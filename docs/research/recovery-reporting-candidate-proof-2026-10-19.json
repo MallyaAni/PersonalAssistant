@@ -1,0 +1,1994 @@
+{
+  "backend": {
+    "reports": [
+      {
+        "candidate_sources": {
+          "backend/cli/market_event_recovery.py": {
+            "bytes": 11302,
+            "sha256": "3db50ee50541d7c08c136117d04a39d33c5e3214600ae00c84fe9e62604629d2"
+          },
+          "backend/market/event_status.py": {
+            "bytes": 1764,
+            "sha256": "d68c37b30e0f82ffef4c8e5972ae4091d9b57d48458f3822b6367bb6f22c946a"
+          },
+          "backend/tests/test_event_recovery_failure_publication.py": {
+            "bytes": 11499,
+            "sha256": "c40d93c531028082e4763edeb3374ab8a293e2c175a4b7c616be8847a98f5a93"
+          }
+        },
+        "cid": "9b4650c6f05e940813e05a5093f4d7f6ceb4b30539ac05643a86780f0bc578df",
+        "docker_start_returncode": 2,
+        "image": "sha256:136ebb46b7912f20472a375a6b29f6efec4cf2fdca13d56cbffb86a1be697db2",
+        "memory_available_before": 9120047104,
+        "mounted_dependency_revision": "c25c8cbedbd0d00318f8a2e5d41db7531e8149ce",
+        "phase": "red",
+        "production_source_unchanged": true,
+        "production_sources_after": {
+          "backend/agents/trading/desk/paper.py": {
+            "bytes": 67605,
+            "physical": {
+              "st_ctime_ns": "1792431633254874073",
+              "st_dev": "66306",
+              "st_gid": "1000",
+              "st_ino": "42991818",
+              "st_mode": "33204",
+              "st_mtime_ns": "1792431633254874073",
+              "st_size": "67605",
+              "st_uid": "1000"
+            },
+            "sha256": "1a96dd96c254abb4799c6f14cb99938c65fb2907d6777fbc4b1194bfaa851bc4"
+          },
+          "backend/cli/market_event_recovery.py": {
+            "bytes": 11302,
+            "physical": {
+              "st_ctime_ns": "1789666356109722227",
+              "st_dev": "66306",
+              "st_gid": "1000",
+              "st_ino": "42632553",
+              "st_mode": "33204",
+              "st_mtime_ns": "1789666356109722227",
+              "st_size": "11302",
+              "st_uid": "1000"
+            },
+            "sha256": "3db50ee50541d7c08c136117d04a39d33c5e3214600ae00c84fe9e62604629d2"
+          },
+          "backend/market/event_status.py": {
+            "bytes": 1764,
+            "physical": {
+              "st_ctime_ns": "1789677371094453276",
+              "st_dev": "66306",
+              "st_gid": "1000",
+              "st_ino": "42894509",
+              "st_mode": "33204",
+              "st_mtime_ns": "1789677371094453276",
+              "st_size": "1764",
+              "st_uid": "1000"
+            },
+            "sha256": "d68c37b30e0f82ffef4c8e5972ae4091d9b57d48458f3822b6367bb6f22c946a"
+          }
+        },
+        "production_sources_before": {
+          "backend/agents/trading/desk/paper.py": {
+            "bytes": 67605,
+            "physical": {
+              "st_ctime_ns": "1792431633254874073",
+              "st_dev": "66306",
+              "st_gid": "1000",
+              "st_ino": "42991818",
+              "st_mode": "33204",
+              "st_mtime_ns": "1792431633254874073",
+              "st_size": "67605",
+              "st_uid": "1000"
+            },
+            "sha256": "1a96dd96c254abb4799c6f14cb99938c65fb2907d6777fbc4b1194bfaa851bc4"
+          },
+          "backend/cli/market_event_recovery.py": {
+            "bytes": 11302,
+            "physical": {
+              "st_ctime_ns": "1789666356109722227",
+              "st_dev": "66306",
+              "st_gid": "1000",
+              "st_ino": "42632553",
+              "st_mode": "33204",
+              "st_mtime_ns": "1789666356109722227",
+              "st_size": "11302",
+              "st_uid": "1000"
+            },
+            "sha256": "3db50ee50541d7c08c136117d04a39d33c5e3214600ae00c84fe9e62604629d2"
+          },
+          "backend/market/event_status.py": {
+            "bytes": 1764,
+            "physical": {
+              "st_ctime_ns": "1789677371094453276",
+              "st_dev": "66306",
+              "st_gid": "1000",
+              "st_ino": "42894509",
+              "st_mode": "33204",
+              "st_mtime_ns": "1789677371094453276",
+              "st_size": "1764",
+              "st_uid": "1000"
+            },
+            "sha256": "d68c37b30e0f82ffef4c8e5972ae4091d9b57d48458f3822b6367bb6f22c946a"
+          }
+        },
+        "scope": "NEW_SYNTHETIC_FAILURE_PUBLICATION_ONLY; NO_ACCOUNT_CREDENTIAL_MODEL_PROVIDER_NETWORK_OR_ORDER_ACCESS",
+        "state": {
+          "Dead": false,
+          "Error": "",
+          "ExitCode": 2,
+          "FinishedAt": "2026-10-19T18:15:09.401392766Z",
+          "OOMKilled": false,
+          "Paused": false,
+          "Pid": 0,
+          "Restarting": false,
+          "Running": false,
+          "StartedAt": "2026-10-19T18:15:07.993474468Z",
+          "Status": "exited"
+        }
+      },
+      {
+        "candidate_sources": {
+          "backend/cli/market_event_recovery.py": {
+            "bytes": 11302,
+            "sha256": "3db50ee50541d7c08c136117d04a39d33c5e3214600ae00c84fe9e62604629d2"
+          },
+          "backend/market/event_status.py": {
+            "bytes": 1764,
+            "sha256": "d68c37b30e0f82ffef4c8e5972ae4091d9b57d48458f3822b6367bb6f22c946a"
+          },
+          "backend/tests/test_event_recovery_failure_publication.py": {
+            "bytes": 11499,
+            "sha256": "c40d93c531028082e4763edeb3374ab8a293e2c175a4b7c616be8847a98f5a93"
+          }
+        },
+        "cid": "d04e214ff68de27e6a52e234240c2e340450d6ffd0292fed51f2e4b518041eaa",
+        "docker_start_returncode": 1,
+        "image": "sha256:136ebb46b7912f20472a375a6b29f6efec4cf2fdca13d56cbffb86a1be697db2",
+        "memory_available_before": 9206661120,
+        "mounted_dependency_revision": "c25c8cbedbd0d00318f8a2e5d41db7531e8149ce",
+        "phase": "red",
+        "production_source_unchanged": true,
+        "production_sources_after": {
+          "backend/agents/trading/desk/paper.py": {
+            "bytes": 67605,
+            "physical": {
+              "st_ctime_ns": "1792431633254874073",
+              "st_dev": "66306",
+              "st_gid": "1000",
+              "st_ino": "42991818",
+              "st_mode": "33204",
+              "st_mtime_ns": "1792431633254874073",
+              "st_size": "67605",
+              "st_uid": "1000"
+            },
+            "sha256": "1a96dd96c254abb4799c6f14cb99938c65fb2907d6777fbc4b1194bfaa851bc4"
+          },
+          "backend/cli/market_event_recovery.py": {
+            "bytes": 11302,
+            "physical": {
+              "st_ctime_ns": "1789666356109722227",
+              "st_dev": "66306",
+              "st_gid": "1000",
+              "st_ino": "42632553",
+              "st_mode": "33204",
+              "st_mtime_ns": "1789666356109722227",
+              "st_size": "11302",
+              "st_uid": "1000"
+            },
+            "sha256": "3db50ee50541d7c08c136117d04a39d33c5e3214600ae00c84fe9e62604629d2"
+          },
+          "backend/market/event_status.py": {
+            "bytes": 1764,
+            "physical": {
+              "st_ctime_ns": "1789677371094453276",
+              "st_dev": "66306",
+              "st_gid": "1000",
+              "st_ino": "42894509",
+              "st_mode": "33204",
+              "st_mtime_ns": "1789677371094453276",
+              "st_size": "1764",
+              "st_uid": "1000"
+            },
+            "sha256": "d68c37b30e0f82ffef4c8e5972ae4091d9b57d48458f3822b6367bb6f22c946a"
+          }
+        },
+        "production_sources_before": {
+          "backend/agents/trading/desk/paper.py": {
+            "bytes": 67605,
+            "physical": {
+              "st_ctime_ns": "1792431633254874073",
+              "st_dev": "66306",
+              "st_gid": "1000",
+              "st_ino": "42991818",
+              "st_mode": "33204",
+              "st_mtime_ns": "1792431633254874073",
+              "st_size": "67605",
+              "st_uid": "1000"
+            },
+            "sha256": "1a96dd96c254abb4799c6f14cb99938c65fb2907d6777fbc4b1194bfaa851bc4"
+          },
+          "backend/cli/market_event_recovery.py": {
+            "bytes": 11302,
+            "physical": {
+              "st_ctime_ns": "1789666356109722227",
+              "st_dev": "66306",
+              "st_gid": "1000",
+              "st_ino": "42632553",
+              "st_mode": "33204",
+              "st_mtime_ns": "1789666356109722227",
+              "st_size": "11302",
+              "st_uid": "1000"
+            },
+            "sha256": "3db50ee50541d7c08c136117d04a39d33c5e3214600ae00c84fe9e62604629d2"
+          },
+          "backend/market/event_status.py": {
+            "bytes": 1764,
+            "physical": {
+              "st_ctime_ns": "1789677371094453276",
+              "st_dev": "66306",
+              "st_gid": "1000",
+              "st_ino": "42894509",
+              "st_mode": "33204",
+              "st_mtime_ns": "1789677371094453276",
+              "st_size": "1764",
+              "st_uid": "1000"
+            },
+            "sha256": "d68c37b30e0f82ffef4c8e5972ae4091d9b57d48458f3822b6367bb6f22c946a"
+          }
+        },
+        "scope": "NEW_SYNTHETIC_FAILURE_PUBLICATION_ONLY; NO_ACCOUNT_CREDENTIAL_MODEL_PROVIDER_NETWORK_OR_ORDER_ACCESS",
+        "state": {
+          "Dead": false,
+          "Error": "",
+          "ExitCode": 1,
+          "FinishedAt": "2026-10-19T18:20:44.768188228Z",
+          "OOMKilled": false,
+          "Paused": false,
+          "Pid": 0,
+          "Restarting": false,
+          "Running": false,
+          "StartedAt": "2026-10-19T18:20:43.206694259Z",
+          "Status": "exited"
+        }
+      },
+      {
+        "candidate_sources": {
+          "backend/cli/market_event_recovery.py": {
+            "bytes": 11626,
+            "sha256": "9c83058638a018e4635d3d141b1dca2f62cbc036c250cca05721a987f6fd3c40"
+          },
+          "backend/market/event_status.py": {
+            "bytes": 1835,
+            "sha256": "1adfd4b22be14b07c025e90f90e008a3d795a8de428b9981437ab91bfea28626"
+          },
+          "backend/tests/test_event_recovery_failure_publication.py": {
+            "bytes": 11499,
+            "sha256": "c40d93c531028082e4763edeb3374ab8a293e2c175a4b7c616be8847a98f5a93"
+          }
+        },
+        "cid": "0f5a9b2e5d29e8a689b0c001b8a8d0e2684e3ff0b9e37e5430b7c9f199a9ccab",
+        "docker_start_returncode": 0,
+        "image": "sha256:136ebb46b7912f20472a375a6b29f6efec4cf2fdca13d56cbffb86a1be697db2",
+        "memory_available_before": 9216507904,
+        "mounted_dependency_revision": "c25c8cbedbd0d00318f8a2e5d41db7531e8149ce",
+        "phase": "green",
+        "production_source_unchanged": true,
+        "production_sources_after": {
+          "backend/agents/trading/desk/paper.py": {
+            "bytes": 67605,
+            "physical": {
+              "st_ctime_ns": "1792431633254874073",
+              "st_dev": "66306",
+              "st_gid": "1000",
+              "st_ino": "42991818",
+              "st_mode": "33204",
+              "st_mtime_ns": "1792431633254874073",
+              "st_size": "67605",
+              "st_uid": "1000"
+            },
+            "sha256": "1a96dd96c254abb4799c6f14cb99938c65fb2907d6777fbc4b1194bfaa851bc4"
+          },
+          "backend/cli/market_event_recovery.py": {
+            "bytes": 11302,
+            "physical": {
+              "st_ctime_ns": "1789666356109722227",
+              "st_dev": "66306",
+              "st_gid": "1000",
+              "st_ino": "42632553",
+              "st_mode": "33204",
+              "st_mtime_ns": "1789666356109722227",
+              "st_size": "11302",
+              "st_uid": "1000"
+            },
+            "sha256": "3db50ee50541d7c08c136117d04a39d33c5e3214600ae00c84fe9e62604629d2"
+          },
+          "backend/market/event_status.py": {
+            "bytes": 1764,
+            "physical": {
+              "st_ctime_ns": "1789677371094453276",
+              "st_dev": "66306",
+              "st_gid": "1000",
+              "st_ino": "42894509",
+              "st_mode": "33204",
+              "st_mtime_ns": "1789677371094453276",
+              "st_size": "1764",
+              "st_uid": "1000"
+            },
+            "sha256": "d68c37b30e0f82ffef4c8e5972ae4091d9b57d48458f3822b6367bb6f22c946a"
+          }
+        },
+        "production_sources_before": {
+          "backend/agents/trading/desk/paper.py": {
+            "bytes": 67605,
+            "physical": {
+              "st_ctime_ns": "1792431633254874073",
+              "st_dev": "66306",
+              "st_gid": "1000",
+              "st_ino": "42991818",
+              "st_mode": "33204",
+              "st_mtime_ns": "1792431633254874073",
+              "st_size": "67605",
+              "st_uid": "1000"
+            },
+            "sha256": "1a96dd96c254abb4799c6f14cb99938c65fb2907d6777fbc4b1194bfaa851bc4"
+          },
+          "backend/cli/market_event_recovery.py": {
+            "bytes": 11302,
+            "physical": {
+              "st_ctime_ns": "1789666356109722227",
+              "st_dev": "66306",
+              "st_gid": "1000",
+              "st_ino": "42632553",
+              "st_mode": "33204",
+              "st_mtime_ns": "1789666356109722227",
+              "st_size": "11302",
+              "st_uid": "1000"
+            },
+            "sha256": "3db50ee50541d7c08c136117d04a39d33c5e3214600ae00c84fe9e62604629d2"
+          },
+          "backend/market/event_status.py": {
+            "bytes": 1764,
+            "physical": {
+              "st_ctime_ns": "1789677371094453276",
+              "st_dev": "66306",
+              "st_gid": "1000",
+              "st_ino": "42894509",
+              "st_mode": "33204",
+              "st_mtime_ns": "1789677371094453276",
+              "st_size": "1764",
+              "st_uid": "1000"
+            },
+            "sha256": "d68c37b30e0f82ffef4c8e5972ae4091d9b57d48458f3822b6367bb6f22c946a"
+          }
+        },
+        "scope": "NEW_SYNTHETIC_FAILURE_PUBLICATION_ONLY; NO_ACCOUNT_CREDENTIAL_MODEL_PROVIDER_NETWORK_OR_ORDER_ACCESS",
+        "state": {
+          "Dead": false,
+          "Error": "",
+          "ExitCode": 0,
+          "FinishedAt": "2026-10-19T18:21:58.024816334Z",
+          "OOMKilled": false,
+          "Paused": false,
+          "Pid": 0,
+          "Restarting": false,
+          "Running": false,
+          "StartedAt": "2026-10-19T18:21:56.959933224Z",
+          "Status": "exited"
+        }
+      }
+    ],
+    "wire_bytes": 160178,
+    "wire_sha256": "0c88d2ce9e236d100020c0ee783c1695d843cbbed552493ec159a2da02138277"
+  },
+  "browser_failed_fixture": {
+    "cases": [
+      {
+        "diagnostics_scope": "UNAVAILABLE: navigation timeout preceded finally attachment",
+        "duration_ms": 60364,
+        "errors": [
+          {
+            "message": "\u001b[31mTest timeout of 60000ms exceeded.\u001b[39m"
+          }
+        ],
+        "status": "timedOut",
+        "title": "FOMC fresh failure keeps execution certainty and original fills explicit after reload"
+      },
+      {
+        "diagnostics_scope": "UNAVAILABLE: navigation timeout preceded finally attachment",
+        "duration_ms": 60218,
+        "errors": [
+          {
+            "message": "\u001b[31mTest timeout of 60000ms exceeded.\u001b[39m"
+          }
+        ],
+        "status": "timedOut",
+        "title": "FOMC stale failure keeps execution certainty and original fills explicit after reload"
+      },
+      {
+        "diagnostics_scope": "UNAVAILABLE: navigation timeout preceded finally attachment",
+        "duration_ms": 60212,
+        "errors": [
+          {
+            "message": "\u001b[31mTest timeout of 60000ms exceeded.\u001b[39m"
+          }
+        ],
+        "status": "timedOut",
+        "title": "FOMC healthy monitoring keeps execution certainty and original fills explicit after reload"
+      }
+    ],
+    "path": "/tmp/event-recovery-unavailable-red-20261019-v1-results.json",
+    "stats": {
+      "duration": 185191.27300000002,
+      "expected": 0,
+      "flaky": 0,
+      "skipped": 0,
+      "startTime": "2026-10-19T18:13:50.129Z",
+      "unexpected": 3
+    }
+  },
+  "browser_green": {
+    "cases": [
+      {
+        "duration_ms": 3489,
+        "errors": [],
+        "evidence": {
+          "asOf": "2026-10-19T18:20:00.442Z",
+          "day": "2026-10-19",
+          "diagnostics": {
+            "badResponses": [],
+            "consoleErrors": [],
+            "failedRequests": [],
+            "forbiddenWrites": [],
+            "pageErrors": [],
+            "unexpectedRequests": []
+          },
+          "filledAt": "2026-10-19T18:19:01.442Z",
+          "mode": "fresh failure",
+          "observations": [
+            {
+              "execution": "Broker orders and fills \u00b7 read Oct 19, 02:20 PM ET\n\n0 orders open at the broker\n\n1 fills \u00b7 2026-10-19\n\nBought 3 STX @ $101.25 \u00b7 Oct 19, 2026, 02:19:01 PM ET",
+              "label": "before reload",
+              "order": "Bought 3 @ $101.25\nOriginal regular execution",
+              "policy": "FOMC \u00b7 recovery unavailable \u00b7 provisional policy\n\nChecked Oct 19, 02:20 PM ET\n\nPolicy & execution\n\nFOMC recovery could not be verified; current event execution is unconfirmed.\n\nThis status does not confirm whether reductions or restorations were placed or filled. Recorded regular orders and fills remain shown below.",
+              "today": "XNYS closed by schedule \u00b7 no regular session today \u00b7 FOMC execution unconfirmed. Paper orders: 1 filled."
+            },
+            {
+              "execution": "Broker orders and fills \u00b7 read Oct 19, 02:20 PM ET\n\n0 orders open at the broker\n\n1 fills \u00b7 2026-10-19\n\nBought 3 STX @ $101.25 \u00b7 Oct 19, 2026, 02:19:01 PM ET",
+              "label": "after reload",
+              "order": "Bought 3 @ $101.25\nOriginal regular execution",
+              "policy": "FOMC \u00b7 recovery unavailable \u00b7 provisional policy\n\nChecked Oct 19, 02:20 PM ET\n\nPolicy & execution\n\nFOMC recovery could not be verified; current event execution is unconfirmed.\n\nThis status does not confirm whether reductions or restorations were placed or filled. Recorded regular orders and fills remain shown below.",
+              "today": "XNYS closed by schedule \u00b7 no regular session today \u00b7 FOMC execution unconfirmed. Paper orders: 1 filled."
+            }
+          ],
+          "requests": [
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/auth/session"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/conversations/event-recovery-coverage-owner"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/holdings"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/session-prices"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/live"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/session-prices"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/live"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/session-prices"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/live"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/paper"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/auth/session"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/conversations/event-recovery-coverage-owner"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/conversations/event-recovery-coverage-owner/78cd7242-eff5-4195-b578-c1251fb4b6f1"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/holdings"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/session-prices"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/live"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/session-prices"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/live"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/paper"
+            }
+          ]
+        },
+        "status": "passed",
+        "title": "FOMC fresh failure keeps execution certainty and original fills explicit after reload"
+      },
+      {
+        "duration_ms": 2278,
+        "errors": [],
+        "evidence": {
+          "asOf": "2026-10-19T18:00:04.476Z",
+          "day": "2026-10-19",
+          "diagnostics": {
+            "badResponses": [],
+            "consoleErrors": [],
+            "failedRequests": [],
+            "forbiddenWrites": [],
+            "pageErrors": [],
+            "unexpectedRequests": []
+          },
+          "filledAt": "2026-10-19T18:19:04.476Z",
+          "mode": "stale failure",
+          "observations": [
+            {
+              "execution": "Broker orders and fills \u00b7 read Oct 19, 02:20 PM ET\n\n0 orders open at the broker\n\n1 fills \u00b7 2026-10-19\n\nBought 3 STX @ $101.25 \u00b7 Oct 19, 2026, 02:19:04 PM ET",
+              "label": "before reload",
+              "order": "Bought 3 @ $101.25\nOriginal regular execution",
+              "policy": "FOMC \u00b7 last recovery unavailable \u00b7 provisional policy\n\nChecked Oct 19, 02:00 PM ET \u00b7 last known status\n\nPolicy & execution\n\nThe last FOMC recovery check failed; current event execution is unconfirmed.\n\nThis status does not confirm whether reductions or restorations were placed or filled. Recorded regular orders and fills remain shown below.",
+              "today": "XNYS closed by schedule \u00b7 no regular session today \u00b7 FOMC execution unconfirmed. Paper orders: 1 filled."
+            },
+            {
+              "execution": "Broker orders and fills \u00b7 read Oct 19, 02:20 PM ET\n\n0 orders open at the broker\n\n1 fills \u00b7 2026-10-19\n\nBought 3 STX @ $101.25 \u00b7 Oct 19, 2026, 02:19:04 PM ET",
+              "label": "after reload",
+              "order": "Bought 3 @ $101.25\nOriginal regular execution",
+              "policy": "FOMC \u00b7 last recovery unavailable \u00b7 provisional policy\n\nChecked Oct 19, 02:00 PM ET \u00b7 last known status\n\nPolicy & execution\n\nThe last FOMC recovery check failed; current event execution is unconfirmed.\n\nThis status does not confirm whether reductions or restorations were placed or filled. Recorded regular orders and fills remain shown below.",
+              "today": "XNYS closed by schedule \u00b7 no regular session today \u00b7 FOMC execution unconfirmed. Paper orders: 1 filled."
+            }
+          ],
+          "requests": [
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/auth/session"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/conversations/event-recovery-coverage-owner"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/holdings"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/session-prices"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/live"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/session-prices"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/live"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/session-prices"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/live"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/paper"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/auth/session"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/conversations/event-recovery-coverage-owner"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/conversations/event-recovery-coverage-owner/b8ba23c7-f672-4d82-b629-252ff4901adf"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/holdings"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/session-prices"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/live"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/session-prices"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/live"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/paper"
+            }
+          ]
+        },
+        "status": "passed",
+        "title": "FOMC stale failure keeps execution certainty and original fills explicit after reload"
+      },
+      {
+        "duration_ms": 2111,
+        "errors": [],
+        "evidence": {
+          "asOf": "2026-10-19T18:20:05.889Z",
+          "day": "2026-10-19",
+          "diagnostics": {
+            "badResponses": [],
+            "consoleErrors": [],
+            "failedRequests": [],
+            "forbiddenWrites": [],
+            "pageErrors": [],
+            "unexpectedRequests": []
+          },
+          "filledAt": "2026-10-19T18:19:06.889Z",
+          "mode": "healthy monitoring",
+          "observations": [
+            {
+              "execution": "Broker orders and fills \u00b7 read Oct 19, 02:20 PM ET\n\n0 orders open at the broker\n\n1 fills \u00b7 2026-10-19\n\nBought 3 STX @ $101.25 \u00b7 Oct 19, 2026, 02:19:06 PM ET",
+              "label": "before reload",
+              "order": "Bought 3 @ $101.25\nOriginal regular execution",
+              "policy": "FOMC \u00b7 monitoring \u00b7 provisional policy\n\nChecked Oct 19, 02:20 PM ET\n\nPolicy & execution\n\nUsing the 2026-10-13 close: no pre-meeting reduction requested. FOMC decision: 2026-11-04.\n\nNothing is being traded for this policy right now. Any reduction would run in the practice account below, never in your own book.",
+              "today": "XNYS closed by schedule \u00b7 no regular session today. Paper orders: 1 filled."
+            },
+            {
+              "execution": "Broker orders and fills \u00b7 read Oct 19, 02:20 PM ET\n\n0 orders open at the broker\n\n1 fills \u00b7 2026-10-19\n\nBought 3 STX @ $101.25 \u00b7 Oct 19, 2026, 02:19:06 PM ET",
+              "label": "after reload",
+              "order": "Bought 3 @ $101.25\nOriginal regular execution",
+              "policy": "FOMC \u00b7 monitoring \u00b7 provisional policy\n\nChecked Oct 19, 02:20 PM ET\n\nPolicy & execution\n\nUsing the 2026-10-13 close: no pre-meeting reduction requested. FOMC decision: 2026-11-04.\n\nNothing is being traded for this policy right now. Any reduction would run in the practice account below, never in your own book.",
+              "today": "XNYS closed by schedule \u00b7 no regular session today. Paper orders: 1 filled."
+            }
+          ],
+          "requests": [
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/auth/session"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/conversations/event-recovery-coverage-owner"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/holdings"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/session-prices"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/live"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/session-prices"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/live"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/paper"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/auth/session"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/conversations/event-recovery-coverage-owner"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/conversations/event-recovery-coverage-owner/5d3847ca-c764-4fe3-b048-b457dcde3203"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/holdings"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/session-prices"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/live"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/session-prices"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/live"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/paper"
+            }
+          ]
+        },
+        "status": "passed",
+        "title": "FOMC healthy monitoring keeps execution certainty and original fills explicit after reload"
+      }
+    ],
+    "path": "/tmp/event-recovery-unavailable-green-20261019-v2-results.json",
+    "stats": {
+      "duration": 11691.93,
+      "expected": 3,
+      "flaky": 0,
+      "skipped": 0,
+      "startTime": "2026-10-19T18:19:57.384Z",
+      "unexpected": 0
+    }
+  },
+  "browser_red": {
+    "cases": [
+      {
+        "duration_ms": 52474,
+        "errors": [
+          {
+            "location": {
+              "column": 50,
+              "file": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/event-recovery-unavailable.spec.ts",
+              "line": 118
+            },
+            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('region', { name: 'FOMC exposure policy', exact: true }).getByRole('alert')\nExpected: \u001b[32m\"FOMC recovery could not be verified; current event execution is unconfirmed.\"\u001b[39m\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"soft toHaveText\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: 'FOMC exposure policy', exact: true }).getByRole('alert')\u001b[22m\n\n\n  116 |       ? 'The last FOMC recovery check failed; current event execution is unconfirmed.'\n  117 |       : 'FOMC recovery could not be verified; current event execution is unconfirmed.'\n> 118 |     await expect.soft(policy.getByRole('alert')).toHaveText(warning)\n      |                                                  ^\n  119 |     await expect.soft(policy).not.toContainText('Nothing is being traded')\n  120 |     await expect.soft(policy).not.toContainText('no pre-meeting reduction requested')\n  121 |     await expect.soft(today).toContainText('FOMC execution unconfirmed')\n    at inspect (/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/event-recovery-unavailable.spec.ts:118:50)\n    at /Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/event-recovery-unavailable.spec.ts:146:7"
+          },
+          {
+            "location": {
+              "column": 35,
+              "file": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/event-recovery-unavailable.spec.ts",
+              "line": 119
+            },
+            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).not.\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('region', { name: 'FOMC exposure policy', exact: true })\nExpected substring: not \u001b[32m\"Nothing is being traded\"\u001b[39m\nReceived string: \u001b[31m\"FOMC \u00b7 recovery unavailable \u00b7 provisional policyChecked Oct 19, 02:17 PM ETPolicy & executionA negative five-session SPY return can trigger a one-time 50% reduction in held shares during the three sessions before the decision. The reduction lasts through decision day. Nightly paper orders are queued for the next open, even on a green day. Missed reductions are recovered during market hours using the same share baseline; recovery does not place buys. Actual fill times and prices can differ. Restoration is limited to confirmed reductions and available cash. Regular rebalances wait until the event cycle ends. Restoration follows the calendar and cash availability; it is not a fresh market-risk all-clear. If the remaining shares are unaffordable, the cycle ends with those shares left unbought.Using the 2026-10-13 close: no pre-meeting reduction requested. FOMC decision: 2026-11-04.\u001b[7mNothing is being traded\u001b[27m for this policy right now. Any reduction would run in the practice account below, never in your own book.\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"soft not toContainText\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: 'FOMC exposure policy', exact: true })\u001b[22m\n\u001b[2m    14 \u00d7 locator resolved to <section aria-label=\"FOMC exposure policy\" class=\"rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-[#5c4300]\">\u2026</section>\u001b[22m\n\u001b[2m       - unexpected value \"FOMC \u00b7 recovery unavailable \u00b7 provisional policyChecked Oct 19, 02:17 PM ETPolicy & executionA negative five-session SPY return can trigger a one-time 50% reduction in held shares during the three sessions before the decision. The reduction lasts through decision day. Nightly paper orders are queued for the next open, even on a green day. Missed reductions are recovered during market hours using the same share baseline; recovery does not place buys. Actual fill times and prices can differ. Restoration is limited to confirmed reductions and available cash. Regular rebalances wait until the event cycle ends. Restoration follows the calendar and cash availability; it is not a fresh market-risk all-clear. If the remaining shares are unaffordable, the cycle ends with those shares left unbought.Using the 2026-10-13 close: no pre-meeting reduction requested. FOMC decision: 2026-11-04.Nothing is being traded for this policy right now. Any reduction would run in the practice account below, never in your own book.\"\u001b[22m\n\n\n  117 |       : 'FOMC recovery could not be verified; current event execution is unconfirmed.'\n  118 |     await expect.soft(policy.getByRole('alert')).toHaveText(warning)\n> 119 |     await expect.soft(policy).not.toContainText('Nothing is being traded')\n      |                                   ^\n  120 |     await expect.soft(policy).not.toContainText('no pre-meeting reduction requested')\n  121 |     await expect.soft(today).toContainText('FOMC execution unconfirmed')\n  122 |     await expect.soft(today).not.toContainText('paper FOMC cycle active')\n    at inspect (/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/event-recovery-unavailable.spec.ts:119:35)\n    at /Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/event-recovery-unavailable.spec.ts:146:7"
+          },
+          {
+            "location": {
+              "column": 35,
+              "file": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/event-recovery-unavailable.spec.ts",
+              "line": 120
+            },
+            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).not.\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('region', { name: 'FOMC exposure policy', exact: true })\nExpected substring: not \u001b[32m\"no pre-meeting reduction requested\"\u001b[39m\nReceived string: \u001b[31m\"FOMC \u00b7 recovery unavailable \u00b7 provisional policyChecked Oct 19, 02:17 PM ETPolicy & executionA negative five-session SPY return can trigger a one-time 50% reduction in held shares during the three sessions before the decision. The reduction lasts through decision day. Nightly paper orders are queued for the next open, even on a green day. Missed reductions are recovered during market hours using the same share baseline; recovery does not place buys. Actual fill times and prices can differ. Restoration is limited to confirmed reductions and available cash. Regular rebalances wait until the event cycle ends. Restoration follows the calendar and cash availability; it is not a fresh market-risk all-clear. If the remaining shares are unaffordable, the cycle ends with those shares left unbought.Using the 2026-10-13 close: \u001b[7mno pre-meeting reduction requested\u001b[27m. FOMC decision: 2026-11-04.Nothing is being traded for this policy right now. Any reduction would run in the practice account below, never in your own book.\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"soft not toContainText\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: 'FOMC exposure policy', exact: true })\u001b[22m\n\u001b[2m    14 \u00d7 locator resolved to <section aria-label=\"FOMC exposure policy\" class=\"rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-[#5c4300]\">\u2026</section>\u001b[22m\n\u001b[2m       - unexpected value \"FOMC \u00b7 recovery unavailable \u00b7 provisional policyChecked Oct 19, 02:17 PM ETPolicy & executionA negative five-session SPY return can trigger a one-time 50% reduction in held shares during the three sessions before the decision. The reduction lasts through decision day. Nightly paper orders are queued for the next open, even on a green day. Missed reductions are recovered during market hours using the same share baseline; recovery does not place buys. Actual fill times and prices can differ. Restoration is limited to confirmed reductions and available cash. Regular rebalances wait until the event cycle ends. Restoration follows the calendar and cash availability; it is not a fresh market-risk all-clear. If the remaining shares are unaffordable, the cycle ends with those shares left unbought.Using the 2026-10-13 close: no pre-meeting reduction requested. FOMC decision: 2026-11-04.Nothing is being traded for this policy right now. Any reduction would run in the practice account below, never in your own book.\"\u001b[22m\n\n\n  118 |     await expect.soft(policy.getByRole('alert')).toHaveText(warning)\n  119 |     await expect.soft(policy).not.toContainText('Nothing is being traded')\n> 120 |     await expect.soft(policy).not.toContainText('no pre-meeting reduction requested')\n      |                                   ^\n  121 |     await expect.soft(today).toContainText('FOMC execution unconfirmed')\n  122 |     await expect.soft(today).not.toContainText('paper FOMC cycle active')\n  123 |     if (state.mode === 'stale failure') {\n    at inspect (/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/event-recovery-unavailable.spec.ts:120:35)\n    at /Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/event-recovery-unavailable.spec.ts:146:7"
+          },
+          {
+            "location": {
+              "column": 30,
+              "file": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/event-recovery-unavailable.spec.ts",
+              "line": 121
+            },
+            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('region', { name: 'Today', exact: true })\nExpected substring: \u001b[32m\"\u001b[7mFOMC execution unconfirm\u001b[27med\"\u001b[39m\nReceived string:    \u001b[31m\"\u001b[7mXNYS closed by schedule \u00b7 no regular session today \u00b7 paper FOMC cycle active. Paper orders: 1 fill\u001b[27med\u001b[7m.\u001b[27m\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"soft toContainText\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: 'Today', exact: true })\u001b[22m\n\u001b[2m    14 \u00d7 locator resolved to <section aria-label=\"Today\" class=\"shrink-0 rounded-xl border border-black/[0.08] bg-white px-3 py-2 text-sm\">\u2026</section>\u001b[22m\n\u001b[2m       - unexpected value \"XNYS closed by schedule \u00b7 no regular session today \u00b7 paper FOMC cycle active. Paper orders: 1 filled.\"\u001b[22m\n\n\n  119 |     await expect.soft(policy).not.toContainText('Nothing is being traded')\n  120 |     await expect.soft(policy).not.toContainText('no pre-meeting reduction requested')\n> 121 |     await expect.soft(today).toContainText('FOMC execution unconfirmed')\n      |                              ^\n  122 |     await expect.soft(today).not.toContainText('paper FOMC cycle active')\n  123 |     if (state.mode === 'stale failure') {\n  124 |       await expect.soft(policy).toContainText('last known status')\n    at inspect (/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/event-recovery-unavailable.spec.ts:121:30)\n    at /Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/event-recovery-unavailable.spec.ts:146:7"
+          },
+          {
+            "location": {
+              "column": 34,
+              "file": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/event-recovery-unavailable.spec.ts",
+              "line": 122
+            },
+            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).not.\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('region', { name: 'Today', exact: true })\nExpected substring: not \u001b[32m\"paper FOMC cycle active\"\u001b[39m\nReceived string: \u001b[31m\"XNYS closed by schedule \u00b7 no regular session today \u00b7 \u001b[7mpaper FOMC cycle active\u001b[27m. Paper orders: 1 filled.\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"soft not toContainText\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: 'Today', exact: true })\u001b[22m\n\u001b[2m    14 \u00d7 locator resolved to <section aria-label=\"Today\" class=\"shrink-0 rounded-xl border border-black/[0.08] bg-white px-3 py-2 text-sm\">\u2026</section>\u001b[22m\n\u001b[2m       - unexpected value \"XNYS closed by schedule \u00b7 no regular session today \u00b7 paper FOMC cycle active. Paper orders: 1 filled.\"\u001b[22m\n\n\n  120 |     await expect.soft(policy).not.toContainText('no pre-meeting reduction requested')\n  121 |     await expect.soft(today).toContainText('FOMC execution unconfirmed')\n> 122 |     await expect.soft(today).not.toContainText('paper FOMC cycle active')\n      |                                  ^\n  123 |     if (state.mode === 'stale failure') {\n  124 |       await expect.soft(policy).toContainText('last known status')\n  125 |       await expect.soft(policy.getByRole('heading')).toContainText('last recovery unavailable')\n    at inspect (/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/event-recovery-unavailable.spec.ts:122:34)\n    at /Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/event-recovery-unavailable.spec.ts:146:7"
+          },
+          {
+            "location": {
+              "column": 50,
+              "file": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/event-recovery-unavailable.spec.ts",
+              "line": 118
+            },
+            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('region', { name: 'FOMC exposure policy', exact: true }).getByRole('alert')\nExpected: \u001b[32m\"FOMC recovery could not be verified; current event execution is unconfirmed.\"\u001b[39m\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"soft toHaveText\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: 'FOMC exposure policy', exact: true }).getByRole('alert')\u001b[22m\n\n\n  116 |       ? 'The last FOMC recovery check failed; current event execution is unconfirmed.'\n  117 |       : 'FOMC recovery could not be verified; current event execution is unconfirmed.'\n> 118 |     await expect.soft(policy.getByRole('alert')).toHaveText(warning)\n      |                                                  ^\n  119 |     await expect.soft(policy).not.toContainText('Nothing is being traded')\n  120 |     await expect.soft(policy).not.toContainText('no pre-meeting reduction requested')\n  121 |     await expect.soft(today).toContainText('FOMC execution unconfirmed')\n    at inspect (/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/event-recovery-unavailable.spec.ts:118:50)\n    at /Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/event-recovery-unavailable.spec.ts:148:7"
+          },
+          {
+            "location": {
+              "column": 35,
+              "file": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/event-recovery-unavailable.spec.ts",
+              "line": 119
+            },
+            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).not.\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('region', { name: 'FOMC exposure policy', exact: true })\nExpected substring: not \u001b[32m\"Nothing is being traded\"\u001b[39m\nReceived string: \u001b[31m\"FOMC \u00b7 recovery unavailable \u00b7 provisional policyChecked Oct 19, 02:17 PM ETPolicy & executionA negative five-session SPY return can trigger a one-time 50% reduction in held shares during the three sessions before the decision. The reduction lasts through decision day. Nightly paper orders are queued for the next open, even on a green day. Missed reductions are recovered during market hours using the same share baseline; recovery does not place buys. Actual fill times and prices can differ. Restoration is limited to confirmed reductions and available cash. Regular rebalances wait until the event cycle ends. Restoration follows the calendar and cash availability; it is not a fresh market-risk all-clear. If the remaining shares are unaffordable, the cycle ends with those shares left unbought.Using the 2026-10-13 close: no pre-meeting reduction requested. FOMC decision: 2026-11-04.\u001b[7mNothing is being traded\u001b[27m for this policy right now. Any reduction would run in the practice account below, never in your own book.\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"soft not toContainText\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: 'FOMC exposure policy', exact: true })\u001b[22m\n\u001b[2m    14 \u00d7 locator resolved to <section aria-label=\"FOMC exposure policy\" class=\"rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-[#5c4300]\">\u2026</section>\u001b[22m\n\u001b[2m       - unexpected value \"FOMC \u00b7 recovery unavailable \u00b7 provisional policyChecked Oct 19, 02:17 PM ETPolicy & executionA negative five-session SPY return can trigger a one-time 50% reduction in held shares during the three sessions before the decision. The reduction lasts through decision day. Nightly paper orders are queued for the next open, even on a green day. Missed reductions are recovered during market hours using the same share baseline; recovery does not place buys. Actual fill times and prices can differ. Restoration is limited to confirmed reductions and available cash. Regular rebalances wait until the event cycle ends. Restoration follows the calendar and cash availability; it is not a fresh market-risk all-clear. If the remaining shares are unaffordable, the cycle ends with those shares left unbought.Using the 2026-10-13 close: no pre-meeting reduction requested. FOMC decision: 2026-11-04.Nothing is being traded for this policy right now. Any reduction would run in the practice account below, never in your own book.\"\u001b[22m\n\n\n  117 |       : 'FOMC recovery could not be verified; current event execution is unconfirmed.'\n  118 |     await expect.soft(policy.getByRole('alert')).toHaveText(warning)\n> 119 |     await expect.soft(policy).not.toContainText('Nothing is being traded')\n      |                                   ^\n  120 |     await expect.soft(policy).not.toContainText('no pre-meeting reduction requested')\n  121 |     await expect.soft(today).toContainText('FOMC execution unconfirmed')\n  122 |     await expect.soft(today).not.toContainText('paper FOMC cycle active')\n    at inspect (/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/event-recovery-unavailable.spec.ts:119:35)\n    at /Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/event-recovery-unavailable.spec.ts:148:7"
+          },
+          {
+            "location": {
+              "column": 35,
+              "file": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/event-recovery-unavailable.spec.ts",
+              "line": 120
+            },
+            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).not.\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('region', { name: 'FOMC exposure policy', exact: true })\nExpected substring: not \u001b[32m\"no pre-meeting reduction requested\"\u001b[39m\nReceived string: \u001b[31m\"FOMC \u00b7 recovery unavailable \u00b7 provisional policyChecked Oct 19, 02:17 PM ETPolicy & executionA negative five-session SPY return can trigger a one-time 50% reduction in held shares during the three sessions before the decision. The reduction lasts through decision day. Nightly paper orders are queued for the next open, even on a green day. Missed reductions are recovered during market hours using the same share baseline; recovery does not place buys. Actual fill times and prices can differ. Restoration is limited to confirmed reductions and available cash. Regular rebalances wait until the event cycle ends. Restoration follows the calendar and cash availability; it is not a fresh market-risk all-clear. If the remaining shares are unaffordable, the cycle ends with those shares left unbought.Using the 2026-10-13 close: \u001b[7mno pre-meeting reduction requested\u001b[27m. FOMC decision: 2026-11-04.Nothing is being traded for this policy right now. Any reduction would run in the practice account below, never in your own book.\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"soft not toContainText\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: 'FOMC exposure policy', exact: true })\u001b[22m\n\u001b[2m    14 \u00d7 locator resolved to <section aria-label=\"FOMC exposure policy\" class=\"rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-[#5c4300]\">\u2026</section>\u001b[22m\n\u001b[2m       - unexpected value \"FOMC \u00b7 recovery unavailable \u00b7 provisional policyChecked Oct 19, 02:17 PM ETPolicy & executionA negative five-session SPY return can trigger a one-time 50% reduction in held shares during the three sessions before the decision. The reduction lasts through decision day. Nightly paper orders are queued for the next open, even on a green day. Missed reductions are recovered during market hours using the same share baseline; recovery does not place buys. Actual fill times and prices can differ. Restoration is limited to confirmed reductions and available cash. Regular rebalances wait until the event cycle ends. Restoration follows the calendar and cash availability; it is not a fresh market-risk all-clear. If the remaining shares are unaffordable, the cycle ends with those shares left unbought.Using the 2026-10-13 close: no pre-meeting reduction requested. FOMC decision: 2026-11-04.Nothing is being traded for this policy right now. Any reduction would run in the practice account below, never in your own book.\"\u001b[22m\n\n\n  118 |     await expect.soft(policy.getByRole('alert')).toHaveText(warning)\n  119 |     await expect.soft(policy).not.toContainText('Nothing is being traded')\n> 120 |     await expect.soft(policy).not.toContainText('no pre-meeting reduction requested')\n      |                                   ^\n  121 |     await expect.soft(today).toContainText('FOMC execution unconfirmed')\n  122 |     await expect.soft(today).not.toContainText('paper FOMC cycle active')\n  123 |     if (state.mode === 'stale failure') {\n    at inspect (/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/event-recovery-unavailable.spec.ts:120:35)\n    at /Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/event-recovery-unavailable.spec.ts:148:7"
+          },
+          {
+            "location": {
+              "column": 30,
+              "file": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/event-recovery-unavailable.spec.ts",
+              "line": 121
+            },
+            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('region', { name: 'Today', exact: true })\nExpected substring: \u001b[32m\"\u001b[7mFOMC execution unconfirm\u001b[27med\"\u001b[39m\nReceived string:    \u001b[31m\"\u001b[7mXNYS closed by schedule \u00b7 no regular session today \u00b7 paper FOMC cycle active. Paper orders: 1 fill\u001b[27med\u001b[7m.\u001b[27m\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"soft toContainText\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: 'Today', exact: true })\u001b[22m\n\u001b[2m    14 \u00d7 locator resolved to <section aria-label=\"Today\" class=\"shrink-0 rounded-xl border border-black/[0.08] bg-white px-3 py-2 text-sm\">\u2026</section>\u001b[22m\n\u001b[2m       - unexpected value \"XNYS closed by schedule \u00b7 no regular session today \u00b7 paper FOMC cycle active. Paper orders: 1 filled.\"\u001b[22m\n\n\n  119 |     await expect.soft(policy).not.toContainText('Nothing is being traded')\n  120 |     await expect.soft(policy).not.toContainText('no pre-meeting reduction requested')\n> 121 |     await expect.soft(today).toContainText('FOMC execution unconfirmed')\n      |                              ^\n  122 |     await expect.soft(today).not.toContainText('paper FOMC cycle active')\n  123 |     if (state.mode === 'stale failure') {\n  124 |       await expect.soft(policy).toContainText('last known status')\n    at inspect (/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/event-recovery-unavailable.spec.ts:121:30)\n    at /Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/event-recovery-unavailable.spec.ts:148:7"
+          },
+          {
+            "location": {
+              "column": 34,
+              "file": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/event-recovery-unavailable.spec.ts",
+              "line": 122
+            },
+            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).not.\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('region', { name: 'Today', exact: true })\nExpected substring: not \u001b[32m\"paper FOMC cycle active\"\u001b[39m\nReceived string: \u001b[31m\"XNYS closed by schedule \u00b7 no regular session today \u00b7 \u001b[7mpaper FOMC cycle active\u001b[27m. Paper orders: 1 filled.\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"soft not toContainText\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: 'Today', exact: true })\u001b[22m\n\u001b[2m    14 \u00d7 locator resolved to <section aria-label=\"Today\" class=\"shrink-0 rounded-xl border border-black/[0.08] bg-white px-3 py-2 text-sm\">\u2026</section>\u001b[22m\n\u001b[2m       - unexpected value \"XNYS closed by schedule \u00b7 no regular session today \u00b7 paper FOMC cycle active. Paper orders: 1 filled.\"\u001b[22m\n\n\n  120 |     await expect.soft(policy).not.toContainText('no pre-meeting reduction requested')\n  121 |     await expect.soft(today).toContainText('FOMC execution unconfirmed')\n> 122 |     await expect.soft(today).not.toContainText('paper FOMC cycle active')\n      |                                  ^\n  123 |     if (state.mode === 'stale failure') {\n  124 |       await expect.soft(policy).toContainText('last known status')\n  125 |       await expect.soft(policy.getByRole('heading')).toContainText('last recovery unavailable')\n    at inspect (/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/event-recovery-unavailable.spec.ts:122:34)\n    at /Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/event-recovery-unavailable.spec.ts:148:7"
+          }
+        ],
+        "evidence": {
+          "asOf": "2026-10-19T18:17:16.813Z",
+          "day": "2026-10-19",
+          "diagnostics": {
+            "badResponses": [],
+            "consoleErrors": [],
+            "failedRequests": [],
+            "forbiddenWrites": [],
+            "pageErrors": [],
+            "unexpectedRequests": []
+          },
+          "filledAt": "2026-10-19T18:16:17.813Z",
+          "mode": "fresh failure",
+          "observations": [
+            {
+              "execution": "Broker orders and fills \u00b7 read Oct 19, 02:17 PM ET\n\n0 orders open at the broker\n\n1 fills \u00b7 2026-10-19\n\nBought 3 STX @ $101.25 \u00b7 Oct 19, 2026, 02:16:17 PM ET",
+              "label": "before reload",
+              "order": "Bought 3 @ $101.25\nOriginal regular execution",
+              "policy": "FOMC \u00b7 recovery unavailable \u00b7 provisional policy\n\nChecked Oct 19, 02:17 PM ET\n\nPolicy & execution\n\nUsing the 2026-10-13 close: no pre-meeting reduction requested. FOMC decision: 2026-11-04.\n\nNothing is being traded for this policy right now. Any reduction would run in the practice account below, never in your own book.",
+              "today": "XNYS closed by schedule \u00b7 no regular session today \u00b7 paper FOMC cycle active. Paper orders: 1 filled."
+            },
+            {
+              "execution": "Broker orders and fills \u00b7 read Oct 19, 02:17 PM ET\n\n0 orders open at the broker\n\n1 fills \u00b7 2026-10-19\n\nBought 3 STX @ $101.25 \u00b7 Oct 19, 2026, 02:16:17 PM ET",
+              "label": "after reload",
+              "order": "Bought 3 @ $101.25\nOriginal regular execution",
+              "policy": "FOMC \u00b7 recovery unavailable \u00b7 provisional policy\n\nChecked Oct 19, 02:17 PM ET\n\nPolicy & execution\n\nUsing the 2026-10-13 close: no pre-meeting reduction requested. FOMC decision: 2026-11-04.\n\nNothing is being traded for this policy right now. Any reduction would run in the practice account below, never in your own book.",
+              "today": "XNYS closed by schedule \u00b7 no regular session today \u00b7 paper FOMC cycle active. Paper orders: 1 filled."
+            }
+          ],
+          "requests": [
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/auth/session"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/conversations/event-recovery-coverage-owner"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/holdings"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/session-prices"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/live"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/session-prices"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/live"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/paper"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/paper"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/session-prices"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/live"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/paper"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/auth/session"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/conversations/event-recovery-coverage-owner"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/conversations/event-recovery-coverage-owner/78784a83-41cf-4b96-b141-f21f0a2c5f18"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/holdings"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/session-prices"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/live"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/session-prices"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/live"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/paper"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/paper"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/session-prices"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/live"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/paper"
+            }
+          ]
+        },
+        "status": "failed",
+        "title": "FOMC fresh failure keeps execution certainty and original fills explicit after reload"
+      },
+      {
+        "duration_ms": 52625,
+        "errors": [
+          {
+            "location": {
+              "column": 50,
+              "file": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/event-recovery-unavailable.spec.ts",
+              "line": 118
+            },
+            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('region', { name: 'FOMC exposure policy', exact: true }).getByRole('alert')\nExpected: \u001b[32m\"The last FOMC recovery check failed; current event execution is unconfirmed.\"\u001b[39m\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"soft toHaveText\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: 'FOMC exposure policy', exact: true }).getByRole('alert')\u001b[22m\n\n\n  116 |       ? 'The last FOMC recovery check failed; current event execution is unconfirmed.'\n  117 |       : 'FOMC recovery could not be verified; current event execution is unconfirmed.'\n> 118 |     await expect.soft(policy.getByRole('alert')).toHaveText(warning)\n      |                                                  ^\n  119 |     await expect.soft(policy).not.toContainText('Nothing is being traded')\n  120 |     await expect.soft(policy).not.toContainText('no pre-meeting reduction requested')\n  121 |     await expect.soft(today).toContainText('FOMC execution unconfirmed')\n    at inspect (/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/event-recovery-unavailable.spec.ts:118:50)\n    at /Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/event-recovery-unavailable.spec.ts:146:7"
+          },
+          {
+            "location": {
+              "column": 35,
+              "file": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/event-recovery-unavailable.spec.ts",
+              "line": 119
+            },
+            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).not.\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('region', { name: 'FOMC exposure policy', exact: true })\nExpected substring: not \u001b[32m\"Nothing is being traded\"\u001b[39m\nReceived string: \u001b[31m\"FOMC \u00b7 monitoring \u00b7 provisional policyChecked Oct 19, 01:58 PM ET \u00b7 last known statusPolicy & executionA negative five-session SPY return can trigger a one-time 50% reduction in held shares during the three sessions before the decision. The reduction lasts through decision day. Nightly paper orders are queued for the next open, even on a green day. Missed reductions are recovered during market hours using the same share baseline; recovery does not place buys. Actual fill times and prices can differ. Restoration is limited to confirmed reductions and available cash. Regular rebalances wait until the event cycle ends. Restoration follows the calendar and cash availability; it is not a fresh market-risk all-clear. If the remaining shares are unaffordable, the cycle ends with those shares left unbought.Using the 2026-10-13 close: no pre-meeting reduction requested. FOMC decision: 2026-11-04.\u001b[7mNothing is being traded\u001b[27m for this policy right now. Any reduction would run in the practice account below, never in your own book.\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"soft not toContainText\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: 'FOMC exposure policy', exact: true })\u001b[22m\n\u001b[2m    14 \u00d7 locator resolved to <section aria-label=\"FOMC exposure policy\" class=\"rounded-2xl border border-black/[0.08] bg-white p-4 text-sm text-[#6e6e73]\">\u2026</section>\u001b[22m\n\u001b[2m       - unexpected value \"FOMC \u00b7 monitoring \u00b7 provisional policyChecked Oct 19, 01:58 PM ET \u00b7 last known statusPolicy & executionA negative five-session SPY return can trigger a one-time 50% reduction in held shares during the three sessions before the decision. The reduction lasts through decision day. Nightly paper orders are queued for the next open, even on a green day. Missed reductions are recovered during market hours using the same share baseline; recovery does not place buys. Actual fill times and prices can differ. Restoration is limited to confirmed reductions and available cash. Regular rebalances wait until the event cycle ends. Restoration follows the calendar and cash availability; it is not a fresh market-risk all-clear. If the remaining shares are unaffordable, the cycle ends with those shares left unbought.Using the 2026-10-13 close: no pre-meeting reduction requested. FOMC decision: 2026-11-04.Nothing is being traded for this policy right now. Any reduction would run in the practice account below, never in your own book.\"\u001b[22m\n\n\n  117 |       : 'FOMC recovery could not be verified; current event execution is unconfirmed.'\n  118 |     await expect.soft(policy.getByRole('alert')).toHaveText(warning)\n> 119 |     await expect.soft(policy).not.toContainText('Nothing is being traded')\n      |                                   ^\n  120 |     await expect.soft(policy).not.toContainText('no pre-meeting reduction requested')\n  121 |     await expect.soft(today).toContainText('FOMC execution unconfirmed')\n  122 |     await expect.soft(today).not.toContainText('paper FOMC cycle active')\n    at inspect (/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/event-recovery-unavailable.spec.ts:119:35)\n    at /Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/event-recovery-unavailable.spec.ts:146:7"
+          },
+          {
+            "location": {
+              "column": 35,
+              "file": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/event-recovery-unavailable.spec.ts",
+              "line": 120
+            },
+            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).not.\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('region', { name: 'FOMC exposure policy', exact: true })\nExpected substring: not \u001b[32m\"no pre-meeting reduction requested\"\u001b[39m\nReceived string: \u001b[31m\"FOMC \u00b7 monitoring \u00b7 provisional policyChecked Oct 19, 01:58 PM ET \u00b7 last known statusPolicy & executionA negative five-session SPY return can trigger a one-time 50% reduction in held shares during the three sessions before the decision. The reduction lasts through decision day. Nightly paper orders are queued for the next open, even on a green day. Missed reductions are recovered during market hours using the same share baseline; recovery does not place buys. Actual fill times and prices can differ. Restoration is limited to confirmed reductions and available cash. Regular rebalances wait until the event cycle ends. Restoration follows the calendar and cash availability; it is not a fresh market-risk all-clear. If the remaining shares are unaffordable, the cycle ends with those shares left unbought.Using the 2026-10-13 close: \u001b[7mno pre-meeting reduction requested\u001b[27m. FOMC decision: 2026-11-04.Nothing is being traded for this policy right now. Any reduction would run in the practice account below, never in your own book.\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"soft not toContainText\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: 'FOMC exposure policy', exact: true })\u001b[22m\n\u001b[2m    14 \u00d7 locator resolved to <section aria-label=\"FOMC exposure policy\" class=\"rounded-2xl border border-black/[0.08] bg-white p-4 text-sm text-[#6e6e73]\">\u2026</section>\u001b[22m\n\u001b[2m       - unexpected value \"FOMC \u00b7 monitoring \u00b7 provisional policyChecked Oct 19, 01:58 PM ET \u00b7 last known statusPolicy & executionA negative five-session SPY return can trigger a one-time 50% reduction in held shares during the three sessions before the decision. The reduction lasts through decision day. Nightly paper orders are queued for the next open, even on a green day. Missed reductions are recovered during market hours using the same share baseline; recovery does not place buys. Actual fill times and prices can differ. Restoration is limited to confirmed reductions and available cash. Regular rebalances wait until the event cycle ends. Restoration follows the calendar and cash availability; it is not a fresh market-risk all-clear. If the remaining shares are unaffordable, the cycle ends with those shares left unbought.Using the 2026-10-13 close: no pre-meeting reduction requested. FOMC decision: 2026-11-04.Nothing is being traded for this policy right now. Any reduction would run in the practice account below, never in your own book.\"\u001b[22m\n\n\n  118 |     await expect.soft(policy.getByRole('alert')).toHaveText(warning)\n  119 |     await expect.soft(policy).not.toContainText('Nothing is being traded')\n> 120 |     await expect.soft(policy).not.toContainText('no pre-meeting reduction requested')\n      |                                   ^\n  121 |     await expect.soft(today).toContainText('FOMC execution unconfirmed')\n  122 |     await expect.soft(today).not.toContainText('paper FOMC cycle active')\n  123 |     if (state.mode === 'stale failure') {\n    at inspect (/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/event-recovery-unavailable.spec.ts:120:35)\n    at /Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/event-recovery-unavailable.spec.ts:146:7"
+          },
+          {
+            "location": {
+              "column": 30,
+              "file": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/event-recovery-unavailable.spec.ts",
+              "line": 121
+            },
+            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('region', { name: 'Today', exact: true })\nExpected substring: \u001b[32m\"\u001b[7mFOMC execution unconfirm\u001b[27med\"\u001b[39m\nReceived string:    \u001b[31m\"\u001b[7mXNYS closed by schedule \u00b7 no regular session today. Paper orders: 1 fill\u001b[27med\u001b[7m.\u001b[27m\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"soft toContainText\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: 'Today', exact: true })\u001b[22m\n\u001b[2m    14 \u00d7 locator resolved to <section aria-label=\"Today\" class=\"shrink-0 rounded-xl border border-black/[0.08] bg-white px-3 py-2 text-sm\">\u2026</section>\u001b[22m\n\u001b[2m       - unexpected value \"XNYS closed by schedule \u00b7 no regular session today. Paper orders: 1 filled.\"\u001b[22m\n\n\n  119 |     await expect.soft(policy).not.toContainText('Nothing is being traded')\n  120 |     await expect.soft(policy).not.toContainText('no pre-meeting reduction requested')\n> 121 |     await expect.soft(today).toContainText('FOMC execution unconfirmed')\n      |                              ^\n  122 |     await expect.soft(today).not.toContainText('paper FOMC cycle active')\n  123 |     if (state.mode === 'stale failure') {\n  124 |       await expect.soft(policy).toContainText('last known status')\n    at inspect (/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/event-recovery-unavailable.spec.ts:121:30)\n    at /Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/event-recovery-unavailable.spec.ts:146:7"
+          },
+          {
+            "location": {
+              "column": 54,
+              "file": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/event-recovery-unavailable.spec.ts",
+              "line": 125
+            },
+            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('region', { name: 'FOMC exposure policy', exact: true }).getByRole('heading')\nExpected substring: \u001b[32m\"last recovery unavailable\"\u001b[39m\nReceived string:    \u001b[31m\"FOMC \u00b7 monitoring \u00b7 provisional policy\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"soft toContainText\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: 'FOMC exposure policy', exact: true }).getByRole('heading')\u001b[22m\n\u001b[2m    14 \u00d7 locator resolved to <h3 class=\"font-semibold\">\u2026</h3>\u001b[22m\n\u001b[2m       - unexpected value \"FOMC \u00b7 monitoring \u00b7 provisional policy\"\u001b[22m\n\n\n  123 |     if (state.mode === 'stale failure') {\n  124 |       await expect.soft(policy).toContainText('last known status')\n> 125 |       await expect.soft(policy.getByRole('heading')).toContainText('last recovery unavailable')\n      |                                                      ^\n  126 |       await expect.soft(page.getByRole('status', {name: 'Trading restriction', exact: true})).toHaveCount(0)\n  127 |     } else await expect.soft(page.getByRole('status', {name: 'Trading restriction', exact: true})).toContainText('FOMC cycle:')\n  128 |   }\n    at inspect (/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/event-recovery-unavailable.spec.ts:125:54)\n    at /Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/event-recovery-unavailable.spec.ts:146:7"
+          },
+          {
+            "location": {
+              "column": 50,
+              "file": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/event-recovery-unavailable.spec.ts",
+              "line": 118
+            },
+            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoHaveText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('region', { name: 'FOMC exposure policy', exact: true }).getByRole('alert')\nExpected: \u001b[32m\"The last FOMC recovery check failed; current event execution is unconfirmed.\"\u001b[39m\nTimeout: 5000ms\nError: element(s) not found\n\nCall log:\n\u001b[2m  - Expect \"soft toHaveText\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: 'FOMC exposure policy', exact: true }).getByRole('alert')\u001b[22m\n\n\n  116 |       ? 'The last FOMC recovery check failed; current event execution is unconfirmed.'\n  117 |       : 'FOMC recovery could not be verified; current event execution is unconfirmed.'\n> 118 |     await expect.soft(policy.getByRole('alert')).toHaveText(warning)\n      |                                                  ^\n  119 |     await expect.soft(policy).not.toContainText('Nothing is being traded')\n  120 |     await expect.soft(policy).not.toContainText('no pre-meeting reduction requested')\n  121 |     await expect.soft(today).toContainText('FOMC execution unconfirmed')\n    at inspect (/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/event-recovery-unavailable.spec.ts:118:50)\n    at /Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/event-recovery-unavailable.spec.ts:148:7"
+          },
+          {
+            "location": {
+              "column": 35,
+              "file": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/event-recovery-unavailable.spec.ts",
+              "line": 119
+            },
+            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).not.\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('region', { name: 'FOMC exposure policy', exact: true })\nExpected substring: not \u001b[32m\"Nothing is being traded\"\u001b[39m\nReceived string: \u001b[31m\"FOMC \u00b7 monitoring \u00b7 provisional policyChecked Oct 19, 01:58 PM ET \u00b7 last known statusPolicy & executionA negative five-session SPY return can trigger a one-time 50% reduction in held shares during the three sessions before the decision. The reduction lasts through decision day. Nightly paper orders are queued for the next open, even on a green day. Missed reductions are recovered during market hours using the same share baseline; recovery does not place buys. Actual fill times and prices can differ. Restoration is limited to confirmed reductions and available cash. Regular rebalances wait until the event cycle ends. Restoration follows the calendar and cash availability; it is not a fresh market-risk all-clear. If the remaining shares are unaffordable, the cycle ends with those shares left unbought.Using the 2026-10-13 close: no pre-meeting reduction requested. FOMC decision: 2026-11-04.\u001b[7mNothing is being traded\u001b[27m for this policy right now. Any reduction would run in the practice account below, never in your own book.\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"soft not toContainText\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: 'FOMC exposure policy', exact: true })\u001b[22m\n\u001b[2m    14 \u00d7 locator resolved to <section aria-label=\"FOMC exposure policy\" class=\"rounded-2xl border border-black/[0.08] bg-white p-4 text-sm text-[#6e6e73]\">\u2026</section>\u001b[22m\n\u001b[2m       - unexpected value \"FOMC \u00b7 monitoring \u00b7 provisional policyChecked Oct 19, 01:58 PM ET \u00b7 last known statusPolicy & executionA negative five-session SPY return can trigger a one-time 50% reduction in held shares during the three sessions before the decision. The reduction lasts through decision day. Nightly paper orders are queued for the next open, even on a green day. Missed reductions are recovered during market hours using the same share baseline; recovery does not place buys. Actual fill times and prices can differ. Restoration is limited to confirmed reductions and available cash. Regular rebalances wait until the event cycle ends. Restoration follows the calendar and cash availability; it is not a fresh market-risk all-clear. If the remaining shares are unaffordable, the cycle ends with those shares left unbought.Using the 2026-10-13 close: no pre-meeting reduction requested. FOMC decision: 2026-11-04.Nothing is being traded for this policy right now. Any reduction would run in the practice account below, never in your own book.\"\u001b[22m\n\n\n  117 |       : 'FOMC recovery could not be verified; current event execution is unconfirmed.'\n  118 |     await expect.soft(policy.getByRole('alert')).toHaveText(warning)\n> 119 |     await expect.soft(policy).not.toContainText('Nothing is being traded')\n      |                                   ^\n  120 |     await expect.soft(policy).not.toContainText('no pre-meeting reduction requested')\n  121 |     await expect.soft(today).toContainText('FOMC execution unconfirmed')\n  122 |     await expect.soft(today).not.toContainText('paper FOMC cycle active')\n    at inspect (/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/event-recovery-unavailable.spec.ts:119:35)\n    at /Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/event-recovery-unavailable.spec.ts:148:7"
+          },
+          {
+            "location": {
+              "column": 35,
+              "file": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/event-recovery-unavailable.spec.ts",
+              "line": 120
+            },
+            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).not.\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('region', { name: 'FOMC exposure policy', exact: true })\nExpected substring: not \u001b[32m\"no pre-meeting reduction requested\"\u001b[39m\nReceived string: \u001b[31m\"FOMC \u00b7 monitoring \u00b7 provisional policyChecked Oct 19, 01:58 PM ET \u00b7 last known statusPolicy & executionA negative five-session SPY return can trigger a one-time 50% reduction in held shares during the three sessions before the decision. The reduction lasts through decision day. Nightly paper orders are queued for the next open, even on a green day. Missed reductions are recovered during market hours using the same share baseline; recovery does not place buys. Actual fill times and prices can differ. Restoration is limited to confirmed reductions and available cash. Regular rebalances wait until the event cycle ends. Restoration follows the calendar and cash availability; it is not a fresh market-risk all-clear. If the remaining shares are unaffordable, the cycle ends with those shares left unbought.Using the 2026-10-13 close: \u001b[7mno pre-meeting reduction requested\u001b[27m. FOMC decision: 2026-11-04.Nothing is being traded for this policy right now. Any reduction would run in the practice account below, never in your own book.\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"soft not toContainText\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: 'FOMC exposure policy', exact: true })\u001b[22m\n\u001b[2m    14 \u00d7 locator resolved to <section aria-label=\"FOMC exposure policy\" class=\"rounded-2xl border border-black/[0.08] bg-white p-4 text-sm text-[#6e6e73]\">\u2026</section>\u001b[22m\n\u001b[2m       - unexpected value \"FOMC \u00b7 monitoring \u00b7 provisional policyChecked Oct 19, 01:58 PM ET \u00b7 last known statusPolicy & executionA negative five-session SPY return can trigger a one-time 50% reduction in held shares during the three sessions before the decision. The reduction lasts through decision day. Nightly paper orders are queued for the next open, even on a green day. Missed reductions are recovered during market hours using the same share baseline; recovery does not place buys. Actual fill times and prices can differ. Restoration is limited to confirmed reductions and available cash. Regular rebalances wait until the event cycle ends. Restoration follows the calendar and cash availability; it is not a fresh market-risk all-clear. If the remaining shares are unaffordable, the cycle ends with those shares left unbought.Using the 2026-10-13 close: no pre-meeting reduction requested. FOMC decision: 2026-11-04.Nothing is being traded for this policy right now. Any reduction would run in the practice account below, never in your own book.\"\u001b[22m\n\n\n  118 |     await expect.soft(policy.getByRole('alert')).toHaveText(warning)\n  119 |     await expect.soft(policy).not.toContainText('Nothing is being traded')\n> 120 |     await expect.soft(policy).not.toContainText('no pre-meeting reduction requested')\n      |                                   ^\n  121 |     await expect.soft(today).toContainText('FOMC execution unconfirmed')\n  122 |     await expect.soft(today).not.toContainText('paper FOMC cycle active')\n  123 |     if (state.mode === 'stale failure') {\n    at inspect (/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/event-recovery-unavailable.spec.ts:120:35)\n    at /Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/event-recovery-unavailable.spec.ts:148:7"
+          },
+          {
+            "location": {
+              "column": 30,
+              "file": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/event-recovery-unavailable.spec.ts",
+              "line": 121
+            },
+            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('region', { name: 'Today', exact: true })\nExpected substring: \u001b[32m\"\u001b[7mFOMC execution unconfirm\u001b[27med\"\u001b[39m\nReceived string:    \u001b[31m\"\u001b[7mXNYS closed by schedule \u00b7 no regular session today. Paper orders: 1 fill\u001b[27med\u001b[7m.\u001b[27m\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"soft toContainText\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: 'Today', exact: true })\u001b[22m\n\u001b[2m    14 \u00d7 locator resolved to <section aria-label=\"Today\" class=\"shrink-0 rounded-xl border border-black/[0.08] bg-white px-3 py-2 text-sm\">\u2026</section>\u001b[22m\n\u001b[2m       - unexpected value \"XNYS closed by schedule \u00b7 no regular session today. Paper orders: 1 filled.\"\u001b[22m\n\n\n  119 |     await expect.soft(policy).not.toContainText('Nothing is being traded')\n  120 |     await expect.soft(policy).not.toContainText('no pre-meeting reduction requested')\n> 121 |     await expect.soft(today).toContainText('FOMC execution unconfirmed')\n      |                              ^\n  122 |     await expect.soft(today).not.toContainText('paper FOMC cycle active')\n  123 |     if (state.mode === 'stale failure') {\n  124 |       await expect.soft(policy).toContainText('last known status')\n    at inspect (/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/event-recovery-unavailable.spec.ts:121:30)\n    at /Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/event-recovery-unavailable.spec.ts:148:7"
+          },
+          {
+            "location": {
+              "column": 54,
+              "file": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/event-recovery-unavailable.spec.ts",
+              "line": 125
+            },
+            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoContainText\u001b[2m(\u001b[22m\u001b[32mexpected\u001b[39m\u001b[2m)\u001b[22m failed\n\nLocator: getByRole('region', { name: 'FOMC exposure policy', exact: true }).getByRole('heading')\nExpected substring: \u001b[32m\"last recovery unavailable\"\u001b[39m\nReceived string:    \u001b[31m\"FOMC \u00b7 monitoring \u00b7 provisional policy\"\u001b[39m\nTimeout: 5000ms\n\nCall log:\n\u001b[2m  - Expect \"soft toContainText\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for getByRole('region', { name: 'FOMC exposure policy', exact: true }).getByRole('heading')\u001b[22m\n\u001b[2m    14 \u00d7 locator resolved to <h3 class=\"font-semibold\">\u2026</h3>\u001b[22m\n\u001b[2m       - unexpected value \"FOMC \u00b7 monitoring \u00b7 provisional policy\"\u001b[22m\n\n\n  123 |     if (state.mode === 'stale failure') {\n  124 |       await expect.soft(policy).toContainText('last known status')\n> 125 |       await expect.soft(policy.getByRole('heading')).toContainText('last recovery unavailable')\n      |                                                      ^\n  126 |       await expect.soft(page.getByRole('status', {name: 'Trading restriction', exact: true})).toHaveCount(0)\n  127 |     } else await expect.soft(page.getByRole('status', {name: 'Trading restriction', exact: true})).toContainText('FOMC cycle:')\n  128 |   }\n    at inspect (/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/event-recovery-unavailable.spec.ts:125:54)\n    at /Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/event-recovery-unavailable.spec.ts:148:7"
+          }
+        ],
+        "evidence": {
+          "asOf": "2026-10-19T17:58:11.210Z",
+          "day": "2026-10-19",
+          "diagnostics": {
+            "badResponses": [],
+            "consoleErrors": [],
+            "failedRequests": [],
+            "forbiddenWrites": [],
+            "pageErrors": [],
+            "unexpectedRequests": []
+          },
+          "filledAt": "2026-10-19T18:17:11.210Z",
+          "mode": "stale failure",
+          "observations": [
+            {
+              "execution": "Broker orders and fills \u00b7 read Oct 19, 02:18 PM ET\n\n0 orders open at the broker\n\n1 fills \u00b7 2026-10-19\n\nBought 3 STX @ $101.25 \u00b7 Oct 19, 2026, 02:17:11 PM ET",
+              "label": "before reload",
+              "order": "Bought 3 @ $101.25\nOriginal regular execution",
+              "policy": "FOMC \u00b7 monitoring \u00b7 provisional policy\n\nChecked Oct 19, 01:58 PM ET \u00b7 last known status\n\nPolicy & execution\n\nUsing the 2026-10-13 close: no pre-meeting reduction requested. FOMC decision: 2026-11-04.\n\nNothing is being traded for this policy right now. Any reduction would run in the practice account below, never in your own book.",
+              "today": "XNYS closed by schedule \u00b7 no regular session today. Paper orders: 1 filled."
+            },
+            {
+              "execution": "Broker orders and fills \u00b7 read Oct 19, 02:18 PM ET\n\n0 orders open at the broker\n\n1 fills \u00b7 2026-10-19\n\nBought 3 STX @ $101.25 \u00b7 Oct 19, 2026, 02:17:11 PM ET",
+              "label": "after reload",
+              "order": "Bought 3 @ $101.25\nOriginal regular execution",
+              "policy": "FOMC \u00b7 monitoring \u00b7 provisional policy\n\nChecked Oct 19, 01:58 PM ET \u00b7 last known status\n\nPolicy & execution\n\nUsing the 2026-10-13 close: no pre-meeting reduction requested. FOMC decision: 2026-11-04.\n\nNothing is being traded for this policy right now. Any reduction would run in the practice account below, never in your own book.",
+              "today": "XNYS closed by schedule \u00b7 no regular session today. Paper orders: 1 filled."
+            }
+          ],
+          "requests": [
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/auth/session"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/conversations/event-recovery-coverage-owner"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/holdings"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/session-prices"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/live"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/session-prices"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/live"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/paper"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/paper"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/session-prices"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/live"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/paper"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/auth/session"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/conversations/event-recovery-coverage-owner"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/conversations/event-recovery-coverage-owner/06fdf2a1-6674-4d36-9fa9-e40ca0524438"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/holdings"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/session-prices"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/live"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/session-prices"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/live"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/session-prices"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/live"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/paper"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/paper"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/session-prices"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/live"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/paper"
+            }
+          ]
+        },
+        "status": "failed",
+        "title": "FOMC stale failure keeps execution certainty and original fills explicit after reload"
+      },
+      {
+        "duration_ms": 2590,
+        "errors": [],
+        "evidence": {
+          "asOf": "2026-10-19T18:19:04.162Z",
+          "day": "2026-10-19",
+          "diagnostics": {
+            "badResponses": [],
+            "consoleErrors": [],
+            "failedRequests": [],
+            "forbiddenWrites": [],
+            "pageErrors": [],
+            "unexpectedRequests": []
+          },
+          "filledAt": "2026-10-19T18:18:05.162Z",
+          "mode": "healthy monitoring",
+          "observations": [
+            {
+              "execution": "Broker orders and fills \u00b7 read Oct 19, 02:19 PM ET\n\n0 orders open at the broker\n\n1 fills \u00b7 2026-10-19\n\nBought 3 STX @ $101.25 \u00b7 Oct 19, 2026, 02:18:05 PM ET",
+              "label": "before reload",
+              "order": "Bought 3 @ $101.25\nOriginal regular execution",
+              "policy": "FOMC \u00b7 monitoring \u00b7 provisional policy\n\nChecked Oct 19, 02:19 PM ET\n\nPolicy & execution\n\nUsing the 2026-10-13 close: no pre-meeting reduction requested. FOMC decision: 2026-11-04.\n\nNothing is being traded for this policy right now. Any reduction would run in the practice account below, never in your own book.",
+              "today": "XNYS closed by schedule \u00b7 no regular session today. Paper orders: 1 filled."
+            },
+            {
+              "execution": "Broker orders and fills \u00b7 read Oct 19, 02:19 PM ET\n\n0 orders open at the broker\n\n1 fills \u00b7 2026-10-19\n\nBought 3 STX @ $101.25 \u00b7 Oct 19, 2026, 02:18:05 PM ET",
+              "label": "after reload",
+              "order": "Bought 3 @ $101.25\nOriginal regular execution",
+              "policy": "FOMC \u00b7 monitoring \u00b7 provisional policy\n\nChecked Oct 19, 02:19 PM ET\n\nPolicy & execution\n\nUsing the 2026-10-13 close: no pre-meeting reduction requested. FOMC decision: 2026-11-04.\n\nNothing is being traded for this policy right now. Any reduction would run in the practice account below, never in your own book.",
+              "today": "XNYS closed by schedule \u00b7 no regular session today. Paper orders: 1 filled."
+            }
+          ],
+          "requests": [
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/auth/session"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/conversations/event-recovery-coverage-owner"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/holdings"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/session-prices"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/live"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/session-prices"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/live"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/paper"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/auth/session"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/conversations/event-recovery-coverage-owner"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/conversations/event-recovery-coverage-owner/cf9ee139-5bf3-4320-9f2e-ed35f23c652c"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/holdings"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/session-prices"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/live"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/session-prices"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/live"
+            },
+            {
+              "finished": true,
+              "method": "GET",
+              "path": "/api/v1/market/event-recovery-coverage-owner/desk/paper"
+            }
+          ]
+        },
+        "status": "passed",
+        "title": "FOMC healthy monitoring keeps execution certainty and original fills explicit after reload"
+      }
+    ],
+    "path": "/tmp/event-recovery-unavailable-red-20261019-v2-results.json",
+    "stats": {
+      "duration": 111997.35399999999,
+      "expected": 1,
+      "flaky": 0,
+      "skipped": 0,
+      "startTime": "2026-10-19T18:17:15.858Z",
+      "unexpected": 2
+    }
+  },
+  "diagram_impact": "NONE: existing recovery publication, planning status and dashboard flows; no new component/store/trust boundary.",
+  "failed_preserved": [
+    "Backend v1 collection failed for missing synthetic SECRET_KEY before any test. Separate v2 adds explicit test-only environment; assertions are unchanged.",
+    "Browser v1 navigation timed out on a hidden Strategy details section before intended assertions; diagnostic attachments are unavailable. Separate v2 corrects navigation and the actual Trading restriction label only.",
+    "Corrected backend RED has four failures/nine passes; corrected browser RED has two failures/one healthy-control pass. These are evidence of defects before the fixes, not green acceptance."
+  ],
+  "inputs": [
+    {
+      "bytes": 13708,
+      "path": "/tmp/recovery-reporting-regression-evidence-20261019-v1/validated.json",
+      "physical": {
+        "st_ctime_ns": "1792434159745574443",
+        "st_dev": "16777223",
+        "st_gid": "0",
+        "st_ino": "198092130",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792434159745574443",
+        "st_size": "13708",
+        "st_uid": "501"
+      },
+      "sha256": "b05182b7e575a40cca9519cd8785704e47a51785d938915ed86ba47d294cd3d2"
+    },
+    {
+      "bytes": 160178,
+      "path": "/tmp/recovery-reporting-regression-evidence-20261019-v1/stdout",
+      "physical": {
+        "st_ctime_ns": "1792434159711372283",
+        "st_dev": "16777223",
+        "st_gid": "0",
+        "st_ino": "198091444",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792434159711372283",
+        "st_size": "160178",
+        "st_uid": "501"
+      },
+      "sha256": "0c88d2ce9e236d100020c0ee783c1695d843cbbed552493ec159a2da02138277"
+    },
+    {
+      "bytes": 9715,
+      "path": "/tmp/event-recovery-unavailable-red-20261019-v1-results.json",
+      "physical": {
+        "st_ctime_ns": "1792433815328398589",
+        "st_dev": "16777223",
+        "st_gid": "0",
+        "st_ino": "197994383",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792433815328398589",
+        "st_size": "9715",
+        "st_uid": "501"
+      },
+      "sha256": "46f204be8a50e8e6ee5aecd0aee9cbe5aa445ad14597c4d2e594571aa63fcebd"
+    },
+    {
+      "bytes": 93066,
+      "path": "/tmp/event-recovery-unavailable-red-20261019-v2-results.json",
+      "physical": {
+        "st_ctime_ns": "1792433947864235059",
+        "st_dev": "16777223",
+        "st_gid": "0",
+        "st_ino": "198035985",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792433947864235059",
+        "st_size": "93066",
+        "st_uid": "501"
+      },
+      "sha256": "53d686a1af185f839abdd8def1431a16561621689a255f4aeeeb3b38c72cfeb7"
+    },
+    {
+      "bytes": 25544,
+      "path": "/tmp/event-recovery-unavailable-green-20261019-v2-results.json",
+      "physical": {
+        "st_ctime_ns": "1792434009080453316",
+        "st_dev": "16777223",
+        "st_gid": "0",
+        "st_ino": "198051557",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792434009080453316",
+        "st_size": "25544",
+        "st_uid": "501"
+      },
+      "sha256": "450cd4542d89a40c516ce4db254fa2eefdacec90c02948f7c5c140d2b2415692"
+    },
+    {
+      "bytes": 9929,
+      "path": "/tmp/event-recovery-unavailable-corrected-red-20261019-v2.spec.ts",
+      "physical": {
+        "st_ctime_ns": "1792433974955553008",
+        "st_dev": "16777223",
+        "st_gid": "0",
+        "st_ino": "198042432",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792433974955553008",
+        "st_size": "9929",
+        "st_uid": "501"
+      },
+      "sha256": "74c87efbf567534de349ff1105114185c6a5df440b7a09549a8ea8e610390093"
+    },
+    {
+      "bytes": 9929,
+      "path": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/event-recovery-unavailable.spec.ts",
+      "physical": {
+        "st_ctime_ns": "1792433834989997114",
+        "st_dev": "16777223",
+        "st_gid": "20",
+        "st_ino": "197932309",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792433834989997114",
+        "st_size": "9929",
+        "st_uid": "501"
+      },
+      "sha256": "74c87efbf567534de349ff1105114185c6a5df440b7a09549a8ea8e610390093"
+    },
+    {
+      "bytes": 0,
+      "path": "/tmp/event-recovery-unavailable-final-source-20261019-v2-tsc.log",
+      "physical": {
+        "st_ctime_ns": "1792434048532049535",
+        "st_dev": "16777223",
+        "st_gid": "0",
+        "st_ino": "198060885",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792434048532049535",
+        "st_size": "0",
+        "st_uid": "501"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    {
+      "bytes": 16661,
+      "path": "/tmp/event-recovery-unavailable-final-source-20261019-v2-vite.log",
+      "physical": {
+        "st_ctime_ns": "1792434063589835081",
+        "st_dev": "16777223",
+        "st_gid": "0",
+        "st_ino": "198062882",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792434063589835081",
+        "st_size": "16661",
+        "st_uid": "501"
+      },
+      "sha256": "3ea00efe183d0ec8ba517b5386ab1b4752e32ab40f5dd8d0f4199309caaffd7a"
+    },
+    {
+      "bytes": 11626,
+      "path": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/backend/cli/market_event_recovery.py",
+      "physical": {
+        "st_ctime_ns": "1792434076907923371",
+        "st_dev": "16777223",
+        "st_gid": "20",
+        "st_ino": "168914642",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792434076907923371",
+        "st_size": "11626",
+        "st_uid": "501"
+      },
+      "sha256": "9c83058638a018e4635d3d141b1dca2f62cbc036c250cca05721a987f6fd3c40"
+    },
+    {
+      "bytes": 1835,
+      "path": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/backend/market/event_status.py",
+      "physical": {
+        "st_ctime_ns": "1792434076908886769",
+        "st_dev": "16777223",
+        "st_gid": "20",
+        "st_ino": "168914929",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792434076908886769",
+        "st_size": "1835",
+        "st_uid": "501"
+      },
+      "sha256": "1adfd4b22be14b07c025e90f90e008a3d795a8de428b9981437ab91bfea28626"
+    },
+    {
+      "bytes": 11499,
+      "path": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/backend/tests/test_event_recovery_failure_publication.py",
+      "physical": {
+        "st_ctime_ns": "1792433591546969477",
+        "st_dev": "16777223",
+        "st_gid": "20",
+        "st_ino": "197920402",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792433591546969477",
+        "st_size": "11499",
+        "st_uid": "501"
+      },
+      "sha256": "c40d93c531028082e4763edeb3374ab8a293e2c175a4b7c616be8847a98f5a93"
+    },
+    {
+      "bytes": 194458,
+      "path": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/src/components/DeskPanel/DeskPanel.tsx",
+      "physical": {
+        "st_ctime_ns": "1792433996294981396",
+        "st_dev": "16777223",
+        "st_gid": "20",
+        "st_ino": "169494361",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792433996294981396",
+        "st_size": "194458",
+        "st_uid": "501"
+      },
+      "sha256": "4a3724206a7f4e9970a29d0e01418b209eccc2317dc93635031e3ec1c75dc136"
+    },
+    {
+      "bytes": 9929,
+      "path": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/event-recovery-unavailable.spec.ts",
+      "physical": {
+        "st_ctime_ns": "1792433834989997114",
+        "st_dev": "16777223",
+        "st_gid": "20",
+        "st_ino": "197932309",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792433834989997114",
+        "st_size": "9929",
+        "st_uid": "501"
+      },
+      "sha256": "74c87efbf567534de349ff1105114185c6a5df440b7a09549a8ea8e610390093"
+    },
+    {
+      "bytes": 465,
+      "path": "/tmp/event-recovery-unavailable-green-20261019-v2-dist/index.html",
+      "physical": {
+        "st_ctime_ns": "1792433988821134193",
+        "st_dev": "16777223",
+        "st_gid": "0",
+        "st_ino": "198046213",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792433988821134193",
+        "st_size": "465",
+        "st_uid": "501"
+      },
+      "sha256": "673fe1424263e2d1d3d5a449234c25df404c07e5fb58933a11c03ecf8fca3195"
+    },
+    {
+      "bytes": 465,
+      "path": "/tmp/event-recovery-unavailable-final-source-20261019-v2-dist/index.html",
+      "physical": {
+        "st_ctime_ns": "1792434063556537343",
+        "st_dev": "16777223",
+        "st_gid": "0",
+        "st_ino": "198063991",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792434063556537343",
+        "st_size": "465",
+        "st_uid": "501"
+      },
+      "sha256": "673fe1424263e2d1d3d5a449234c25df404c07e5fb58933a11c03ecf8fca3195"
+    },
+    {
+      "bytes": 1225,
+      "path": "/tmp/event-recovery-unavailable-green-20261019-v2-dist/favicon.svg",
+      "physical": {
+        "st_ctime_ns": "1792433988191807689",
+        "st_dev": "16777223",
+        "st_gid": "20",
+        "st_ino": "198046110",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792433988191807689",
+        "st_size": "1225",
+        "st_uid": "501"
+      },
+      "sha256": "5b47e76806b21240c680e48ab5a110bf65976e25e30cbe9c36900722c1424594"
+    },
+    {
+      "bytes": 1225,
+      "path": "/tmp/event-recovery-unavailable-final-source-20261019-v2-dist/favicon.svg",
+      "physical": {
+        "st_ctime_ns": "1792434062863757812",
+        "st_dev": "16777223",
+        "st_gid": "20",
+        "st_ino": "198063893",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792434062863757812",
+        "st_size": "1225",
+        "st_uid": "501"
+      },
+      "sha256": "5b47e76806b21240c680e48ab5a110bf65976e25e30cbe9c36900722c1424594"
+    },
+    {
+      "bytes": 879362,
+      "path": "/tmp/event-recovery-unavailable-green-20261019-v2-dist/assets/index-kklqIZZK.js",
+      "physical": {
+        "st_ctime_ns": "1792433988772933152",
+        "st_dev": "16777223",
+        "st_gid": "0",
+        "st_ino": "198046117",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792433988772933152",
+        "st_size": "879362",
+        "st_uid": "501"
+      },
+      "sha256": "698478db78cc75b5d9d78028a78856b11257a4d28c2254d02fb337dc13199a7d"
+    },
+    {
+      "bytes": 879362,
+      "path": "/tmp/event-recovery-unavailable-final-source-20261019-v2-dist/assets/index-kklqIZZK.js",
+      "physical": {
+        "st_ctime_ns": "1792434063525891480",
+        "st_dev": "16777223",
+        "st_gid": "0",
+        "st_ino": "198063895",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792434063525891480",
+        "st_size": "879362",
+        "st_uid": "501"
+      },
+      "sha256": "698478db78cc75b5d9d78028a78856b11257a4d28c2254d02fb337dc13199a7d"
+    },
+    {
+      "bytes": 49680,
+      "path": "/tmp/event-recovery-unavailable-green-20261019-v2-dist/assets/index-C5DBCRv7.css",
+      "physical": {
+        "st_ctime_ns": "1792433988820826506",
+        "st_dev": "16777223",
+        "st_gid": "0",
+        "st_ino": "198046212",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792433988820826506",
+        "st_size": "49680",
+        "st_uid": "501"
+      },
+      "sha256": "31462699322defd0bbf7c3bcbedc6902123aec308798ef00d34bceebe77debf0"
+    },
+    {
+      "bytes": 49680,
+      "path": "/tmp/event-recovery-unavailable-final-source-20261019-v2-dist/assets/index-C5DBCRv7.css",
+      "physical": {
+        "st_ctime_ns": "1792434063556284451",
+        "st_dev": "16777223",
+        "st_gid": "0",
+        "st_ino": "198063990",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792434063556284451",
+        "st_size": "49680",
+        "st_uid": "501"
+      },
+      "sha256": "31462699322defd0bbf7c3bcbedc6902123aec308798ef00d34bceebe77debf0"
+    },
+    {
+      "bytes": 10526,
+      "path": "/tmp/run_event_recovery_failure_publication_v1_failed_collection_20261019.py",
+      "physical": {
+        "st_ctime_ns": "1792434010391611089",
+        "st_dev": "16777223",
+        "st_gid": "0",
+        "st_ino": "198051570",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792434010391611089",
+        "st_size": "10526",
+        "st_uid": "501"
+      },
+      "sha256": "f6e63be6ea0eade943c707bf878683b686f2043e8c4917b84a671136cfc3ce56"
+    },
+    {
+      "bytes": 10687,
+      "path": "/tmp/run_event_recovery_failure_publication_v2_red_source_20261019.py",
+      "physical": {
+        "st_ctime_ns": "1792434093743612724",
+        "st_dev": "16777223",
+        "st_gid": "0",
+        "st_ino": "198072043",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792434093743612724",
+        "st_size": "10687",
+        "st_uid": "501"
+      },
+      "sha256": "78dc4ae80816b526e00de4c02b296600d7ff5ba3ba53cade2d6425fe6d00f24b"
+    },
+    {
+      "bytes": 10917,
+      "path": "/tmp/run_event_recovery_failure_publication_v2_20261019.py",
+      "physical": {
+        "st_ctime_ns": "1792434093930637850",
+        "st_dev": "16777223",
+        "st_gid": "0",
+        "st_ino": "198051571",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792434093930637850",
+        "st_size": "10917",
+        "st_uid": "501"
+      },
+      "sha256": "a8f168f25cbdead35a76070508913f98a867824e149a768d9c43e58f1b5f92f1"
+    },
+    {
+      "bytes": 8329,
+      "path": "/tmp/observe_recovery_regressions_20261019.py",
+      "physical": {
+        "st_ctime_ns": "1792434158205558178",
+        "st_dev": "16777223",
+        "st_gid": "0",
+        "st_ino": "198075397",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792434158205558178",
+        "st_size": "8329",
+        "st_uid": "501"
+      },
+      "sha256": "10afa7f00f9cb71f694ab2e60483ddebaf90f26b309fe45094556109f4455773"
+    },
+    {
+      "bytes": 9796,
+      "path": "/tmp/event-recovery-unavailable-first-fixture-failed-20261019-v1.spec.ts",
+      "physical": {
+        "st_ctime_ns": "1792433834950957486",
+        "st_dev": "16777223",
+        "st_gid": "0",
+        "st_ino": "198000941",
+        "st_mode": "33188",
+        "st_mtime_ns": "1792433834950957486",
+        "st_size": "9796",
+        "st_uid": "501"
+      },
+      "sha256": "756670aa5cb6c2d555a32756121a11f5630d9e56013db88c8a1797e8b97d456a"
+    }
+  ],
+  "production_predecessor": "c25c8cbedbd0d00318f8a2e5d41db7531e8149ce",
+  "recorded_at": "2026-10-19T18:24:02.542657+00:00",
+  "schema": "recovery-reporting-candidate/1",
+  "source_build_assets": {
+    "assets/index-C5DBCRv7.css": {
+      "bytes": 49680,
+      "sha256": "31462699322defd0bbf7c3bcbedc6902123aec308798ef00d34bceebe77debf0"
+    },
+    "assets/index-kklqIZZK.js": {
+      "bytes": 879362,
+      "sha256": "698478db78cc75b5d9d78028a78856b11257a4d28c2254d02fb337dc13199a7d"
+    },
+    "favicon.svg": {
+      "bytes": 1225,
+      "sha256": "5b47e76806b21240c680e48ab5a110bf65976e25e30cbe9c36900722c1424594"
+    },
+    "index.html": {
+      "bytes": 465,
+      "sha256": "673fe1424263e2d1d3d5a449234c25df404c07e5fb58933a11c03ecf8fca3195"
+    }
+  },
+  "source_pins": {
+    "backend/cli/market_event_recovery.py": {
+      "bytes": 11626,
+      "sha256": "9c83058638a018e4635d3d141b1dca2f62cbc036c250cca05721a987f6fd3c40"
+    },
+    "backend/market/event_status.py": {
+      "bytes": 1835,
+      "sha256": "1adfd4b22be14b07c025e90f90e008a3d795a8de428b9981437ab91bfea28626"
+    },
+    "backend/tests/test_event_recovery_failure_publication.py": {
+      "bytes": 11499,
+      "sha256": "c40d93c531028082e4763edeb3374ab8a293e2c175a4b7c616be8847a98f5a93"
+    },
+    "frontend/e2e/event-recovery-unavailable.spec.ts": {
+      "bytes": 9929,
+      "sha256": "74c87efbf567534de349ff1105114185c6a5df440b7a09549a8ea8e610390093"
+    },
+    "frontend/src/components/DeskPanel/DeskPanel.tsx": {
+      "bytes": 194458,
+      "sha256": "4a3724206a7f4e9970a29d0e01418b209eccc2317dc93635031e3ec1c75dc136"
+    }
+  },
+  "unverified": [
+    "Canonical full unit/functional deployment gates and actual deployed-source/browser acceptance have not yet run for this candidate.",
+    "No live account access/ownership correction, sender execution, order/fill adoption or signed-in account acceptance; explicit ownership/read approval is still pending.",
+    "Native kernel permission failure is injected in these new tests; the earlier actual denied live read remains separate evidence. No genuine market/provider/model or account mount was used.",
+    "Historical identity/economic/calendar/physical filesystem/horizon/model-RAM/two-host acceptance remains unchanged and incomplete."
+  ],
+  "verified": [
+    "Original sanitized recovery error is persisted despite a separately denied native-state lookup; unknown active is omitted.",
+    "Computed policy survives a later failure; readable native state supplies actual active boolean; original account bytes/inode/mode/owner/mtime remain unchanged.",
+    "Fresh unavailable status pauses planning; authoritative account-read failures remain failures and existing 900-second TTL/control behavior is unchanged.",
+    "Fresh and stale unavailable browser states remain explicit after reload, retain known original regular orders/fills and do not infer a successful empty cycle; healthy monitoring stays unchanged.",
+    "Only new bounded regressions ran: thirteen backend cases plus a separate three-case browser cohort; source TypeScript and Vite passed."
+  ]
+}

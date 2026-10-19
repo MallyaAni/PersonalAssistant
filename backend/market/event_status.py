@@ -7,7 +7,7 @@ from backend.agents.trading.desk import event_risk, paper
 from backend.market import desk_freshness
 
 
-# Read current durable intent and date the intraday policy observation separately.
+# Read durable intent and pause planning while a fresh recovery observation is unavailable.
 def load(root):
     state = paper.load_state(root)
     try:
@@ -20,7 +20,8 @@ def load(root):
     paused = bool(state.event_cycle) or (
         not stale
         and (
-            policy.get("factor") == event_risk.REDUCED
+            result.get("status") == "recovery unavailable"
+            or policy.get("factor") == event_risk.REDUCED
             or policy.get("calendar_known") is False
         )
     )
