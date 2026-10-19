@@ -1,0 +1,35 @@
+{
+  "schema": "personal-guidance-availability-candidate/1",
+  "scope": "FRONTEND_FAILED_GUIDANCE_DISCLOSURE_ONLY",
+  "base_production_commit": "878cbc53db56f635c8dd9ee6a3307e0d4f1c6b2f",
+  "observed_live_defect": "Signed-in Personal action displayed Hold after learned guidance failed, with its blocker hidden in a hover. Current saved strategy plan remains October 13 and is not current trading advice.",
+  "change": "A non-executable response with no validity deadline and an explicit blocker renders Unavailable with that blocker. Genuine holds, funded blocked intent and valid learned timing waits remain distinct.",
+  "sources": {
+    "frontend/src/components/DeskPanel/StockBoard.tsx": {"bytes": 21142, "sha256": "422e8cf9ae4ddd689072156316bb77fc0ff4a4f101cfe6b84317fd05776c1458"},
+    "frontend/e2e/personal-guidance-availability.spec.ts": {"bytes": 7559, "sha256": "7f68164ed1abf093ff0c6aa5f9df7cb1d296be4e7d6ca79f7218bd20bbe2bae4"}
+  },
+  "red": {
+    "artifact": "Actual prior deployed gateway static files retained in /tmp/recovery-reporting-deployed-20261019-v1-static",
+    "primary_js": "index-BT6Gh9TN.js",
+    "primary_js_sha256": "1ed62591ef30ce7ece51bccc4af6828393d4411bb5f8cd46ca5f11c300db0872",
+    "result": "/tmp/personal-guidance-availability-red-20261019-results.json",
+    "result_bytes": 16123,
+    "result_sha256": "14c94fd0fe15a2097b798ef88fdead59df2d92a5eb3bfe88024647f2676e9940",
+    "passed": 3, "failed": 1, "skipped": 0, "flaky": 0, "duration_ms": 21188.97,
+    "first_failed_assertion": "Expected Unavailable; received HoldRecorded allocation & execution quote..."
+  },
+  "green": {
+    "result": "/tmp/personal-guidance-availability-green-20261019-results.json",
+    "result_bytes": 10116,
+    "result_sha256": "93780f929286a96f66c08a1e25fcb7a2f788666019f585002bb3bd4dee03f0ba",
+    "passed": 4, "failed": 0, "skipped": 0, "flaky": 0, "duration_ms": 12664.132,
+    "build_directory": "/tmp/personal-guidance-availability-green-20261019-dist",
+    "cases": ["unavailable guidance", "genuine hold", "blocked buy", "timing wait"],
+    "each_case_checks": ["Initial response and explicit refresh", "No personal trade size or entry limit from non-executable fixtures", "All captured API requests complete", "No browser errors or unexpected requests"],
+    "fixtures": "Synthetic isolated auth and API responses; only GET and the explicit read-only personal-guidance POST are allowed. Real timers; no fake clock; no actual account, provider, order or model calls.",
+    "test_bytes_identical_to_red": true
+  },
+  "validation": {"typescript_no_emit": "PASS", "vite_build": "PASS", "build_vite_version": "8.2.2", "diff_check": "PASS"},
+  "limits": ["Not a fresh strategy decision", "Not personalized real-account funding acceptance", "Not economic/model-performance proof", "Deployment and exact deployed-static verification pending at candidate creation"],
+  "diagram_impact": "NONE"
+}

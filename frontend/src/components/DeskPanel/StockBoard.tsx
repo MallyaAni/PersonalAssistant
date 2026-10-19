@@ -161,12 +161,14 @@ export const actionWord = (plan: PlanAction, decision?: {strategy_action?: strin
 export const timedBoard = (decisions: DeskDecisions | undefined, latest: DeskRecord | null | undefined): boolean =>
   !!decisions?.timing && !!latest && decisions.session === latest.session && decisions.written === latest.written
 
-// Separate missing evidence and waiting setups from an actual instruction to keep a position.
+// Separate failed guidance, missing evidence and waiting setups from an actual hold instruction.
 export const actionPresentation = (plan: PlanAction, decision: DeskDecisions['rows'][string] | undefined, timed: boolean, now: number, paused = false): {word: string; detail: string | null} => {
   if (paused) return {word: 'Paused', detail: 'FOMC'}
   if (!decision || !PLAN_ACTIONS.includes(decision.action)) return {word: 'Unavailable', detail: 'Refresh guidance'}
   const intent = decision.strategy_action ?? decision.action
   if (!PLAN_ACTIONS.includes(intent)) return {word: 'Unavailable', detail: 'Refresh guidance'}
+  if (decision.executable === false && !decision.valid_until && decision.blocker)
+    return {word: 'Unavailable', detail: decision.blocker}
   if (!timed) return {word: actionWord(plan, decision), detail: null}
   if (intent === 'Hold') return decision.entry_status === 'unavailable'
     ? {word: 'Unavailable', detail: 'Entry data missing'}
