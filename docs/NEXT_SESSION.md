@@ -44,6 +44,20 @@ dependency_revision field still names the live parent50d62c63; create argv binds
 the actual candidate source path atc159473d. Treat that field as parent metadata,
 not the mounted candidate revision. Do not replay the failed release/root.
 
+FAILED second canonical release:2cea13ec full unit gate completed10862pass,
+2FAIL/93skip/6xfail/439warnings/25subtests,582.98s. The only two failures were
+test_market_daily history-output dictionaries that omitted the intentionally new
+original client_order_id. Root strengthened both exact dictionaries with their
+original known IDs; no assertion was removed and no product byte changed.
+Targeted original2cases passed1.29s/CIDbbc53cdbe334800156f8f248663bb626f80888ebba8feabf1d7a77d36befe835.
+That test uses an in-memory synthetic broker for its ordinary sender journey:
+the reused harness NO_ORDER_CALL label is overbroad, and its dependency_revision
+again denotes live parent50d62 rather than the actual2cea candidate package.
+No real broker/account/model/provider/network call occurred; source+argv retain
+the actual synthetic call and mount. Preserve v2fullfailed log/after/upstream
+receipts. Production remains50d62; neither failed release reached source
+activation, production build or restart. Fresh roots only for corrected release.
+
 The corrected candidate's fresh canonical gated deployment is recorded separately
 after it finishes. Never
 report candidate checks as deployed/live account acceptance. Naturally scheduled
