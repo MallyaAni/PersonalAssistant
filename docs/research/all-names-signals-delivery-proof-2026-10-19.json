@@ -1,0 +1,578 @@
+{
+  "status": "DEPLOYED_FRONTEND_VERIFIED_LIVE_SIGNALS_AND_CURRENT_HISTORY_STILL_UNVERIFIED",
+  "release": "c1acdffa232544783b78b97c1179870b314cd43e",
+  "main_integration": "4eab947f",
+  "scope": "Independent current chart signal ranking, shared reasons/expiry, simultaneous simulated-share and grade-change chart presentation. Not a new economic model or a historical-performance certification.",
+  "verified": [
+    "Canonical scripts/deploy.sh invoked once from the production-based candidate with no skip flags or clock override; post2026-10-19T22:05:49Z c1acdffa ok(cheap). Backend CID/image/restarts, all31 economic source hashes and3 approval artifact hashes unchanged.",
+    "All names requires neither paper account nor personal portfolio inputs. Best buys and Best sells use original model High/Medium/Low priorities; fresh immediate signals precede waiting and unavailable evidence. Sell review is downside review for an existing holding, not shorting or executable funded shares.",
+    "Ten browser cases passed on source build and again on exact deployed gateway static files,0skip/flaky/unexpected, page/console/network/write isolation checks passed. These are ten named cases at two builds, not twenty distinct cases; five cases are new, one updated assessment case and four prior personal-availability cases.",
+    "Real signed-in IABtab3 refreshed to index-BKiUB2WT.js, Best buys/Best sells controls exercised;94names,0current assessments/0immediate actions after regular close, no error/warning logs. Actual AAOI chart rendered2000sessions and82grade changes; old simulation was explicitly withheld for policy mismatch.",
+    "Chart can render action/share markers and dated grade changes together from a compatible synthetic simulation fixture; grade changes no longer manufacture extra buy/sell trade arrows. Paper executions remain explicitly separate.",
+    "TypeScript/source build, canonical frontend image build and diff checks passed. No backend unit/model suite claim applies to this frontend-only release."
+  ],
+  "failed_preserved": [
+    "Original deployed878 lacks independent ranking workflows:2expected workflow failures retained.",
+    "Main integration initially8pass/2fail because pre-existing chart wording said '2 dated grade changes marked; funded amounts remain unchanged.' Changed that integration-only product wording to the same neutral grade-change statement; assertions unchanged; corrected exact main frontend build10pass.",
+    "Extra public-asset Homebrew Python urllib byte check FAILED local certificate issuer validation; no bypass or retry. Gateway byte identities and actual signed-in browser behavior are separately verified; public-byte SHA through this failed reader is not claimed.",
+    "One local patch refused unmatched text before mutation; exact existing main wording was inspected before the targeted integration edit."
+  ],
+  "unverified": [
+    "Fresh real immediate recommendations: actual live view correctly has no current assessment after regular close; no valid now signal or future profit is inferred. Observe naturally scheduled ordinary19:30ET nightly then subsequent genuine intraday publication; never invoke effectful market_daily/market_balancer as a probe.",
+    "Full current grade-led strategy historical share-sized simulation and resulting performance. Production strategy_simulation.read authenticates older learned_holding_transition.POLICY; actual returned stored policy differs from currentgrade-led record and is withheld. The new chart fixture is not real strategy evidence.",
+    "Main contains pre-existing private current-model historical sizing code/UI (live-model-history) preserved during integration, but its API/data/full genuine account publication is NOT deployed or admitted by this frontend release. Main chart props/capability were retained, no historical main wholesale deployment.",
+    "Archived full genuinev6 history remains OPEN/PAUSED/failed capacity and missing-receipt acceptance, no adoption/replay/new genuine run. Native directory/journal capacity still lacks allocator acknowledgement; no full horizon/modelRAM/twohost/powerloss claim."
+  ],
+  "next": "Prioritize fresh deployed recommendation acceptance after the natural nightly and authentic current-policy history publication. Do not resume tiny private allocation guards, fabricate historical sizes, ask for portfolio inputs, reset paper history or duplicate existing/closed jobs.",
+  "diagram_impact": "NONE: existing account-independent chart-assessment-to-dashboard opportunity ranking flow already exists; presentation changes no agent/store/provider/ownership/deployment boundary.",
+  "release_receipts": {
+    "before.json": {
+      "approval": {
+        "artifacts": {
+          "config.json": "a237bfe4e21db38a0fabf8d31a2c78542b8bff58a5d26895ac98f2387c144f7c",
+          "evidence.json": "4d6af1bb755243bdce9a5c74477ae43cf91a72cbe7fa9e2985d13bfd5d3cacb9",
+          "release.json": "fc3259718eb55daabc748120aa1c3791e87ee02b6f536762afbe2e16b8686c0c"
+        },
+        "sources": {
+          "backend/agents/trading/desk/event_execution.py": "76e49243ffb7fff8bb989df2c384ee1f2f0dcc7885c9421f98a986eda667202f",
+          "backend/agents/trading/desk/event_risk.py": "34462a0ad3569022c90a3d7898b8f5a43ba053a38d2b7e44a63bc18e54de8973",
+          "backend/agents/trading/desk/funded_execution.py": "6b913621d11ad81b78394c1f3eb9e4aef8e52ed6585b0a0716b3b45a9d6f909c",
+          "backend/agents/trading/desk/intraday_orders.py": "ca8c236746441e204f36a263e972104d48d442538ea189fd4cad9d4ccf9f0f1c",
+          "backend/agents/trading/desk/nightly_plan.py": "9fe2c223f24086a8a978cf3d373f39f24e3f6dc810a624a5e8773cc3ae91a7ca",
+          "backend/agents/trading/desk/paper.py": "1a96dd96c254abb4799c6f14cb99938c65fb2907d6777fbc4b1194bfaa851bc4",
+          "backend/api/v1/market.py": "fb35aa6865890b8c75c3b354fcb65b24a2dea3454efb892eaa88f486cde4ba88",
+          "backend/cli/market_daily.py": "70201cfb771fb873a75b1356654a5dce9ab1b0900094ddcc23bcb6da56f1549b",
+          "backend/market/adaptive_growth_policy.py": "35a2d6a07276096acee78078886c9aefe02051f2b746a8739442814920114e34",
+          "backend/market/alpaca_trading.py": "105c5800d90b7f17b142d1678a781ecbf116ff89575466bec5e3c553eb24c3e2",
+          "backend/market/decision_view.py": "8315ec2b8f647dc02a46bec3d2a77a15b2d31b9777baed1ec5aa3aacdea97aca",
+          "backend/market/entry_timing.py": "f23d286c0d613d99620ce4a4ea8aa889be88ca224c5fbfc945b4360eae944a88",
+          "backend/market/forward_arithmetic.py": "9617f9dc3252d3ce48891eb800de1dfc135383a88cb3f15b377c480d60d8d882",
+          "backend/market/forward_execution.py": "62fa03e76d6f186a5084afe7ed1087891ce06f1d4b74040c6491f9c0b32ff295",
+          "backend/market/forward_market_evidence.py": "737f14c2ab3b4c12501d8707184871dd7c1f84287d4b43d182e2add0a02490a2",
+          "backend/market/forward_probability_timing.py": "0103852d53be711fcf4eeec80f74d707f42ef2ec86599ff72a305376d5632a92",
+          "backend/market/grade_led_policy.py": "4dec4ba263efa21b3a534b826b594d57e1a8cb99097e73ea53e8fbb0e96dfd66",
+          "backend/market/holding_risk_bank.py": "4024753161e21521309e265c5e96a70de94a75e81a8f151a4e59fe659c7f6158",
+          "backend/market/joint_funded_policy.py": "5b5b96c685f78f867bb590f00f83cdbaca88c1de45681ca178f0c5b84d6bb339",
+          "backend/market/learned_holding_transition.py": "c271f6ff649058d43aec226789e62cc08dc41bcc177755f0d17be87f4abfeb55",
+          "backend/market/learned_live_holding.py": "25fee57bd3dc57c2b945e204aa3b83e39434cf4f84f8a165a4b9e41f9f6183e1",
+          "backend/market/learned_live_timing.py": "80223f1fe3a6ea81318cbb64a663b3805bfead1e8c2190aa176234ef294ccb7f",
+          "backend/market/learned_order_observation.py": "e5ab7151ab010137fe682a73da98d19496331176e1fc7c67b33827e6b63839ff",
+          "backend/market/learned_personal_guidance.py": "37e1fadba7cfb85d05464b1848d0e268015d43c53f33dd7481a6fed1ca999721",
+          "backend/market/live_model_decision.py": "06bd5150ec8cdfce5399e2ce1bc96f9a07c43231fc2b47fb6dbf5b1ea6f89aea",
+          "backend/market/live_probability_timing.py": "3fc9da7ae628e3fdd98388bbaa0e08bbaf5b8c36da78fb7c0e0efdcab63c1721",
+          "backend/market/market_conditioned_holding.py": "e2de45ca5b79ad1547299b131deb23e898aa7a9c33c13e7ec28bc4210d4950e4",
+          "backend/market/personal_history.py": "8f60457e598f0cf2c234739f9754a61ccc88b79e8907aaf53cd22c661177746a",
+          "backend/market/sequential_shadow_context.py": "5af947b74af12de1914b192c41d243494bd89ab90d5329564d86c31ff9c40a92",
+          "docs/research/grade-led-sizing-contract-2026-10-13.md": "51e4f718ed73a29188cb134a342615927a48c12f4647b30307cb996efd1393c6",
+          "docs/research/learned-held-transition-2026-10-07.md": "f2669e1a40f74f6ccccd3cfdfae6f299a1bd1d416ae916dc622d2fa61837218a"
+        }
+      },
+      "backend": {
+        "cid": "089434b2fca6525b36ed1b147dea86a5e1beaec786632aba2b3599290a98635d",
+        "image": "sha256:156ff038921bead5f37746e7d2efa739d12eff3687d9c70f1d4d4b87c6cb4803",
+        "restarts": 0,
+        "state": "running"
+      },
+      "gateway": {
+        "cid": "0d62f562b776fd50d366563ff0bc789f3f8cd0445056723c748ffc7dd50d1841",
+        "image": "sha256:3fb3c8bd17807d5e2c1a8c6d1ec93334e21a706c173c45cf20129952b370aa2a",
+        "restarts": 0,
+        "state": "running"
+      },
+      "head": "878cbc53db56f635c8dd9ee6a3307e0d4f1c6b2f",
+      "mem_available": 9299714048
+    },
+    "claim.json": {
+      "account_mutations": false,
+      "argv": [
+        "bash",
+        "/home/animallya96/scratch/all-names-signals-candidate-20261019-v1/scripts/deploy.sh",
+        "--deploy-dir=/home/animallya96/deploy/anios",
+        "--wait-post"
+      ],
+      "base": "878cbc53db56f635c8dd9ee6a3307e0d4f1c6b2f",
+      "clock_override": false,
+      "skip_flags": [],
+      "strategy_changes": false,
+      "target": "c1acdffa232544783b78b97c1179870b314cd43e"
+    },
+    "canonical-result.json": {
+      "exit_code": 0,
+      "finished_at": "2026-10-19T22:05:47.375991+00:00"
+    },
+    "upstream-restoration.json": {
+      "upstream": "origin/main"
+    },
+    "after.json": {
+      "approval": {
+        "artifacts": {
+          "config.json": "a237bfe4e21db38a0fabf8d31a2c78542b8bff58a5d26895ac98f2387c144f7c",
+          "evidence.json": "4d6af1bb755243bdce9a5c74477ae43cf91a72cbe7fa9e2985d13bfd5d3cacb9",
+          "release.json": "fc3259718eb55daabc748120aa1c3791e87ee02b6f536762afbe2e16b8686c0c"
+        },
+        "sources": {
+          "backend/agents/trading/desk/event_execution.py": "76e49243ffb7fff8bb989df2c384ee1f2f0dcc7885c9421f98a986eda667202f",
+          "backend/agents/trading/desk/event_risk.py": "34462a0ad3569022c90a3d7898b8f5a43ba053a38d2b7e44a63bc18e54de8973",
+          "backend/agents/trading/desk/funded_execution.py": "6b913621d11ad81b78394c1f3eb9e4aef8e52ed6585b0a0716b3b45a9d6f909c",
+          "backend/agents/trading/desk/intraday_orders.py": "ca8c236746441e204f36a263e972104d48d442538ea189fd4cad9d4ccf9f0f1c",
+          "backend/agents/trading/desk/nightly_plan.py": "9fe2c223f24086a8a978cf3d373f39f24e3f6dc810a624a5e8773cc3ae91a7ca",
+          "backend/agents/trading/desk/paper.py": "1a96dd96c254abb4799c6f14cb99938c65fb2907d6777fbc4b1194bfaa851bc4",
+          "backend/api/v1/market.py": "fb35aa6865890b8c75c3b354fcb65b24a2dea3454efb892eaa88f486cde4ba88",
+          "backend/cli/market_daily.py": "70201cfb771fb873a75b1356654a5dce9ab1b0900094ddcc23bcb6da56f1549b",
+          "backend/market/adaptive_growth_policy.py": "35a2d6a07276096acee78078886c9aefe02051f2b746a8739442814920114e34",
+          "backend/market/alpaca_trading.py": "105c5800d90b7f17b142d1678a781ecbf116ff89575466bec5e3c553eb24c3e2",
+          "backend/market/decision_view.py": "8315ec2b8f647dc02a46bec3d2a77a15b2d31b9777baed1ec5aa3aacdea97aca",
+          "backend/market/entry_timing.py": "f23d286c0d613d99620ce4a4ea8aa889be88ca224c5fbfc945b4360eae944a88",
+          "backend/market/forward_arithmetic.py": "9617f9dc3252d3ce48891eb800de1dfc135383a88cb3f15b377c480d60d8d882",
+          "backend/market/forward_execution.py": "62fa03e76d6f186a5084afe7ed1087891ce06f1d4b74040c6491f9c0b32ff295",
+          "backend/market/forward_market_evidence.py": "737f14c2ab3b4c12501d8707184871dd7c1f84287d4b43d182e2add0a02490a2",
+          "backend/market/forward_probability_timing.py": "0103852d53be711fcf4eeec80f74d707f42ef2ec86599ff72a305376d5632a92",
+          "backend/market/grade_led_policy.py": "4dec4ba263efa21b3a534b826b594d57e1a8cb99097e73ea53e8fbb0e96dfd66",
+          "backend/market/holding_risk_bank.py": "4024753161e21521309e265c5e96a70de94a75e81a8f151a4e59fe659c7f6158",
+          "backend/market/joint_funded_policy.py": "5b5b96c685f78f867bb590f00f83cdbaca88c1de45681ca178f0c5b84d6bb339",
+          "backend/market/learned_holding_transition.py": "c271f6ff649058d43aec226789e62cc08dc41bcc177755f0d17be87f4abfeb55",
+          "backend/market/learned_live_holding.py": "25fee57bd3dc57c2b945e204aa3b83e39434cf4f84f8a165a4b9e41f9f6183e1",
+          "backend/market/learned_live_timing.py": "80223f1fe3a6ea81318cbb64a663b3805bfead1e8c2190aa176234ef294ccb7f",
+          "backend/market/learned_order_observation.py": "e5ab7151ab010137fe682a73da98d19496331176e1fc7c67b33827e6b63839ff",
+          "backend/market/learned_personal_guidance.py": "37e1fadba7cfb85d05464b1848d0e268015d43c53f33dd7481a6fed1ca999721",
+          "backend/market/live_model_decision.py": "06bd5150ec8cdfce5399e2ce1bc96f9a07c43231fc2b47fb6dbf5b1ea6f89aea",
+          "backend/market/live_probability_timing.py": "3fc9da7ae628e3fdd98388bbaa0e08bbaf5b8c36da78fb7c0e0efdcab63c1721",
+          "backend/market/market_conditioned_holding.py": "e2de45ca5b79ad1547299b131deb23e898aa7a9c33c13e7ec28bc4210d4950e4",
+          "backend/market/personal_history.py": "8f60457e598f0cf2c234739f9754a61ccc88b79e8907aaf53cd22c661177746a",
+          "backend/market/sequential_shadow_context.py": "5af947b74af12de1914b192c41d243494bd89ab90d5329564d86c31ff9c40a92",
+          "docs/research/grade-led-sizing-contract-2026-10-13.md": "51e4f718ed73a29188cb134a342615927a48c12f4647b30307cb996efd1393c6",
+          "docs/research/learned-held-transition-2026-10-07.md": "f2669e1a40f74f6ccccd3cfdfae6f299a1bd1d416ae916dc622d2fa61837218a"
+        }
+      },
+      "backend": {
+        "cid": "089434b2fca6525b36ed1b147dea86a5e1beaec786632aba2b3599290a98635d",
+        "image": "sha256:156ff038921bead5f37746e7d2efa739d12eff3687d9c70f1d4d4b87c6cb4803",
+        "restarts": 0,
+        "state": "running"
+      },
+      "gateway": {
+        "cid": "ab42f0c36f64f149483f640cf018c156bab1b69e1777672bb8ccf7b33b175551",
+        "image": "sha256:aba4323e272ddd8b7ce08d98eea87048a485fc6b19a5215f457b25f4fd34b6a0",
+        "restarts": 0,
+        "state": "running"
+      },
+      "head": "c1acdffa232544783b78b97c1179870b314cd43e"
+    },
+    "post-status.json": {
+      "original_text": "2026-10-19T22:05:49Z c1acdffa ok (cheap)\n"
+    },
+    "release-result.json": {
+      "current_strategy_historical_simulation": "UNAVAILABLE",
+      "fresh_live_signals": "UNVERIFIED",
+      "post_status": "2026-10-19T22:05:49Z c1acdffa ok (cheap)\n",
+      "status": "CANONICAL_ALL_NAMES_SIGNALS_DEPLOYED",
+      "target": "c1acdffa232544783b78b97c1179870b314cd43e"
+    }
+  },
+  "retained_release_file_identities": {
+    "before.json": {
+      "bytes": 4515,
+      "sha256": "5676fcb20c839a8b5973f199cfab881cf520f60d3dfae04091b28f4bb96cbce8"
+    },
+    "claim.json": {
+      "bytes": 408,
+      "sha256": "d2244d7ce2b5109b427e2508b929db637fb0f746c8d0cf72f54e77e00733650f"
+    },
+    "canonical-result.json": {
+      "bytes": 74,
+      "sha256": "2f98e4e519f1d63e79d80788f193d3f7baa9133f06a92e19b862e9911b507a2c"
+    },
+    "upstream-restoration.json": {
+      "bytes": 32,
+      "sha256": "8ef869b131f4733add003fb7076237600712bf65d73bde253aebd74325a87399"
+    },
+    "after.json": {
+      "bytes": 4484,
+      "sha256": "e9e38713e5585ea9332fb9cedad9e1873eea2402934d8c543fee86c196d7f9e4"
+    },
+    "post-status.json": {
+      "bytes": 68,
+      "sha256": "fe8f80d627e60e04c41893c372d88883808607f164007e0e0a1860b2d3dee73e"
+    },
+    "release-result.json": {
+      "bytes": 271,
+      "sha256": "88d9ce8ec68bdc39e0157007bf6700d0952efb78819fa1cb8f2b8f80a7f1e979"
+    },
+    "canonical-deploy.log": {
+      "bytes": 23555,
+      "sha256": "15c02d1048c3f5d9f6316a1912b19f3c79da663901ac0534ede5096e6f3dc9e6"
+    },
+    "static/index.html": {
+      "bytes": 465,
+      "sha256": "9f62939adee8cd6c75ef3b547825bdbfb74b96df662f4201d88e0a325f455198"
+    },
+    "static/assets/index-BKiUB2WT.js": {
+      "bytes": 886878,
+      "sha256": "5b638ccccdc8bea990a3ba25f3d9a258e77325b423849fadb09edfa5b47ac075"
+    },
+    "static/assets/index-Da6jOVsw.css": {
+      "bytes": 49735,
+      "sha256": "2e1504f083cc70aa2287b67c515ea835780454592490bb0946ff3a7259f41244"
+    }
+  },
+  "signed_in": {
+    "at": "2026-10-19T22:09:52.970Z",
+    "url": "https://deep-matter.com/?deskView=strategy#desk",
+    "dom": {
+      "coverage": "0 of 94 current assessments · 0 buy now · 0 sell reviews now · regular session closed or unavailable.",
+      "headers": [
+        "Stock / price",
+        "Grade",
+        "Buy signal",
+        "Sell signal",
+        "Strength",
+        "Reason / timing"
+      ],
+      "scripts": [
+        "/assets/index-BKiUB2WT.js",
+        "https://static.cloudflareinsights.com/beacon.min.js/vce701823e78c4301a35b7e07294d87301792088814092"
+      ],
+      "selected": "Best buys"
+    },
+    "logs": []
+  },
+  "public_extra_check": {
+    "status": "FAILED_LOCAL_TLS_VALIDATION",
+    "url": "https://deep-matter.com/assets/index-BKiUB2WT.js",
+    "reason": "Homebrew Python urllib could not validate the local issuer chain: CERTIFICATE_VERIFY_FAILED unable to get local issuer certificate. No bytes or public hash receipt obtained.",
+    "output_file": "/tmp/all-names-signals-deployed-20261019-v1/public-asset.json",
+    "output_created": false,
+    "tls_bypass": false,
+    "retry": false,
+    "separate_evidence": "Exact gateway static SHA and automated tests passed; real signed-in browser rendered the corresponding asset URL and controls without error/warning logs. This failed extra public-byte check is not relabelled as a pass."
+  },
+  "browser_reports": {
+    "all-names-signals-red": {
+      "path": "/tmp/all-names-signals-red-20261019-results.json",
+      "bytes": 14576,
+      "sha256": "a80653a57d8d8fd4c8dd33fa96196bdab4aa460cfe9d8de8ea9decf2d316fcf5",
+      "stats": {
+        "startTime": "2026-10-19T21:56:45.128Z",
+        "duration": 18948.524,
+        "expected": 0,
+        "skipped": 0,
+        "unexpected": 2,
+        "flaky": 0
+      },
+      "cases": [
+        {
+          "title": "All names ranks independent buy and sell signals, with matching details",
+          "statuses": [
+            "failed"
+          ]
+        },
+        {
+          "title": "All names separates waiting, invalidated and unavailable signals",
+          "statuses": [
+            "failed"
+          ]
+        }
+      ]
+    },
+    "all-names-signals-final": {
+      "path": "/tmp/all-names-signals-final-20261019-results.json",
+      "bytes": 215149,
+      "sha256": "c291ba867b8359f57a8eb996dc403b0536d65375b7a99989e38c5ea13cc7f8b7",
+      "stats": {
+        "startTime": "2026-10-19T22:02:59.572Z",
+        "duration": 29026.482,
+        "expected": 10,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "cases": [
+        {
+          "title": "All names ranks independent buy and sell signals, with matching details",
+          "statuses": [
+            "passed"
+          ]
+        },
+        {
+          "title": "All names expires its own signal receipt without a network update",
+          "statuses": [
+            "passed"
+          ]
+        },
+        {
+          "title": "Stock charts show simulated actions, share counts and grade changes together",
+          "statuses": [
+            "passed"
+          ]
+        },
+        {
+          "title": "Stock charts withhold an incompatible historical simulation",
+          "statuses": [
+            "passed"
+          ]
+        },
+        {
+          "title": "All names separates waiting, invalidated and unavailable signals",
+          "statuses": [
+            "passed"
+          ]
+        },
+        {
+          "title": "Stocks and chart details refresh assessments without personal guidance",
+          "statuses": [
+            "passed"
+          ]
+        },
+        {
+          "title": "Personal preview distinguishes unavailable guidance",
+          "statuses": [
+            "passed"
+          ]
+        },
+        {
+          "title": "Personal preview distinguishes genuine hold",
+          "statuses": [
+            "passed"
+          ]
+        },
+        {
+          "title": "Personal preview distinguishes blocked buy",
+          "statuses": [
+            "passed"
+          ]
+        },
+        {
+          "title": "Personal preview distinguishes timing wait",
+          "statuses": [
+            "passed"
+          ]
+        }
+      ]
+    },
+    "all-names-signals-deployed": {
+      "path": "/tmp/all-names-signals-deployed-20261019-results.json",
+      "bytes": 215409,
+      "sha256": "53944204fc077fd3efa39889222dbaaae8abbf8145cdf6bc6f4a89dabd728ac4",
+      "stats": {
+        "startTime": "2026-10-19T22:07:45.889Z",
+        "duration": 30638.6,
+        "expected": 10,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "cases": [
+        {
+          "title": "All names ranks independent buy and sell signals, with matching details",
+          "statuses": [
+            "passed"
+          ]
+        },
+        {
+          "title": "All names expires its own signal receipt without a network update",
+          "statuses": [
+            "passed"
+          ]
+        },
+        {
+          "title": "Stock charts show simulated actions, share counts and grade changes together",
+          "statuses": [
+            "passed"
+          ]
+        },
+        {
+          "title": "Stock charts withhold an incompatible historical simulation",
+          "statuses": [
+            "passed"
+          ]
+        },
+        {
+          "title": "All names separates waiting, invalidated and unavailable signals",
+          "statuses": [
+            "passed"
+          ]
+        },
+        {
+          "title": "Stocks and chart details refresh assessments without personal guidance",
+          "statuses": [
+            "passed"
+          ]
+        },
+        {
+          "title": "Personal preview distinguishes unavailable guidance",
+          "statuses": [
+            "passed"
+          ]
+        },
+        {
+          "title": "Personal preview distinguishes genuine hold",
+          "statuses": [
+            "passed"
+          ]
+        },
+        {
+          "title": "Personal preview distinguishes blocked buy",
+          "statuses": [
+            "passed"
+          ]
+        },
+        {
+          "title": "Personal preview distinguishes timing wait",
+          "statuses": [
+            "passed"
+          ]
+        }
+      ]
+    },
+    "all-names-signals-main-integration": {
+      "path": "/tmp/all-names-signals-main-integration-20261019-results.json",
+      "bytes": 31147,
+      "sha256": "d252954096cb9ac724b5c58eb39418396294ec54a46b9d40cf8e9498c7c1b5f1",
+      "stats": {
+        "startTime": "2026-10-19T22:09:25.907Z",
+        "duration": 44546.806,
+        "expected": 8,
+        "skipped": 0,
+        "unexpected": 2,
+        "flaky": 0
+      },
+      "cases": [
+        {
+          "title": "All names ranks independent buy and sell signals, with matching details",
+          "statuses": [
+            "passed"
+          ]
+        },
+        {
+          "title": "All names expires its own signal receipt without a network update",
+          "statuses": [
+            "passed"
+          ]
+        },
+        {
+          "title": "Stock charts show simulated actions, share counts and grade changes together",
+          "statuses": [
+            "failed"
+          ]
+        },
+        {
+          "title": "Stock charts withhold an incompatible historical simulation",
+          "statuses": [
+            "failed"
+          ]
+        },
+        {
+          "title": "All names separates waiting, invalidated and unavailable signals",
+          "statuses": [
+            "passed"
+          ]
+        },
+        {
+          "title": "Stocks and chart details refresh assessments without personal guidance",
+          "statuses": [
+            "passed"
+          ]
+        },
+        {
+          "title": "Personal preview distinguishes unavailable guidance",
+          "statuses": [
+            "passed"
+          ]
+        },
+        {
+          "title": "Personal preview distinguishes genuine hold",
+          "statuses": [
+            "passed"
+          ]
+        },
+        {
+          "title": "Personal preview distinguishes blocked buy",
+          "statuses": [
+            "passed"
+          ]
+        },
+        {
+          "title": "Personal preview distinguishes timing wait",
+          "statuses": [
+            "passed"
+          ]
+        }
+      ]
+    },
+    "all-names-signals-main-integration-v2": {
+      "path": "/tmp/all-names-signals-main-integration-v2-20261019-results.json",
+      "bytes": 215680,
+      "sha256": "61304fff951b460c99b382f11e2aaa0b0a971847610ae10337b810f9ecc0e882",
+      "stats": {
+        "startTime": "2026-10-19T22:11:14.676Z",
+        "duration": 28343.717,
+        "expected": 10,
+        "skipped": 0,
+        "unexpected": 0,
+        "flaky": 0
+      },
+      "cases": [
+        {
+          "title": "All names ranks independent buy and sell signals, with matching details",
+          "statuses": [
+            "passed"
+          ]
+        },
+        {
+          "title": "All names expires its own signal receipt without a network update",
+          "statuses": [
+            "passed"
+          ]
+        },
+        {
+          "title": "Stock charts show simulated actions, share counts and grade changes together",
+          "statuses": [
+            "passed"
+          ]
+        },
+        {
+          "title": "Stock charts withhold an incompatible historical simulation",
+          "statuses": [
+            "passed"
+          ]
+        },
+        {
+          "title": "All names separates waiting, invalidated and unavailable signals",
+          "statuses": [
+            "passed"
+          ]
+        },
+        {
+          "title": "Stocks and chart details refresh assessments without personal guidance",
+          "statuses": [
+            "passed"
+          ]
+        },
+        {
+          "title": "Personal preview distinguishes unavailable guidance",
+          "statuses": [
+            "passed"
+          ]
+        },
+        {
+          "title": "Personal preview distinguishes genuine hold",
+          "statuses": [
+            "passed"
+          ]
+        },
+        {
+          "title": "Personal preview distinguishes blocked buy",
+          "statuses": [
+            "passed"
+          ]
+        },
+        {
+          "title": "Personal preview distinguishes timing wait",
+          "statuses": [
+            "passed"
+          ]
+        }
+      ]
+    }
+  }
+}

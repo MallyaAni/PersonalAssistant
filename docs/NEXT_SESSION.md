@@ -1,5 +1,91 @@
 # Next session
 
+## 2026-10-19 — LIVE All names independent signals; current-strategy historical chart data still unavailable
+
+CURRENT PRODUCT PATH supersedes older paper-account/private guard directions.
+Human explicitly requested independent strongest immediate buys/sells in All names,
+deployment, then charts showing past simulated actions/share counts/grade changes
+to judge strategy performance. Portfolio inputs are OPTIONAL; no new question is
+pending. No real-money order placement or paper-history reset performed.
+
+LIVE frontend release c1acdffa232544783b78b97c1179870b314cd43e, production-based
+codex/trading-fill-consistency-20261019, parent742589e2/base878cbc53. Canonical
+scripts/deploy.sh ran ONCE/no skip or clock flags; original post22:05:49UTC
+c1acdffa ok(cheap). Backend089434b2/image156ff038/restarts0 and ALL31 economic
+source hashes plus3 approval artifacts unchanged. Gatewayab42f0c/imageaba4323e.
+Exact deployed index-BKiUB2WT.js886878B/SHA
+5b638ccccdc8bea990a3ba25f3d9a258e77325b423849fadb09edfa5b47ac075.
+Never deploy historical main wholesale.
+
+PRIVATE-ACCOUNT DEPENDENCY REMOVED from the Stocks workflow: SignalBoard has no
+paper/account prop; current chart assessments supply independent entry/exit
+priorities. Best buys / Best sells rank each direction: immediate first, then
+waiting/other/unavailable, original High/Medium/Low within groups, alphabetical
+ties. Sell review now means assess downside/reduction IF held; NOT a short sale
+or funded numeric order. No paper quantities, allocation weights or cash are
+borrowed. Buy now retains grade permission/confirmation/fresh regular midpoint;
+both directions lose immediate status without open regular session/fresh quote.
+Original per-assessment expiry runs even without refresh. Row/full-chart reasons
+and evidence times share the same source. This is qualitative current chart
+signal ranking, NOT renamed allocator output or a profit-probability score.
+
+Chart presentation now defaults to simulated trades AND grade changes together;
+trade labels preserve action/share quantities, grade arrows preserve transitions
+instead of inventing more trades. Actual paper executions stay a separate layer.
+Matching-policy fixture BUY7/SELL5 with C→A/A→B passed and screenshot labels were
+visually inspected. Incompatible old-policy simulation is explicitly withheld.
+
+UNFINISHED HUMAN CHART REQUIREMENT: real current-strategy historical share data
+is NOT published. Actual signed-in AAOI chart loaded2000sessions/82grade changes
+but returned an older-policy simulation, correctly withheld. Production
+strategy_simulation.read admits learned_holding_transition.POLICY with exact
+manifest/config/source binding; that is not current grade-led history. Main's
+pre-existing private live-model-history adapter/UI remains preserved but is NOT
+deployed/admitted; do not claim its full genuine account completed, adopt its
+failed/OPEN pools or silently plot old model-only shares as current performance.
+No genuine history run/replay was started. Current strategy profitability and
+historical performance remain UNVERIFIED; chart fixtures prove presentation only.
+
+VERIFIED acceptance:10 named browser cases source29.026s and AGAIN exact deployed
+gateway static30.639s,0skip/flaky/unexpected/diagnostics. Five new All names/chart
+cases, one updated assessment workflow, four prior personal-availability cases;
+NOT20 distinct tests. Initial deployed878 independent-ranking RED2 failures
+preserved. TSC/build/diff pass. Real signed-in IABtab3 served exact asset URL;
+Best buys/Best sells controls exercised, no error/warning logs. At22:09:52UTC,
+94names/0current assessments/0buy-now/0sell-reviews after regular close. Keep this
+tab at Stocks→Best buys; do not request Portfolio inputs. Latest ordinary record
+stillOct13; no fresh recommendation/real trading readiness claim.
+
+Evidence docs/research/all-names-signals-delivery-proof-2026-10-19.json contains
+original release receipts/runtime/source bindings/static identities/report stats
+and signed-in observations. Originals /tmp/all-names-signals-{final,deployed}-
+20261019-results.json; /tmp/all-names-signals-deployed-20261019-v1;
+/tmp/all-names-live-ui-20261019-v1 actual board/chart screenshots and DOM evidence.
+Extra HomebrewPython public-JS hash check FAILED local issuer TLS validation,
+no output/bypass/retry; NOT relabelled green. Browser actually rendered the same
+asset URL; independently retained gateway bytes passed the ten tests.
+
+Main integration4eab947f preserves unrelated private sizedHistory props/API/UI;
+it is NOT the deployed tree. Integration initially8pass/2wording failures;
+targeted main-only neutral grade-count wording fix preserved assertions, then
+exact integration frontend10pass28.344s/TSC/build. Its extra optional history
+capability is not backend/genuine acceptance. Both failures remain retained.
+Source-only private gates/old pools/model configuration remain untouched.
+Diagram impact:NONE; existing account-independent opportunity-to-View flow.
+
+NEXT: observe naturally scheduled ordinary19:30ET nightly after completion,
+then subsequent genuine intraday assessments; identify the FIRST new failing
+boundary from bounded original logs/record/capture/source bindings. Follow
+universe signal/quote/expiry→All names→chart, independently of paper executions.
+market_daily/market_balancer mutate/send/cancel: NEVER invoke them as probes.
+Do not rerun closed source/RED/deployed tests/getter/deploy for docs. Preserve
+failed/completed evidence; genuinev6 OPEN/PAUSED/no adoption/replay/new genuine
+run from failed admission. Native rename/journal capacity still lacks allocator
+acknowledgement at paper.py433 replace/cleanup unlink/parent fsync; stat/fallocate
+does not reserve it. No tiny-guard treadmill, guard/cap weakening, model/provider/
+account/service changes, Spark2load, paid data or real-money orders. Heartbeat
+ACTIVE; quiet on unchanged state. No ETA or new permission question.
+
 ## 2026-10-19 — HUMAN CORRECTION: All names is the live decision workflow; Portfolio is optional
 
 CURRENT PRODUCT INTENT supersedes personal-account acceptance prerequisites below:
