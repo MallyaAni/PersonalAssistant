@@ -1,5 +1,159 @@
 # Next session
 
+## 2026-10-18 — Native directory lineage VERIFIED; physical rename capacity BLOCKED
+
+Read research/native-directory-binding-proof-2026-10-18.json:
+011a85a0b0c4bd3ef2808cb4ab585d7867b2c8a3946ed9327d7433e513e1a149,
+201928B. Product source52cb070abdcfe02c9300c06b86f090038658d11f/tree
+61ca3bea7a18268880294be6f423b3ced2100af4 has six passing A/B assertions and
+two passing assertions in FAILED C. Only C's incorrect test lookup and the
+targeted runner changed at a657d9fac909feb262fcdeb49ef4e7388c6a6b5b/tree
+1626eb58079c63802191ce12cc5ecab6334e2a61; full corrected h alone passed there.
+These are NINE distinct named assertions across TWO trees with identical product
+bytes, NOT nine tests passing at one tree. All failed evidence remains FAILED.
+
+The requested physical native rename-directory reservation has a concrete
+unavailable input: no source/runtime/filesystem-bound allocator acknowledgement
+reserving directory-entry and journal capacity exists in the current
+Path.replace storage interface. At original paper.save_state temporary.replace(path)
+(paper.py:433), failure temporary.unlink, and the adapter's post-save parent fsync,
+neither body fallocate nor stat/names can certify pre-reserved metadata capacity.
+This is a hard physical-admission blocker, not a request for human permission.
+No placeholder, dummy reserve or unsupported capacity claim was introduced.
+
+Independent PRODUCT progress: new PRIVATE historical_native_directory_binding.
+DirectoryBindings/synthetic-native-directory-binding/1 plus optional native-io/5
+bind six original directories, exact finite temp/anchor/receipt names and inode
+lineage before selected effects. Original Store owner lock plus six held original
+directory descriptors remain open for the Store lifetime. Fixed initialized
+header/control/mode and directory exist before birth; original state.json stays
+ABSENT before birth. Header/control bind source/account/identity/metadata-claim/
+head/inputs and exact original native-writer header. PENDING persists under the
+UNCHANGED original writer lock before calling unchanged _save_locked; publish
+only after native receipt/cursor/current bytes/anchors/parents/unused names agree.
+Original result precedes directory phase seal, then SQLite seal and CAS seal.
+Completed phases cannot enable later saves; explicit persisted Store mode forbids
+omitted-pool downgrade. Historical successful saves remain readable after a later
+pending/failed transition. Recovery publishes only original missing result/seals,
+never save/fold/flush/capture/append/replay/account restore.
+
+All original native writer/module/Path.replace/unlink/mkdir semantics remain
+unchanged, including absent birth destination. Ordinary Store paths/schema/caps/
+DELETE+FILE defaults and public genuine/old bound-CAS raw-final refusals remain
+unchanged. Directory dev/ino/mode/size/blocks/nlink equality is a tested lineage
+invariant, NOT capacity reservation; capacity_reserved=False throughout.
+Named-vs-held descriptors/advisory locks and Python global identities are not
+hostile concurrent-path replacement isolation, sandboxing or deep immutability.
+
+A: CID e23ef0692b7842c0d4176c57ae64aa31344f80411e4f7eddb99d7469ae157064/f612,
+exit0/noOOM2026-10-19T02:11:13.97030327Z;3pass/0fail/error/skip,
+24.45880133472383s/57860KiB. Actual UNBOUND legacy negative control moved the
+original paper directory; native parent mkdir recreated a different empty inode
+(original700→new755) before missing-temp refusal. This is the reproduced gap,
+NOT acceptance of that behavior. Bound missing-parent mode refused BEFORE native
+directory recreation/writer charge. Full bound birth→stages→desired8/submitted5/
+filled5 partial native journal→Store OUTCOME→reopen/original recovery→same-session
+Nightly passed, policycount2/seven COMPLETE directory+SQL+CAS phases/five native
+save records/exact >256KiB NaN+Unicode bytes. Baseline fault directories were
+explicitly retained/restored by the harness, not new product namespace operations.
+Proof36900430fdbbd3d846905fe02ad7d7329115b15ed546a9c2ffe04ff081e9887d/73596B.
+
+B: CID2e4a6d3304fb2bae18459a1a09f73b862e3f9f5bf5a313372de71239b1c50cb9/f612,
+exit0/noOOM2026-10-19T02:14:03.492704459Z;3pass/0fail/error/skip,
+36.51039218902588s/57396KiB. Actual owned PID7 SIGKILL before native replace
+leaves writer OPEN3/next4, directory pending3/published cursor3/three records.
+PID8 after directory publication leaves native+directory cursor4 but no final
+prepared result, so recovery stays paused. PID9 after Store final commit recovers
+ONLY original missing result/directory+SQL+CAS seals. All-9/reaped. Three protocol
+boundary process cuts, NOT powerloss/inside-syscall/SQLite-commit proof. The
+pre-replace cut uses an owned-child instance hook at the original named point,
+not a patched Path.replace. Immutable broker decoding validates witnesses only.
+Prooffdfcb3aa95bbc8434b7dde1d03fc198e1733517f7b2a347b862085861aa7be97/103348B.
+
+FAILED C: CID706b2594addece1015d62a1be264fb9886eafeba7cb7a9f4db0af038ab296450/f612,
+exit1/noOOM2026-10-19T02:15:42.51310027Z;3tests/2pass/0assertionfail/1error/0skip,
+28.238456221297383s/58420KiB. Unexpected-name pre-submit refusal and caught
+post-native publication uncertainty passed. Test h used current SUBMISSION head
+to locate original birth evidence, causing FileNotFoundError BEFORE its intended
+schema-downgrade assertion. Product read_lifecycle already authenticated the
+correct original pre_head. Only that test call now uses authenticated original
+phase/session/pre_head; assertions/guards/caps/product bytes were not weakened.
+Proof9a9918f61fdf2bec02e690085d143ece108fe67774bfaa89cf8150f32ff75cb6/73202B.
+
+Targeted H ONLY: CID5e2a38351a09eaafa5b55d0f6a3a89a752709c08f3044fecc9c40e22983ce301/f612,
+exit0/noOOM2026-10-19T02:23:51.105581347Z;1pass/0fail/error/skip,
+9.239689258858562s/55424KiB. Full corrected h reaches mandatory persisted mode,
+foreign-claim and IO/4 downgrade refusal, completed-phase save refusal and old
+successful receipt readability. No g/i/A/B rerun or new kill claim.
+Proof41b3ce7965dfed55fec139be935ea7082c548f51582a4409fc8b6ef5c978f2d2/63224B.
+All four raw proofs+seven fixed results stay in /tmp/native-directory-binding-
+20261018-v1-{a,b,c} and-v2-c plus matching Spark1 scratch. Never replay/adopt pools.
+
+ROOT+healthy READONLY reviewer independently folded ALL10 complete inventories,
+INCLUDING FAILED C:5160CAS+370metadata+70SQL+36directory-binding+60native-directory
+identities =5696 globally distinct original identities. Every name and physical
+field unchanged; each CAS34344960/meta9183232/SQL1843200 allocated AND logicalB,
+each bound directory-metadata pool790528 allocated AND logicalB<separate1MiB.
+The legacy baseline intentionally has no new directory pool. All six original
+native directory fields match after explicit negative harness fault restoration.
+Complete529071B inventories retained36258B gzip. All six canonical cut/exit
+strings24262B reproduce exact SHA/length. Actual sources/exact calls/fresh proofs/
+getters/full results/create argv/CID/runtime/terminal bindings reviewed independently.
+
+22 copied pins/31payloads479096B(original) or479261B(targeted)<524288;
+33 source bookends/47 native fullSHA physical bookends/writer globals unchanged/
+forbidden[]. FOUR unchanged whole codec/CAS/physical/Nightly SOURCE-only exact
+RO file mounts from prior closed SOURCE paths, never old account/output/pool.
+Whole CLI text for two helper CodeTypes pins1655map; no CLI startup import.
+Combined executed closure exceeds512KiB; copied-payload cap is not closure/RAM.
+Context/policy/program/calendar/source-manifest globals SYNTHETIC/constructors
+bypassed. Eight FULL mounts equal by uniqueDestination; raw order differs all
+four. HostConfig only OomKillDisablefalse→null. UID1000/noneRO/1CPU/512MiB=swap/
+PIDs32/tmp64/dropALL/no-new-privileges/CPU30/native1MiBFSIZE/source-controls-log
+256KiB/productioncaps unchanged. All five phases0/emptyerr except FAILED C
+execute1/AssertionError preserved. Local preflight ENOSPC stopped at mkdir BEFORE
+SSH; removed ONLY observed regular nlink1 Homebrew Node source download60914892B/
+inode67793563/dev16777223, restoring82MiB; installed dependencies/source/backups/
+all prior proofs untouched. No cachewide cleanup.
+
+Local data-only collector ONCE:169inputs2965128B/four full held-read SHA physical
+bookends. Separate SOURCE4MiB+four CONTROL2MiB+EVIDENCE4MiB+DERIVED2MiB ledgers =
+18MiB maximum, NOT whole-process4MiB. ActualSOURCE2965536/CONTROL_A1728178/
+B1728210/C1729110/D1731550/DERIVED902961/EVIDENCE3111648B. Exclusive bounded
+201928B proof/fsync/readback; no local crash/kernel-FSIZE claim. Seven changed
+Python sources/164 purpose comments/AST/zeroBackspaces/old writer byte identity/
+diff PASS; Ruff unavailable. No fullunit/build/deploy/UI/model claim. Diagram:NONE.
+
+NEXT CONCRETE PRODUCT TASK: this namespace-lineage boundary is CLOSED. NEVER rerun
+A/B/FAILED C/targeted H preflight/stage/copy/tests/getter/collector or prior closed
+SQLite11/protocol13/outcome10/stage9/capability2/older gates for docs. Never adopt
+failed/OPEN/completed pools or reopen COMPLETE phases. Physical native rename/
+journal admission stays blocked on the unavailable allocator acknowledgement;
+do not reinterpret lineage or body preallocation as capacity.
+
+Continue independent synthetic product work: FIRST inspect exact native SAVE-SLOT
+allowances before broker observe/submit/policy effects. DirectoryBindings.save
+currently checks slot<writer.header.slots only when save is called; _Effects.submit
+can already accept an order before later save exhaustion in an undersized valid
+writer pool. Implement a DISTINCT source/head/input/phase-bound finite save-count
+lease before selected effects, composing original writer slots without changing
+its semantics/caps. Add NEW bounded slot-exhaustion/original-result assertions.
+This is source-backed next work, not an observed exhaustion acceptance result.
+Advance one coherent boundary. No recursive provenance/ELF detours.
+
+Full native rename/journal/whole filesystem/native SQLite FILE mode, whole832MB
+horizon/load-save/deepcopy/serialization/model RAM/twohost/powerloss/whole genuine
+constructors/market_daily Resolver/sender/models/providers/actualcontext/calendar/
+economics/native operation/adoption/independent publication/API/UI remain
+UNVERIFIED. Full admission mandatory BEFORE genuine effects. Originaltiming FAILED/
+publication CLOSED/missing receipts/immutable roots unchanged. Genuinev6 OPEN/
+PAUSED/no replay/adoption/newgenuine run from failed reservation. No Spark2load/
+guard-G08-cap weakening/fakeclock/actualday replay/historyrewrite/model-provider-
+account-servicechange/denied-read bypass/paiddata/tuning/realmoneyorders.
+Production unchanged; NEVER deploy historical main wholesale. Heartbeat ACTIVE,
+quiet on unchanged/non-actionable state; notify only meaningful progress/completion/
+failure/required user action. No ETA.
+
 ## 2026-10-18 — Private finite SQLite banks VERIFIED; native FILE mode remains UNVERIFIED
 
 The NEW finite PRIVATE memory-SQLite/durable-bank boundary is VERIFIED at source
