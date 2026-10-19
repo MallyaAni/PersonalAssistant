@@ -356,7 +356,7 @@ class SQLiteBanks:
         if trigger is not None:
             return sqlite3.SQLITE_DENY
         if action == sqlite3.SQLITE_FUNCTION:
-            return sqlite3.SQLITE_OK if second in ('count', 'sum', 'coalesce') else sqlite3.SQLITE_DENY
+            return sqlite3.SQLITE_OK if second in ('count', 'sum', 'coalesce', 'length', 'substr') else sqlite3.SQLITE_DENY
         if action == sqlite3.SQLITE_PRAGMA:
             return sqlite3.SQLITE_OK if second is None and first in (
                 'database_list', 'journal_mode', 'temp_store', 'page_size', 'max_page_count',
