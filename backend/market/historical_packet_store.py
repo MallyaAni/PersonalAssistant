@@ -88,7 +88,7 @@ def _private(path, directory=False):
 class Store:
     # Open one private writer requiring every original pool recorded by its persisted mode.
     def __init__(self, root, identity_sha256, expected_head, *, create=False, blob_reservation=None,
-                 metadata_reservation=None):
+                 metadata_reservation=None, sqlite_reservation=None):
         self.root = Path(root)
         self.identity = registry.digest(identity_sha256)
         self.owner = uuid4().hex
@@ -97,10 +97,20 @@ class Store:
         self._spools = {}
         self._blob_reservation = None
         self._metadata_reservation = None
+        self._sqlite_reservation = sqlite_reservation
         self._last_clock = None
         self._opened_clock = self._sample_clock()
-        if create:
+        if create and sqlite_reservation is None:
             self.root.mkdir(mode=0o700)
+        _require(sqlite_reservation is not None or (not os.path.lexists(self.root / 'sqlite-mode')
+            and not os.path.lexists(self.root / 'reserved-sqlite')),
+                 'Original explicit SQLite bank mode required before connect')
+        if sqlite_reservation is not None:
+            from backend.market.historical_reserved_sqlite import SQLiteBanks
+
+            _require(type(sqlite_reservation) is SQLiteBanks and sqlite_reservation.root == self.root
+                and sqlite_reservation.identity == self.identity
+                and not os.path.lexists(self.root / 'state.sqlite'), 'Original separate SQLite bank Store required')
         _private(self.root, True)
         self.lock = os.open(
             self.root / "lock", os.O_RDWR | os.O_CREAT | os.O_NOFOLLOW, 0o600
@@ -108,22 +118,26 @@ class Store:
         try:
             _private(self.root / "lock")
             fcntl.flock(self.lock, fcntl.LOCK_EX | fcntl.LOCK_NB)
+            if sqlite_reservation is not None:
+                sqlite_reservation.owner_fd = self.lock
             for name in ("blobs", "incoming"):
                 path = self.root / name
                 if create:
                     path.mkdir(mode=0o700)
                 _private(path, True)
             database = self.root / "state.sqlite"
-            if create:
+            if create and sqlite_reservation is None:
                 descriptor = os.open(
                     database, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600
                 )
                 os.close(descriptor)
-            _private(database)
-            self.connection = sqlite3.connect(database, isolation_level=None, timeout=0)
+            if sqlite_reservation is None:
+                _private(database)
+            self.connection = (sqlite3.connect(database, isolation_level=None, timeout=0)
+                               if sqlite_reservation is None else sqlite_reservation.connect(create=create))
             self.connection.row_factory = sqlite3.Row
             self.connection.setlimit(sqlite3.SQLITE_LIMIT_LENGTH, MAX_META)
-            self.connection.executescript(
+            setup = (
                 """
                 PRAGMA journal_mode=DELETE;
                 PRAGMA synchronous=FULL;
@@ -162,6 +176,12 @@ class Store:
                 PRAGMA temp_store=FILE;
             """
             )
+            if sqlite_reservation is not None:
+                _require(setup.count('PRAGMA journal_mode=DELETE;') == setup.count('PRAGMA temp_store=FILE;') == 1,
+                         'Original ordinary SQLite setup required')
+                setup = setup.replace('PRAGMA journal_mode=DELETE;', 'PRAGMA journal_mode=MEMORY;').replace(
+                    'PRAGMA temp_store=FILE;', 'PRAGMA temp_store=MEMORY;')
+            self.connection.executescript(setup)
             tables = {
                 row[0]
                 for row in self.connection.execute(
@@ -219,6 +239,9 @@ class Store:
             )
             if create:
                 with self._transaction():
+                    if sqlite_reservation is not None:
+                        self.connection.execute("INSERT INTO meta VALUES ('reserved_sqlite_header',?)",
+                                                (demand.encoded(sqlite_reservation.binding),))
                     self._write_state(
                         {
                             "identity": self.identity,
@@ -257,6 +280,9 @@ class Store:
                 'Original explicit metadata namespace required; no downgrade')
             if metadata_reservation is not None:
                 self.bind_reserved_metadata(metadata_reservation)
+            self.sqlite_reservation
+            if sqlite_reservation is not None:
+                sqlite_reservation.seal_connection()
         except BaseException:
             self.close()
             raise
@@ -265,6 +291,20 @@ class Store:
     @property
     def blob_reservation(self):
         return self._blob_reservation
+
+    # Require the original separate bank mode and forbid a stale native-file fallback.
+    @property
+    def sqlite_reservation(self):
+        row = self.connection.execute("SELECT raw FROM meta WHERE key='reserved_sqlite_header'").fetchone()
+        _require((row is None and self._sqlite_reservation is None
+            and not getattr(self.connection, 'reserved_bank_mode', False)
+            and not os.path.lexists(self.root / 'sqlite-mode')
+            and not os.path.lexists(self.root / 'reserved-sqlite'))
+            or (row is not None and self._sqlite_reservation is not None
+                and self.connection is self._sqlite_reservation.connection
+                and row['raw'] == demand.encoded(self._sqlite_reservation.binding)),
+            'Original retained SQLite bank binding required; no downgrade')
+        return self._sqlite_reservation
 
     # Persist the exact pool header before selected native work, never adopt legacy blobs.
     def bind_reserved_blobs(self, reservation):
@@ -397,18 +437,43 @@ class Store:
         if self.fault is not None:
             self.fault(name)
 
-    # Commit complete SQLite transitions or roll back every uncommitted row.
+    # Return only after ordinary SQLite commit or separately reserved durable-bank publication.
     @contextmanager
     def _transaction(self):
-        self.connection.execute("BEGIN IMMEDIATE")
+        if self._sqlite_reservation is None:
+            _require(not getattr(self.connection, 'reserved_bank_mode', False)
+                and not os.path.lexists(self.root / 'sqlite-mode')
+                and not os.path.lexists(self.root / 'reserved-sqlite'), 'SQLite bank mode cannot downgrade')
+            self.connection.execute("BEGIN IMMEDIATE")
+            try:
+                yield
+                self._point("before_commit")
+                self.connection.execute("COMMIT")
+                self._point("after_commit")
+            except BaseException:
+                if self.connection.in_transaction:
+                    self.connection.execute("ROLLBACK")
+                raise
+            return
         try:
+            if self._sqlite_reservation is not None:
+                row = self.connection.execute("SELECT raw FROM meta WHERE key='state'").fetchone()
+                self._sqlite_reservation.begin(None if row is None else _decode(row['raw'])['head'])
+            self.connection.execute("BEGIN IMMEDIATE")
             yield
             self._point("before_commit")
             self.connection.execute("COMMIT")
+            if self._sqlite_reservation is not None:
+                self._point('sqlite_ram_committed')
+                self._sqlite_reservation._point('sqlite_ram_committed')
+                self._sqlite_reservation.publish(self._state()['head'])
             self._point("after_commit")
         except BaseException:
-            if self.connection.in_transaction:
-                self.connection.execute("ROLLBACK")
+            try:
+                if self.connection.in_transaction:
+                    self.connection.execute("ROLLBACK")
+            finally:
+                self._sqlite_reservation.poison()
             raise
 
     # Read only bounded singleton state rather than scanning the history.

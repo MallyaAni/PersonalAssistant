@@ -19,6 +19,7 @@ from backend.market import historical_synthetic_native_write as writer_module
 
 SCHEMA = 'synthetic-reserved-native-io/2'
 METADATA_SCHEMA = 'synthetic-reserved-native-io/3'
+SQLITE_SCHEMA = 'synthetic-reserved-native-io/4'
 
 
 # Bind the exact synthetic executor source/code and all original global identities.
@@ -82,7 +83,14 @@ class SyntheticNativeIO:
         self.bound_nightly, self.metadata_pool, self.metadata_ref = nightly, namespace, metadata_ref
         self.metadata_legacy = legacy
         extra = {} if namespace is None else {'protocol': metadata_ref}
-        value = {'schema': SCHEMA if namespace is None else METADATA_SCHEMA, **extra, 'identity': nightly.store.identity,
+        self.sqlite_pool = nightly.store.sqlite_reservation
+        physical._require(self.sqlite_pool is None or namespace is not None,
+                          'SQLite banks require the original typed metadata claim')
+        self.sqlite_lease = None if self.sqlite_pool is None else self.sqlite_pool.arm(metadata_ref)
+        if self.sqlite_pool is not None:
+            extra['reserved_sqlite'] = self.sqlite_lease
+        value = {'schema': SQLITE_SCHEMA if self.sqlite_pool is not None else
+                 SCHEMA if namespace is None else METADATA_SCHEMA, **extra, 'identity': nightly.store.identity,
             'account': str(nightly.root), 'writer_root': str(self.writer.root),
             'sources': sources(), 'trade_sha256': self.trade_sha256, 'trade_path': str(self.trade_path),
             'header_sha256': sha256((self.writer.root / 'header').read_bytes()).hexdigest(),
@@ -139,7 +147,10 @@ class SyntheticNativeIO:
         with self.writer._locked(shared=True):
             physical._require(self.writer._control() == self.cursor, 'Reserved native evidence cursor differs')
         extra = {} if self.metadata_pool is None else {'protocol': self.metadata_ref}
-        return {'schema': SCHEMA if self.metadata_pool is None else METADATA_SCHEMA, **extra,
+        if self.sqlite_pool is not None:
+            extra['reserved_sqlite'] = self.sqlite_lease
+        return {'schema': SQLITE_SCHEMA if self.sqlite_pool is not None else
+                SCHEMA if self.metadata_pool is None else METADATA_SCHEMA, **extra,
             'reservation_sha256': sha256(protocol.read(self.bound_nightly,
                 self.directory / 'reserved-native-save.json', self.metadata_legacy)).hexdigest(),
             'saves': deepcopy(self.saved), 'native_operation_adopted': False,
@@ -203,6 +214,14 @@ class SyntheticNativeIO:
 
     # Refuse further native effects or fresh evidence once the exact CAS lease is uncertain.
     def _lease(self):
+        if getattr(self, 'sqlite_pool', None) is not None:
+            try:
+                physical._require(self.bound_nightly.store.sqlite_reservation is self.sqlite_pool,
+                                  'Original SQLite pool required before native work')
+                self.sqlite_pool.check(self.sqlite_lease)
+            except BaseException:
+                self.failed = True
+                raise
         if getattr(self, 'metadata_pool', None) is not None:
             try:
                 physical._require(protocol.pool(self.bound_nightly) is self.metadata_pool
@@ -228,8 +247,10 @@ class SyntheticNativeIO:
 def operation_identity(nightly, directory, effect_binding):
     reference = protocol.reference(nightly, directory)
     if reference is not None:
+        pool = nightly.store.sqlite_reservation
+        extra = {} if pool is None else {'sqlite': pool.binding}
         return sha256(physical._encoded({'directory': str(directory),
-            'effect_binding': effect_binding, 'protocol': reference})).hexdigest()
+            'effect_binding': effect_binding, 'protocol': reference, **extra})).hexdigest()
     return (sha256(str(directory).encode()).hexdigest() if effect_binding is None else
         sha256(physical._encoded({'directory': str(directory), 'effect_binding': effect_binding})).hexdigest())
 
@@ -245,12 +266,16 @@ def validate(nightly, directory, evidence, native_contents, legacy, expected):
     raw = protocol.read(nightly, directory / 'reserved-native-save.json', legacy)
     namespace = protocol.pool(nightly)
     extra = set() if namespace is None else {'protocol'}
+    sqlite_pool = nightly.store.sqlite_reservation
+    if sqlite_pool is not None:
+        extra.add('reserved_sqlite')
     value = legacy.admitted.decoded(raw)
     physical._require(type(value) is dict and set(value) == {'schema', 'identity', 'account',
         'writer_root', 'sources', 'trade_sha256', 'trade_path', 'header_sha256', 'before',
         'native_operation_adopted', 'reserved_cas', 'effect_binding'} | extra and type(evidence) is dict and set(evidence) ==
         ({'schema', 'reservation_sha256', 'saves', 'native_operation_adopted', 'reserved_cas', 'effect_binding'} | extra)
-        and evidence['schema'] == value['schema'] == (SCHEMA if namespace is None else METADATA_SCHEMA)
+        and evidence['schema'] == value['schema'] == (SQLITE_SCHEMA if sqlite_pool is not None else
+            SCHEMA if namespace is None else METADATA_SCHEMA)
         and (namespace is None or value['protocol'] == evidence['protocol'] == protocol.reference(nightly, directory))
         and (namespace is None or value['protocol']['head'] == value['reserved_cas']['head']
              and (value['effect_binding'] is None or value['protocol']['inputs'] == value['effect_binding']))
@@ -261,6 +286,10 @@ def validate(nightly, directory, evidence, native_contents, legacy, expected):
         and value['account'] == str(nightly.root)
         and Path(value['writer_root']) / 'work' == nightly.root,
         'Original synthetic reserved native evidence required')
+    if sqlite_pool is not None:
+        physical._require(value['reserved_sqlite'] == evidence['reserved_sqlite']
+            and value['reserved_sqlite']['claim'] == value['protocol'], 'Original SQLite phase binding differs')
+        sqlite_pool.verify(value['reserved_sqlite'])
     physical._require(evidence['reserved_cas'] == value['reserved_cas'], 'Original CAS lease differs')
     physical._require(evidence['effect_binding'] == value['effect_binding'], 'Original effect inputs differ')
     if value['reserved_cas'] is None:
@@ -293,6 +322,9 @@ def validate(nightly, directory, evidence, native_contents, legacy, expected):
 
 # Seal only the original published result's reserved phase, including metadata-only recovery.
 def complete(nightly, declaration, result):
+    if declaration is not None and declaration.get('reserved_sqlite') is not None:
+        physical._require(nightly.store.sqlite_reservation is not None, 'Original SQLite phase mode required')
+        nightly.store.sqlite_reservation.complete(declaration['reserved_sqlite'], result)
     if declaration is not None and declaration['reserved_cas'] is not None:
         physical._require(nightly.store.blob_reservation is not None, 'Original reserved CAS binding required')
         nightly.store.blob_reservation.complete(declaration['reserved_cas'], result)
