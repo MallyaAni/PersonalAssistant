@@ -161,8 +161,65 @@ def settlement_metadata_review(old, new, review):
         raise ValueError("Unreviewed paper planning or persistence change")
 
 
+# Admit reviewed order persistence and fill projection while pinning all other logic.
+def reconciliation_review(old, new, review):
+    path = "backend/cli/market_daily.py"
+    projection = "backend/market/live_model_decision.py"
+    allowed = {path, projection}
+    changes = {name for name in old.keys() | new.keys() if old.get(name) != new.get(name)}
+    if (
+        set(old) != set(new)
+        or len(old) != 31
+        or changes != allowed
+        or set(review["source_changes"]) != allowed
+        or any(review["source_changes"][name]
+               != {"before_sha256": old[name], "after_sha256": new[name]}
+               for name in allowed)
+        or type(review["other_reviewed_sources_unchanged"]) is not int
+        or review["other_reviewed_sources_unchanged"] != 29
+    ):
+        raise ValueError("Exact reconciliation and fill-projection source review required")
+    raw = (Path(__file__).resolve().parents[2] / path).read_bytes()
+    require_hash(raw, new[path])
+    tree = ast.parse(raw)
+    functions = [
+        node for node in tree.body
+        if isinstance(node, ast.FunctionDef) and node.name == "_reconcile"
+    ]
+    if len(functions) != 1 or digest(
+        ast.dump(functions[0], include_attributes=False).encode()
+    ) != review["reviewed_reconcile_ast_sha256"]:
+        raise ValueError("Exact reviewed reconciliation body required")
+    tree.body = [node for node in tree.body if node is not functions[0]]
+    if digest(ast.dump(tree, include_attributes=False).encode()) != review[
+        "unchanged_daily_module_ast_sha256"
+    ]:
+        raise ValueError("Unreviewed daily planning, submission or persistence change")
+    raw = (Path(__file__).resolve().parents[2] / projection).read_bytes()
+    require_hash(raw, new[projection])
+    tree = ast.parse(raw)
+    selected = {"recorded_fills", "_recorded_fill_entry"}
+    functions = [node for node in tree.body
+                 if isinstance(node, ast.FunctionDef) and node.name in selected]
+    if (
+        len(functions) != 2
+        or {node.name for node in functions} != selected
+        or {node.name: digest(ast.dump(node, include_attributes=False).encode())
+            for node in functions} != review["reviewed_fill_functions_ast_sha256"]
+    ):
+        raise ValueError("Exact recorded-fill projection functions required")
+    tree.body = [node for node in tree.body if node not in functions]
+    if digest(ast.dump(tree, include_attributes=False).encode()) != review[
+        "unchanged_decision_module_ast_sha256"
+    ]:
+        raise ValueError("Unreviewed numeric decision or terminal conclusion change")
+
+
 # Require an exact reviewed transition without broadening the production source guard.
 def reviewed_sources(old, new, review):
+    if review["status"] == "REVIEWED_EXACT_ORDER_RECONCILIATION_AND_FILL_PROJECTION":
+        reconciliation_review(old, new, review)
+        return
     if review["status"] == "REVIEWED_EXACT_SETTLEMENT_QUANTITY_METADATA":
         settlement_metadata_review(old, new, review)
         return

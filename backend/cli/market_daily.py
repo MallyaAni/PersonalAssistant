@@ -267,7 +267,7 @@ def prune(root: Path, asof: date, days: int) -> list[Path]:
 # Orders are looked up by the id chosen before they were sent, not by
 # comparing positions: a position moves for reasons that have nothing to
 # do with this desk, so it cannot say whether this desk's order filled.
-# Reconcile reported outcomes without expiring a future unsent execution window.
+# Reconcile actual receipts while retaining unknown acknowledged and future unsent intents.
 def _reconcile(client, state, store_root: Path, live: bool, *, decision_at=None):
     """Return (state after settlement, what settled)."""
     from backend.agents.trading.desk import paper
@@ -300,7 +300,27 @@ def _reconcile(client, state, store_root: Path, live: bool, *, decision_at=None)
             f"recovery ({', '.join(unknown)})"
         )
         return state, []
-    pending = _reconciliation_pending(state.pending, known, decision_at)
+    # A missing later listing cannot undo an ordinary order's recorded acknowledgment.
+    ordinary_unknown = {
+        row.get("client_order_id")
+        for row in state.pending
+        if not row.get("event_id")
+        and row.get("client_order_id") not in known
+        and _acknowledged(row)
+    }
+    if ordinary_unknown:
+        print(
+            "  ordinary order outcome unknown; preserving recorded evidence "
+            f"({', '.join(sorted(str(value) for value in ordinary_unknown))})"
+        )
+    candidates = [
+        row
+        for row in state.pending
+        if row.get("client_order_id") not in ordinary_unknown
+    ]
+    pending = _reconciliation_pending(candidates, known, decision_at)
+    if not pending:
+        return state, []
     settled = paper.settle(pending, broker)
     if settled:
         counts: dict[str, int] = {}
