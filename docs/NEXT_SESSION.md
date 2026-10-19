@@ -1,5 +1,97 @@
 # Next session
 
+## 2026-10-19 — Broker/account coverage warnings LIVE; ownership approval still pending
+
+Current production is minimalc25c8cbedbd0d00318f8a2e5d41db7531e8149ce,
+direct parent52056af2, on the production-based fill-consistency branch. Only
+DeskPanel/TickerChart/new browser spec/candidate proof changed. Main integration
+3f0bdd70 preserves unrelated sizedHistory/sizedHistoryError props through the
+one-line cherry-pick conflict; main TypeScript passed. NEVER deploy main wholesale.
+
+VERIFIED NEW3: source-shaped broker activity failure, unconfirmed100-row activity
+coverage, and whole paper-account unavailability now stay explicit in both
+ticker contexts and after reload. Known uncertainty cannot display verified-empty
+history. Valid returned STX BUY3@$101.25 and actual BUY3sh canvas label remain;
+99 other-symbol rows do not leak into that ticker. No quantity/merge/backend/
+provider/pagination changes. API full page proves coverage unconfirmed, not actual
+missing events; copy truthfully says "may be incomplete". No raw internal account
+failure text is rendered by the new account-unavailable boolean.
+
+Initial2RED on retained current69d assets, interim2GREEN10.01426s, third-onlyRED,
+then FINAL3GREEN13.241875s at the final source are separately retained. The
+initial RED warning literal was preserved before a copy-only precision correction;
+no assertion/property was weakened. Do not sum these as seven distinct cases or
+one unchanged-tree cohort. Candidate proof299945B/75b7393cab8340b523c67836e67808d01cd7a9f711e57a2b4b14785a08606d66.
+Source TypeScript/Vite passed; final source117 GETs all finished/diagnostics empty.
+
+Canonical frontend-only deploy completed0/SSH0, exactpost
+`2026-10-19T17:58:39Z c25c8cbe ok (cheap)`. Its standard short path did not rebuild
+backend, run backend gates, back up, migrate, activate trading or change approval;
+no skip/clock flags. Existing backend668d1e94/image20986d31/restart0 and all31host
+source identities plus3selectors are unchanged across release bookends. Earlier
+52056 source-admission/full gate remains its own evidence, not a new container
+file-hash check here. Gateway84a8c7585e49e38d8b6167d45b4adef252b7aeb7a771bdabfc52e1fa4dacc483
+image2bafd3abf0ff142def8a7ca7f951dd5624579b7b675c311d7667ad63b91960e1/restart0
+serves index-2TSoaArN.js878968B/SHA3a0d3c3d47761c8008c199a9f65cc2922c5296b8ce452f1a17ef51175bcabf89,
+equal to public primary JS. Four copied files are NOT whole-distribution proof.
+
+Actual served-asset NEW3 browser GREEN13.492751s/0fail-skip-flaky-errors,
+115 GETs/all finished/no writes/all six diagnostics empty, both contexts/reload/
+list/marker assertions. These are synthetic GET fixtures, NOT signed-in actual
+account or fresh strategy/order/fill acceptance. Delivery proof139174B/
+SHAc46f7444ae4f39e0450ad786cd591cba758efbfbbb6213fb7875e97def566aa4.
+Root+healthy existing reviewer independently reconstructed actual receipts,
+source/binding/runtime/asset/browser links. No new worker/release/test duplicate.
+
+Original data observer4028B/85db3810 and fixed8reader2617B/c9413d53 each ran ONCE
+in one combined shell invocation(exit0); individual first-observer exit was not
+separately retained. Its runtime/static artifacts are fully retained. Peer review
+arrived after capture and identified a missing controller-artifact path/SHA
+assertion in the observer. The final LOCAL retained-DATA fold enforces both
+links against the original captured records; no observer/getter/test replay or
+pretended pre-use source correction. Exact public/gateway/controller equality
+passed. Local collector wrote exclusive/fsynced/readback proofs, application
+bounds only, no local crash/kernel/whole-RAM claim.
+
+NEW3 boundary CLOSED: never rerun its RED/interim/final/deployed cohorts, canonical
+controller38722, observers27055, browser78597, getter or collector for docs; all
+handles terminal. Exact artifacts remain /tmp/paper-broker-coverage-* and
+/tmp/broker-coverage-warning-*. Prior closed browser5/2 and all older gates stay
+closed. Production tree cleanc25; main task-only dependency links/generated
+build metadata removed, installed Desktop dependencies untouched.
+
+The existing direct-user ownership/read approval question REMAINS PENDING. The
+automated goal continuation is NOT a grant. No protected account body read,
+chown/chmod/restore/replay or forced strategy execution has occurred. Do not
+repeat the question or bypass it through Docker. Sender failure/current real
+order/fill persistence/signed-in dashboard acceptance remain unresolved.
+
+Independent SOURCE preparation is complete: separately reviewed INERT exact
+runtime controller /tmp/live_paper_owner_repair_controller_20261019.py27407B/
+SHAf33a674269cea9138113074c258afd632b0fe802aa3c8cb4b12214ebf074d350.
+research/live-paper-ownership-controller-source-2026-10-19.json is30694B/
+SHA27c54fe9eac20f21f6ccefba548d27c59d03b1bfa02eaeb562f4e2ccdc614034.
+Original520-pin source27425B/11ed125b is preserved; only HEAD→currentc25 andtwo
+comments changed after verified frontend delivery. Backend/economic/helper/
+authorization/lock/owned-stop checks unchanged. Wrapper is UNRUN, not staged;
+no actual runtime/CLI/ownership proof follows. Prior nine synthetic helper tests
+remain separate and are not rerun. Flags/authorization JSON cannot establish
+human authority. Future invocation must use the actual direct human grant.
+
+After grant: revalidate exact liveHEAD/backend668d/image209/31source+approval and
+known old writers; fixed original inode41818273/size1649061/root0600 plus complete
+metadata must still agree. One fresh networknone/RO512MiB helper uses only five
+exact mounts/four required caps and the original native lock, then one fd chown
+to1000:1000 with identical bytes/inode/mode and container UID1000 verification.
+Require normal HOST UID1000 fresh-path/hash under existing lock afterward and
+exact post-runtime/source evidence. Source checks/advisory locks cover known
+cooperating writers, not hostile namespace isolation/powerloss/capacity. No auto
+retry/rollback after uncertainty; never stop production backend as cleanup.
+Then observe a natural sender run, genuine persisted original orders/fills and
+signed-in UI; never force a strategy run or retime old intents. Original-history/
+anonymous-identity/private physical/horizon/model-RAM restrictions remain.
+Goal/heartbeat ACTIVE. Optional Mac WAL mirror stays stopped. Diagram impact:NONE.
+
 ## 2026-10-19 — Ownership prevention LIVE; one-time account repair requires authority
 
 This entry supersedes the running-release directions below. Exact minimal

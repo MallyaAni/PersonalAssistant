@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-10-19 — Disclose broker and account history coverage in tickers
+
+LIVE productionc25c8cbe exposes broker activity errors, uncertain100-row coverage
+and whole-account unavailability in both ticker contexts. Known uncertainty
+cannot look like verified empty history. Valid returned fill quantities and
+canvas markers are unchanged. Three new source-build browser cases and the same
+three on actual deployed assets passed, including reload; all diagnostics empty.
+Frontend-only canonical deployment preserved backend/source approval/economics.
+The prior live account ownership repair still requires pending user authority;
+this is not real sender/order/fill or signed-in account acceptance.
+Evidence:research/broker-coverage-warning-delivery-proof-2026-10-19.json.
+
 ## 2026-10-19 — Preserve paper account access across atomic saves
 
 LIVE minimal production52056af2 preserves an existing state's POSIX UID/GID/mode
