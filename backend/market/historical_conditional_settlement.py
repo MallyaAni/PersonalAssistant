@@ -16,6 +16,7 @@ from backend.agents.trading.desk import paper
 from backend.cli import market_daily
 from backend.market import historical_broker_checkpoint as codec
 from backend.market import historical_packet_demand as demand
+from backend.market import historical_prepared_transition as transition
 from backend.market import replay_broker as native
 
 
@@ -194,7 +195,7 @@ class _PreparedRawInput:
 
 # Bind raw reconciliation to opaque prior bytes, optionally consuming an exact pre-resolution input copy.
 def reconcile_raw(client, state, *, pins, outcome_sha256, observed_at,
-                  prior_component, raw_checkpoint, prepared_input=None):
+                  prior_component, raw_checkpoint, prepared_input=None, prepared_transition=None):
     from backend.market import historical_paper_component as component
 
     if type(client) is not native.ReplayBroker or type(state) is not paper.PaperState:
@@ -216,13 +217,17 @@ def reconcile_raw(client, state, *, pins, outcome_sha256, observed_at,
     before = codec.encode(client, **pins)
     if prepared_input is not None and type(prepared_input) is not _PreparedRawInput:
         raise ValueError('Exact typed pre-resolution raw input required')
+    if prepared_transition is not None and (prepared_input is None
+            or type(prepared_transition) is not transition.PreparedTransition):
+        raise ValueError('Exact separately prepared private transition and input required')
     prior = deepcopy(state) if prepared_input is None else prepared_input.take(
         state, original, raw_checkpoint.limits['raw_bytes'])
     orders = deepcopy(list(client._orders.values()))
     known = _requests(prior, orders, observed)
     due = market_daily._reconciliation_pending(prior.pending, known, observed)
     settled = paper.settle(due, orders)
-    updated = paper.apply_settlements(prior, settled)
+    updated = (paper.apply_settlements(prior, settled) if prepared_transition is None
+               else prepared_transition.apply(prior, settled))
     if (codec.encode(client, **pins) != before
             or _native_serialization(state, raw_checkpoint.limits["raw_bytes"]) != original):
         raise ValueError("Native reconciliation changed original broker or input state")

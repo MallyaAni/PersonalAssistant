@@ -48,7 +48,7 @@ CAP = 256 * 1024
 LOCK = Lock()
 SAVE_STATE = paper.save_state
 SUBMIT = native.ReplayBroker._submit
-CYCLE = "ac0644b9ab3ee4c6e291ace250a6ad65bde7044a5e452e9960e88d18dd0a6bed"
+CYCLE = "b2e53c71f386bf58aeb2af8aed9a93cfbc0039be60e48f49550636778d482a61"
 SOURCES = {
     "backend/market/historical_native_metadata.py": (
         "333c5d22c49e06742eb4cb50183bf90fa0859d0ce200d3be5f2a4914c8f71e21"
