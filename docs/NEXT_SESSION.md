@@ -1,5 +1,79 @@
 # Next session
 
+## 2026-10-19 — Ownership repaired; live recommendations await fresh nightly and personal-screen acceptance
+
+THIS IS CURRENT. The human renewed the direct instruction: "i want it ready for
+live trading", after explicitly approving the ownership correction and a reset
+if appropriate, then prioritizing manual live recommendations. The approved
+repair is now COMPLETE. Do not ask again for ownership or source verification,
+and NEVER rerun the completed correction if a delayed question reply arrives.
+Necessary read-only strategy-source verification used the backend execution
+identity within the approved repair/readiness work; this interpretation was
+recorded separately from the original verbatim one-file ownership grant.
+
+V3controller4d07add3/helper1478, ownedCID
+e498bc45dd14d9e11593c276e2aabc7b7e0330945f32a1b769334d6f0862cff2,
+SSH0/container0/noOOM. One original fd ownership correction changed state.json
+root:root→1000:1000, retaining inode41818273/1649061B/mode0600/mtime/blocks and
+EXACT native bytes SHAe44a5161e730ed0ed907ca320f7ee54c6dd58a81e5ee7eada8e338234dc62f2d.
+Fresh container UID1000 AND normal HOST UID1000 read/hash passed under original
+native lock. All31 host/backend source digests and all3 installed approval
+artifacts matched before/prestart/after. Production878/runtime/source/model/
+economic configuration unchanged; no broker calls, account save or reset by
+the repair. Fourcaps/networknone/RO512MiB=swap/1CPU/PIDs32/tmp64/five exact mounts.
+
+V1remains FAILED before helper creation: source hashing as UID1000 denied
+intraday_orders.py. V2source hashes passed through actual backend root but its
+runtime checker expected CHOWN while Docker reports CAP_CHOWN (and analogous
+prefixes for the other3 exact caps). V2CID
+a50c1ec070fce46a19b8c6cfb63b05abce0899f1477567bcae3889662f12fcba
+remains CREATED/NEVER STARTED/Pid0; no account body read/change there. V3corrected
+ONLY the exact capability representation and fresh exclusive root/container
+names relative to v2; flags/mounts/limits/helper/source/native-lock/byte guards
+unchanged. No weakened guard/failed-pool adoption/uncertain mutation retry.
+
+Proof research/authorized-paper-repair-completed-proof-2026-10-19.json96916B/
+SHA2684d99b373edd3b43138a110cb823f6de7860e25e1353170e24c8f0bfb9656d retains
+8 complete original receipts/source+runtime links with exact raw SHA/length and
+decimal physical fields. Local originals/controllers/transports remain
+/tmp/authorized-paper-owner-repair-20261019-v{1,2,3}; matching exclusive remote
+scratch roots and stopped/created helpers preserved. Getter ran ONCE; do not
+rerun it or closed tests for docs. No hostile-path isolation/powerloss claim.
+
+NEW real HOST scheduler Python native paper.load_state AND event_status.load
+passed at21:34:56UTC, with exact state hash/metadata unchanged. Loaded27sessions/
+27history rows/131journal rows/0pending/0active cycle/current
+grade-led-learned-sizing/1. Last session remainsOct13. Event unavailable record
+from20:45UTC is STALE; native active=false/planning_paused=false. No state/save/
+policy/market_daily/market_balancer/provider/model call was invoked by this
+read-only check. Evidence /tmp/repaired-scheduler-readiness-20261019-v1.
+
+Reset is deferred and not needed to correct access: the existing book already
+names the current strategy, and8 actual broker holdings remain. Preserve real
+history/journal/IDs; do not delete only local state to simulate a fresh account.
+
+NEXT: observe the NATURALLY scheduled ordinary19:30ET weekday nightly, then its
+new record/capture/source/config/current-session/parity and exact selected
+targets. Existing cron and scripts remain unchanged (daily e6a884f4/intraday
+d99134b3/SIP2ac1bc1d; quarterhours09–16/SIP20:30ET). Do not force a strategy job,
+replay an old session or publish incumbent weights to work around fresh-plan
+validation. As of21:34UTC current recommendation is stillOct13: NOT ready for
+current trading. No model-performance or successful fresh recommendation claim.
+
+The existing dashboard IABtab2 is at sign-in. One updated asynchronous request
+asks the human to sign in and confirm actual personal holdings/equity/cash in
+Personal guidance. Let that request stand; do not duplicate it or inject auth.
+After access, verify actual personal inputs→current plan→quote/timing/expiry→
+display and persistence. Never use the paper equity as real-account capital.
+No real-money order placement is authorized by recommendation readiness work.
+
+Heartbeat remains ACTIVE. Old pending-account/source-approval/blocked-goal notes
+below are superseded. Remaining real acceptance is pending scheduled publication
+and user access, not another ownership approval or private tiny allocation task.
+Keep quiet until a new natural result, concrete failure or user access arrives.
+No deployment/new product code/test rerun was needed for this metadata repair.
+Historical/private limitations remain preserved. Diagram impact:NONE.
+
 ## 2026-10-19 — Human priority: current manual recommendations for real trading
 
 The human now says: "focus on the live recommendations for now so i can start
