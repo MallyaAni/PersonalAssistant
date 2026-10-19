@@ -233,7 +233,7 @@ def stage_large_annotation(*, phase, inputs, effects):
     state = effects.load()
     state.pending[0].update({'sent': {'qty': 6, 'at': order['submitted_at']},
         'execution': {'created_at': order['created_at'], 'submitted_at': order['submitted_at'],
-                      'original_annotation': 'x' * 250000}})
+                      'original_annotation': 'x' * 260000}})
     effects.save(state)
     effects.latch()
     return {'submitted_qty': int(order['qty'])}

@@ -246,7 +246,7 @@ class ReceiptCapacityTests(unittest.TestCase):
         self.assertEqual(f.writer._control()['next_slot'], 4)
         self.assertEqual(f.store.snapshot()['head'], self.head)
         state = paper.load_state(f.nightly.root)
-        self.assertEqual(len(state.journal[0]['execution']['original_annotation']), 250000)
+        self.assertEqual(len(state.journal[0]['execution']['original_annotation']), 260000)
         self.assertEqual(state.journal[0]['quantity_evidence']['anomalies'], ['broker_sender_disagreement'])
         EVIDENCE_UNITS.append({'scope': 'ACTUAL_UNCHANGED_FINAL7_NEGATIVE_BASELINE_NOT_ACCEPTANCE',
             'reason': str(error.exception), 'filled_qty': '5', 'native_next_slot': 4, 'head_unchanged': True})
