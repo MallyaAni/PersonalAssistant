@@ -17,6 +17,7 @@ from backend.market import historical_physical_checkpoint as physical
 from backend.market import historical_prepared_transition as transition
 from backend.market import historical_request_admission as request_admission
 from backend.market import historical_static_request_admission as static_admission
+from backend.market import historical_finite_evidence_input as finite_evidence
 from backend.market import historical_raw_cycle as bridge
 from backend.market import historical_reserved_cycle_stages as stages
 from backend.market import historical_reserved_native_io as reserved_io
@@ -25,7 +26,7 @@ from backend.market import historical_timing_packet as packet
 from backend.market import replay_broker as native
 from backend.market.historical_packet_store import StorePause
 
-SCHEMA = 'synthetic-reserved-cycle-final/6'
+SCHEMA = 'synthetic-reserved-cycle-final/7'
 RESULT_SCHEMA = 'synthetic-reserved-cycle-final/1'
 INPUT_SCHEMA = 'synthetic-final-prepared-raw-input/1'
 SAVED_SCHEMA = 'synthetic-final-saved-native-bytes/1'
@@ -44,6 +45,9 @@ UNIQUE_CODE = UNIQUE.__code__
 REQUESTS, REQUESTS_CODE = settlement._requests, settlement._requests.__code__
 ADMISSION_METHODS = {name: getattr(ADMISSION, name).__code__ for name in
                      ('__init__', 'check', 'consume', 'check_released', 'close')}
+EVIDENCE_INPUT = finite_evidence.EvidenceInput
+EVIDENCE_METHODS = {name: getattr(EVIDENCE_INPUT, name).__code__ for name in
+                    ('__init__', 'check', 'consume', 'check_released', 'close')}
 
 
 # Keep public genuine execution closed before constructing or reserving anything.
@@ -59,6 +63,7 @@ def sources():
         str(Path(transition.__file__)): sha256(Path(transition.__file__).read_bytes()).hexdigest(),
         str(Path(request_admission.__file__)): sha256(Path(request_admission.__file__).read_bytes()).hexdigest(),
         str(Path(static_admission.__file__)): sha256(Path(static_admission.__file__).read_bytes()).hexdigest(),
+        str(Path(finite_evidence.__file__)): sha256(Path(finite_evidence.__file__).read_bytes()).hexdigest(),
         str(Path(__file__)): sha256(Path(__file__).read_bytes()).hexdigest()}
 
 
@@ -98,6 +103,7 @@ def link(value, reservation_sha, saved):
             'prepared_input_sha256': packet._digest(value['prepared_input']),
             'prepared_transition_sha256': packet._digest(value['prepared_transition']),
             'request_admission_sha256': packet._digest(value['request_admission']),
+            'evidence_input_sha256': packet._digest(value['evidence_input']),
             'saved_bytes_sha256': packet._digest(saved)}
 
 
@@ -211,6 +217,11 @@ def verify_admission(value):
         value['declaration']['request']['at'])
 
 
+# Read only the original finite evidence strategy admission, never native state or settled rows.
+def verify_evidence_input(value):
+    return finite_evidence.read_descriptor(value['evidence_input'], value['prepared_input'])
+
+
 # Derive exact source/head/input bindings from the original completed producer graph.
 def declaration(nightly, checkpoint, submission_head, inputs):
     entry = bridge.cycle._head_entry(nightly.store, submission_head)
@@ -232,11 +243,12 @@ def validate(nightly, reference, checkpoint, *, require_result=True):
     submission_head, cycle = final['entry']['parent'], final['entry']['cycle_sha256']
     _, directory = operation(nightly, submission_head)
     value, reservation_sha = read_file(nightly, directory / 'reservation.json')
-    physical._require(set(value) == {'schema', 'declaration', 'native_io', 'prepared_input', 'prepared_transition', 'request_admission'} and value['schema'] == SCHEMA,
+    physical._require(set(value) == {'schema', 'declaration', 'native_io', 'prepared_input', 'prepared_transition', 'request_admission', 'evidence_input'} and value['schema'] == SCHEMA,
                       'Original reserved final reservation required')
     verify_input(nightly, checkpoint, directory, value)
     verify_transition(value)
     verify_admission(value)
+    verify_evidence_input(value)
     declared = value['declaration']
     protocol.verify(nightly, directory, phase='OUTCOME_COMMITTED', head=submission_head,
                     inputs=packet._digest(declared))
@@ -307,6 +319,7 @@ class _Final:
         self.prepared_input = None
         self.prepared_transition = None
         self.request_admission = None
+        self.evidence_input = None
         self.saved_bytes = None
         self._guard()
 
@@ -328,6 +341,9 @@ class _Final:
             and all(getattr(ADMISSION, name).__code__ is code for name, code in ADMISSION_METHODS.items()),
             'Original finite request admission and predicate required')
         static_admission.sources(REQUESTS)
+        physical._require(finite_evidence.EvidenceInput is EVIDENCE_INPUT
+            and all(getattr(EVIDENCE_INPUT, name).__code__ is code for name, code in EVIDENCE_METHODS.items()),
+            'Original finite evidence-input admission required')
 
     # Rebind every later step to original persisted inputs, current sources and active lease.
     def _active(self, value, reservation_sha, directory):
@@ -360,6 +376,12 @@ class _Final:
             self.request_admission.check_released(binding, admitted)
         else:
             self.request_admission.check(self.prepared_input.prior, binding, admitted)
+        evidence_input = verify_evidence_input(value)
+        physical._require(type(self.evidence_input) is EVIDENCE_INPUT, 'Original evidence-input ownership required')
+        if self.evidence_input.closed:
+            self.evidence_input.check_released(binding, evidence_input)
+        else:
+            self.evidence_input.check(self.prepared_input.prior, binding, evidence_input)
         if not self.io.saved:
             physical._require(reserved_io.writer_module._image(paper.state_path(self.nightly.root))
                 == binding['preimage'], 'Live final input preimage changed')
@@ -402,6 +424,12 @@ class _Final:
         self.request_admission = ADMISSION(self.prepared_input.prior, self.client, binding, REQUESTS, resolution_at)
         return deepcopy(self.request_admission.binding)
 
+    # Admit only original input shape/encoding for the existing finite evidence contract before native effects.
+    def _prepare_evidence_input(self, binding):
+        self.nightly.store._point('reserved_final_evidence_before_check')
+        self.evidence_input = EVIDENCE_INPUT(self.prepared_input.prior, binding)
+        return deepcopy(self.evidence_input.binding)
+
     # Persist uncertainty after preparation or folding so caught failures cannot authorize effects.
     def _poison(self):
         self.io.failed = True
@@ -421,6 +449,9 @@ class _Final:
             self.io.failed = True
             raise
         finally:
+            if self.evidence_input is not None:
+                self.evidence_input.close()
+                self.evidence_input = None
             if self.request_admission is not None:
                 self.request_admission.close()
                 self.request_admission = None
@@ -452,6 +483,7 @@ class _Final:
             value = {'schema': SCHEMA, 'declaration': declared, 'native_io': self.io.evidence()}
             value['prepared_input'] = self._prepare_input(declared, value['native_io'])
             value['request_admission'] = self._prepare_requests(value['prepared_input'], declared['request']['at'])
+            value['evidence_input'] = self._prepare_evidence_input(value['prepared_input'])
             value['prepared_transition'] = self._prepare_transition(value['prepared_input'])
             raw = legacy.admitted.encoded(value)
             protocol.write(nightly, directory / 'reservation.json', raw, legacy)
@@ -459,6 +491,7 @@ class _Final:
             store._point('reserved_final_input_reserved')
             store._point('reserved_final_transition_reserved')
             store._point('reserved_final_requests_ready')
+            store._point('reserved_final_evidence_ready')
             store._point('reserved_final_reserved')
             self._active(value, reservation_sha, directory)
             reserved_io.current_components(nightly, client, declared['before'], self.checkpoint, legacy)
@@ -467,6 +500,7 @@ class _Final:
             self.prepared_input.check(value['prepared_input'], unconsumed=True)
             self.prepared_transition.check(value['prepared_transition'], unconsumed=True)
             self.request_admission.consume(self.prepared_input.prior, value['prepared_input'], value['request_admission'])
+            self.evidence_input.consume(self.prepared_input.prior, value['prepared_input'], value['evidence_input'])
             store._point('reserved_final_requests_consumed')
             self._active(value, reservation_sha, directory)
             fills = client.flush(call['at'], call['prices'], phase=call['phase'])
@@ -491,6 +525,7 @@ class _Final:
                 pins=nightly.pins(), outcome_sha256=pre, observed_at=client._now.isoformat(),
                 prior_component=retained['components']['paper'], raw_checkpoint=self.checkpoint,
                 prepared_input=self.prepared_input, prepared_transition=self.prepared_transition)
+            self.evidence_input.close()
             self.request_admission.close()
             self.prepared_transition.close()
             self.prepared_input.close()
