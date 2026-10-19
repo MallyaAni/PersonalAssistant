@@ -1,5 +1,154 @@
 # Next session
 
+## 2026-10-19 — Private native result storage before resolution VERIFIED; live acceptance remains UNVERIFIED
+
+Read research/prepared-results-proof-2026-10-19.json:
+0758ef532ecdf72216acc4cc778e9b1e62760d674611f8b2c93ce90fc326c4cc,
+32140B. Exact source4b7b7951e016220e12296281192f78f99cc9b2d3/tree
+69e12fe9877fe798e8fcc2a05d0666f44605dfe7 passed EIGHT NEW named tests in
+EIGHT fresh single-case runtimes, all exit0/noOOM/0failure/error/skip. Full
+531250B reports retained in154356B sidecar7e90ce446b8120644c54b72a43080d88e58693befba7623f0c235b970375c6ac.
+Root source/call/runtime/complete DATA fold/readback passed. Independent review
+remains UNVERIFIED: no healthy existing agent was present; limited workers were
+not retried or replaced. Goal and heartbeat remain ACTIVE. This is private
+synthetic product progress, not a live strategy/dashboard fix or deployment.
+
+PRODUCT: new historical_prepared_results.PreparedResults,
+synthetic-prepared-native-results/1 plus Final10 owns exact native frozen Settled
+instance/list/dictionary storage BEFORE native flush. Private nonserializable
+sentinels occupy empty fields; they are never exposed as result evidence or
+populated from predicted status/fills/prices/timestamps. Exact original pending
+membership is selected with source-authenticated complete CLI helper CodeTypes
+and the original supplied resolution clock. Source/head/input/preimage/native-IO
+binding, ordered due IDs/count/field names, native type/initializer and original
+storage identities are rechecked. The UNCHANGED native Settled initializer runs
+ONCE per record with actual values computed AFTER resolution. Frozen-record
+behavior and native diagnostics remain intact. Duplicate or uncertain use
+poisons later evidence/saving even if caught; an actual fill is never undone.
+
+Both entries are explicitly DERIVED, never called unchanged native whole-code
+execution. Native settle derivation replaces only output-list initialization
+and constructor/append expression. Raw reconciliation derivation replaces only
+the original orders-copy and settle assignments, composing existing unchanged
+PreparedOrders storage with this new typed owner. Full original source and
+complete original CodeTypes authenticate both entries. Original native paper,
+default settlement API, writer, Store/default DELETE+FILE/schema/paths/caps,
+Cycle/Nightly/native-IO/prepared-orders/prepared-transition/receipt-capacity
+modules remain byte-identical to b48c4702 (ten full-file comparisons). Public
+genuine and old bound-CAS raw-final refusals remain unchanged. Function/global
+identities are not a hostile Python sandbox or deep immutability guarantee.
+
+Original reservation/receipt bind the new descriptor digest and original
+resolution time; stable final RESULT_SCHEMA1 remains separate. Owners release
+prior/output/native function/global references before save and on every failure
+path. Original metadata-only recovery validates descriptors without constructing
+new native instances, compiling or running derived settlement, loading account
+state, resolving, folding, saving, capturing, appending or advancing SQL.
+Original result still precedes directory→SQL→CAS seals. Native by_id/keyword/
+execution dictionaries, journal/list/evidence construction, encoding/save and
+other allocations remain LATE. This moves storage ownership only; no whole832MB
+or model-RAM/physical-capacity/allocation-free claim.
+
+A6462302f: original whole Final9 fresh negative control injects MemoryError at
+the ACTUAL original native frozen initializer AFTER real native fill5. Original
+paper/head/nextslot3 retained; original paused recovery does not replay. B95802d72:
+injected early preparation failure leaves accepted order/account/head/cursors
+unchanged, no flush/output-asdict/native-result initializer. These are deliberate
+INJECTED failures, not measured system OOM or allocator guarantees.
+
+Cda6b6a36 compares EIGHT fresh actual broker journeys WITHIN ONE test: full,
+missing-price, partial-cash, canceled, prior terminal, open closing-auction,
+deliberate held sell and empty. Original native settle on fresh independent
+inputs matches exact native record JSON, native apply_settlements output JSON,
+NaN/Unicode/quantity diagnostics, unresolved pending/rebalance behavior and
+original input/broker preservation. Same preallocated list/instance identities,
+native frozen class behavior and strict bool-count metadata refusal pass.
+
+D76f97425 completes actual private birth→prior close→Store stages→desired8/
+submitted5/filled5 partial native journal→Store OUTCOME→reopen/original recovery→
+same-session Nightly→historical final recovery. Full DERIVED result matches
+unchanged WHOLE reconcile_raw on a fresh independent native input and the same
+actual broker:314187 native JSON bytes SHA00a25386465e620fda94cc66371bd46fdb65f3c66643f05d5acb9f7fa360b824
+and14300 finite evidence bytes. Input and broker preserved; policy2/five saves/
+large native NaN+Unicode state remain. Actual profile is loadFalse→storagePrepare
+False→outputAsdictFalse→flushTrue→resultsBeginTrue→nativeInitializerTrue.
+Recovery and historical recovery traces[]; references released before save.
+
+E805426e2 catches duplicate result initialization after actual fill5; no save/
+commit/replay follows, original account/head/nextslot3 retained. H531546d9
+injects a predicted filled_qty into private storage at the named negative hook;
+the pre-flush guard refuses before resolution and retains original state.
+
+F0fada486 and G42ae0a33 each own PID7 SIGKILL/reaped-9 in DIFFERENT runtimes:
+after original empty-storage reservation BEFORE flush; after authoritative
+OUTCOME with owner released. First remains paused. Committed recovery ONLY
+publishes original missing result/seals, with no native load/init/flush/save/
+SQL generation/account restore. Four canonical cut/exit strings16143B reproduce
+exact SHA/length. Protocol process cuts, NOT powerloss/inside-syscall/SQLite
+commit proof. Immutable broker witness DATA never restores parent/account.
+
+All raw proofs+eight fixed result files remain /tmp/prepared-results-20261019-
+v1-{a..h} and matching Spark1 scratch. Never replay/adopt these pools. All eight
+four-phase transports0/emptyerr; no unexpected native/test failure. Root folded
+ALL8 inventories:4128CAS+296metadata+56SQL+32directory-metadata+48native-dir=
+4560 globally distinct originals, every name/field unchanged. Each case
+CAS34344960/meta9183232/SQL1843200/dir790528 allocated AND logicalB; native body
+changes remain outside these inventories. Complete423357B inventories29761B
+gzip. Source copied payload495571B+pins4865B=500436B<524288/40payloads incl
+source-data mountpoints+pins/41source bookends/47native SHA physical bookends,
+writer globals unchanged/forbidden[]. EIGHT whole SOURCE-only exact RO references
+including original Final9/Nightly plus TWO exact SOURCE data files; never prior
+accounts/output/pools. Combined executed closure exceeds copied cap, not a RAM
+bound. Synthetic context/policy/program/calendar/source-manifest globals and
+bypassed constructors remain explicit.
+
+Fourteen FULL mounts equal by unique destination; raw order only A equals.
+HostConfig only OomKillDisablefalse→null. UID1000/noneRO1CPU512MiB=swap/PIDs32/
+tmp64/dropALL/no-new-privileges/CPU30/nativeFSIZE1MiB/control-log256KiB unchanged.
+Per-case5.13590–27.42455s/max57796KiB; CPU30 is not a30s wall claim.
+
+New DATA-only collector ran ONCE:205inputs/four held fullSHA/physical reads;
+SOURCE4MiB+eight CONTROL4MiB each+DERIVED2MiB=38MiB maximum, NOT whole-process4MiB.
+Actual SOURCE3284548B/eachCONTROL<1.85MiB/DERIVED372992B including output readback.
+Exclusive proof+sidecar186496B total, each<256KiB/fsync/readback. Control archive
+research/prepared-results-controls-2026-10-19.json19527B/
+a75911d7fe620104001eed799067d338d68b576ad5171ba282b7d17d30bcc2fe retains
+four small source files/four held reads/separate2MiB/216034B actual incl readback.
+Two initial read-only local inspection expressions used the wrong retained-DATA
+body field/encoding; both stopped before output/mutation/runtime, corrected by
+reading the actual base64 body contract. No test/runtime/getter replay.
+Five product/test/runner files110 purpose functions/ASTwarnings/backspaces0/diff
+PASS. Ruff unavailable; no fullunit/build/deploy/UI/model/local crash/kernel
+FSIZE claim. Diagram impact: NONE — internal private allocation ownership.
+
+NEXT: NEW8 native result-storage boundary CLOSED. Never rerun its tests,
+preflights/stages/copies/getters/collector/archive or previous closed gates for
+docs. Never adopt failed/OPEN/completed pools or reopen COMPLETE phases.
+Inspect original paper.apply_settlements journal-map/list/pending construction
+and reconcile_raw settled-asdict/evidence/encoding lifetimes as one remaining
+post-resolution capacity problem. Prefer a coherent source-bound admission or
+owned-container boundary with actual outcome population, exact native parity,
+original input preservation and metadata-only recovery; no predicted results,
+placeholder evidence, default native changes or cap weakening. Avoid treating
+each internal allocation as full lifecycle acceptance.
+
+LIVE acceptance remains UNVERIFIED: available in-app browser stops at sign-in;
+the asynchronous request for a signed-in connected dashboard has no reply yet.
+Do not bypass auth or interpret historical dashboard cleanup as current complete
+strategy→orders→fills→UI acceptance. Production remains unchanged. Full native
+rename/journal/filesystem reservation remains BLOCKED on the missing source/
+runtime/filesystem-bound allocator acknowledgement at paper.py:433 replace,
+failure unlink and parent fsync; fallocate/stat/names do not reserve it and
+capacity_reserved=False. NativeSQLiteFILE/horizon/modelRAM/twohost/powerloss/
+genuine constructors/Resolver/sender/providers/calendar/economics/native operation/
+adoption/independent publication/API/UI remain UNVERIFIED. Full admission mandatory
+BEFORE genuine effects; original timing FAILED/publication CLOSED/missing receipts/
+immutable roots unchanged. Genuinev6 OPEN/PAUSED/no replay/adoption/new genuine
+run. No limited-worker retries/replacements/account/model switches, Spark2 load,
+guard/G08/cap weakening, fake clock/actual-day replay/history rewrite/provider/
+service changes/denied-read bypass/paiddata/tuning/real-money orders. Never deploy
+historical main wholesale. Goal/heartbeat ACTIVE; notify meaningful progress only.
+
 ## 2026-10-19 — Owned order containers before resolution VERIFIED; live acceptance still UNVERIFIED
 
 USER STATUS QUESTION: "is the live strategy and dashboard fixed?" Answered that
