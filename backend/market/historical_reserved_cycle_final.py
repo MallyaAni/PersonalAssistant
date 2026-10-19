@@ -15,6 +15,7 @@ from backend.market import historical_conditional_nightly as legacy
 from backend.market import historical_conditional_settlement as settlement
 from backend.market import historical_physical_checkpoint as physical
 from backend.market import historical_prepared_transition as transition
+from backend.market import historical_request_admission as request_admission
 from backend.market import historical_raw_cycle as bridge
 from backend.market import historical_reserved_cycle_stages as stages
 from backend.market import historical_reserved_native_io as reserved_io
@@ -23,7 +24,7 @@ from backend.market import historical_timing_packet as packet
 from backend.market import replay_broker as native
 from backend.market.historical_packet_store import StorePause
 
-SCHEMA = 'synthetic-reserved-cycle-final/4'
+SCHEMA = 'synthetic-reserved-cycle-final/5'
 RESULT_SCHEMA = 'synthetic-reserved-cycle-final/1'
 INPUT_SCHEMA = 'synthetic-final-prepared-raw-input/1'
 SAVED_SCHEMA = 'synthetic-final-saved-native-bytes/1'
@@ -37,6 +38,10 @@ INPUT_METHODS = {name: getattr(PREPARED_INPUT, name).__code__ for name in
 TRANSITION = transition.PreparedTransition
 TRANSITION_METHODS = {name: getattr(TRANSITION, name).__code__ for name in
                       ('__init__', 'check', 'apply', 'check_released', 'close')}
+ADMISSION, UNIQUE = request_admission.RequestAdmission, settlement._unique
+UNIQUE_CODE = UNIQUE.__code__
+ADMISSION_METHODS = {name: getattr(ADMISSION, name).__code__ for name in
+                     ('__init__', 'check', 'consume', 'check_released', 'close')}
 
 
 # Keep public genuine execution closed before constructing or reserving anything.
@@ -50,6 +55,7 @@ def sources():
     return {**stages.sources(), str(Path(settlement.__file__)): sha256(
         Path(settlement.__file__).read_bytes()).hexdigest(),
         str(Path(transition.__file__)): sha256(Path(transition.__file__).read_bytes()).hexdigest(),
+        str(Path(request_admission.__file__)): sha256(Path(request_admission.__file__).read_bytes()).hexdigest(),
         str(Path(__file__)): sha256(Path(__file__).read_bytes()).hexdigest()}
 
 
@@ -88,6 +94,7 @@ def link(value, reservation_sha, saved):
             'reserved_cas': value['native_io']['reserved_cas'], 'sources': sources(),
             'prepared_input_sha256': packet._digest(value['prepared_input']),
             'prepared_transition_sha256': packet._digest(value['prepared_transition']),
+            'request_admission_sha256': packet._digest(value['request_admission']),
             'saved_bytes_sha256': packet._digest(saved)}
 
 
@@ -195,6 +202,12 @@ def verify_transition(value):
     return binding
 
 
+# Read the original finite request admission without loading paper or rerunning its native-input predicate.
+def verify_admission(value):
+    return request_admission.read_descriptor(value['request_admission'],
+        request_admission.base(value['prepared_input'], UNIQUE), UNIQUE)
+
+
 # Derive exact source/head/input bindings from the original completed producer graph.
 def declaration(nightly, checkpoint, submission_head, inputs):
     entry = bridge.cycle._head_entry(nightly.store, submission_head)
@@ -216,10 +229,11 @@ def validate(nightly, reference, checkpoint, *, require_result=True):
     submission_head, cycle = final['entry']['parent'], final['entry']['cycle_sha256']
     _, directory = operation(nightly, submission_head)
     value, reservation_sha = read_file(nightly, directory / 'reservation.json')
-    physical._require(set(value) == {'schema', 'declaration', 'native_io', 'prepared_input', 'prepared_transition'} and value['schema'] == SCHEMA,
+    physical._require(set(value) == {'schema', 'declaration', 'native_io', 'prepared_input', 'prepared_transition', 'request_admission'} and value['schema'] == SCHEMA,
                       'Original reserved final reservation required')
     verify_input(nightly, checkpoint, directory, value)
     verify_transition(value)
+    verify_admission(value)
     declared = value['declaration']
     protocol.verify(nightly, directory, phase='OUTCOME_COMMITTED', head=submission_head,
                     inputs=packet._digest(declared))
@@ -289,6 +303,7 @@ class _Final:
         self.checkpoint, self.io = producer.checkpoint, producer.io
         self.prepared_input = None
         self.prepared_transition = None
+        self.request_admission = None
         self.saved_bytes = None
         self._guard()
 
@@ -304,6 +319,11 @@ class _Final:
             and all(getattr(TRANSITION, name).__code__ is code for name, code in TRANSITION_METHODS.items()),
             'Original separately derived transition adapter required')
         transition.sources()
+        physical._require(request_admission.RequestAdmission is ADMISSION
+            and settlement._unique is UNIQUE and UNIQUE.__code__ is UNIQUE_CODE
+            and all(getattr(ADMISSION, name).__code__ is code for name, code in ADMISSION_METHODS.items()),
+            'Original finite request admission and predicate required')
+        request_admission.sources(UNIQUE)
 
     # Rebind every later step to original persisted inputs, current sources and active lease.
     def _active(self, value, reservation_sha, directory):
@@ -330,6 +350,12 @@ class _Final:
             self.prepared_transition.check_released(descriptor)
         else:
             self.prepared_transition.check(descriptor)
+        admitted = verify_admission(value)
+        physical._require(type(self.request_admission) is ADMISSION, 'Original live request admission required')
+        if self.request_admission.closed:
+            self.request_admission.check_released(binding, admitted)
+        else:
+            self.request_admission.check(self.prepared_input.prior, binding, admitted)
         if not self.io.saved:
             physical._require(reserved_io.writer_module._image(paper.state_path(self.nightly.root))
                 == binding['preimage'], 'Live final input preimage changed')
@@ -366,6 +392,12 @@ class _Final:
         self.prepared_transition = TRANSITION(self.prepared_input.prior, binding['raw_limit'], binding=descriptor)
         return descriptor
 
+    # Admit original pending/journal identity shape before the output clone or broker resolution.
+    def _prepare_requests(self, binding):
+        self.nightly.store._point('reserved_final_requests_before_check')
+        self.request_admission = ADMISSION(self.prepared_input.prior, binding, UNIQUE)
+        return deepcopy(self.request_admission.binding)
+
     # Persist uncertainty after preparation or folding so caught failures cannot authorize effects.
     def _poison(self):
         self.io.failed = True
@@ -385,6 +417,9 @@ class _Final:
             self.io.failed = True
             raise
         finally:
+            if self.request_admission is not None:
+                self.request_admission.close()
+                self.request_admission = None
             if self.prepared_transition is not None:
                 self.prepared_transition.close()
                 self.prepared_transition = None
@@ -412,12 +447,14 @@ class _Final:
         try:
             value = {'schema': SCHEMA, 'declaration': declared, 'native_io': self.io.evidence()}
             value['prepared_input'] = self._prepare_input(declared, value['native_io'])
+            value['request_admission'] = self._prepare_requests(value['prepared_input'])
             value['prepared_transition'] = self._prepare_transition(value['prepared_input'])
             raw = legacy.admitted.encoded(value)
             protocol.write(nightly, directory / 'reservation.json', raw, legacy)
             reservation_sha = sha256(raw).hexdigest()
             store._point('reserved_final_input_reserved')
             store._point('reserved_final_transition_reserved')
+            store._point('reserved_final_requests_ready')
             store._point('reserved_final_reserved')
             self._active(value, reservation_sha, directory)
             reserved_io.current_components(nightly, client, declared['before'], self.checkpoint, legacy)
@@ -425,6 +462,8 @@ class _Final:
             call = declared['request']
             self.prepared_input.check(value['prepared_input'], unconsumed=True)
             self.prepared_transition.check(value['prepared_transition'], unconsumed=True)
+            self.request_admission.consume(self.prepared_input.prior, value['prepared_input'], value['request_admission'])
+            store._point('reserved_final_requests_consumed')
             fills = client.flush(call['at'], call['prices'], phase=call['phase'])
             store._point('reserved_final_resolved')
             self._active(value, reservation_sha, directory)
@@ -447,6 +486,7 @@ class _Final:
                 pins=nightly.pins(), outcome_sha256=pre, observed_at=client._now.isoformat(),
                 prior_component=retained['components']['paper'], raw_checkpoint=self.checkpoint,
                 prepared_input=self.prepared_input, prepared_transition=self.prepared_transition)
+            self.request_admission.close()
             self.prepared_transition.close()
             self.prepared_input.close()
             store._point('reserved_final_input_released')
