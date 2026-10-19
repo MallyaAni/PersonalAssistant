@@ -20,6 +20,7 @@ STATE, ASDICT, ENCODER = paper.PaperState, asdict, paper._state_json
 ASDICT_CODE, ENCODER_CODE = ASDICT.__code__, ENCODER.__code__
 DONE, REBALANCE_EVERY = paper.DONE, paper.REBALANCE_EVERY
 DONE_VALUE = frozenset(DONE)
+_SOURCE_CERTIFICATE = None
 
 
 # Hash the exact standalone native writer representation without normalizing nonfinite values.
@@ -139,12 +140,16 @@ def _apply_owned_tail(state, settled, new):
     return new
 
 
-# Authenticate whole source, exact native dependencies and every statement of the explicit derived tail.
-def sources():
-    native_path, own_path = Path(paper.__file__), Path(__file__)
-    if native_path.stat().st_size > 262144 or own_path.stat().st_size > 262144:
-        raise ValueError('Bounded original transition sources required')
-    native_raw, own_raw = native_path.read_bytes(), own_path.read_bytes()
+_DERIVED_CODE = _apply_owned_tail.__code__
+
+
+# Certify the complete derived tail once, then require the identical source bytes for its whole lifetime.
+def _certificate(native_raw, own_raw, native_path, own_path):
+    global _SOURCE_CERTIFICATE
+    if _SOURCE_CERTIFICATE is not None:
+        if native_raw != _SOURCE_CERTIFICATE[0] or own_raw != _SOURCE_CERTIFICATE[1]:
+            raise ValueError('Original certified transition source bytes changed')
+        return _SOURCE_CERTIFICATE
     native_tree, own_tree = ast.parse(native_raw), ast.parse(own_raw)
     original = next(n for n in native_tree.body if isinstance(n, ast.FunctionDef) and n.name == 'apply_settlements')
     derived = next(n for n in own_tree.body if isinstance(n, ast.FunctionDef) and n.name == '_apply_owned_tail')
@@ -155,16 +160,31 @@ def sources():
     derived_code = next(n for n in compile(own_raw, str(own_path), 'exec', dont_inherit=True).co_consts
                         if type(n) is CodeType and n.co_name == '_apply_owned_tail')
     if (sha256(native_raw).hexdigest() != PAPER_SHA or expected != actual
+            or native_code != APPLY_CODE or derived_code != _DERIVED_CODE):
+        raise ValueError('Exact original native source and complete derived transition tail required')
+    _SOURCE_CERTIFICATE = (native_raw, own_raw, sha256(own_raw).hexdigest(),
+                           sha256(actual.encode()).hexdigest())
+    return _SOURCE_CERTIFICATE
+
+
+# Recheck full source bytes and every original live dependency without repeated AST materialization.
+def sources():
+    native_path, own_path = Path(paper.__file__), Path(__file__)
+    if native_path.stat().st_size > 262144 or own_path.stat().st_size > 262144:
+        raise ValueError('Bounded original transition sources required')
+    native_raw, own_raw = native_path.read_bytes(), own_path.read_bytes()
+    certificate = _certificate(native_raw, own_raw, native_path, own_path)
+    if (sha256(native_raw).hexdigest() != PAPER_SHA
             or paper.apply_settlements is not APPLY or APPLY.__code__ is not APPLY_CODE
-            or native_code != APPLY_CODE or _apply_owned_tail.__code__ != derived_code
+            or _apply_owned_tail.__code__ is not _DERIVED_CODE
             or paper.PaperState is not STATE or paper.asdict is not ASDICT or asdict is not ASDICT
             or ASDICT.__code__ is not ASDICT_CODE or ENCODER.__code__ is not ENCODER_CODE
             or paper._state_json is not ENCODER or APPLY.__globals__ is not vars(paper)
             or paper.DONE is not DONE or frozenset(DONE) != DONE_VALUE
             or type(REBALANCE_EVERY) is not int or paper.REBALANCE_EVERY is not REBALANCE_EVERY):
         raise ValueError('Exact native source/globals and complete derived transition tail required')
-    return {'native_paper': PAPER_SHA, 'derived_adapter': sha256(own_raw).hexdigest(),
-            'derived_tail_ast_sha256': sha256(actual.encode()).hexdigest(),
+    return {'native_paper': PAPER_SHA, 'derived_adapter': certificate[2],
+            'derived_tail_ast_sha256': certificate[3],
             'execution_mode': 'PRIVATE_DERIVED_TAIL_NOT_NATIVE_WHOLE_FUNCTION'}
 
 

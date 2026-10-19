@@ -95,6 +95,7 @@ class PreparedTransitionTests(unittest.TestCase):
     # Record native load and whole-input deepcopy timing without replacing original functions.
     def profiled(self, action):
         trace, resolved = [], [False]
+        compile_events = []
         load_code = paper.load_state.__code__
         flush_code = fixture.native.ReplayBroker.flush.__code__
         copy_code, asdict_code = copy.deepcopy.__code__, asdict.__code__
@@ -102,6 +103,8 @@ class PreparedTransitionTests(unittest.TestCase):
 
         # Observe actual native calls and distinguish the later native result-copy allocations.
         def profile(frame, event, argument):
+            if event == 'c_call' and argument is compile and frame.f_code is transition._certificate.__code__:
+                compile_events.append(resolved[0])
             if event != 'call':
                 return
             kind = None
@@ -133,6 +136,7 @@ class PreparedTransitionTests(unittest.TestCase):
         finally:
             sys.setprofile(previous)
             self.trace = trace
+            self.compile_events = compile_events
         return result, trace
 
     # Prepare one actual accepted submission, retaining its original authoritative parent head.
@@ -291,6 +295,11 @@ class PreparedTransitionTests(unittest.TestCase):
                 rows.append({'case': case, 'bytes': len(self.raw_state(actual)),
                     'sha256': hashlib.sha256(self.raw_state(actual)).hexdigest()})
         PARITY_OBSERVATIONS.extend(rows)
+        certificate = transition._SOURCE_CERTIFICATE
+        with self.assertRaisesRegex(ValueError, 'certified transition source bytes changed'):
+            transition._certificate(certificate[0] + b' ', certificate[1], Path(paper.__file__), Path(transition.__file__))
+        self.assertIs(transition._SOURCE_CERTIFICATE, certificate)
+        self.assertEqual(transition.sources()['derived_adapter'], hashlib.sha256(certificate[1]).hexdigest())
 
     # Fail at the explicit pre-asdict point before any broker resolution or native save.
     def test_b_pre_asdict_failure(self):
@@ -361,6 +370,7 @@ class PreparedTransitionTests(unittest.TestCase):
 
         f.store.fault = observe
         result, trace = self.profiled(self.finish)
+        self.assertEqual(self.compile_events, [])
         f.store.fault = None
         self.assertEqual([r for r in trace if r[0] == 'load'], [['load', False]])
         self.assertEqual([r for r in trace if r[0] == 'native_asdict'], [['native_asdict', False]])
@@ -394,6 +404,7 @@ class PreparedTransitionTests(unittest.TestCase):
         TRANSITION_OBSERVATIONS.append({'trace': trace, 'recovery_trace': recovered,
             'historical_recovery_trace': historical, 'released_before_native_save': released == [True],
             'transition': held[0].binding, 'full_ram_admitted': False,
+            'repeated_source_compile_events': [],
             'execution_mode': 'PRIVATE_DERIVED_TAIL_NOT_NATIVE_WHOLE_FUNCTION'})
 
     # A caught duplicate after premature consumption cannot enable broker flush or native adoption.
