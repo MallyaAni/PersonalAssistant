@@ -1,5 +1,51 @@
 # Next session
 
+## 2026-10-19 — Human priority: current manual recommendations for real trading
+
+The human now says: "focus on the live recommendations for now so i can start
+using it for real trading". Prioritize current adopted-strategy publication and
+the personal guidance screen. Defer the conditional paper-account reset. Do not
+return to private allocation guards, reset history or place real-money orders.
+
+NEW ordinary-host read at21:27:12UTC confirms newest saved desk record remains
+Oct13, written23:47:45UTC that day,94 grades/94 targets/grade-led-learned-sizing/1,
+with selected-target equality. Exact recordSHA37d7541f5ce12a080a4c0538939b95f99367fc9b5318e21eba03d96963927c32,
+1627828B/inode42634420; physical bookends match. It records source42b11a76 and
+holding-config1a14980a, not current installed configa237bfe4. This observation
+reads NO paper account and invokes NO strategy/provider. Original metadata-only
+response/transport retained /tmp/live-recommendation-record-20261019-v1. Do not
+relabel the Oct13 plan as current or loosen its freshness/configuration checks.
+
+Source inspection identifies the actual publication coupling: market_daily._run
+calls paper_trade BEFORE record(), and an exception under an installed learned
+policy raises "incumbent record not substituted" before publishing. The personal
+reader learned_personal_guidance._approve requires the exact selected targets,
+installed configuration and current session. Calling market_daily without paper
+flags instead would take _record_targets(report,None)'s incumbent branch; it is
+NOT a safe way to publish the selected learned recommendations. Do not invoke it
+as a diagnostic or manufacture a fallback. Native nightly19:30ET remains the
+ordinary next publication opportunity; do not force/replay a session.
+
+The manual personal path correctly keeps paper balances separate: its declared
+capital/cash/holdings drive personal whole-share guidance, subject to dated
+learned targets/current quotes/risk/expiry. It must not size a real account from
+the paper account's88435.98 equity. No current trade-ready basket is verified.
+
+Actual existing IAB tab2, https://deep-matter.com/?deskView=strategy#desk, still
+shows Sign in to DeepMatter (observed this turn). No credentials entered/auth
+bypass/session fabricated. Real signed-in recommendation acceptance requires
+that existing user access; earlier access request remains unanswered, do not
+repeat it. Current source-hash authorization question from the previous section
+also remains unanswered; the account ownership grant itself is already valid.
+
+Continue the approved byte-preserving ownership repair only after the additional
+source-read grant, with fresh original guards. Then observe naturally produced
+current recommendations and original capture/config lineage; exercise actual
+personal account→quote→timing→expiry→render workflow after sign-in. No product
+code, deployment, paper reset, broker order/cancel or account body read occurred
+in this recommendation-priority turn. Product878 is unchanged; full real-trading
+readiness is UNVERIFIED. Diagram impact:NONE.
+
 ## 2026-10-19 — Human approved account repair and conditional reset; source preflight refused before change
 
 This section supersedes the older pending-account-approval notes below. The human
