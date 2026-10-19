@@ -1,5 +1,13 @@
 # Next session
 
+Latest documentation transport note: after the successful0a95adcf sync, the
+normal pull and push attempted for natural-status checkpointf4c261bb both failed
+again with GitHub hostname DNS resolution errors at18:56UTC (pull1/push128).
+No remote/account/runtime operation followed; all new evidence is committed
+locally. Do not retry unchanged DNS, switch networks or bypass the resolver.
+The previously delivered production878 reporting fix remains verified. Human
+ownership/hash authority remains the actual next-live-action blocker below.
+
 ## 2026-10-19 — Natural failure status observed; next live action blocked on authority
 
 One NEW ordinary host UID1000 read at18:54:11UTC observed desk/event-live.json
