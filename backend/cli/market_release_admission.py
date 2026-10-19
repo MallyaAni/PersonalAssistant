@@ -161,6 +161,43 @@ def settlement_metadata_review(old, new, review):
         raise ValueError("Unreviewed paper planning or persistence change")
 
 
+# Admit only the exact native ownership repair while retaining every other paper node.
+def paper_ownership_review(old, new, review):
+    path = "backend/agents/trading/desk/paper.py"
+    before = "a8c5083f1828df7395164882ba877d5a134d55295d6a0cda0dcdc0047bcde42c"
+    after = "1a96dd96c254abb4799c6f14cb99938c65fb2907d6777fbc4b1194bfaa851bc4"
+    changes = {name for name in old.keys() | new.keys() if old.get(name) != new.get(name)}
+    if (
+        set(old) != set(new)
+        or len(old) != 31
+        or changes != {path}
+        or old[path] != before
+        or new[path] != after
+        or set(review["source_changes"]) != {path}
+        or review["source_changes"][path]
+        != {"before_sha256": before, "after_sha256": after}
+        or type(review["other_reviewed_sources_unchanged"]) is not int
+        or review["other_reviewed_sources_unchanged"] != 30
+    ):
+        raise ValueError("Exact native paper ownership source review required")
+    raw = (Path(__file__).resolve().parents[2] / path).read_bytes()
+    require_hash(raw, after)
+    tree = ast.parse(raw)
+    functions = [
+        node for node in tree.body
+        if isinstance(node, ast.FunctionDef) and node.name == "save_state"
+    ]
+    if len(functions) != 1 or digest(
+        ast.dump(functions[0], include_attributes=False).encode()
+    ) != review["reviewed_save_state_ast_sha256"]:
+        raise ValueError("Exact reviewed native paper ownership writer required")
+    tree.body = [node for node in tree.body if node is not functions[0]]
+    if digest(ast.dump(tree, include_attributes=False).encode()) != review[
+        "unchanged_paper_module_ast_sha256"
+    ]:
+        raise ValueError("Unreviewed native paper imports, planning or settlement change")
+
+
 # Admit reviewed order persistence and fill projection while pinning all other logic.
 def reconciliation_review(old, new, review):
     path = "backend/cli/market_daily.py"
@@ -217,6 +254,9 @@ def reconciliation_review(old, new, review):
 
 # Require an exact reviewed transition without broadening the production source guard.
 def reviewed_sources(old, new, review):
+    if review["status"] == "REVIEWED_NATIVE_PAPER_OWNERSHIP_PRESERVATION":
+        paper_ownership_review(old, new, review)
+        return
     if review["status"] == "REVIEWED_EXACT_ORDER_RECONCILIATION_AND_FILL_PROJECTION":
         reconciliation_review(old, new, review)
         return
