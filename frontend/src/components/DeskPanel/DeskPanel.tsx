@@ -1126,6 +1126,8 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
   const mineRequestSeq = useRef(0)
   // A whole-board poll owns its context before it waits for market data.
   const pollRequestSeq = useRef(0)
+  // Both paper readers share response ordering without superseding the rest of a board poll.
+  const paperRequestSeq = useRef(0)
   const acceptedMineRequest = useRef(0)
   const [historyContext, setHistoryContext] = useState<PersonalHistoryContext | null>(null)
   const [help, setHelp] = useState(false)
@@ -1260,12 +1262,13 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
       setLive((previous) => ({ ...previous, stale: true, reason: 'Regular-session data refresh failed; showing last known regular data.' }))
     }
     // The board is the paper account's orders; read them after the candle.
+    const paperRequest = ++paperRequestSeq.current
     try {
       const nextPaper = await getDeskPaper(userId)
       if (!current()) return
-      setPaperLive(nextPaper)
+      if (paperRequest === paperRequestSeq.current) setPaperLive(nextPaper)
     } catch {
-      if (current()) setPaperLive({ reason: 'unreachable' })
+      if (current() && paperRequest === paperRequestSeq.current) setPaperLive({ reason: 'unreachable' })
     }
     // Collect personal advice only while requested and after positions load.
     if (current() && personalOpen && holdingsReady) await refreshMine(current)
@@ -1366,9 +1369,14 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
     const refresh = async () => {
       if (busy || document.hidden) return
       busy = true
+      const gen = accountGen.current
+      const paperRequest = ++paperRequestSeq.current
       try {
         const next = await getDeskPaper(userId)
-        if (!stopped) { setPaperLive(next); setNow(Date.now()) }
+        if (!stopped && gen === accountGen.current && paperRequest === paperRequestSeq.current) {
+          setPaperLive(next)
+          setNow(Date.now())
+        }
       } catch {
         // the minute poll reports an unreachable account
       } finally { busy = false }
@@ -1652,6 +1660,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
             {paperLive && paperLive.reason === undefined && paperLive.equity !== undefined && <LivePositions paper={paperLive} equity={paperLive.equity} />}
             <section aria-label="Paper execution" className="rounded-xl border border-black/[0.08] p-3 text-xs">
               <h3 className="font-semibold">Broker orders and fills {paperLive?.as_of ? `· read ${marketTime(paperLive.as_of)}` : ''}</h3>
+              {paperLive?.recorded_fills_reason && <p role="alert" className="text-[#b42318]">{paperLive.recorded_fills_reason}</p>}
               <p>{paperLive?.orders ? `${paperLive.orders.length} order${paperLive.orders.length === 1 ? '' : 's'} open at the broker` : 'Open orders unavailable'}</p>
               {paperLive?.orders?.map((order, i) => <p key={i}>{order.side.toUpperCase()} {order.qty} {order.symbol} · {order.status}</p>)}
               <p>{paperLive?.activity?.fills ? `${paperLive.activity.fills.length === 0 && paperLive.activity.complete ? 'No fills' : `${paperLive.activity.fills.length}${paperLive.activity.complete ? '' : '+'} fills`} · ${paperLive.activity.session}` : 'Today’s fill history unavailable'}</p>
