@@ -1,0 +1,2545 @@
+{
+  "attempts": [
+    {
+      "bundle": {
+        "physical": {
+          "st_ctime_ns": "1792382356572314058",
+          "st_dev": "16777223",
+          "st_ino": "195352856",
+          "st_mtime_ns": "1792382356572314058",
+          "st_size": "131737"
+        },
+        "sha256": "bee831b3d01f5cfbb6f3b0df879618e4701748af3f4d0f503a9ba5b8fba17a96"
+      },
+      "cohort": "a",
+      "local_root": "/tmp/final-prepared-input-20261019-v1-a",
+      "metrics": {
+        "elapsed_seconds": 31.57011605706066,
+        "errors": 0,
+        "failures": 0,
+        "peak_kib": 58016,
+        "skips": 0,
+        "status": "VERIFIED_SYNTHETIC_FINAL_PREPARED_INPUT_COHORT",
+        "tests": 3
+      },
+      "native_count": 47,
+      "outcomes": [
+        "test_a_pre_load_failure (backend.tests.test_historical_final_prepared_input.FinalPreparedInputTests.test_a_pre_load_failure) ... ok",
+        "test_b_pre_copy_failure (backend.tests.test_historical_final_prepared_input.FinalPreparedInputTests.test_b_pre_copy_failure) ... ok",
+        "test_c_changed_prepared_copy (backend.tests.test_historical_final_prepared_input.FinalPreparedInputTests.test_c_changed_prepared_copy) ... ok"
+      ],
+      "payload_bytes": 520583,
+      "payload_count": 31,
+      "physical_validation": {
+        "allocated_and_logical_bytes_each": 34344960,
+        "canonical_witness_bytes": 0,
+        "children": [],
+        "complete_inventory_encoding": {
+          "base64": "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",
+          "encoding": "gzip-base64-complete-json/1",
+          "gzip_bytes": 11117,
+          "gzip_sha256": "9edf56d897fdae3ffa0a387d60bfddde5756a94bb947045f2cedaf6e9b132af5",
+          "raw_bytes": 158615,
+          "raw_sha256": "8ff4db2060b2266a16316fee02ac32c6c38559d6d32ff1d02f3676e9eac9d904"
+        },
+        "directory_distinct_inodes": 12,
+        "directory_totals": [
+          {
+            "allocated_bytes": 790528,
+            "logical_bytes": 790528
+          },
+          {
+            "allocated_bytes": 790528,
+            "logical_bytes": 790528
+          },
+          {
+            "allocated_bytes": 790528,
+            "logical_bytes": 790528
+          }
+        ],
+        "distinct_inodes": 1548,
+        "inventories": 3,
+        "metadata_distinct_inodes": 111,
+        "metadata_totals": [
+          {
+            "allocated_bytes": 9183232,
+            "logical_bytes": 9183232
+          },
+          {
+            "allocated_bytes": 9183232,
+            "logical_bytes": 9183232
+          },
+          {
+            "allocated_bytes": 9183232,
+            "logical_bytes": 9183232
+          }
+        ],
+        "native_directory_distinct_inodes": 18,
+        "sqlite_distinct_inodes": 21,
+        "sqlite_totals": [
+          {
+            "allocated_bytes": 1843200,
+            "logical_bytes": 1843200
+          },
+          {
+            "allocated_bytes": 1843200,
+            "logical_bytes": 1843200
+          },
+          {
+            "allocated_bytes": 1843200,
+            "logical_bytes": 1843200
+          }
+        ]
+      },
+      "proof": {
+        "physical": {
+          "st_ctime_ns": "1792382280821706984",
+          "st_dev": "66306",
+          "st_ino": "60969295",
+          "st_mtime_ns": "1792382280821706984",
+          "st_size": "73205"
+        },
+        "sha256": "4b8c9b0969635318179b07ab9308c6158d8ef27f8de5267ca3212b4c7fe6ad56"
+      },
+      "runtime": {
+        "cid": "6c0611a3136f0afe1992aa2ea48b90c96bdad48ad8621d989a7f29468969b108",
+        "full_mounts": [
+          {
+            "Destination": "/fixture",
+            "Mode": "",
+            "Propagation": "rprivate",
+            "RW": false,
+            "Source": "/home/animallya96/scratch/final-prepared-input-20261019-v1-a/fixture",
+            "Type": "bind"
+          },
+          {
+            "Destination": "/native",
+            "Mode": "",
+            "Propagation": "rprivate",
+            "RW": false,
+            "Source": "/home/animallya96/scratch/current-forecast-readable-image-source-20261017-v1/source",
+            "Type": "bind"
+          },
+          {
+            "Destination": "/out",
+            "Mode": "",
+            "Propagation": "rprivate",
+            "RW": true,
+            "Source": "/home/animallya96/scratch/final-prepared-input-20261019-v1-a/out",
+            "Type": "bind"
+          },
+          {
+            "Destination": "/audit/backend/market/historical_broker_checkpoint.py",
+            "Mode": "",
+            "Propagation": "rprivate",
+            "RW": false,
+            "Source": "/home/animallya96/scratch/reserved-cycle-outcome-20261018-v1-a/source/backend/market/historical_broker_checkpoint.py",
+            "Type": "bind"
+          },
+          {
+            "Destination": "/audit/backend/market/historical_reserved_blob_store.py",
+            "Mode": "",
+            "Propagation": "rprivate",
+            "RW": false,
+            "Source": "/home/animallya96/scratch/reserved-cycle-outcome-20261018-v1-a/source/backend/market/historical_reserved_blob_store.py",
+            "Type": "bind"
+          },
+          {
+            "Destination": "/audit/backend/market/historical_physical_checkpoint.py",
+            "Mode": "",
+            "Propagation": "rprivate",
+            "RW": false,
+            "Source": "/home/animallya96/scratch/reserved-protocol-metadata-20261018-v1-a/source/backend/market/historical_physical_checkpoint.py",
+            "Type": "bind"
+          },
+          {
+            "Destination": "/audit/backend/market/historical_reserved_cycle_stages.py",
+            "Mode": "",
+            "Propagation": "rprivate",
+            "RW": false,
+            "Source": "/home/animallya96/scratch/prepared-paper-20261019-v3-a/source/backend/market/historical_reserved_cycle_stages.py",
+            "Type": "bind"
+          },
+          {
+            "Destination": "/audit",
+            "Mode": "",
+            "Propagation": "rprivate",
+            "RW": false,
+            "Source": "/home/animallya96/scratch/final-prepared-input-20261019-v1-a/source",
+            "Type": "bind"
+          }
+        ],
+        "hostconfig_changes": {
+          "OomKillDisable": [
+            false,
+            null
+          ]
+        },
+        "image": "sha256:f6127ef3d56d9d5d858ee82fea0dbde95886d286288570aa6b590a6ab53d3272",
+        "mount_order_equal": false,
+        "state": {
+          "Dead": false,
+          "Error": "",
+          "ExitCode": 0,
+          "FinishedAt": "2026-10-19T03:58:00.855678414Z",
+          "OOMKilled": false,
+          "Paused": false,
+          "Pid": 0,
+          "Restarting": false,
+          "Running": false,
+          "StartedAt": "2026-10-19T03:57:28.706014724Z",
+          "Status": "exited"
+        }
+      },
+      "source_count": 33,
+      "source_pins": {
+        "/audit/backend/__init__.py": "045ed978e72ac591e4a465dbe384ff3efa9755219dd1532c982f521cc4842af5",
+        "/audit/backend/market/__init__.py": "daa603c1b64a2660881e06c915634c15b0dbbbc5a6c889ea08a6deee5784ea5e",
+        "/audit/backend/market/historical_broker_checkpoint.py": "703db0680497d2cf7ea78a5902c2d7d7d6cd4777355ac953c999763fe22b9f08",
+        "/audit/backend/market/historical_conditional_cycle.py": "ac0644b9ab3ee4c6e291ace250a6ad65bde7044a5e452e9960e88d18dd0a6bed",
+        "/audit/backend/market/historical_conditional_nightly.py": "355b1b9b61e31ffa6ab50f496aa53a82e8f419f4e212e21a74ff692f736ba171",
+        "/audit/backend/market/historical_conditional_settlement.py": "b4184036f2cb7899fe72494c9bdccadbc9a1278850e692d402b221afce6e132a",
+        "/audit/backend/market/historical_native_directory_binding.py": "8fbeb810503c349cc098f7f8622a82c881c9e21f65af5b814fcc7f636b5f8c48",
+        "/audit/backend/market/historical_native_metadata.py": "333c5d22c49e06742eb4cb50183bf90fa0859d0ce200d3be5f2a4914c8f71e21",
+        "/audit/backend/market/historical_packet_checkpoint.py": "cf8613ac2d77fd78d065de19edafad5b53a5b3eaf72f146d3b9d7bcbe0a9851f",
+        "/audit/backend/market/historical_packet_demand.py": "25e712b63ff418a3a115ff8933387083f734017212594a0b42879ed386f162b0",
+        "/audit/backend/market/historical_packet_registry.py": "6b17e1f9add4b07c816313a8c966b2eff57bf24239b212d717d1e30fdb0e2ad3",
+        "/audit/backend/market/historical_packet_spool.py": "705300210493d46e1a65225c371a05dd9bc8e30dff2c5ae8da43b85041b3f6ac",
+        "/audit/backend/market/historical_packet_store.py": "387ab41b3b83ac127d2489fedbb7a11908bba281e463a59a67437e985f3c2823",
+        "/audit/backend/market/historical_paper_component.py": "edf967f35bf42b5ffb02321d180bcf9de666bf5da8b87a97a6db6c70aea0d648",
+        "/audit/backend/market/historical_physical_checkpoint.py": "5d6169282f5054bc9871a5f4e3dec572a1b0b31482e4ff15ee6bc92ee7803604",
+        "/audit/backend/market/historical_raw_cycle.py": "3e8b136e8f37e63600e008dd6e8e1bb238c72dd01538f420b3183148e0c270b4",
+        "/audit/backend/market/historical_raw_nightly.py": "df3e2589a5c209f0a40e39d1e4f1be421631892c894b6d40305c2b570e4a2feb",
+        "/audit/backend/market/historical_reserved_blob_store.py": "9058cf5f54902ef7043a1d95514e1262b8a47b405413d389d636f3a107260caf",
+        "/audit/backend/market/historical_reserved_cycle_final.py": "9f8582b37a5d400724cc22a648617490e21780b8f70b9841dce3375f0d76db97",
+        "/audit/backend/market/historical_reserved_cycle_stages.py": "7c88ccddaa8016e0b44a5a43ed7a0bce93284bd413ab4a6dad5f0fa6088e474b",
+        "/audit/backend/market/historical_reserved_native_io.py": "a473940650a04b0cef6b5b7f83305a92e15c4a6f9ba484d07a9f97ecb176ff44",
+        "/audit/backend/market/historical_reserved_native_metadata.py": "23a60cfb3020ab333911592c47458b85541e1a59bdb0bd91ac8f39078f37cd51",
+        "/audit/backend/market/historical_reserved_protocol.py": "e5fe183efd639e8ec0b322481b958d87b1b1d7d6a13ea7855c830261970820c1",
+        "/audit/backend/market/historical_reserved_sqlite.py": "c665030aaf2dc4045dc966df2c432cb0ca9e2e6b3283da665e34311cfbbada0a",
+        "/audit/backend/market/historical_synthetic_native_write.py": "21f5c29c89405d6b9b59e081b14e6a2c649e4547b86dba9c314a7efba1fb7501",
+        "/audit/backend/market/historical_timing_packet.py": "54763a69c3a0f7f7a6c8fa90fc7ff278ade0eec93e9b4872afa9c8a5f055377d",
+        "/audit/backend/tests/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "/audit/backend/tests/synthetic_final_prepared_input_setup.py": "6026635c506fefef62ea399d42f5320ec613461568e2bda93be034999e4c7f7e",
+        "/audit/backend/tests/test_historical_final_prepared_input.py": "792d4bb0ef552342f0e773cb804f07bbf53675999568c97cde42318a55140455",
+        "/audit/run.py": "a66c9720c8fa3bba4578ce19bdf914040dea6b5d7d7b3dc7588d7020de97b5fc",
+        "/fixture/current-identity.json": "56bb33afb32160d794d9ee734c8f6f70f7688094dc30d3bd60f03d2c31d7c39d",
+        "/fixture/native-source-map.json": "1d126a0b335452e541d48b1d3befc4525323b819135f4b65ee5de07f61b2bfb5",
+        "/native/backend/cli/market_daily.py": "0db03a31af2400d777d3a5b46b8fda96dbb3cc4ec32d8a39bee41be362afe819"
+      },
+      "version": "1"
+    },
+    {
+      "bundle": {
+        "physical": {
+          "st_ctime_ns": "1792382594004498362",
+          "st_dev": "16777223",
+          "st_ino": "195447096",
+          "st_mtime_ns": "1792382594004498362",
+          "st_size": "134245"
+        },
+        "sha256": "88ce5dbe992fbfe988267e5be4cf5df99d75de23f7dd2bc464dc9cd80288e22b"
+      },
+      "cohort": "b",
+      "local_root": "/tmp/final-prepared-input-20261019-v1-b",
+      "metrics": {
+        "elapsed_seconds": 41.051495854742825,
+        "errors": 0,
+        "failures": 0,
+        "peak_kib": 58340,
+        "skips": 0,
+        "status": "VERIFIED_SYNTHETIC_FINAL_PREPARED_INPUT_COHORT",
+        "tests": 3
+      },
+      "native_count": 47,
+      "outcomes": [
+        "test_d_full_graph_preparation_order (backend.tests.test_historical_final_prepared_input.FinalPreparedInputTests.test_d_full_graph_preparation_order) ... ok",
+        "test_e_caught_premature_consumption (backend.tests.test_historical_final_prepared_input.FinalPreparedInputTests.test_e_caught_premature_consumption) ... ok",
+        "test_f_post_flush_mutation_and_default_fold (backend.tests.test_historical_final_prepared_input.FinalPreparedInputTests.test_f_post_flush_mutation_and_default_fold) ... ok"
+      ],
+      "payload_bytes": 520583,
+      "payload_count": 31,
+      "physical_validation": {
+        "allocated_and_logical_bytes_each": 34344960,
+        "canonical_witness_bytes": 0,
+        "children": [],
+        "complete_inventory_encoding": {
+          "base64": "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",
+          "encoding": "gzip-base64-complete-json/1",
+          "gzip_bytes": 11154,
+          "gzip_sha256": "9976286ffa3ecd2ead78a64b62c277658a33513c8efa80f04bd9f0197bdc0857",
+          "raw_bytes": 158810,
+          "raw_sha256": "9694f0905a8c49cac6bb641a2d091d32c61f80274f109c2ec3288c4b9b3c5d97"
+        },
+        "directory_distinct_inodes": 12,
+        "directory_totals": [
+          {
+            "allocated_bytes": 790528,
+            "logical_bytes": 790528
+          },
+          {
+            "allocated_bytes": 790528,
+            "logical_bytes": 790528
+          },
+          {
+            "allocated_bytes": 790528,
+            "logical_bytes": 790528
+          }
+        ],
+        "distinct_inodes": 1548,
+        "inventories": 3,
+        "metadata_distinct_inodes": 111,
+        "metadata_totals": [
+          {
+            "allocated_bytes": 9183232,
+            "logical_bytes": 9183232
+          },
+          {
+            "allocated_bytes": 9183232,
+            "logical_bytes": 9183232
+          },
+          {
+            "allocated_bytes": 9183232,
+            "logical_bytes": 9183232
+          }
+        ],
+        "native_directory_distinct_inodes": 18,
+        "sqlite_distinct_inodes": 21,
+        "sqlite_totals": [
+          {
+            "allocated_bytes": 1843200,
+            "logical_bytes": 1843200
+          },
+          {
+            "allocated_bytes": 1843200,
+            "logical_bytes": 1843200
+          },
+          {
+            "allocated_bytes": 1843200,
+            "logical_bytes": 1843200
+          }
+        ]
+      },
+      "proof": {
+        "physical": {
+          "st_ctime_ns": "1792382399918611237",
+          "st_dev": "66306",
+          "st_ino": "60971371",
+          "st_mtime_ns": "1792382399918611237",
+          "st_size": "75008"
+        },
+        "sha256": "b831b6b84c62a0cb907a4efebc0a32b86b8e7379d6ec881691c73fe38095528a"
+      },
+      "runtime": {
+        "cid": "f4395ce67c70f1f09f89ded9675fa80b77284887657b947c7013a12a0c63ff79",
+        "full_mounts": [
+          {
+            "Destination": "/native",
+            "Mode": "",
+            "Propagation": "rprivate",
+            "RW": false,
+            "Source": "/home/animallya96/scratch/current-forecast-readable-image-source-20261017-v1/source",
+            "Type": "bind"
+          },
+          {
+            "Destination": "/out",
+            "Mode": "",
+            "Propagation": "rprivate",
+            "RW": true,
+            "Source": "/home/animallya96/scratch/final-prepared-input-20261019-v1-b/out",
+            "Type": "bind"
+          },
+          {
+            "Destination": "/audit/backend/market/historical_broker_checkpoint.py",
+            "Mode": "",
+            "Propagation": "rprivate",
+            "RW": false,
+            "Source": "/home/animallya96/scratch/reserved-cycle-outcome-20261018-v1-a/source/backend/market/historical_broker_checkpoint.py",
+            "Type": "bind"
+          },
+          {
+            "Destination": "/audit/backend/market/historical_reserved_blob_store.py",
+            "Mode": "",
+            "Propagation": "rprivate",
+            "RW": false,
+            "Source": "/home/animallya96/scratch/reserved-cycle-outcome-20261018-v1-a/source/backend/market/historical_reserved_blob_store.py",
+            "Type": "bind"
+          },
+          {
+            "Destination": "/audit/backend/market/historical_physical_checkpoint.py",
+            "Mode": "",
+            "Propagation": "rprivate",
+            "RW": false,
+            "Source": "/home/animallya96/scratch/reserved-protocol-metadata-20261018-v1-a/source/backend/market/historical_physical_checkpoint.py",
+            "Type": "bind"
+          },
+          {
+            "Destination": "/audit/backend/market/historical_reserved_cycle_stages.py",
+            "Mode": "",
+            "Propagation": "rprivate",
+            "RW": false,
+            "Source": "/home/animallya96/scratch/prepared-paper-20261019-v3-a/source/backend/market/historical_reserved_cycle_stages.py",
+            "Type": "bind"
+          },
+          {
+            "Destination": "/audit",
+            "Mode": "",
+            "Propagation": "rprivate",
+            "RW": false,
+            "Source": "/home/animallya96/scratch/final-prepared-input-20261019-v1-b/source",
+            "Type": "bind"
+          },
+          {
+            "Destination": "/fixture",
+            "Mode": "",
+            "Propagation": "rprivate",
+            "RW": false,
+            "Source": "/home/animallya96/scratch/final-prepared-input-20261019-v1-b/fixture",
+            "Type": "bind"
+          }
+        ],
+        "hostconfig_changes": {
+          "OomKillDisable": [
+            false,
+            null
+          ]
+        },
+        "image": "sha256:f6127ef3d56d9d5d858ee82fea0dbde95886d286288570aa6b590a6ab53d3272",
+        "mount_order_equal": false,
+        "state": {
+          "Dead": false,
+          "Error": "",
+          "ExitCode": 0,
+          "FinishedAt": "2026-10-19T03:59:59.958804626Z",
+          "OOMKilled": false,
+          "Paused": false,
+          "Pid": 0,
+          "Restarting": false,
+          "Running": false,
+          "StartedAt": "2026-10-19T03:59:18.395940253Z",
+          "Status": "exited"
+        }
+      },
+      "source_count": 33,
+      "source_pins": {
+        "/audit/backend/__init__.py": "045ed978e72ac591e4a465dbe384ff3efa9755219dd1532c982f521cc4842af5",
+        "/audit/backend/market/__init__.py": "daa603c1b64a2660881e06c915634c15b0dbbbc5a6c889ea08a6deee5784ea5e",
+        "/audit/backend/market/historical_broker_checkpoint.py": "703db0680497d2cf7ea78a5902c2d7d7d6cd4777355ac953c999763fe22b9f08",
+        "/audit/backend/market/historical_conditional_cycle.py": "ac0644b9ab3ee4c6e291ace250a6ad65bde7044a5e452e9960e88d18dd0a6bed",
+        "/audit/backend/market/historical_conditional_nightly.py": "355b1b9b61e31ffa6ab50f496aa53a82e8f419f4e212e21a74ff692f736ba171",
+        "/audit/backend/market/historical_conditional_settlement.py": "b4184036f2cb7899fe72494c9bdccadbc9a1278850e692d402b221afce6e132a",
+        "/audit/backend/market/historical_native_directory_binding.py": "8fbeb810503c349cc098f7f8622a82c881c9e21f65af5b814fcc7f636b5f8c48",
+        "/audit/backend/market/historical_native_metadata.py": "333c5d22c49e06742eb4cb50183bf90fa0859d0ce200d3be5f2a4914c8f71e21",
+        "/audit/backend/market/historical_packet_checkpoint.py": "cf8613ac2d77fd78d065de19edafad5b53a5b3eaf72f146d3b9d7bcbe0a9851f",
+        "/audit/backend/market/historical_packet_demand.py": "25e712b63ff418a3a115ff8933387083f734017212594a0b42879ed386f162b0",
+        "/audit/backend/market/historical_packet_registry.py": "6b17e1f9add4b07c816313a8c966b2eff57bf24239b212d717d1e30fdb0e2ad3",
+        "/audit/backend/market/historical_packet_spool.py": "705300210493d46e1a65225c371a05dd9bc8e30dff2c5ae8da43b85041b3f6ac",
+        "/audit/backend/market/historical_packet_store.py": "387ab41b3b83ac127d2489fedbb7a11908bba281e463a59a67437e985f3c2823",
+        "/audit/backend/market/historical_paper_component.py": "edf967f35bf42b5ffb02321d180bcf9de666bf5da8b87a97a6db6c70aea0d648",
+        "/audit/backend/market/historical_physical_checkpoint.py": "5d6169282f5054bc9871a5f4e3dec572a1b0b31482e4ff15ee6bc92ee7803604",
+        "/audit/backend/market/historical_raw_cycle.py": "3e8b136e8f37e63600e008dd6e8e1bb238c72dd01538f420b3183148e0c270b4",
+        "/audit/backend/market/historical_raw_nightly.py": "df3e2589a5c209f0a40e39d1e4f1be421631892c894b6d40305c2b570e4a2feb",
+        "/audit/backend/market/historical_reserved_blob_store.py": "9058cf5f54902ef7043a1d95514e1262b8a47b405413d389d636f3a107260caf",
+        "/audit/backend/market/historical_reserved_cycle_final.py": "9f8582b37a5d400724cc22a648617490e21780b8f70b9841dce3375f0d76db97",
+        "/audit/backend/market/historical_reserved_cycle_stages.py": "7c88ccddaa8016e0b44a5a43ed7a0bce93284bd413ab4a6dad5f0fa6088e474b",
+        "/audit/backend/market/historical_reserved_native_io.py": "a473940650a04b0cef6b5b7f83305a92e15c4a6f9ba484d07a9f97ecb176ff44",
+        "/audit/backend/market/historical_reserved_native_metadata.py": "23a60cfb3020ab333911592c47458b85541e1a59bdb0bd91ac8f39078f37cd51",
+        "/audit/backend/market/historical_reserved_protocol.py": "e5fe183efd639e8ec0b322481b958d87b1b1d7d6a13ea7855c830261970820c1",
+        "/audit/backend/market/historical_reserved_sqlite.py": "c665030aaf2dc4045dc966df2c432cb0ca9e2e6b3283da665e34311cfbbada0a",
+        "/audit/backend/market/historical_synthetic_native_write.py": "21f5c29c89405d6b9b59e081b14e6a2c649e4547b86dba9c314a7efba1fb7501",
+        "/audit/backend/market/historical_timing_packet.py": "54763a69c3a0f7f7a6c8fa90fc7ff278ade0eec93e9b4872afa9c8a5f055377d",
+        "/audit/backend/tests/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "/audit/backend/tests/synthetic_final_prepared_input_setup.py": "6026635c506fefef62ea399d42f5320ec613461568e2bda93be034999e4c7f7e",
+        "/audit/backend/tests/test_historical_final_prepared_input.py": "792d4bb0ef552342f0e773cb804f07bbf53675999568c97cde42318a55140455",
+        "/audit/run.py": "a66c9720c8fa3bba4578ce19bdf914040dea6b5d7d7b3dc7588d7020de97b5fc",
+        "/fixture/current-identity.json": "56bb33afb32160d794d9ee734c8f6f70f7688094dc30d3bd60f03d2c31d7c39d",
+        "/fixture/native-source-map.json": "1d126a0b335452e541d48b1d3befc4525323b819135f4b65ee5de07f61b2bfb5",
+        "/native/backend/cli/market_daily.py": "0db03a31af2400d777d3a5b46b8fda96dbb3cc4ec32d8a39bee41be362afe819"
+      },
+      "version": "1"
+    },
+    {
+      "bundle": {
+        "physical": {
+          "st_ctime_ns": "1792382737067564552",
+          "st_dev": "16777223",
+          "st_ino": "195503847",
+          "st_mtime_ns": "1792382737067564552",
+          "st_size": "171182"
+        },
+        "sha256": "f1df404931d8c1e8b12d83d95023da0554ac06938155a7e476d53ee5b86114df"
+      },
+      "cohort": "c",
+      "local_root": "/tmp/final-prepared-input-20261019-v1-c",
+      "metrics": {
+        "elapsed_seconds": 36.463228036649525,
+        "errors": 0,
+        "failures": 0,
+        "peak_kib": 58132,
+        "skips": 0,
+        "status": "VERIFIED_SYNTHETIC_FINAL_PREPARED_INPUT_COHORT",
+        "tests": 3
+      },
+      "native_count": 47,
+      "outcomes": [
+        "test_g_actual_input_before_resolution (backend.tests.test_historical_final_prepared_input.FinalPreparedInputTests.test_g_actual_input_before_resolution) ... ok",
+        "test_h_actual_post_resolution (backend.tests.test_historical_final_prepared_input.FinalPreparedInputTests.test_h_actual_post_resolution) ... ok",
+        "test_i_actual_committed_original_recovery (backend.tests.test_historical_final_prepared_input.FinalPreparedInputTests.test_i_actual_committed_original_recovery) ... ok"
+      ],
+      "payload_bytes": 520583,
+      "payload_count": 31,
+      "physical_validation": {
+        "allocated_and_logical_bytes_each": 34344960,
+        "canonical_witness_bytes": 24554,
+        "children": [
+          {
+            "cut": {
+              "path": "/out/cases/test_g_actual_input_before_resolution-rcs6mm1c/actual-child-cut.json",
+              "physical": {
+                "st_ctime_ns": "1792382606908530148",
+                "st_dev": "66306",
+                "st_ino": "60972123",
+                "st_mtime_ns": "1792382606908530148",
+                "st_size": "7797"
+              },
+              "sha256": "ded21cd2c4dad304a7094d0176f9b0312c7afa3f5096ec9a530c8d1c3a7babd1",
+              "value": {
+                "broker_raw": "{\"schema\":\"private-n2-broker-checkpoint/1\",\"private_synthetic_only\":true,\"identity\":{\"backend_image\":\"sha256:f6127ef3d56d9d5d858ee82fea0dbde95886d286288570aa6b590a6ab53d3272\",\"broker_sha256\":\"c3d427e180e6b7527d3b666a450c6076b24e1cd75bfce1786852dced9eb2d616\",\"calendar_sha256\":\"f5ceca3cd12484f66a13f75026c4466970c8810496bf7b7871f5973d749f05f4\",\"holding_config_sha256\":\"f96a29777403f5f08623709b70f36b15300500065202acbd215cd43f3c99a588\",\"holding_release_sha256\":\"1c1c6e9bcc7e9fa8d095f6ce5e6bf973c99ed19531e88c38a9aba5ed8410cd3e\",\"source_revision\":\"3b72cd4e0bc15acd24432d501918c721685a5333\",\"source_sha256\":{\"backend/agents/trading/desk/event_execution.py\":\"76e49243ffb7fff8bb989df2c384ee1f2f0dcc7885c9421f98a986eda667202f\",\"backend/agents/trading/desk/event_risk.py\":\"34462a0ad3569022c90a3d7898b8f5a43ba053a38d2b7e44a63bc18e54de8973\",\"backend/agents/trading/desk/funded_execution.py\":\"6b913621d11ad81b78394c1f3eb9e4aef8e52ed6585b0a0716b3b45a9d6f909c\",\"backend/agents/trading/desk/intraday_orders.py\":\"ca8c236746441e204f36a263e972104d48d442538ea189fd4cad9d4ccf9f0f1c\",\"backend/agents/trading/desk/nightly_plan.py\":\"9fe2c223f24086a8a978cf3d373f39f24e3f6dc810a624a5e8773cc3ae91a7ca\",\"backend/agents/trading/desk/paper.py\":\"a8c5083f1828df7395164882ba877d5a134d55295d6a0cda0dcdc0047bcde42c\",\"backend/api/v1/market.py\":\"fb35aa6865890b8c75c3b354fcb65b24a2dea3454efb892eaa88f486cde4ba88\",\"backend/cli/market_daily.py\":\"0db03a31af2400d777d3a5b46b8fda96dbb3cc4ec32d8a39bee41be362afe819\",\"backend/market/adaptive_growth_policy.py\":\"35a2d6a07276096acee78078886c9aefe02051f2b746a8739442814920114e34\",\"backend/market/alpaca_trading.py\":\"105c5800d90b7f17b142d1678a781ecbf116ff89575466bec5e3c553eb24c3e2\",\"backend/market/decision_view.py\":\"8315ec2b8f647dc02a46bec3d2a77a15b2d31b9777baed1ec5aa3aacdea97aca\",\"backend/market/entry_timing.py\":\"f23d286c0d613d99620ce4a4ea8aa889be88ca224c5fbfc945b4360eae944a88\",\"backend/market/forward_arithmetic.py\":\"9617f9dc3252d3ce48891eb800de1dfc135383a88cb3f15b377c480d60d8d882\",\"backend/market/forward_execution.py\":\"62fa03e76d6f186a5084afe7ed1087891ce06f1d4b74040c6491f9c0b32ff295\",\"backend/market/forward_market_evidence.py\":\"737f14c2ab3b4c12501d8707184871dd7c1f84287d4b43d182e2add0a02490a2\",\"backend/market/forward_probability_timing.py\":\"0103852d53be711fcf4eeec80f74d707f42ef2ec86599ff72a305376d5632a92\",\"backend/market/grade_led_policy.py\":\"4dec4ba263efa21b3a534b826b594d57e1a8cb99097e73ea53e8fbb0e96dfd66\",\"backend/market/holding_risk_bank.py\":\"4024753161e21521309e265c5e96a70de94a75e81a8f151a4e59fe659c7f6158\",\"backend/market/joint_funded_policy.py\":\"5b5b96c685f78f867bb590f00f83cdbaca88c1de45681ca178f0c5b84d6bb339\",\"backend/market/learned_holding_transition.py\":\"c271f6ff649058d43aec226789e62cc08dc41bcc177755f0d17be87f4abfeb55\",\"backend/market/learned_live_holding.py\":\"25fee57bd3dc57c2b945e204aa3b83e39434cf4f84f8a165a4b9e41f9f6183e1\",\"backend/market/learned_live_timing.py\":\"80223f1fe3a6ea81318cbb64a663b3805bfead1e8c2190aa176234ef294ccb7f\",\"backend/market/learned_order_observation.py\":\"e5ab7151ab010137fe682a73da98d19496331176e1fc7c67b33827e6b63839ff\",\"backend/market/learned_personal_guidance.py\":\"37e1fadba7cfb85d05464b1848d0e268015d43c53f33dd7481a6fed1ca999721\",\"backend/market/live_model_decision.py\":\"b86a23539c28be91b96e8e2b7688e4b8ff497296169a20cc0ef2698e04dcbd93\",\"backend/market/live_probability_timing.py\":\"3fc9da7ae628e3fdd98388bbaa0e08bbaf5b8c36da78fb7c0e0efdcab63c1721\",\"backend/market/market_conditioned_holding.py\":\"e2de45ca5b79ad1547299b131deb23e898aa7a9c33c13e7ec28bc4210d4950e4\",\"backend/market/personal_history.py\":\"8f60457e598f0cf2c234739f9754a61ccc88b79e8907aaf53cd22c661177746a\",\"backend/market/sequential_shadow_context.py\":\"5af947b74af12de1914b192c41d243494bd89ab90d5329564d86c31ff9c40a92\",\"docs/research/grade-led-sizing-contract-2026-10-13.md\":\"51e4f718ed73a29188cb134a342615927a48c12f4647b30307cb996efd1393c6\",\"docs/research/learned-held-transition-2026-10-07.md\":\"f2669e1a40f74f6ccccd3cfdfae6f299a1bd1d416ae916dc622d2fa61837218a\"},\"timing_config_sha256\":\"d03339a3ad4b590ef8ed4205375d39d634df12a6fb49e290ab5b0f3642ea679a\"},\"identity_sha256\":\"e13b03259b95797ed7032c9fb6397975f4c29d9d47dba6d5b15ee571644a26df\",\"caps\":{\"bytes\":8388608,\"names\":256,\"orders\":8192,\"attempts\":16384,\"fills\":8192,\"actions\":8192,\"dividends\":8192,\"claims_per_kind\":2048,\"records\":32768,\"string_chars\":512,\"depth\":16},\"codec_sha256\":\"703db0680497d2cf7ea78a5902c2d7d7d6cd4777355ac953c999763fe22b9f08\",\"state\":{\"map\":[[\"_cash\",100000.0],[\"cost_bps\",10.0],[\"_held\",{\"map\":[]}],[\"_average\",{\"map\":[]}],[\"_orders\",{\"map\":[[\"SYNTHETIC-reserved-outcome\",{\"map\":[[\"id\",\"private-replay-0\"],[\"client_order_id\",\"SYNTHETIC-reserved-outcome\"],[\"symbol\",\"AAPL\"],[\"side\",\"buy\"],[\"qty\",\"5\"],[\"type\",\"market\"],[\"time_in_force\",\"day\"],[\"status\",\"accepted\"],[\"filled_qty\",\"0\"],[\"filled_avg_price\",null],[\"created_at\",\"2019-03-01T14:45:31.200000+00:00\"],[\"submitted_at\",\"2019-03-01T14:45:31.200000+00:00\"],[\"execution_phase\",\"market\"],[\"execute_on\",\"2019-03-01\"],[\"reserved_cash\",500.49999999999994],[\"fee\",0.0]]}]]}],[\"_attempts\",{\"list\":[{\"map\":[[\"client_order_id\",\"SYNTHETIC-reserved-outcome\"],[\"symbol\",\"AAPL\"],[\"side\",\"buy\"],[\"qty\",5],[\"at\",\"2019-03-01T14:45:31.200000+00:00\"],[\"observed_price\",100.0],[\"available_cash\",100000.0],[\"accepted\",true],[\"reason\",null]]}]}],[\"_fills\",{\"list\":[]}],[\"_actions\",{\"map\":[]}],[\"_dividends\",{\"list\":[]}],[\"_marks\",{\"map\":[[\"AAPL\",100.0]]}],[\"_mark_times\",{\"map\":[[\"AAPL\",{\"datetime\":\"2019-03-01T14:45:31.200000+00:00\"}]]}],[\"_security_distributions\",{\"list\":[]}],[\"_security_exchanges\",{\"list\":[]}],[\"_share_consolidations\",{\"list\":[]}],[\"_cash_mergers\",{\"list\":[]}],[\"_now\",{\"datetime\":\"2019-03-01T14:45:31.200000+00:00\"}],[\"_observed_at\",{\"datetime\":\"2019-03-01T14:45:31.200000+00:00\"}],[\"_market_open\",true],[\"_batch_open\",true],[\"_last_equity\",100000.0]]}}",
+                "broker_sha256": "e125d3628ea2c398d224956d97e7ca0f75c0926c6a30dd02d34c4798aab29210",
+                "distinct_objects": true,
+                "head": "70d3cd13c9e7328f3b9d87e57b9ba4de65534c8bc31092fc4c70d0e04615c79a",
+                "kind": "final-prepared-input",
+                "owned_identity": true,
+                "paper_sha256": "06c0ffc124bfc15b78a560d0aa28367d0bcbdc426706d7484c36b2a63ea44083",
+                "pid": 6,
+                "point": "reserved_final_input_reserved",
+                "preparation": {
+                  "account": "/out/cases/test_g_actual_input_before_resolution-rcs6mm1c/store/SYNTHETIC-reserved-workspace/work",
+                  "declaration_sha256": "73d10d0b6c710e16de6650ca97dfdba3f5351d944857d20e32b7b0b1436f36a8",
+                  "head": "70d3cd13c9e7328f3b9d87e57b9ba4de65534c8bc31092fc4c70d0e04615c79a",
+                  "identity": "e13b03259b95797ed7032c9fb6397975f4c29d9d47dba6d5b15ee571644a26df",
+                  "native_bytes": {
+                    "raw_bytes": 301880,
+                    "raw_sha256": "06c0ffc124bfc15b78a560d0aa28367d0bcbdc426706d7484c36b2a63ea44083",
+                    "schema": "native-paper-serialization/1"
+                  },
+                  "native_io_sha256": "eeb88d7b8b8dcb6d672d8fb61067a410649b0e30c6c0a063f5f00c7006c8ba7d",
+                  "phase": "OUTCOME_COMMITTED",
+                  "preimage": {
+                    "device": 66306,
+                    "inode": 60972002,
+                    "length": 301880,
+                    "sha256": "06c0ffc124bfc15b78a560d0aa28367d0bcbdc426706d7484c36b2a63ea44083"
+                  },
+                  "raw_limit": 1048576,
+                  "schema": "synthetic-final-prepared-raw-input/1",
+                  "sources_sha256": "6d823e22003f3051656ac741a525b97c0d49453c52122df99f632fa3e6521065"
+                },
+                "released": false,
+                "used": false,
+                "writer": {
+                  "current": {
+                    "device": 66306,
+                    "inode": 60972002,
+                    "length": 301880,
+                    "sha256": "06c0ffc124bfc15b78a560d0aa28367d0bcbdc426706d7484c36b2a63ea44083"
+                  },
+                  "last": {
+                    "receipt_sha256": "60c779aa9fe9f780ecc956ee0b55f77accc7f013734e1ba6e5f1f79f18d44f9d",
+                    "slot": 2
+                  },
+                  "next_slot": 3,
+                  "operation": null
+                }
+              }
+            },
+            "exit": {
+              "path": "/out/cases/test_g_actual_input_before_resolution-rcs6mm1c/actual-child-exit.json",
+              "physical": {
+                "st_ctime_ns": "1792382606916149275",
+                "st_dev": "66306",
+                "st_ino": "60972124",
+                "st_mtime_ns": "1792382606916149275",
+                "st_size": "183"
+              },
+              "sha256": "91e528bffe19c33e4ca989ecfe0ef6ef2f78a537db8dd158ff81b4fcf37bfbf4",
+              "value": {
+                "exitcode": -9,
+                "head": "70d3cd13c9e7328f3b9d87e57b9ba4de65534c8bc31092fc4c70d0e04615c79a",
+                "pid": 6,
+                "point": "reserved_final_input_reserved",
+                "scope": "ACTUAL_OWNED_SIGKILL_NOT_POWER_LOSS"
+              }
+            }
+          },
+          {
+            "cut": {
+              "path": "/out/cases/test_h_actual_post_resolution-ez50fc7m/actual-child-cut.json",
+              "physical": {
+                "st_ctime_ns": "1792382617711749886",
+                "st_dev": "66306",
+                "st_ino": "60972787",
+                "st_mtime_ns": "1792382617711749886",
+                "st_size": "8103"
+              },
+              "sha256": "a4944a4d24269f15d65e92a8cd9f9693fc11cf60cb7cb0f216db70c389225485",
+              "value": {
+                "broker_raw": "{\"schema\":\"private-n2-broker-checkpoint/1\",\"private_synthetic_only\":true,\"identity\":{\"backend_image\":\"sha256:f6127ef3d56d9d5d858ee82fea0dbde95886d286288570aa6b590a6ab53d3272\",\"broker_sha256\":\"c3d427e180e6b7527d3b666a450c6076b24e1cd75bfce1786852dced9eb2d616\",\"calendar_sha256\":\"f5ceca3cd12484f66a13f75026c4466970c8810496bf7b7871f5973d749f05f4\",\"holding_config_sha256\":\"f96a29777403f5f08623709b70f36b15300500065202acbd215cd43f3c99a588\",\"holding_release_sha256\":\"1c1c6e9bcc7e9fa8d095f6ce5e6bf973c99ed19531e88c38a9aba5ed8410cd3e\",\"source_revision\":\"3b72cd4e0bc15acd24432d501918c721685a5333\",\"source_sha256\":{\"backend/agents/trading/desk/event_execution.py\":\"76e49243ffb7fff8bb989df2c384ee1f2f0dcc7885c9421f98a986eda667202f\",\"backend/agents/trading/desk/event_risk.py\":\"34462a0ad3569022c90a3d7898b8f5a43ba053a38d2b7e44a63bc18e54de8973\",\"backend/agents/trading/desk/funded_execution.py\":\"6b913621d11ad81b78394c1f3eb9e4aef8e52ed6585b0a0716b3b45a9d6f909c\",\"backend/agents/trading/desk/intraday_orders.py\":\"ca8c236746441e204f36a263e972104d48d442538ea189fd4cad9d4ccf9f0f1c\",\"backend/agents/trading/desk/nightly_plan.py\":\"9fe2c223f24086a8a978cf3d373f39f24e3f6dc810a624a5e8773cc3ae91a7ca\",\"backend/agents/trading/desk/paper.py\":\"a8c5083f1828df7395164882ba877d5a134d55295d6a0cda0dcdc0047bcde42c\",\"backend/api/v1/market.py\":\"fb35aa6865890b8c75c3b354fcb65b24a2dea3454efb892eaa88f486cde4ba88\",\"backend/cli/market_daily.py\":\"0db03a31af2400d777d3a5b46b8fda96dbb3cc4ec32d8a39bee41be362afe819\",\"backend/market/adaptive_growth_policy.py\":\"35a2d6a07276096acee78078886c9aefe02051f2b746a8739442814920114e34\",\"backend/market/alpaca_trading.py\":\"105c5800d90b7f17b142d1678a781ecbf116ff89575466bec5e3c553eb24c3e2\",\"backend/market/decision_view.py\":\"8315ec2b8f647dc02a46bec3d2a77a15b2d31b9777baed1ec5aa3aacdea97aca\",\"backend/market/entry_timing.py\":\"f23d286c0d613d99620ce4a4ea8aa889be88ca224c5fbfc945b4360eae944a88\",\"backend/market/forward_arithmetic.py\":\"9617f9dc3252d3ce48891eb800de1dfc135383a88cb3f15b377c480d60d8d882\",\"backend/market/forward_execution.py\":\"62fa03e76d6f186a5084afe7ed1087891ce06f1d4b74040c6491f9c0b32ff295\",\"backend/market/forward_market_evidence.py\":\"737f14c2ab3b4c12501d8707184871dd7c1f84287d4b43d182e2add0a02490a2\",\"backend/market/forward_probability_timing.py\":\"0103852d53be711fcf4eeec80f74d707f42ef2ec86599ff72a305376d5632a92\",\"backend/market/grade_led_policy.py\":\"4dec4ba263efa21b3a534b826b594d57e1a8cb99097e73ea53e8fbb0e96dfd66\",\"backend/market/holding_risk_bank.py\":\"4024753161e21521309e265c5e96a70de94a75e81a8f151a4e59fe659c7f6158\",\"backend/market/joint_funded_policy.py\":\"5b5b96c685f78f867bb590f00f83cdbaca88c1de45681ca178f0c5b84d6bb339\",\"backend/market/learned_holding_transition.py\":\"c271f6ff649058d43aec226789e62cc08dc41bcc177755f0d17be87f4abfeb55\",\"backend/market/learned_live_holding.py\":\"25fee57bd3dc57c2b945e204aa3b83e39434cf4f84f8a165a4b9e41f9f6183e1\",\"backend/market/learned_live_timing.py\":\"80223f1fe3a6ea81318cbb64a663b3805bfead1e8c2190aa176234ef294ccb7f\",\"backend/market/learned_order_observation.py\":\"e5ab7151ab010137fe682a73da98d19496331176e1fc7c67b33827e6b63839ff\",\"backend/market/learned_personal_guidance.py\":\"37e1fadba7cfb85d05464b1848d0e268015d43c53f33dd7481a6fed1ca999721\",\"backend/market/live_model_decision.py\":\"b86a23539c28be91b96e8e2b7688e4b8ff497296169a20cc0ef2698e04dcbd93\",\"backend/market/live_probability_timing.py\":\"3fc9da7ae628e3fdd98388bbaa0e08bbaf5b8c36da78fb7c0e0efdcab63c1721\",\"backend/market/market_conditioned_holding.py\":\"e2de45ca5b79ad1547299b131deb23e898aa7a9c33c13e7ec28bc4210d4950e4\",\"backend/market/personal_history.py\":\"8f60457e598f0cf2c234739f9754a61ccc88b79e8907aaf53cd22c661177746a\",\"backend/market/sequential_shadow_context.py\":\"5af947b74af12de1914b192c41d243494bd89ab90d5329564d86c31ff9c40a92\",\"docs/research/grade-led-sizing-contract-2026-10-13.md\":\"51e4f718ed73a29188cb134a342615927a48c12f4647b30307cb996efd1393c6\",\"docs/research/learned-held-transition-2026-10-07.md\":\"f2669e1a40f74f6ccccd3cfdfae6f299a1bd1d416ae916dc622d2fa61837218a\"},\"timing_config_sha256\":\"d03339a3ad4b590ef8ed4205375d39d634df12a6fb49e290ab5b0f3642ea679a\"},\"identity_sha256\":\"e13b03259b95797ed7032c9fb6397975f4c29d9d47dba6d5b15ee571644a26df\",\"caps\":{\"bytes\":8388608,\"names\":256,\"orders\":8192,\"attempts\":16384,\"fills\":8192,\"actions\":8192,\"dividends\":8192,\"claims_per_kind\":2048,\"records\":32768,\"string_chars\":512,\"depth\":16},\"codec_sha256\":\"703db0680497d2cf7ea78a5902c2d7d7d6cd4777355ac953c999763fe22b9f08\",\"state\":{\"map\":[[\"_cash\",99499.5],[\"cost_bps\",10.0],[\"_held\",{\"map\":[[\"AAPL\",5]]}],[\"_average\",{\"map\":[[\"AAPL\",100.0]]}],[\"_orders\",{\"map\":[[\"SYNTHETIC-reserved-outcome\",{\"map\":[[\"id\",\"private-replay-0\"],[\"client_order_id\",\"SYNTHETIC-reserved-outcome\"],[\"symbol\",\"AAPL\"],[\"side\",\"buy\"],[\"qty\",\"5\"],[\"type\",\"market\"],[\"time_in_force\",\"day\"],[\"status\",\"filled\"],[\"filled_qty\",\"5\"],[\"filled_avg_price\",\"100.0\"],[\"created_at\",\"2019-03-01T14:45:31.200000+00:00\"],[\"submitted_at\",\"2019-03-01T14:45:31.200000+00:00\"],[\"execution_phase\",\"market\"],[\"execute_on\",\"2019-03-01\"],[\"reserved_cash\",0.0],[\"fee\",0.5],[\"filled_at\",\"2019-03-01T14:45:33+00:00\"]]}]]}],[\"_attempts\",{\"list\":[{\"map\":[[\"client_order_id\",\"SYNTHETIC-reserved-outcome\"],[\"symbol\",\"AAPL\"],[\"side\",\"buy\"],[\"qty\",5],[\"at\",\"2019-03-01T14:45:31.200000+00:00\"],[\"observed_price\",100.0],[\"available_cash\",100000.0],[\"accepted\",true],[\"reason\",null]]}]}],[\"_fills\",{\"list\":[{\"map\":[[\"client_order_id\",\"SYNTHETIC-reserved-outcome\"],[\"symbol\",\"AAPL\"],[\"side\",\"buy\"],[\"requested_qty\",5],[\"filled_qty\",5],[\"price\",100.0],[\"fee\",0.5],[\"at\",\"2019-03-01T14:45:33+00:00\"],[\"status\",\"filled\"],[\"reason\",\"filled\"]]}]}],[\"_actions\",{\"map\":[]}],[\"_dividends\",{\"list\":[]}],[\"_marks\",{\"map\":[[\"AAPL\",100.0]]}],[\"_mark_times\",{\"map\":[[\"AAPL\",{\"datetime\":\"2019-03-01T14:45:31.200000+00:00\"}]]}],[\"_security_distributions\",{\"list\":[]}],[\"_security_exchanges\",{\"list\":[]}],[\"_share_consolidations\",{\"list\":[]}],[\"_cash_mergers\",{\"list\":[]}],[\"_now\",{\"datetime\":\"2019-03-01T14:45:33+00:00\"}],[\"_observed_at\",{\"datetime\":\"2019-03-01T14:45:31.200000+00:00\"}],[\"_market_open\",true],[\"_batch_open\",false],[\"_last_equity\",100000.0]]}}",
+                "broker_sha256": "a610d03fbe7174407d8b33ee7f13468b747b703c4bc60576b7892d535463fa4b",
+                "distinct_objects": true,
+                "head": "abb24f1c3e92b28c3a3eb44b6ff6bc26b60389b2023bcf9a699c07d628595273",
+                "kind": "final-prepared-input",
+                "owned_identity": true,
+                "paper_sha256": "a32c8b0f9e3ef78af53feb47b0ba285829282a967a3c609dfa79f5a2a12d6a51",
+                "pid": 7,
+                "point": "reserved_final_resolved",
+                "preparation": {
+                  "account": "/out/cases/test_h_actual_post_resolution-ez50fc7m/store/SYNTHETIC-reserved-workspace/work",
+                  "declaration_sha256": "185f22d8b2210c920644690cf860c9cd8d64bd81f20948904c7fdeba8c8cc236",
+                  "head": "abb24f1c3e92b28c3a3eb44b6ff6bc26b60389b2023bcf9a699c07d628595273",
+                  "identity": "e13b03259b95797ed7032c9fb6397975f4c29d9d47dba6d5b15ee571644a26df",
+                  "native_bytes": {
+                    "raw_bytes": 301880,
+                    "raw_sha256": "a32c8b0f9e3ef78af53feb47b0ba285829282a967a3c609dfa79f5a2a12d6a51",
+                    "schema": "native-paper-serialization/1"
+                  },
+                  "native_io_sha256": "7318a7b747a3e29ee2bcf7f784f2b0a6a52b6b4f4b3326b3c6f0ba85317e6731",
+                  "phase": "OUTCOME_COMMITTED",
+                  "preimage": {
+                    "device": 66306,
+                    "inode": 60972666,
+                    "length": 301880,
+                    "sha256": "a32c8b0f9e3ef78af53feb47b0ba285829282a967a3c609dfa79f5a2a12d6a51"
+                  },
+                  "raw_limit": 1048576,
+                  "schema": "synthetic-final-prepared-raw-input/1",
+                  "sources_sha256": "6d823e22003f3051656ac741a525b97c0d49453c52122df99f632fa3e6521065"
+                },
+                "released": false,
+                "used": false,
+                "writer": {
+                  "current": {
+                    "device": 66306,
+                    "inode": 60972666,
+                    "length": 301880,
+                    "sha256": "a32c8b0f9e3ef78af53feb47b0ba285829282a967a3c609dfa79f5a2a12d6a51"
+                  },
+                  "last": {
+                    "receipt_sha256": "59c4419394ab53bb00e0bdf0698dd91df1096072c0615c2863981665f7c09c59",
+                    "slot": 2
+                  },
+                  "next_slot": 3,
+                  "operation": null
+                }
+              }
+            },
+            "exit": {
+              "path": "/out/cases/test_h_actual_post_resolution-ez50fc7m/actual-child-exit.json",
+              "physical": {
+                "st_ctime_ns": "1792382617730308596",
+                "st_dev": "66306",
+                "st_ino": "60972788",
+                "st_mtime_ns": "1792382617730308596",
+                "st_size": "177"
+              },
+              "sha256": "faf9c4074a1775022e074823d2f42f567665758f7d042423c585619aac0672c4",
+              "value": {
+                "exitcode": -9,
+                "head": "abb24f1c3e92b28c3a3eb44b6ff6bc26b60389b2023bcf9a699c07d628595273",
+                "pid": 7,
+                "point": "reserved_final_resolved",
+                "scope": "ACTUAL_OWNED_SIGKILL_NOT_POWER_LOSS"
+              }
+            }
+          },
+          {
+            "cut": {
+              "path": "/out/cases/test_i_actual_committed_original_recovery-7kxz0kor/actual-child-cut.json",
+              "physical": {
+                "st_ctime_ns": "1792382630788176045",
+                "st_dev": "66306",
+                "st_ino": "60973451",
+                "st_mtime_ns": "1792382630788176045",
+                "st_size": "8116"
+              },
+              "sha256": "2674df9b5f9fa8fb5f52c2b0642625dbc73626504bc288146ae9fb425c2b6e73",
+              "value": {
+                "broker_raw": "{\"schema\":\"private-n2-broker-checkpoint/1\",\"private_synthetic_only\":true,\"identity\":{\"backend_image\":\"sha256:f6127ef3d56d9d5d858ee82fea0dbde95886d286288570aa6b590a6ab53d3272\",\"broker_sha256\":\"c3d427e180e6b7527d3b666a450c6076b24e1cd75bfce1786852dced9eb2d616\",\"calendar_sha256\":\"f5ceca3cd12484f66a13f75026c4466970c8810496bf7b7871f5973d749f05f4\",\"holding_config_sha256\":\"f96a29777403f5f08623709b70f36b15300500065202acbd215cd43f3c99a588\",\"holding_release_sha256\":\"1c1c6e9bcc7e9fa8d095f6ce5e6bf973c99ed19531e88c38a9aba5ed8410cd3e\",\"source_revision\":\"3b72cd4e0bc15acd24432d501918c721685a5333\",\"source_sha256\":{\"backend/agents/trading/desk/event_execution.py\":\"76e49243ffb7fff8bb989df2c384ee1f2f0dcc7885c9421f98a986eda667202f\",\"backend/agents/trading/desk/event_risk.py\":\"34462a0ad3569022c90a3d7898b8f5a43ba053a38d2b7e44a63bc18e54de8973\",\"backend/agents/trading/desk/funded_execution.py\":\"6b913621d11ad81b78394c1f3eb9e4aef8e52ed6585b0a0716b3b45a9d6f909c\",\"backend/agents/trading/desk/intraday_orders.py\":\"ca8c236746441e204f36a263e972104d48d442538ea189fd4cad9d4ccf9f0f1c\",\"backend/agents/trading/desk/nightly_plan.py\":\"9fe2c223f24086a8a978cf3d373f39f24e3f6dc810a624a5e8773cc3ae91a7ca\",\"backend/agents/trading/desk/paper.py\":\"a8c5083f1828df7395164882ba877d5a134d55295d6a0cda0dcdc0047bcde42c\",\"backend/api/v1/market.py\":\"fb35aa6865890b8c75c3b354fcb65b24a2dea3454efb892eaa88f486cde4ba88\",\"backend/cli/market_daily.py\":\"0db03a31af2400d777d3a5b46b8fda96dbb3cc4ec32d8a39bee41be362afe819\",\"backend/market/adaptive_growth_policy.py\":\"35a2d6a07276096acee78078886c9aefe02051f2b746a8739442814920114e34\",\"backend/market/alpaca_trading.py\":\"105c5800d90b7f17b142d1678a781ecbf116ff89575466bec5e3c553eb24c3e2\",\"backend/market/decision_view.py\":\"8315ec2b8f647dc02a46bec3d2a77a15b2d31b9777baed1ec5aa3aacdea97aca\",\"backend/market/entry_timing.py\":\"f23d286c0d613d99620ce4a4ea8aa889be88ca224c5fbfc945b4360eae944a88\",\"backend/market/forward_arithmetic.py\":\"9617f9dc3252d3ce48891eb800de1dfc135383a88cb3f15b377c480d60d8d882\",\"backend/market/forward_execution.py\":\"62fa03e76d6f186a5084afe7ed1087891ce06f1d4b74040c6491f9c0b32ff295\",\"backend/market/forward_market_evidence.py\":\"737f14c2ab3b4c12501d8707184871dd7c1f84287d4b43d182e2add0a02490a2\",\"backend/market/forward_probability_timing.py\":\"0103852d53be711fcf4eeec80f74d707f42ef2ec86599ff72a305376d5632a92\",\"backend/market/grade_led_policy.py\":\"4dec4ba263efa21b3a534b826b594d57e1a8cb99097e73ea53e8fbb0e96dfd66\",\"backend/market/holding_risk_bank.py\":\"4024753161e21521309e265c5e96a70de94a75e81a8f151a4e59fe659c7f6158\",\"backend/market/joint_funded_policy.py\":\"5b5b96c685f78f867bb590f00f83cdbaca88c1de45681ca178f0c5b84d6bb339\",\"backend/market/learned_holding_transition.py\":\"c271f6ff649058d43aec226789e62cc08dc41bcc177755f0d17be87f4abfeb55\",\"backend/market/learned_live_holding.py\":\"25fee57bd3dc57c2b945e204aa3b83e39434cf4f84f8a165a4b9e41f9f6183e1\",\"backend/market/learned_live_timing.py\":\"80223f1fe3a6ea81318cbb64a663b3805bfead1e8c2190aa176234ef294ccb7f\",\"backend/market/learned_order_observation.py\":\"e5ab7151ab010137fe682a73da98d19496331176e1fc7c67b33827e6b63839ff\",\"backend/market/learned_personal_guidance.py\":\"37e1fadba7cfb85d05464b1848d0e268015d43c53f33dd7481a6fed1ca999721\",\"backend/market/live_model_decision.py\":\"b86a23539c28be91b96e8e2b7688e4b8ff497296169a20cc0ef2698e04dcbd93\",\"backend/market/live_probability_timing.py\":\"3fc9da7ae628e3fdd98388bbaa0e08bbaf5b8c36da78fb7c0e0efdcab63c1721\",\"backend/market/market_conditioned_holding.py\":\"e2de45ca5b79ad1547299b131deb23e898aa7a9c33c13e7ec28bc4210d4950e4\",\"backend/market/personal_history.py\":\"8f60457e598f0cf2c234739f9754a61ccc88b79e8907aaf53cd22c661177746a\",\"backend/market/sequential_shadow_context.py\":\"5af947b74af12de1914b192c41d243494bd89ab90d5329564d86c31ff9c40a92\",\"docs/research/grade-led-sizing-contract-2026-10-13.md\":\"51e4f718ed73a29188cb134a342615927a48c12f4647b30307cb996efd1393c6\",\"docs/research/learned-held-transition-2026-10-07.md\":\"f2669e1a40f74f6ccccd3cfdfae6f299a1bd1d416ae916dc622d2fa61837218a\"},\"timing_config_sha256\":\"d03339a3ad4b590ef8ed4205375d39d634df12a6fb49e290ab5b0f3642ea679a\"},\"identity_sha256\":\"e13b03259b95797ed7032c9fb6397975f4c29d9d47dba6d5b15ee571644a26df\",\"caps\":{\"bytes\":8388608,\"names\":256,\"orders\":8192,\"attempts\":16384,\"fills\":8192,\"actions\":8192,\"dividends\":8192,\"claims_per_kind\":2048,\"records\":32768,\"string_chars\":512,\"depth\":16},\"codec_sha256\":\"703db0680497d2cf7ea78a5902c2d7d7d6cd4777355ac953c999763fe22b9f08\",\"state\":{\"map\":[[\"_cash\",99499.5],[\"cost_bps\",10.0],[\"_held\",{\"map\":[[\"AAPL\",5]]}],[\"_average\",{\"map\":[[\"AAPL\",100.0]]}],[\"_orders\",{\"map\":[[\"SYNTHETIC-reserved-outcome\",{\"map\":[[\"id\",\"private-replay-0\"],[\"client_order_id\",\"SYNTHETIC-reserved-outcome\"],[\"symbol\",\"AAPL\"],[\"side\",\"buy\"],[\"qty\",\"5\"],[\"type\",\"market\"],[\"time_in_force\",\"day\"],[\"status\",\"filled\"],[\"filled_qty\",\"5\"],[\"filled_avg_price\",\"100.0\"],[\"created_at\",\"2019-03-01T14:45:31.200000+00:00\"],[\"submitted_at\",\"2019-03-01T14:45:31.200000+00:00\"],[\"execution_phase\",\"market\"],[\"execute_on\",\"2019-03-01\"],[\"reserved_cash\",0.0],[\"fee\",0.5],[\"filled_at\",\"2019-03-01T14:45:33+00:00\"]]}]]}],[\"_attempts\",{\"list\":[{\"map\":[[\"client_order_id\",\"SYNTHETIC-reserved-outcome\"],[\"symbol\",\"AAPL\"],[\"side\",\"buy\"],[\"qty\",5],[\"at\",\"2019-03-01T14:45:31.200000+00:00\"],[\"observed_price\",100.0],[\"available_cash\",100000.0],[\"accepted\",true],[\"reason\",null]]}]}],[\"_fills\",{\"list\":[{\"map\":[[\"client_order_id\",\"SYNTHETIC-reserved-outcome\"],[\"symbol\",\"AAPL\"],[\"side\",\"buy\"],[\"requested_qty\",5],[\"filled_qty\",5],[\"price\",100.0],[\"fee\",0.5],[\"at\",\"2019-03-01T14:45:33+00:00\"],[\"status\",\"filled\"],[\"reason\",\"filled\"]]}]}],[\"_actions\",{\"map\":[]}],[\"_dividends\",{\"list\":[]}],[\"_marks\",{\"map\":[[\"AAPL\",100.0]]}],[\"_mark_times\",{\"map\":[[\"AAPL\",{\"datetime\":\"2019-03-01T14:45:31.200000+00:00\"}]]}],[\"_security_distributions\",{\"list\":[]}],[\"_security_exchanges\",{\"list\":[]}],[\"_share_consolidations\",{\"list\":[]}],[\"_cash_mergers\",{\"list\":[]}],[\"_now\",{\"datetime\":\"2019-03-01T14:45:33+00:00\"}],[\"_observed_at\",{\"datetime\":\"2019-03-01T14:45:31.200000+00:00\"}],[\"_market_open\",true],[\"_batch_open\",false],[\"_last_equity\",100000.0]]}}",
+                "broker_sha256": "a610d03fbe7174407d8b33ee7f13468b747b703c4bc60576b7892d535463fa4b",
+                "distinct_objects": false,
+                "head": "ee810ec72495757fd2e2a13e0897577c7046e9cf2fde0d88b106c824c1bc10cc",
+                "kind": "final-prepared-input",
+                "owned_identity": false,
+                "paper_sha256": "4123f41b932a09fd66d0651b7540c44a0fc35e026b7e2724d778b5af6806c365",
+                "pid": 8,
+                "point": "reserved_final_committed",
+                "preparation": {
+                  "account": "/out/cases/test_i_actual_committed_original_recovery-7kxz0kor/store/SYNTHETIC-reserved-workspace/work",
+                  "declaration_sha256": "dfaafd6ac07345113f731e29b1532cabd860fe87751926e30862a7bbe1fa0bcd",
+                  "head": "7f4f67fa73136ee9c4a14011b46f165a898e55e21eb2aca6445f5af0676d23ab",
+                  "identity": "e13b03259b95797ed7032c9fb6397975f4c29d9d47dba6d5b15ee571644a26df",
+                  "native_bytes": {
+                    "raw_bytes": 301880,
+                    "raw_sha256": "5ce7667e05544438c69ba2be6d76f1633621766005bd6749ac164436e73493ae",
+                    "schema": "native-paper-serialization/1"
+                  },
+                  "native_io_sha256": "62ab0c09468d80859880ca3e78e78d90c41e9c4e4893c407ad01f1ef6795e86b",
+                  "phase": "OUTCOME_COMMITTED",
+                  "preimage": {
+                    "device": 66306,
+                    "inode": 60973330,
+                    "length": 301880,
+                    "sha256": "5ce7667e05544438c69ba2be6d76f1633621766005bd6749ac164436e73493ae"
+                  },
+                  "raw_limit": 1048576,
+                  "schema": "synthetic-final-prepared-raw-input/1",
+                  "sources_sha256": "6d823e22003f3051656ac741a525b97c0d49453c52122df99f632fa3e6521065"
+                },
+                "released": true,
+                "used": true,
+                "writer": {
+                  "current": {
+                    "device": 66306,
+                    "inode": 60973332,
+                    "length": 301990,
+                    "sha256": "4123f41b932a09fd66d0651b7540c44a0fc35e026b7e2724d778b5af6806c365"
+                  },
+                  "last": {
+                    "receipt_sha256": "99375f25b208715b69dca9c9e54628576751b3c036c638899aa2fa0834c81eff",
+                    "slot": 3
+                  },
+                  "next_slot": 4,
+                  "operation": null
+                }
+              }
+            },
+            "exit": {
+              "path": "/out/cases/test_i_actual_committed_original_recovery-7kxz0kor/actual-child-exit.json",
+              "physical": {
+                "st_ctime_ns": "1792382630797012541",
+                "st_dev": "66306",
+                "st_ino": "60973452",
+                "st_mtime_ns": "1792382630797012541",
+                "st_size": "178"
+              },
+              "sha256": "21a8d5846a7393c591023ffd35d8c3ee40dc9f85e77901701a29fe2fc3568680",
+              "value": {
+                "exitcode": -9,
+                "head": "ee810ec72495757fd2e2a13e0897577c7046e9cf2fde0d88b106c824c1bc10cc",
+                "pid": 8,
+                "point": "reserved_final_committed",
+                "scope": "ACTUAL_OWNED_SIGKILL_NOT_POWER_LOSS"
+              }
+            }
+          }
+        ],
+        "complete_inventory_encoding": {
+          "base64": "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",
+          "encoding": "gzip-base64-complete-json/1",
+          "gzip_bytes": 11156,
+          "gzip_sha256": "65fef9caedf535f3fad8399d477c5eb6bcc91ea8fdf8831673bba3ce6434338d",
+          "raw_bytes": 158780,
+          "raw_sha256": "dfd5a7f19946a9141838ad5a75b29070985ef90fe71200ceadf01a3592cde1ad"
+        },
+        "directory_distinct_inodes": 12,
+        "directory_totals": [
+          {
+            "allocated_bytes": 790528,
+            "logical_bytes": 790528
+          },
+          {
+            "allocated_bytes": 790528,
+            "logical_bytes": 790528
+          },
+          {
+            "allocated_bytes": 790528,
+            "logical_bytes": 790528
+          }
+        ],
+        "distinct_inodes": 1548,
+        "inventories": 3,
+        "metadata_distinct_inodes": 111,
+        "metadata_totals": [
+          {
+            "allocated_bytes": 9183232,
+            "logical_bytes": 9183232
+          },
+          {
+            "allocated_bytes": 9183232,
+            "logical_bytes": 9183232
+          },
+          {
+            "allocated_bytes": 9183232,
+            "logical_bytes": 9183232
+          }
+        ],
+        "native_directory_distinct_inodes": 18,
+        "sqlite_distinct_inodes": 21,
+        "sqlite_totals": [
+          {
+            "allocated_bytes": 1843200,
+            "logical_bytes": 1843200
+          },
+          {
+            "allocated_bytes": 1843200,
+            "logical_bytes": 1843200
+          },
+          {
+            "allocated_bytes": 1843200,
+            "logical_bytes": 1843200
+          }
+        ]
+      },
+      "proof": {
+        "physical": {
+          "st_ctime_ns": "1792382633550325857",
+          "st_dev": "66306",
+          "st_ino": "60973453",
+          "st_mtime_ns": "1792382633550325857",
+          "st_size": "102726"
+        },
+        "sha256": "4f2adf44c6757e99f356ef35055a81de25f06fc02dd1c6fa874201ebbf4f3526"
+      },
+      "runtime": {
+        "cid": "ac8248f69ea625ccafb3bf29c6a36b58a87b556a2c7a1edc1775258fe958ed8a",
+        "full_mounts": [
+          {
+            "Destination": "/audit/backend/market/historical_reserved_blob_store.py",
+            "Mode": "",
+            "Propagation": "rprivate",
+            "RW": false,
+            "Source": "/home/animallya96/scratch/reserved-cycle-outcome-20261018-v1-a/source/backend/market/historical_reserved_blob_store.py",
+            "Type": "bind"
+          },
+          {
+            "Destination": "/audit/backend/market/historical_physical_checkpoint.py",
+            "Mode": "",
+            "Propagation": "rprivate",
+            "RW": false,
+            "Source": "/home/animallya96/scratch/reserved-protocol-metadata-20261018-v1-a/source/backend/market/historical_physical_checkpoint.py",
+            "Type": "bind"
+          },
+          {
+            "Destination": "/audit/backend/market/historical_reserved_cycle_stages.py",
+            "Mode": "",
+            "Propagation": "rprivate",
+            "RW": false,
+            "Source": "/home/animallya96/scratch/prepared-paper-20261019-v3-a/source/backend/market/historical_reserved_cycle_stages.py",
+            "Type": "bind"
+          },
+          {
+            "Destination": "/audit",
+            "Mode": "",
+            "Propagation": "rprivate",
+            "RW": false,
+            "Source": "/home/animallya96/scratch/final-prepared-input-20261019-v1-c/source",
+            "Type": "bind"
+          },
+          {
+            "Destination": "/fixture",
+            "Mode": "",
+            "Propagation": "rprivate",
+            "RW": false,
+            "Source": "/home/animallya96/scratch/final-prepared-input-20261019-v1-c/fixture",
+            "Type": "bind"
+          },
+          {
+            "Destination": "/native",
+            "Mode": "",
+            "Propagation": "rprivate",
+            "RW": false,
+            "Source": "/home/animallya96/scratch/current-forecast-readable-image-source-20261017-v1/source",
+            "Type": "bind"
+          },
+          {
+            "Destination": "/out",
+            "Mode": "",
+            "Propagation": "rprivate",
+            "RW": true,
+            "Source": "/home/animallya96/scratch/final-prepared-input-20261019-v1-c/out",
+            "Type": "bind"
+          },
+          {
+            "Destination": "/audit/backend/market/historical_broker_checkpoint.py",
+            "Mode": "",
+            "Propagation": "rprivate",
+            "RW": false,
+            "Source": "/home/animallya96/scratch/reserved-cycle-outcome-20261018-v1-a/source/backend/market/historical_broker_checkpoint.py",
+            "Type": "bind"
+          }
+        ],
+        "hostconfig_changes": {
+          "OomKillDisable": [
+            false,
+            null
+          ]
+        },
+        "image": "sha256:f6127ef3d56d9d5d858ee82fea0dbde95886d286288570aa6b590a6ab53d3272",
+        "mount_order_equal": false,
+        "state": {
+          "Dead": false,
+          "Error": "",
+          "ExitCode": 0,
+          "FinishedAt": "2026-10-19T04:03:53.5884277Z",
+          "OOMKilled": false,
+          "Paused": false,
+          "Pid": 0,
+          "Restarting": false,
+          "Running": false,
+          "StartedAt": "2026-10-19T04:03:16.627732349Z",
+          "Status": "exited"
+        }
+      },
+      "source_count": 33,
+      "source_pins": {
+        "/audit/backend/__init__.py": "045ed978e72ac591e4a465dbe384ff3efa9755219dd1532c982f521cc4842af5",
+        "/audit/backend/market/__init__.py": "daa603c1b64a2660881e06c915634c15b0dbbbc5a6c889ea08a6deee5784ea5e",
+        "/audit/backend/market/historical_broker_checkpoint.py": "703db0680497d2cf7ea78a5902c2d7d7d6cd4777355ac953c999763fe22b9f08",
+        "/audit/backend/market/historical_conditional_cycle.py": "ac0644b9ab3ee4c6e291ace250a6ad65bde7044a5e452e9960e88d18dd0a6bed",
+        "/audit/backend/market/historical_conditional_nightly.py": "355b1b9b61e31ffa6ab50f496aa53a82e8f419f4e212e21a74ff692f736ba171",
+        "/audit/backend/market/historical_conditional_settlement.py": "b4184036f2cb7899fe72494c9bdccadbc9a1278850e692d402b221afce6e132a",
+        "/audit/backend/market/historical_native_directory_binding.py": "8fbeb810503c349cc098f7f8622a82c881c9e21f65af5b814fcc7f636b5f8c48",
+        "/audit/backend/market/historical_native_metadata.py": "333c5d22c49e06742eb4cb50183bf90fa0859d0ce200d3be5f2a4914c8f71e21",
+        "/audit/backend/market/historical_packet_checkpoint.py": "cf8613ac2d77fd78d065de19edafad5b53a5b3eaf72f146d3b9d7bcbe0a9851f",
+        "/audit/backend/market/historical_packet_demand.py": "25e712b63ff418a3a115ff8933387083f734017212594a0b42879ed386f162b0",
+        "/audit/backend/market/historical_packet_registry.py": "6b17e1f9add4b07c816313a8c966b2eff57bf24239b212d717d1e30fdb0e2ad3",
+        "/audit/backend/market/historical_packet_spool.py": "705300210493d46e1a65225c371a05dd9bc8e30dff2c5ae8da43b85041b3f6ac",
+        "/audit/backend/market/historical_packet_store.py": "387ab41b3b83ac127d2489fedbb7a11908bba281e463a59a67437e985f3c2823",
+        "/audit/backend/market/historical_paper_component.py": "edf967f35bf42b5ffb02321d180bcf9de666bf5da8b87a97a6db6c70aea0d648",
+        "/audit/backend/market/historical_physical_checkpoint.py": "5d6169282f5054bc9871a5f4e3dec572a1b0b31482e4ff15ee6bc92ee7803604",
+        "/audit/backend/market/historical_raw_cycle.py": "3e8b136e8f37e63600e008dd6e8e1bb238c72dd01538f420b3183148e0c270b4",
+        "/audit/backend/market/historical_raw_nightly.py": "df3e2589a5c209f0a40e39d1e4f1be421631892c894b6d40305c2b570e4a2feb",
+        "/audit/backend/market/historical_reserved_blob_store.py": "9058cf5f54902ef7043a1d95514e1262b8a47b405413d389d636f3a107260caf",
+        "/audit/backend/market/historical_reserved_cycle_final.py": "9f8582b37a5d400724cc22a648617490e21780b8f70b9841dce3375f0d76db97",
+        "/audit/backend/market/historical_reserved_cycle_stages.py": "7c88ccddaa8016e0b44a5a43ed7a0bce93284bd413ab4a6dad5f0fa6088e474b",
+        "/audit/backend/market/historical_reserved_native_io.py": "a473940650a04b0cef6b5b7f83305a92e15c4a6f9ba484d07a9f97ecb176ff44",
+        "/audit/backend/market/historical_reserved_native_metadata.py": "23a60cfb3020ab333911592c47458b85541e1a59bdb0bd91ac8f39078f37cd51",
+        "/audit/backend/market/historical_reserved_protocol.py": "e5fe183efd639e8ec0b322481b958d87b1b1d7d6a13ea7855c830261970820c1",
+        "/audit/backend/market/historical_reserved_sqlite.py": "c665030aaf2dc4045dc966df2c432cb0ca9e2e6b3283da665e34311cfbbada0a",
+        "/audit/backend/market/historical_synthetic_native_write.py": "21f5c29c89405d6b9b59e081b14e6a2c649e4547b86dba9c314a7efba1fb7501",
+        "/audit/backend/market/historical_timing_packet.py": "54763a69c3a0f7f7a6c8fa90fc7ff278ade0eec93e9b4872afa9c8a5f055377d",
+        "/audit/backend/tests/__init__.py": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+        "/audit/backend/tests/synthetic_final_prepared_input_setup.py": "6026635c506fefef62ea399d42f5320ec613461568e2bda93be034999e4c7f7e",
+        "/audit/backend/tests/test_historical_final_prepared_input.py": "792d4bb0ef552342f0e773cb804f07bbf53675999568c97cde42318a55140455",
+        "/audit/run.py": "a66c9720c8fa3bba4578ce19bdf914040dea6b5d7d7b3dc7588d7020de97b5fc",
+        "/fixture/current-identity.json": "56bb33afb32160d794d9ee734c8f6f70f7688094dc30d3bd60f03d2c31d7c39d",
+        "/fixture/native-source-map.json": "1d126a0b335452e541d48b1d3befc4525323b819135f4b65ee5de07f61b2bfb5",
+        "/native/backend/cli/market_daily.py": "0db03a31af2400d777d3a5b46b8fda96dbb3cc4ec32d8a39bee41be362afe819"
+      },
+      "version": "1"
+    }
+  ],
+  "directory_capacity_reserved": false,
+  "hard_blocker": {
+    "callsite_consequence": "Original paper.save_state temporary.replace(path) at paper.py:433, failure cleanup temporary.unlink and adapter parent fsync remain uncertified for physical capacity.",
+    "unavailable_input": "Source/runtime/filesystem-bound allocator acknowledgement reserving native directory-entry/journal capacity is unavailable."
+  },
+  "hash_budget": {
+    "limits": {
+      "CONTROL_A": 2097152,
+      "CONTROL_B": 2097152,
+      "CONTROL_C": 2097152,
+      "DERIVED": 2097152,
+      "EVIDENCE": 4194304,
+      "SOURCE": 4194304
+    },
+    "separate_ledgers_not_whole_process_4MiB": true
+  },
+  "inventory_totals": {
+    "canonical_witness_bytes": 24554,
+    "cas": 4644,
+    "directory": 36,
+    "gzip_bytes": 33427,
+    "metadata": 333,
+    "native_directory": 54,
+    "raw_bytes": 476205,
+    "sqlite": 63
+  },
+  "limitations": [
+    "Native apply_settlements.asdict, result mutation/orders deepcopy/evidence/encoding/save/readbacks occur after broker response. Owned input preparation is not full832MB/modelRAM admission.",
+    "Three actual owned protocol-boundary process cuts, not powerloss/inside-syscall/SQLite-commit proof. Recovery never restores account/broker or original RAM objects.",
+    "Python identities/advisory locks are not hostile sandbox/deep immutability/concurrent-path-replacement isolation.",
+    "Four unchanged SOURCE-only RO references including Stage; current whole Nightly copied. Copied520583B is not complete executed closure/RAM. Synthetic context/policy/program/calendar/source-manifest, constructors bypassed.",
+    "Native FILE SQLite, whole filesystem/horizon/twohost/modelRAM/constructors/providers/economics/native operation/adoption/publication/API/UI remain UNVERIFIED.",
+    "Original native writer/Store bytes and production caps unchanged. Public genuine refusal remains. No fullunit/build/deploy/UI/model claim; Ruff unavailable."
+  ],
+  "local_hash_work_before_output": {
+    "CONTROL_A": 1729549,
+    "CONTROL_B": 1729517,
+    "CONTROL_C": 1729517,
+    "DERIVED": 875894,
+    "EVIDENCE": 2168276,
+    "SOURCE": 2880904
+  },
+  "local_inputs": {
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/backend/market/historical_broker_checkpoint.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792252269142498959",
+        "st_dev": "16777223",
+        "st_ino": "169476881",
+        "st_mtime_ns": "1792252269142498959",
+        "st_size": "40026"
+      },
+      "sha256": "703db0680497d2cf7ea78a5902c2d7d7d6cd4777355ac953c999763fe22b9f08"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/backend/market/historical_conditional_cycle.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792382043548508909",
+        "st_dev": "16777223",
+        "st_ino": "169484943",
+        "st_mtime_ns": "1792382043548508909",
+        "st_size": "61496"
+      },
+      "sha256": "ac0644b9ab3ee4c6e291ace250a6ad65bde7044a5e452e9960e88d18dd0a6bed"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/backend/market/historical_conditional_nightly.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792382043664296925",
+        "st_dev": "16777223",
+        "st_ino": "169781386",
+        "st_mtime_ns": "1792382043664296925",
+        "st_size": "63878"
+      },
+      "sha256": "355b1b9b61e31ffa6ab50f496aa53a82e8f419f4e212e21a74ff692f736ba171"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/backend/market/historical_conditional_settlement.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792382017700216565",
+        "st_dev": "16777223",
+        "st_ino": "169478369",
+        "st_mtime_ns": "1792382017700216565",
+        "st_size": "14954"
+      },
+      "sha256": "b4184036f2cb7899fe72494c9bdccadbc9a1278850e692d402b221afce6e132a"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/backend/market/historical_native_directory_binding.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792377212754659235",
+        "st_dev": "16777223",
+        "st_ino": "192761612",
+        "st_mtime_ns": "1792377212754659235",
+        "st_size": "30314"
+      },
+      "sha256": "8fbeb810503c349cc098f7f8622a82c881c9e21f65af5b814fcc7f636b5f8c48"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/backend/market/historical_native_metadata.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792362839980927381",
+        "st_dev": "16777223",
+        "st_ino": "188347722",
+        "st_mtime_ns": "1792362839980927381",
+        "st_size": "7097"
+      },
+      "sha256": "333c5d22c49e06742eb4cb50183bf90fa0859d0ce200d3be5f2a4914c8f71e21"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/backend/market/historical_packet_checkpoint.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792245297505270888",
+        "st_dev": "16777223",
+        "st_ino": "169431282",
+        "st_mtime_ns": "1792245297505270888",
+        "st_size": "4763"
+      },
+      "sha256": "cf8613ac2d77fd78d065de19edafad5b53a5b3eaf72f146d3b9d7bcbe0a9851f"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/backend/market/historical_packet_demand.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792252765099138572",
+        "st_dev": "16777223",
+        "st_ino": "169478340",
+        "st_mtime_ns": "1792252765099138572",
+        "st_size": "6666"
+      },
+      "sha256": "25e712b63ff418a3a115ff8933387083f734017212594a0b42879ed386f162b0"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/backend/market/historical_packet_registry.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792245297506635487",
+        "st_dev": "16777223",
+        "st_ino": "169431285",
+        "st_mtime_ns": "1792245297506635487",
+        "st_size": "6645"
+      },
+      "sha256": "6b17e1f9add4b07c816313a8c966b2eff57bf24239b212d717d1e30fdb0e2ad3"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/backend/market/historical_packet_spool.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792250186761766611",
+        "st_dev": "16777223",
+        "st_ino": "169470207",
+        "st_mtime_ns": "1792250186761766611",
+        "st_size": "10414"
+      },
+      "sha256": "705300210493d46e1a65225c371a05dd9bc8e30dff2c5ae8da43b85041b3f6ac"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/backend/market/historical_packet_store.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792375537804944494",
+        "st_dev": "16777223",
+        "st_ino": "169470208",
+        "st_mtime_ns": "1792375537804944494",
+        "st_size": "53910"
+      },
+      "sha256": "387ab41b3b83ac127d2489fedbb7a11908bba281e463a59a67437e985f3c2823"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/backend/market/historical_paper_component.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792353414050181307",
+        "st_dev": "16777223",
+        "st_ino": "187885217",
+        "st_mtime_ns": "1792353414050181307",
+        "st_size": "4280"
+      },
+      "sha256": "edf967f35bf42b5ffb02321d180bcf9de666bf5da8b87a97a6db6c70aea0d648"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/backend/market/historical_physical_checkpoint.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792352115745890961",
+        "st_dev": "16777223",
+        "st_ino": "187748374",
+        "st_mtime_ns": "1792352115745890961",
+        "st_size": "36101"
+      },
+      "sha256": "5d6169282f5054bc9871a5f4e3dec572a1b0b31482e4ff15ee6bc92ee7803604"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/backend/market/historical_raw_cycle.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792370252588872967",
+        "st_dev": "16777223",
+        "st_ino": "188810040",
+        "st_mtime_ns": "1792370252588872967",
+        "st_size": "7538"
+      },
+      "sha256": "3e8b136e8f37e63600e008dd6e8e1bb238c72dd01538f420b3183148e0c270b4"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/backend/market/historical_raw_nightly.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792370870086870116",
+        "st_dev": "16777223",
+        "st_ino": "188564953",
+        "st_mtime_ns": "1792370870086870116",
+        "st_size": "31820"
+      },
+      "sha256": "df3e2589a5c209f0a40e39d1e4f1be421631892c894b6d40305c2b570e4a2feb"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/backend/market/historical_reserved_blob_store.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792363186193468673",
+        "st_dev": "16777223",
+        "st_ino": "189412902",
+        "st_mtime_ns": "1792363186193468673",
+        "st_size": "28606"
+      },
+      "sha256": "9058cf5f54902ef7043a1d95514e1262b8a47b405413d389d636f3a107260caf"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/backend/market/historical_reserved_cycle_final.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792382017701316543",
+        "st_dev": "16777223",
+        "st_ino": "190082780",
+        "st_mtime_ns": "1792382017701316543",
+        "st_size": "25323"
+      },
+      "sha256": "9f8582b37a5d400724cc22a648617490e21780b8f70b9841dce3375f0d76db97"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/backend/market/historical_reserved_cycle_stages.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792380102869637052",
+        "st_dev": "16777223",
+        "st_ino": "189716512",
+        "st_mtime_ns": "1792380102869637052",
+        "st_size": "48956"
+      },
+      "sha256": "7c88ccddaa8016e0b44a5a43ed7a0bce93284bd413ab4a6dad5f0fa6088e474b"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/backend/market/historical_reserved_native_io.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792377193634666573",
+        "st_dev": "16777223",
+        "st_ino": "189195866",
+        "st_mtime_ns": "1792377193634666573",
+        "st_size": "23050"
+      },
+      "sha256": "a473940650a04b0cef6b5b7f83305a92e15c4a6f9ba484d07a9f97ecb176ff44"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/backend/market/historical_reserved_native_metadata.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792363287442675657",
+        "st_dev": "16777223",
+        "st_ino": "189451472",
+        "st_mtime_ns": "1792363287442675657",
+        "st_size": "7719"
+      },
+      "sha256": "23a60cfb3020ab333911592c47458b85541e1a59bdb0bd91ac8f39078f37cd51"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/backend/market/historical_reserved_protocol.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792375247885110690",
+        "st_dev": "16777223",
+        "st_ino": "190825582",
+        "st_mtime_ns": "1792375247885110690",
+        "st_size": "29036"
+      },
+      "sha256": "e5fe183efd639e8ec0b322481b958d87b1b1d7d6a13ea7855c830261970820c1"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/backend/market/historical_reserved_sqlite.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792373904997309194",
+        "st_dev": "16777223",
+        "st_ino": "191805420",
+        "st_mtime_ns": "1792373904997309194",
+        "st_size": "28980"
+      },
+      "sha256": "c665030aaf2dc4045dc966df2c432cb0ca9e2e6b3283da665e34311cfbbada0a"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/backend/market/historical_synthetic_native_write.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792360808501541443",
+        "st_dev": "16777223",
+        "st_ino": "189178492",
+        "st_mtime_ns": "1792360808501541443",
+        "st_size": "28492"
+      },
+      "sha256": "21f5c29c89405d6b9b59e081b14e6a2c649e4547b86dba9c314a7efba1fb7501"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/backend/market/historical_timing_packet.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792241371433295533",
+        "st_dev": "16777223",
+        "st_ino": "169405635",
+        "st_mtime_ns": "1792241371433295533",
+        "st_size": "18520"
+      },
+      "sha256": "54763a69c3a0f7f7a6c8fa90fc7ff278ade0eec93e9b4872afa9c8a5f055377d"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/backend/tests/synthetic_final_prepared_input_setup.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792382017702295647",
+        "st_dev": "16777223",
+        "st_ino": "195130097",
+        "st_mtime_ns": "1792382017702295647",
+        "st_size": "21140"
+      },
+      "sha256": "6026635c506fefef62ea399d42f5320ec613461568e2bda93be034999e4c7f7e"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/backend/tests/test_historical_final_prepared_input.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792382017703435749",
+        "st_dev": "16777223",
+        "st_ino": "195162632",
+        "st_mtime_ns": "1792382017703435749",
+        "st_size": "21151"
+      },
+      "sha256": "792d4bb0ef552342f0e773cb804f07bbf53675999568c97cde42318a55140455"
+    },
+    "/Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant/scripts/run_final_prepared_input.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792381884198693672",
+        "st_dev": "16777223",
+        "st_ino": "195196603",
+        "st_mtime_ns": "1792381884198693672",
+        "st_size": "8966"
+      },
+      "sha256": "a66c9720c8fa3bba4578ce19bdf914040dea6b5d7d7b3dc7588d7020de97b5fc"
+    },
+    "/tmp/collect_final_prepared_input_evidence_20261019.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792382720234357183",
+        "st_dev": "16777223",
+        "st_ino": "195486544",
+        "st_mtime_ns": "1792382720234357183",
+        "st_size": "32265"
+      },
+      "sha256": "2268967986e6bcb77f6ceb30ec79821445b595a6bb82acc9aaaf21e6903ee73c"
+    },
+    "/tmp/final-prepared-input-20261019-v1-a/execute-argv.json": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792382247794276518",
+        "st_dev": "16777223",
+        "st_ino": "195310759",
+        "st_mtime_ns": "1792382247794276518",
+        "st_size": "20094"
+      },
+      "sha256": "7b0a14505b164d7cb7a558515a52366fce824b8fc64831edf2987b249a078be0"
+    },
+    "/tmp/final-prepared-input-20261019-v1-a/execute-exit.json": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792382280880941123",
+        "st_dev": "16777223",
+        "st_ino": "195323443",
+        "st_mtime_ns": "1792382280880941123",
+        "st_size": "48"
+      },
+      "sha256": "ade616bb6ba81dc6874698c7754670b0333e0e9ebc626e4df4fff3381e0ad08d"
+    },
+    "/tmp/final-prepared-input-20261019-v1-a/execute-input.bin": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792382247794637703",
+        "st_dev": "16777223",
+        "st_ino": "195310760",
+        "st_mtime_ns": "1792382247794567726",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/final-prepared-input-20261019-v1-a/execute-stderr": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792382247795119214",
+        "st_dev": "16777223",
+        "st_ino": "195310762",
+        "st_mtime_ns": "1792382247795062519",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/final-prepared-input-20261019-v1-a/execute-stdout": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792382280827964104",
+        "st_dev": "16777223",
+        "st_ino": "195310761",
+        "st_mtime_ns": "1792382280827964104",
+        "st_size": "243"
+      },
+      "sha256": "40b7866e5e0806eae6e15b6502b40f4c1bc03837ea19a4b7cc412e26501cf595"
+    },
+    "/tmp/final-prepared-input-20261019-v1-a/launcher.py": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792382181274868590",
+        "st_dev": "16777223",
+        "st_ino": "195308984",
+        "st_mtime_ns": "1792382181274868590",
+        "st_size": "11322"
+      },
+      "sha256": "1a535787599841c394b327b3a2b518894b2b2485219da52bf271feee07070998"
+    },
+    "/tmp/final-prepared-input-20261019-v1-a/preflight-argv.json": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792382181278257980",
+        "st_dev": "16777223",
+        "st_ino": "195308985",
+        "st_mtime_ns": "1792382181278257980",
+        "st_size": "20031"
+      },
+      "sha256": "9c4b31bae5d7a726ab75705ba4c066a65eef1c0caf95258d81fb80a14e9b12e2"
+    },
+    "/tmp/final-prepared-input-20261019-v1-a/preflight-exit.json": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792382182314028385",
+        "st_dev": "16777223",
+        "st_ino": "195309383",
+        "st_mtime_ns": "1792382182314028385",
+        "st_size": "48"
+      },
+      "sha256": "ade616bb6ba81dc6874698c7754670b0333e0e9ebc626e4df4fff3381e0ad08d"
+    },
+    "/tmp/final-prepared-input-20261019-v1-a/preflight-input.bin": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792382181278887569",
+        "st_dev": "16777223",
+        "st_ino": "195308986",
+        "st_mtime_ns": "1792382181278805917",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/final-prepared-input-20261019-v1-a/preflight-stderr": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792382181279432454",
+        "st_dev": "16777223",
+        "st_ino": "195308988",
+        "st_mtime_ns": "1792382181279366915",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/final-prepared-input-20261019-v1-a/preflight-stdout": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792382182280335016",
+        "st_dev": "16777223",
+        "st_ino": "195308987",
+        "st_mtime_ns": "1792382182280335016",
+        "st_size": "244909"
+      },
+      "sha256": "35359b9bcae398a051b9eb7530953e760295ad8022209f2e4b263be19372c2b7"
+    },
+    "/tmp/final-prepared-input-20261019-v1-a/remote.py": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792382181265438101",
+        "st_dev": "16777223",
+        "st_ino": "195308982",
+        "st_mtime_ns": "1792382181265438101",
+        "st_size": "16465"
+      },
+      "sha256": "7851bc47cdcefe02ae6292dba2d9bcb756a59059524f2f37c46711d4456ca0ef"
+    },
+    "/tmp/final-prepared-input-20261019-v1-a/results-only-argv.json": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792382356063662851",
+        "st_dev": "16777223",
+        "st_ino": "195352854",
+        "st_mtime_ns": "1792382356063662851",
+        "st_size": "2714"
+      },
+      "sha256": "8e3b21dd31a11a9e723a8be9ba43717bfa0f275bdd3b47a7b9c3074d948d70a9"
+    },
+    "/tmp/final-prepared-input-20261019-v1-a/results-only-exit.json": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792382356608762632",
+        "st_dev": "16777223",
+        "st_ino": "195353136",
+        "st_mtime_ns": "1792382356608762632",
+        "st_size": "48"
+      },
+      "sha256": "ade616bb6ba81dc6874698c7754670b0333e0e9ebc626e4df4fff3381e0ad08d"
+    },
+    "/tmp/final-prepared-input-20261019-v1-a/results-only-input.bin": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792382356064707518",
+        "st_dev": "16777223",
+        "st_ino": "195352855",
+        "st_mtime_ns": "1792382356064629747",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/final-prepared-input-20261019-v1-a/results-only-stderr": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792382356065142252",
+        "st_dev": "16777223",
+        "st_ino": "195352857",
+        "st_mtime_ns": "1792382356065068813",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/final-prepared-input-20261019-v1-a/results-only-stdout": {
+      "category": "EVIDENCE",
+      "physical": {
+        "st_ctime_ns": "1792382356572314058",
+        "st_dev": "16777223",
+        "st_ino": "195352856",
+        "st_mtime_ns": "1792382356572314058",
+        "st_size": "131737"
+      },
+      "sha256": "bee831b3d01f5cfbb6f3b0df879618e4701748af3f4d0f503a9ba5b8fba17a96"
+    },
+    "/tmp/final-prepared-input-20261019-v1-a/runner.py": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792382181266978842",
+        "st_dev": "16777223",
+        "st_ino": "195308983",
+        "st_mtime_ns": "1792382181266978842",
+        "st_size": "8966"
+      },
+      "sha256": "a66c9720c8fa3bba4578ce19bdf914040dea6b5d7d7b3dc7588d7020de97b5fc"
+    },
+    "/tmp/final-prepared-input-20261019-v1-a/source-copy-argv.json": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792382246979800925",
+        "st_dev": "16777223",
+        "st_ino": "195310348",
+        "st_mtime_ns": "1792382246979800925",
+        "st_size": "459"
+      },
+      "sha256": "270e668888236528abbbfc6761297c4f7faf602ee1861e781f36dbf0aca14294"
+    },
+    "/tmp/final-prepared-input-20261019-v1-a/source-copy-exit.json": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792382247793353279",
+        "st_dev": "16777223",
+        "st_ino": "195310757",
+        "st_mtime_ns": "1792382247793353279",
+        "st_size": "48"
+      },
+      "sha256": "ade616bb6ba81dc6874698c7754670b0333e0e9ebc626e4df4fff3381e0ad08d"
+    },
+    "/tmp/final-prepared-input-20261019-v1-a/source-copy-input.bin": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792382246980276040",
+        "st_dev": "16777223",
+        "st_ino": "195310349",
+        "st_mtime_ns": "1792382246980199950",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/final-prepared-input-20261019-v1-a/source-copy-stderr": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792382246980810296",
+        "st_dev": "16777223",
+        "st_ino": "195310351",
+        "st_mtime_ns": "1792382246980756644",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/final-prepared-input-20261019-v1-a/source-copy-stdout": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792382246980625445",
+        "st_dev": "16777223",
+        "st_ino": "195310350",
+        "st_mtime_ns": "1792382246980559787",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/final-prepared-input-20261019-v1-a/source-pins.json": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792382246094087580",
+        "st_dev": "16777223",
+        "st_ino": "195309956",
+        "st_mtime_ns": "1792382246094087580",
+        "st_size": "4382"
+      },
+      "sha256": "b3fc5344025dcbe7405cf64cb3963504ad947a45268a25efc334484fd1d6946c"
+    },
+    "/tmp/final-prepared-input-20261019-v1-a/stage-argv.json": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792382246113178613",
+        "st_dev": "16777223",
+        "st_ino": "195309994",
+        "st_mtime_ns": "1792382246113178613",
+        "st_size": "20092"
+      },
+      "sha256": "16d7682da5b76436b39869b117df27c99b86dc45ade5e4f9453d7eecbf348126"
+    },
+    "/tmp/final-prepared-input-20261019-v1-a/stage-exit.json": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792382246979071370",
+        "st_dev": "16777223",
+        "st_ino": "195310346",
+        "st_mtime_ns": "1792382246979071370",
+        "st_size": "48"
+      },
+      "sha256": "ade616bb6ba81dc6874698c7754670b0333e0e9ebc626e4df4fff3381e0ad08d"
+    },
+    "/tmp/final-prepared-input-20261019-v1-a/stage-input.bin": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792382246113611995",
+        "st_dev": "16777223",
+        "st_ino": "195309995",
+        "st_mtime_ns": "1792382246113611995",
+        "st_size": "6006"
+      },
+      "sha256": "efeaf9642f92d46b4b8a5c801656220c2c9279a22b14f9034c1c9f7fbfd1855e"
+    },
+    "/tmp/final-prepared-input-20261019-v1-a/stage-stderr": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792382246114064104",
+        "st_dev": "16777223",
+        "st_ino": "195309997",
+        "st_mtime_ns": "1792382246114012795",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/final-prepared-input-20261019-v1-a/stage-stdout": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792382246925748339",
+        "st_dev": "16777223",
+        "st_ino": "195309996",
+        "st_mtime_ns": "1792382246925748339",
+        "st_size": "207"
+      },
+      "sha256": "c428eae3a7ec2592bd2e188a41e52ca1622d00782f040e8853109dc3f7c01d92"
+    },
+    "/tmp/final-prepared-input-20261019-v1-b/execute-argv.json": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792382357172445395",
+        "st_dev": "16777223",
+        "st_ino": "195353407",
+        "st_mtime_ns": "1792382357172445395",
+        "st_size": "20094"
+      },
+      "sha256": "f71918116a1212ad683378d50ca39a8dfcb3fb23964ec083c35dd5ea49af6c07"
+    },
+    "/tmp/final-prepared-input-20261019-v1-b/execute-exit.json": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792382399743709357",
+        "st_dev": "16777223",
+        "st_ino": "195370042",
+        "st_mtime_ns": "1792382399743709357",
+        "st_size": "48"
+      },
+      "sha256": "ade616bb6ba81dc6874698c7754670b0333e0e9ebc626e4df4fff3381e0ad08d"
+    },
+    "/tmp/final-prepared-input-20261019-v1-b/execute-input.bin": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792382357172830947",
+        "st_dev": "16777223",
+        "st_ino": "195353408",
+        "st_mtime_ns": "1792382357172776776",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/final-prepared-input-20261019-v1-b/execute-stderr": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792382357173264982",
+        "st_dev": "16777223",
+        "st_ino": "195353410",
+        "st_mtime_ns": "1792382357173213630",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/final-prepared-input-20261019-v1-b/execute-stdout": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792382399730992878",
+        "st_dev": "16777223",
+        "st_ino": "195353409",
+        "st_mtime_ns": "1792382399730992878",
+        "st_size": "243"
+      },
+      "sha256": "6404722ca1212807284c58655aa566419dbfeeda34234bc6c6d84a4ddb56e6dc"
+    },
+    "/tmp/final-prepared-input-20261019-v1-b/launcher.py": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792382308239648053",
+        "st_dev": "16777223",
+        "st_ino": "195334005",
+        "st_mtime_ns": "1792382308239648053",
+        "st_size": "11322"
+      },
+      "sha256": "ad3391c549986c033edbc5f4913862e9f8025eee8e71fd01ac7357f5b39e6078"
+    },
+    "/tmp/final-prepared-input-20261019-v1-b/preflight-argv.json": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792382308240700824",
+        "st_dev": "16777223",
+        "st_ino": "195334007",
+        "st_mtime_ns": "1792382308240700824",
+        "st_size": "20031"
+      },
+      "sha256": "8f682713830d09ce09c07ac721014000ad8ab588ee1dc1aab17df2d58178d9f3"
+    },
+    "/tmp/final-prepared-input-20261019-v1-b/preflight-exit.json": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792382308908164933",
+        "st_dev": "16777223",
+        "st_ino": "195334220",
+        "st_mtime_ns": "1792382308908164933",
+        "st_size": "48"
+      },
+      "sha256": "ade616bb6ba81dc6874698c7754670b0333e0e9ebc626e4df4fff3381e0ad08d"
+    },
+    "/tmp/final-prepared-input-20261019-v1-b/preflight-input.bin": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792382308240991044",
+        "st_dev": "16777223",
+        "st_ino": "195334008",
+        "st_mtime_ns": "1792382308240954369",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/final-prepared-input-20261019-v1-b/preflight-stderr": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792382308241270001",
+        "st_dev": "16777223",
+        "st_ino": "195334010",
+        "st_mtime_ns": "1792382308241233836",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/final-prepared-input-20261019-v1-b/preflight-stdout": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792382308871823111",
+        "st_dev": "16777223",
+        "st_ino": "195334009",
+        "st_mtime_ns": "1792382308871823111",
+        "st_size": "244909"
+      },
+      "sha256": "708bc8df60fd0f63be7b88a98a84e09e8c21135f9d23fb2a924f67f6b06272d2"
+    },
+    "/tmp/final-prepared-input-20261019-v1-b/remote.py": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792382308238066087",
+        "st_dev": "16777223",
+        "st_ino": "195334003",
+        "st_mtime_ns": "1792382308238066087",
+        "st_size": "16465"
+      },
+      "sha256": "a0dc4d657a613f790e400d0df933a251bc3d59e16344a6283b5e542b8adffdbc"
+    },
+    "/tmp/final-prepared-input-20261019-v1-b/results-only-argv.json": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792382593291035586",
+        "st_dev": "16777223",
+        "st_ino": "195447094",
+        "st_mtime_ns": "1792382593291035586",
+        "st_size": "2710"
+      },
+      "sha256": "f8114059341b9bb39adf1438619e75ab94c4a47784cf2378d0e3c69d2a470c3b"
+    },
+    "/tmp/final-prepared-input-20261019-v1-b/results-only-exit.json": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792382594047563176",
+        "st_dev": "16777223",
+        "st_ino": "195447495",
+        "st_mtime_ns": "1792382594047563176",
+        "st_size": "48"
+      },
+      "sha256": "ade616bb6ba81dc6874698c7754670b0333e0e9ebc626e4df4fff3381e0ad08d"
+    },
+    "/tmp/final-prepared-input-20261019-v1-b/results-only-input.bin": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792382593291536282",
+        "st_dev": "16777223",
+        "st_ino": "195447095",
+        "st_mtime_ns": "1792382593291443494",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/final-prepared-input-20261019-v1-b/results-only-stderr": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792382593292182189",
+        "st_dev": "16777223",
+        "st_ino": "195447098",
+        "st_mtime_ns": "1792382593292118766",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/final-prepared-input-20261019-v1-b/results-only-stdout": {
+      "category": "EVIDENCE",
+      "physical": {
+        "st_ctime_ns": "1792382594004498362",
+        "st_dev": "16777223",
+        "st_ino": "195447096",
+        "st_mtime_ns": "1792382594004498362",
+        "st_size": "134245"
+      },
+      "sha256": "88ce5dbe992fbfe988267e5be4cf5df99d75de23f7dd2bc464dc9cd80288e22b"
+    },
+    "/tmp/final-prepared-input-20261019-v1-b/runner.py": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792382308238982325",
+        "st_dev": "16777223",
+        "st_ino": "195334004",
+        "st_mtime_ns": "1792382308238982325",
+        "st_size": "8966"
+      },
+      "sha256": "a66c9720c8fa3bba4578ce19bdf914040dea6b5d7d7b3dc7588d7020de97b5fc"
+    },
+    "/tmp/final-prepared-input-20261019-v1-b/source-copy-argv.json": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792382355890944160",
+        "st_dev": "16777223",
+        "st_ino": "195352776",
+        "st_mtime_ns": "1792382355890944160",
+        "st_size": "459"
+      },
+      "sha256": "93a269cfaa625402ffc01478ed4134480b786f2223939f4945f6117eb9f44163"
+    },
+    "/tmp/final-prepared-input-20261019-v1-b/source-copy-exit.json": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792382357171176107",
+        "st_dev": "16777223",
+        "st_ino": "195353406",
+        "st_mtime_ns": "1792382357171176107",
+        "st_size": "48"
+      },
+      "sha256": "ade616bb6ba81dc6874698c7754670b0333e0e9ebc626e4df4fff3381e0ad08d"
+    },
+    "/tmp/final-prepared-input-20261019-v1-b/source-copy-input.bin": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792382355891341343",
+        "st_dev": "16777223",
+        "st_ino": "195352777",
+        "st_mtime_ns": "1792382355891284658",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/final-prepared-input-20261019-v1-b/source-copy-stderr": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792382355891637333",
+        "st_dev": "16777223",
+        "st_ino": "195352779",
+        "st_mtime_ns": "1792382355891605437",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/final-prepared-input-20261019-v1-b/source-copy-stdout": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792382355891522515",
+        "st_dev": "16777223",
+        "st_ino": "195352778",
+        "st_mtime_ns": "1792382355891486693",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/final-prepared-input-20261019-v1-b/source-pins.json": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792382354990894604",
+        "st_dev": "16777223",
+        "st_ino": "195352346",
+        "st_mtime_ns": "1792382354990894604",
+        "st_size": "4382"
+      },
+      "sha256": "b3fc5344025dcbe7405cf64cb3963504ad947a45268a25efc334484fd1d6946c"
+    },
+    "/tmp/final-prepared-input-20261019-v1-b/stage-argv.json": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792382355009397303",
+        "st_dev": "16777223",
+        "st_ino": "195352384",
+        "st_mtime_ns": "1792382355009397303",
+        "st_size": "20092"
+      },
+      "sha256": "0bb9ee3d9e2b4563fe1dbb8df018efb2902ac22aa5f9c896c52d1866d8bad9c2"
+    },
+    "/tmp/final-prepared-input-20261019-v1-b/stage-exit.json": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792382355890206658",
+        "st_dev": "16777223",
+        "st_ino": "195352774",
+        "st_mtime_ns": "1792382355890206658",
+        "st_size": "48"
+      },
+      "sha256": "ade616bb6ba81dc6874698c7754670b0333e0e9ebc626e4df4fff3381e0ad08d"
+    },
+    "/tmp/final-prepared-input-20261019-v1-b/stage-input.bin": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792382355009947964",
+        "st_dev": "16777223",
+        "st_ino": "195352385",
+        "st_mtime_ns": "1792382355009947964",
+        "st_size": "6006"
+      },
+      "sha256": "3f150c8f24472ae6b17eaa57c07030d8932b6425faed439a2e16120d8cca7aa4"
+    },
+    "/tmp/final-prepared-input-20261019-v1-b/stage-stderr": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792382355010566184",
+        "st_dev": "16777223",
+        "st_ino": "195352387",
+        "st_mtime_ns": "1792382355010512142",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/final-prepared-input-20261019-v1-b/stage-stdout": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792382355884258273",
+        "st_dev": "16777223",
+        "st_ino": "195352386",
+        "st_mtime_ns": "1792382355884258273",
+        "st_size": "207"
+      },
+      "sha256": "270429be5fa15e9c6e8efea951de61582806a903256e10c3f4914d59ec5f6c68"
+    },
+    "/tmp/final-prepared-input-20261019-v1-c/execute-argv.json": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792382595982150373",
+        "st_dev": "16777223",
+        "st_ino": "195448212",
+        "st_mtime_ns": "1792382595982150373",
+        "st_size": "20094"
+      },
+      "sha256": "ba50f90b3f0873fc04862a164f314a598f5dd4cb482e212c3460396efd8e989a"
+    },
+    "/tmp/final-prepared-input-20261019-v1-c/execute-exit.json": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792382633716933983",
+        "st_dev": "16777223",
+        "st_ino": "195463180",
+        "st_mtime_ns": "1792382633716933983",
+        "st_size": "48"
+      },
+      "sha256": "ade616bb6ba81dc6874698c7754670b0333e0e9ebc626e4df4fff3381e0ad08d"
+    },
+    "/tmp/final-prepared-input-20261019-v1-c/execute-input.bin": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792382595982600172",
+        "st_dev": "16777223",
+        "st_ino": "195448214",
+        "st_mtime_ns": "1792382595982550086",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/final-prepared-input-20261019-v1-c/execute-stderr": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792382595982987846",
+        "st_dev": "16777223",
+        "st_ino": "195448216",
+        "st_mtime_ns": "1792382595982936331",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/final-prepared-input-20261019-v1-c/execute-stdout": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792382633671602889",
+        "st_dev": "16777223",
+        "st_ino": "195448215",
+        "st_mtime_ns": "1792382633671602889",
+        "st_size": "243"
+      },
+      "sha256": "86c2327ad9f0c3cfd978a610aed48789243cf1d1953f69a9bd6e0e212b776914"
+    },
+    "/tmp/final-prepared-input-20261019-v1-c/launcher.py": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792382559063351541",
+        "st_dev": "16777223",
+        "st_ino": "195433643",
+        "st_mtime_ns": "1792382559063351541",
+        "st_size": "11322"
+      },
+      "sha256": "fb7b729c874bb777909a3f53057d9a3ca3aa42b71bb8149400fe7cc60337e50a"
+    },
+    "/tmp/final-prepared-input-20261019-v1-c/preflight-argv.json": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792382559064125658",
+        "st_dev": "16777223",
+        "st_ino": "195433645",
+        "st_mtime_ns": "1792382559064125658",
+        "st_size": "20031"
+      },
+      "sha256": "f9306d8756e3e60138eaa2d54bc3e4755096786b7080a41b317fa84a8395842f"
+    },
+    "/tmp/final-prepared-input-20261019-v1-c/preflight-exit.json": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792382559880654994",
+        "st_dev": "16777223",
+        "st_ino": "195433980",
+        "st_mtime_ns": "1792382559880654994",
+        "st_size": "48"
+      },
+      "sha256": "ade616bb6ba81dc6874698c7754670b0333e0e9ebc626e4df4fff3381e0ad08d"
+    },
+    "/tmp/final-prepared-input-20261019-v1-c/preflight-input.bin": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792382559064511192",
+        "st_dev": "16777223",
+        "st_ino": "195433646",
+        "st_mtime_ns": "1792382559064456877",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/final-prepared-input-20261019-v1-c/preflight-stderr": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792382559064956897",
+        "st_dev": "16777223",
+        "st_ino": "195433648",
+        "st_mtime_ns": "1792382559064905859",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/final-prepared-input-20261019-v1-c/preflight-stdout": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792382559861310436",
+        "st_dev": "16777223",
+        "st_ino": "195433647",
+        "st_mtime_ns": "1792382559861310436",
+        "st_size": "244909"
+      },
+      "sha256": "6d42bcc55b7eee23f43570f7d6350ec2d20bfde2102c8a76c1bffde6089d3eb4"
+    },
+    "/tmp/final-prepared-input-20261019-v1-c/remote.py": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792382559062253341",
+        "st_dev": "16777223",
+        "st_ino": "195433641",
+        "st_mtime_ns": "1792382559062253341",
+        "st_size": "16465"
+      },
+      "sha256": "c1650db2e7bce11d61734cfd50889b0af53b75d8779159e976a1ca8f0da63db7"
+    },
+    "/tmp/final-prepared-input-20261019-v1-c/results-only-argv.json": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792382736334653595",
+        "st_dev": "16777223",
+        "st_ino": "195503845",
+        "st_mtime_ns": "1792382736334653595",
+        "st_size": "2710"
+      },
+      "sha256": "dafdb089ffbd0a11ec5105991d8cdd9260620665becfb8214b12c64fff9888fc"
+    },
+    "/tmp/final-prepared-input-20261019-v1-c/results-only-exit.json": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792382737106731925",
+        "st_dev": "16777223",
+        "st_ino": "195504242",
+        "st_mtime_ns": "1792382737106731925",
+        "st_size": "48"
+      },
+      "sha256": "ade616bb6ba81dc6874698c7754670b0333e0e9ebc626e4df4fff3381e0ad08d"
+    },
+    "/tmp/final-prepared-input-20261019-v1-c/results-only-input.bin": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792382736334960538",
+        "st_dev": "16777223",
+        "st_ino": "195503846",
+        "st_mtime_ns": "1792382736334920614",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/final-prepared-input-20261019-v1-c/results-only-stderr": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792382736335304331",
+        "st_dev": "16777223",
+        "st_ino": "195503848",
+        "st_mtime_ns": "1792382736335252369",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/final-prepared-input-20261019-v1-c/results-only-stdout": {
+      "category": "EVIDENCE",
+      "physical": {
+        "st_ctime_ns": "1792382737067564552",
+        "st_dev": "16777223",
+        "st_ino": "195503847",
+        "st_mtime_ns": "1792382737067564552",
+        "st_size": "171182"
+      },
+      "sha256": "f1df404931d8c1e8b12d83d95023da0554ac06938155a7e476d53ee5b86114df"
+    },
+    "/tmp/final-prepared-input-20261019-v1-c/runner.py": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792382559062908977",
+        "st_dev": "16777223",
+        "st_ino": "195433642",
+        "st_mtime_ns": "1792382559062908977",
+        "st_size": "8966"
+      },
+      "sha256": "a66c9720c8fa3bba4578ce19bdf914040dea6b5d7d7b3dc7588d7020de97b5fc"
+    },
+    "/tmp/final-prepared-input-20261019-v1-c/source-copy-argv.json": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792382594910063353",
+        "st_dev": "16777223",
+        "st_ino": "195447966",
+        "st_mtime_ns": "1792382594910063353",
+        "st_size": "459"
+      },
+      "sha256": "797919fd3d0dd718c8fc5a0628149044e11084dd22a474c635f7c1f19756fc54"
+    },
+    "/tmp/final-prepared-input-20261019-v1-c/source-copy-exit.json": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792382595981207792",
+        "st_dev": "16777223",
+        "st_ino": "195448211",
+        "st_mtime_ns": "1792382595981207792",
+        "st_size": "48"
+      },
+      "sha256": "ade616bb6ba81dc6874698c7754670b0333e0e9ebc626e4df4fff3381e0ad08d"
+    },
+    "/tmp/final-prepared-input-20261019-v1-c/source-copy-input.bin": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792382594910372156",
+        "st_dev": "16777223",
+        "st_ino": "195447967",
+        "st_mtime_ns": "1792382594910334096",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/final-prepared-input-20261019-v1-c/source-copy-stderr": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792382594910653778",
+        "st_dev": "16777223",
+        "st_ino": "195447969",
+        "st_mtime_ns": "1792382594910611509",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/final-prepared-input-20261019-v1-c/source-copy-stdout": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792382594910528086",
+        "st_dev": "16777223",
+        "st_ino": "195447968",
+        "st_mtime_ns": "1792382594910487229",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/final-prepared-input-20261019-v1-c/source-pins.json": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792382594318147314",
+        "st_dev": "16777223",
+        "st_ino": "195447633",
+        "st_mtime_ns": "1792382594318147314",
+        "st_size": "4382"
+      },
+      "sha256": "b3fc5344025dcbe7405cf64cb3963504ad947a45268a25efc334484fd1d6946c"
+    },
+    "/tmp/final-prepared-input-20261019-v1-c/stage-argv.json": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792382594353895456",
+        "st_dev": "16777223",
+        "st_ino": "195447683",
+        "st_mtime_ns": "1792382594353895456",
+        "st_size": "20092"
+      },
+      "sha256": "9076cab305ad284932baca566a85cad900d835cf4a4998beac66b64ed2f3b3a0"
+    },
+    "/tmp/final-prepared-input-20261019-v1-c/stage-exit.json": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792382594909243716",
+        "st_dev": "16777223",
+        "st_ino": "195447965",
+        "st_mtime_ns": "1792382594909243716",
+        "st_size": "48"
+      },
+      "sha256": "ade616bb6ba81dc6874698c7754670b0333e0e9ebc626e4df4fff3381e0ad08d"
+    },
+    "/tmp/final-prepared-input-20261019-v1-c/stage-input.bin": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792382594354409893",
+        "st_dev": "16777223",
+        "st_ino": "195447684",
+        "st_mtime_ns": "1792382594354409893",
+        "st_size": "6006"
+      },
+      "sha256": "d4f6b1d8176a15af005ae9ad26e4bc36b0d4a855b41384ef494aa9da4d51d35b"
+    },
+    "/tmp/final-prepared-input-20261019-v1-c/stage-stderr": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792382594355051921",
+        "st_dev": "16777223",
+        "st_ino": "195447687",
+        "st_mtime_ns": "1792382594355011912",
+        "st_size": "0"
+      },
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/final-prepared-input-20261019-v1-c/stage-stdout": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792382594878656992",
+        "st_dev": "16777223",
+        "st_ino": "195447686",
+        "st_mtime_ns": "1792382594878656992",
+        "st_size": "207"
+      },
+      "sha256": "ac1fc9fbb2599f779e9ca5bcdb27078031f7feae3387ddafc24c63e28d7a67ce"
+    },
+    "/tmp/final-prepared-input-result-review-v1-a-20261019.json": {
+      "category": "EVIDENCE",
+      "physical": {
+        "st_ctime_ns": "1792382356755135971",
+        "st_dev": "16777223",
+        "st_ino": "195353210",
+        "st_mtime_ns": "1792382356755135971",
+        "st_size": "24913"
+      },
+      "sha256": "d10e243a40e9622e98de37c40ee248ea36ec58e89e0524075eb05fd408c29ed4"
+    },
+    "/tmp/final-prepared-input-result-review-v1-b-20261019.json": {
+      "category": "EVIDENCE",
+      "physical": {
+        "st_ctime_ns": "1792382604152725894",
+        "st_dev": "16777223",
+        "st_ino": "195451655",
+        "st_mtime_ns": "1792382604152725894",
+        "st_size": "25040"
+      },
+      "sha256": "3ca3837319451796cca514380929651e68026dec26d3a9a70a39d9a09254ab92"
+    },
+    "/tmp/final-prepared-input-result-review-v1-c-20261019.json": {
+      "category": "EVIDENCE",
+      "physical": {
+        "st_ctime_ns": "1792382737259674114",
+        "st_dev": "16777223",
+        "st_ino": "195504321",
+        "st_mtime_ns": "1792382737259674114",
+        "st_size": "54952"
+      },
+      "sha256": "76b635360525ba5b0e21ae14f39bab3ed73d953ece4cecca8a4213c43802ebe4"
+    },
+    "/tmp/final_prepared_input_remote_v1_a_20261019.py": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792381942109335862",
+        "st_dev": "16777223",
+        "st_ino": "195218750",
+        "st_mtime_ns": "1792381942109335862",
+        "st_size": "16465"
+      },
+      "sha256": "7851bc47cdcefe02ae6292dba2d9bcb756a59059524f2f37c46711d4456ca0ef"
+    },
+    "/tmp/final_prepared_input_remote_v1_b_20261019.py": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792381942136544187",
+        "st_dev": "16777223",
+        "st_ino": "195218752",
+        "st_mtime_ns": "1792381942136544187",
+        "st_size": "16465"
+      },
+      "sha256": "a0dc4d657a613f790e400d0df933a251bc3d59e16344a6283b5e542b8adffdbc"
+    },
+    "/tmp/final_prepared_input_remote_v1_c_20261019.py": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792381942171386547",
+        "st_dev": "16777223",
+        "st_ino": "195218754",
+        "st_mtime_ns": "1792381942171386547",
+        "st_size": "16465"
+      },
+      "sha256": "c1650db2e7bce11d61734cfd50889b0af53b75d8779159e976a1ca8f0da63db7"
+    },
+    "/tmp/get_final_prepared_input_results_transport_v1_a_20261019.py": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792382309034975157",
+        "st_dev": "16777223",
+        "st_ino": "195334222",
+        "st_mtime_ns": "1792382309034975157",
+        "st_size": "400"
+      },
+      "sha256": "0188ee0ed6a4efd8eeb029ff6d3006d4015d3832633cf954008b5111c2ad05e3"
+    },
+    "/tmp/get_final_prepared_input_results_transport_v1_b_20261019.py": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792382558926713671",
+        "st_dev": "16777223",
+        "st_ino": "195433576",
+        "st_mtime_ns": "1792382558926713671",
+        "st_size": "398"
+      },
+      "sha256": "b85497a827be823e2ab6075f74b7c8cba5127d0a85895698e073917a7893ac25"
+    },
+    "/tmp/get_final_prepared_input_results_transport_v1_c_20261019.py": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792382642625766005",
+        "st_dev": "16777223",
+        "st_ino": "195466625",
+        "st_mtime_ns": "1792382642625766005",
+        "st_size": "398"
+      },
+      "sha256": "4fcb6f01c98807e14067118f6d4dd17d8b82852ab5c30779c8c94edfc17c0f32"
+    },
+    "/tmp/get_final_prepared_input_results_v1_a_20261019.py": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792382309025712480",
+        "st_dev": "16777223",
+        "st_ino": "195334221",
+        "st_mtime_ns": "1792382309025712480",
+        "st_size": "2055"
+      },
+      "sha256": "af2caca40b4d3f2727d49c0d005c80b501973a5bac41826c7600536da17ade74"
+    },
+    "/tmp/get_final_prepared_input_results_v1_b_20261019.py": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792382558926106339",
+        "st_dev": "16777223",
+        "st_ino": "195433575",
+        "st_mtime_ns": "1792382558926106339",
+        "st_size": "2053"
+      },
+      "sha256": "3cbd25b38b265c99a2954cebb0ca2b659b79718b409e076355845b6291b68667"
+    },
+    "/tmp/get_final_prepared_input_results_v1_c_20261019.py": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792382642624885487",
+        "st_dev": "16777223",
+        "st_ino": "195466624",
+        "st_mtime_ns": "1792382642624885487",
+        "st_size": "2053"
+      },
+      "sha256": "48096e368f1db7cb32c58640259353cfe4542b4312d4098b94d96e71e1b4cd9f"
+    },
+    "/tmp/launch_final_prepared_input_v1_a_20261019.py": {
+      "category": "CONTROL_A",
+      "physical": {
+        "st_ctime_ns": "1792382058658803949",
+        "st_dev": "16777223",
+        "st_ino": "195218749",
+        "st_mtime_ns": "1792382058658803949",
+        "st_size": "11322"
+      },
+      "sha256": "1a535787599841c394b327b3a2b518894b2b2485219da52bf271feee07070998"
+    },
+    "/tmp/launch_final_prepared_input_v1_b_20261019.py": {
+      "category": "CONTROL_B",
+      "physical": {
+        "st_ctime_ns": "1792382058669269948",
+        "st_dev": "16777223",
+        "st_ino": "195218751",
+        "st_mtime_ns": "1792382058669269948",
+        "st_size": "11322"
+      },
+      "sha256": "ad3391c549986c033edbc5f4913862e9f8025eee8e71fd01ac7357f5b39e6078"
+    },
+    "/tmp/launch_final_prepared_input_v1_c_20261019.py": {
+      "category": "CONTROL_C",
+      "physical": {
+        "st_ctime_ns": "1792382058683450166",
+        "st_dev": "16777223",
+        "st_ino": "195218753",
+        "st_mtime_ns": "1792382058683450166",
+        "st_size": "11322"
+      },
+      "sha256": "fb7b729c874bb777909a3f53057d9a3ca3aa42b71bb8149400fe7cc60337e50a"
+    },
+    "/tmp/review_final_prepared_input_results_20261019.py": {
+      "category": "SOURCE",
+      "physical": {
+        "st_ctime_ns": "1792382245873495738",
+        "st_dev": "16777223",
+        "st_ino": "195309955",
+        "st_mtime_ns": "1792382245873495738",
+        "st_size": "18120"
+      },
+      "sha256": "805cf76dfec4e7e43994eabc05976409869b858794007c5a1ff3bdb4ea60b2ab"
+    }
+  },
+  "next": "Keep this NEW9 boundary closed. Inspect the two Final post-save load_state readbacks and original writer receipt/anchored rawSHA+length+inode validation. Prepare a separate typed phase-owned saved-byte verifier preserving exact native output checks without JSON rematerialization. Native apply_settlements.asdict and remaining late allocations/capacity stay unverified. No closed-gate reruns or pool adoption.",
+  "prepared_object_observation": {
+    "binding": {
+      "account": "/out/cases/test_d_full_graph_preparation_order-bj030c8g/store/SYNTHETIC-reserved-workspace/work",
+      "declaration_sha256": "b464fd55573c8d6e3825979a0485cc5d9a03d3784054d9af6731f00a7af97731",
+      "head": "e1823b49ddb6266acba39828f74cd7b7b8e66a1ed9c4164725927e39c31d2f62",
+      "identity": "e13b03259b95797ed7032c9fb6397975f4c29d9d47dba6d5b15ee571644a26df",
+      "native_bytes": {
+        "raw_bytes": 301880,
+        "raw_sha256": "5c063a8b9c8c45266617c49b34b9baf8a3b7cf5f15f8f40891cb9f5a4f153b8e",
+        "schema": "native-paper-serialization/1"
+      },
+      "native_io_sha256": "9ecd63880501483e5a6e02372a2e1dd036c10324a2eeff74eecd4d5e8e4a3f7f",
+      "phase": "OUTCOME_COMMITTED",
+      "preimage": {
+        "device": 66306,
+        "inode": 60969926,
+        "length": 301880,
+        "sha256": "5c063a8b9c8c45266617c49b34b9baf8a3b7cf5f15f8f40891cb9f5a4f153b8e"
+      },
+      "raw_limit": 1048576,
+      "schema": "synthetic-final-prepared-raw-input/1",
+      "sources_sha256": "6d823e22003f3051656ac741a525b97c0d49453c52122df99f632fa3e6521065"
+    },
+    "full_ram_admitted": false,
+    "late_native_asdict_remains": true,
+    "recovery_trace": [],
+    "released_before_native_save": true,
+    "released_owned_references": true,
+    "trace": [
+      [
+        "load",
+        false
+      ],
+      [
+        "input_copy",
+        false
+      ],
+      [
+        "flush",
+        true
+      ],
+      [
+        "native_asdict",
+        true
+      ],
+      [
+        "load",
+        true
+      ],
+      [
+        "load",
+        true
+      ]
+    ]
+  },
+  "schema": "private-final-prepared-native-input-proof/1",
+  "scope": "Nine NEW assertions at ONE source in THREE bounded cohorts; pre-resolution owned load/initial deepcopy, original once-only input consumption, release before save, original metadata-only recovery. Not whole transition or full RAM admission.",
+  "source_checkpoint": "0168b4e12de853fba0bc59f40d6ef8c0bf659f00",
+  "source_tree": "7340a1b408b4bc08f9262787e7c03c3456cffe56",
+  "transport_phases": {
+    "a": {
+      "execute": {
+        "exit": 0,
+        "remote_quiescence_inferred": false
+      },
+      "preflight": {
+        "exit": 0,
+        "remote_quiescence_inferred": false
+      },
+      "results-only": {
+        "exit": 0,
+        "remote_quiescence_inferred": false
+      },
+      "source-copy": {
+        "exit": 0,
+        "remote_quiescence_inferred": false
+      },
+      "stage": {
+        "exit": 0,
+        "remote_quiescence_inferred": false
+      }
+    },
+    "b": {
+      "execute": {
+        "exit": 0,
+        "remote_quiescence_inferred": false
+      },
+      "preflight": {
+        "exit": 0,
+        "remote_quiescence_inferred": false
+      },
+      "results-only": {
+        "exit": 0,
+        "remote_quiescence_inferred": false
+      },
+      "source-copy": {
+        "exit": 0,
+        "remote_quiescence_inferred": false
+      },
+      "stage": {
+        "exit": 0,
+        "remote_quiescence_inferred": false
+      }
+    },
+    "c": {
+      "execute": {
+        "exit": 0,
+        "remote_quiescence_inferred": false
+      },
+      "preflight": {
+        "exit": 0,
+        "remote_quiescence_inferred": false
+      },
+      "results-only": {
+        "exit": 0,
+        "remote_quiescence_inferred": false
+      },
+      "source-copy": {
+        "exit": 0,
+        "remote_quiescence_inferred": false
+      },
+      "stage": {
+        "exit": 0,
+        "remote_quiescence_inferred": false
+      }
+    }
+  }
+}

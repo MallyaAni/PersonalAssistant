@@ -1,5 +1,155 @@
 # Next session
 
+## 2026-10-19 — Owned settlement input prepared before resolution VERIFIED
+
+Read research/final-prepared-input-proof-2026-10-19.json:
+6a53d32af138ce33425fc9fa3f9127cbf3df5d89092963e43991bcbed04a146b,
+168352B. Source0168b4e12de853fba0bc59f40d6ef8c0bf659f00/tree
+7340a1b408b4bc08f9262787e7c03c3456cffe56 passed NINE NEW assertions in THREE
+bounded cohorts at ONE tree. No test failures/errors/skips or unexpected native
+operational failure. Old submission-preparation/save-slot gates remain CLOSED.
+
+PRODUCT: PRIVATE Final schema2 plus synthetic-final-prepared-raw-input/1 bind an
+owned native PaperState and its initial original deepcopy BEFORE real broker
+flush. The exact source/account/identity/phase/submission-head/declaration/input/
+native-IO reservation/preimage SHA+length+dev+inode/raw-limit descriptor is
+persisted before resolution. Both original object identities and native byte
+representations are checked before consumption; reconcile_raw takes ONLY the
+original prepared copy once. Default reconcile_raw retains its old deepcopy
+path. Preparation faults and source/preimage/lease/object drift durably poison
+the original CAS+Directory phase before another effect. Finally releases owned
+references on every outcome; successful fold releases all four original/input
+references BEFORE native save/readbacks. Later checks authenticate the exact
+consumed/released descriptor without retaining those input graphs.
+
+The stable final result marker schema1 remains separate from Final schema2.
+Original native writer AND Store full bytes unchanged; Cycle/Nightly changes
+are source-pin literals only, function/class ASTs unchanged. Ordinary Store
+DELETE+FILE/schema/paths/caps/guards, absent native birth destination, public
+genuine and old bound-CAS raw-final refusals remain unchanged. Recovery publishes
+ONLY the original missing result/seals, never native load/deepcopy/flush/fold/
+save/capture/append/SQL generation/account restore. Python identities/advisory
+locks are NOT hostile sandbox/deep immutability/concurrent-path isolation.
+
+Native apply_settlements constructs PaperState(**asdict(state)) AFTER fills;
+orders deepcopy, post-fill graph/evidence, serialization/save and TWO native
+readback loads also remain late. Input preparation is NOT precomputation of the
+whole transition or full832MB/native-model-RAM admission.
+
+A: CID6c0611a3136f0afe1992aa2ea48b90c96bdad48ad8621d989a7f29468969b108/f612,
+exit0/noOOM2026-10-19T03:58:00.855678414Z;3pass0fail/error/skip,
+31.57011605706066s/58016KiB. Injected pre-load/pre-copy faults preserve accepted
+submitted5 order/native paper/latch/SQL state and refuse resolution/save; changed
+owned prior refuses BEFORE flush. References released; repeated original paused
+recovery never re-materializes or replays.
+Rawproof4b8c9b0969635318179b07ab9308c6158d8ef27f8de5267ca3212b4c7fe6ad56/73205B.
+
+B: CIDf4395ce67c70f1f09f89ded9675fa80b77284887657b947c7013a12a0c63ff79/f612,
+exit0/noOOM2026-10-19T03:59:59.958804626Z;3pass0fail/error/skip,
+41.051495854742825s/58340KiB. Real code profiling (without native function/global
+replacement) observes loadFalse/input_copyFalse/flushTrue/native_asdictTrue/
+loadTrue/loadTrue. Exactly ONE input load+whole-input deepcopy before flush;
+TWO post-save readback loads remain. Original recovery trace[]; input references
+released immediately after fold BEFORE native save (writer next3). Actual full
+private birth→stages→desired8/submitted5/filled5 partial native journal→Store
+OUTCOME→reopen/original recovery→same-session Nightly passes, policy2/five native
+saves/exact >256KiB NaN+Unicode native bytes. Caught premature consumption refuses
+before flush. Post-flush owned-copy mutation retains real filled5 but no native
+save/head advance/replay. Separate default pure-fold control is explicitly
+SYNTHETIC/uncommitted, not native outcome adoption.
+Rawproofb831b6b84c62a0cb907a4efebc0a32b86b8e7379d6ec881691c73fe38095528a/75008B.
+
+C: CIDac8248f69ea625ccafb3bf29c6a36b58a87b556a2c7a1edc1775258fe958ed8a/f612,
+exit0/noOOM2026-10-19T04:03:53.5884277Z;3pass0fail/error/skip,
+36.463228036649525s/58132KiB. Actual owned PID6 SIGKILL after input reservation
+BEFORE resolution (accepted5/next3/two distinct unused objects); PID7 after REAL
+flush (filled5/next3/two unused objects); PID8 after authoritative OUTCOME commit
+(next4/consumed/all references released) before original result. All-9/reaped.
+First two stay paused with no reconstruction/replay; committed recovery ONLY
+original missing result/seals, trace[]/no SQL or native advance. Full packed
+broker witness is DATA validation, never parent/account restore. Three protocol
+boundary process cuts, NOT powerloss/inside native syscall/SQLite-commit proof.
+Rawproof4f2adf44c6757e99f356ef35055a81de25f06fc02dd1c6fa874201ebbf4f3526/102726B.
+
+All raw proofs+seven fixed results retained /tmp/final-prepared-input-20261019-v1-
+{a,b,c} and matching Spark1 scratch; never replay/adopt any pools. ROOT+healthy
+READONLY reviewer independently reconstructed all9 complete inventories:
+4644CAS+333metadata+63SQL+36directory-metadata+54native-directory identities =
+5130 globally distinct originals, every name/all physical fields unchanged.
+Per-caseCAS34344960/metadata9183232/SQL1843200/directory-metadata790528 allocated
+AND logicalB; native state bodies follow original writer semantics.
+Complete476205B raw/33427B gzip inventories; six canonical cut/exit strings
+24554B reproduce allSHA/lengths. Sources/exact calls/fresh prerequisites/getters/
+full actual results/create argv/CID/runtime/terminal links independently accepted.
+
+22 copied product/test pins/31payloads520583B<524288;33source/47native fullSHA
+physical bookends/writer globals unchanged/forbidden[]. Current whole Nightly
+63878B is copied/pinned; FOUR unchanged SOURCE-only exact RO references are
+codec/CAS/physical and Stage48956B from prepared-paper-v3-a SOURCE path. Old
+Nightly reference removed; no old account/output/pool/broadsource fallback.
+Whole CLI text two helper CodeTypes pins1655map/no CLI startup import. Combined
+executed source closure EXCEEDS512KiB; copied-payload cap is NOT closure/RAM.
+Context/policy/program/calendar/source-manifest globals SYNTHETIC/constructors
+bypassed. Eight FULL mounts equal by uniqueDestination; raw order differs all
+three. HConlyOomKillDisablefalse→null. UID1000/noneRO1CPU512MiB=swap/PIDs32/tmp64/
+dropALL/no-new-privileges/CPU30/native1MiBFSIZE/source-controls-log256KiB/
+productioncaps unchanged. All three five-phase transports0/emptyerr.
+
+Pre-use fixture mapping dependency restored and owned-reference release moved
+before save/readbacks BEFORE first runtime; no test body replay/assertion/cap/
+guard weakening. Local checker-file creation refused while disk full before
+dispatch; target absence confirmed. Removed ONLY exact observed regular nlink1
+regenerable Homebrew Go1.27 source download35080395B/dev16777223/inode75312649,
+restoring56303616B. Installed dependencies/source/backups/prior proofs untouched;
+no cachewide cleanup. Collector source prereq comparison corrected BEFORE first
+body use: stage legitimately rechecks fresh timestamp/resources, so original
+compact prerequisite SHA+stable bindings+fresh limits are authenticated separately.
+
+Local DATA collector ONCE exit0:131 inputs/2421395B/four full held-read
+SHA+physical bookends, exclusive proof/fsync/readback. Separate SOURCE4MiB +
+A/B/C CONTROL2MiB each + EVIDENCE4MiB + DERIVED2MiB =16MiB maximum, NOT whole4MiB.
+Actual SOURCE2880904/A1729549/B1729517/C1729517/EVIDENCE2504980/DERIVED875894B. No local crash/kernel-FSIZE claim.21 changed product/test/
+runner/control/helper sources238 purpose functions/ASTwarnings/zeroBackspaces/
+diff PASS; Ruff unavailable/no fullunit/build/deploy/UI/model claim. Diagram:NONE.
+
+Prior heartbeat delivery is now OBSERVED late: saved TOML ACTIVE updated_at
+1792381677747 contains0d1fcb1b/promptSHAc2da29744121f3b89b1e10b336e135b2a1ca10df004d9ed97884d0340ef6a190.
+The previous request was never retried. This later app observation is outside
+the product proof; prior pending readback remains preserved.
+
+NEXT CONCRETE PRODUCT TASK: this NEW9 input-preparation boundary is CLOSED.
+NEVER rerun its cohorts/preflights/stages/copies/tests/getters/collector or prior
+submission9/failedA/save-slots9/namespace9/SQLite11/protocol13/outcome10/stage9/
+capability2/older closed gates for docs. Never adopt failed/OPEN/completed pools
+or reopen COMPLETE phases. Physical native rename/journal admission stays blocked
+on unavailable source/runtime/filesystem-bound allocator acknowledgement; original
+paper.save_state temporary.replace(path) at paper.py:433, cleanup temporary.unlink
+and adapter parent fsync cannot be certified by body preallocation/stat/names.
+capacity_reserved=False remains explicit.
+
+Continue independent synthetic product work: FIRST inspect the TWO Final native
+post-save paper.load_state→_native_serialization readbacks (current lines328/355)
+and writer.completed/_image/phase-owned original native receipts. Implement a
+DISTINCT typed source/head/input/phase-owned saved-byte verification using exact
+original save receipt+cursor+rawSHA/length/original dev/inode, actual byte reads
+and raw-component equality, eliminating these JSON re-materializations while
+preserving exact output checks. Generic latest-completion is insufficient: bind
+the ONE original receipt for THIS Final IO/phase and recheck immediately after
+save and before commit. Add NEW bounded profile/tamper/original-result/fullgraph
+assertions. Preserve original writer/Store/caps/public genuine refusal. Do NOT
+claim native apply_settlements.asdict/result copies/serialization/model-RAM are
+prepared. Advance one coherent boundary; no recursive provenance/ELF detours.
+
+Full native rename/journal/filesystem/native SQLite FILE mode, whole832MB horizon/
+load-save/deepcopy/serialization/model RAM coexistence/twohost/powerloss/whole
+genuine constructors/market_daily Resolver/sender/models/providers/actualcontext/
+calendar/economics/native operation/adoption/independent publication/API/UI remain
+UNVERIFIED. Full admission mandatory BEFORE genuine effects. Original timing
+FAILED/publication CLOSED/missing receipts/immutable roots unchanged. Genuinev6
+OPEN/PAUSED/no replay/adoption/newgenuine run from failed reservation. Production
+unchanged; NEVER deploy historical main wholesale. Heartbeat ACTIVE, quiet on
+unchanged/non-actionable state; no ETA.
+
 ## 2026-10-19 — Owned native paper prepared before submission VERIFIED
 
 Read research/prepared-paper-proof-2026-10-19.json:
