@@ -1,5 +1,158 @@
 # Next session
 
+## 2026-10-19 — Private complete native output-byte admission VERIFIED; RAM/physical/live admission still UNVERIFIED
+
+Read research/native-output-capacity-proof-2026-10-19.json:
+e1536ee058c57d8ea2378051bf2aeb148b00b237d6fa670c52060ac89297bbe9,
+32424B. Exact source42c1d9125e73b96bafc210ea479f28d7fef46b3e/tree
+f1f0ee1903a5511aa233c038392cf6d1990a2060 passed EIGHT NEW named tests in
+EIGHT fresh single-case runtimes: all exit0/noOOM/0failure/error/skip. Complete
+527940B reports retained in153148B sidecar441bc74aee014ce05200cdbced298ff853799a3bd78ff12920499befad4c0b59.
+Root source/call/runtime/full DATA fold/readback passed. No healthy existing
+agent was present; independent review remains UNVERIFIED and limited workers
+were not retried/replaced. Goal and heartbeat ACTIVE. Production unchanged;
+this is private synthetic reliability progress, not live strategy/UI acceptance.
+
+PRODUCT: distinct historical_native_output_capacity.NativeOutputCapacity,
+synthetic-native-output-byte-capacity/1 plus Final11 checks a conservative
+allowance for the WHOLE final native body BEFORE output clone/broker resolution.
+The earlier receipt allowance bounded finite metadata, not native journal/pending/
+rebalance growth into the original one-MiB save slot. New source/head/input/
+preimage/native-IO/original-slot binding and original variable-row digest/count
+are persisted before selected effects. Limit is the minimum of the original
+checkpoint raw limit and original writer slot bytes. It never predicts a status,
+fill, price, timestamp or resulting state; no placeholder result evidence.
+
+The source-bound arithmetic retains original native body bytes and adds eight
+exact native-JSON wrapped variable-row copies (pending plus affected previous
+journal), four original broker image lengths,8192B per original intent and1024B
+framing/rebalance allowance. This accounts for inherited execution/optional
+fields, echoed raw quantity diagnostics and bounded native generated keys/scalars.
+It is deliberately conservative and can refuse inputs whose actual result might
+fit. It is a byte admission for this native JSON-loaded private path, NOT a
+Python RAM/allocator/physical filesystem reservation or arbitrary Python-object
+certificate. Original histories/NaNs are not normalized or truncated.
+
+Original allowance is consumed once immediately before flush against exact
+broker bytes. Actual native serialization is checked against the original upper
+allowance BEFORE native save. Original receipt digest binds the descriptor;
+metadata-only read/recovery checks original committed native serialization
+length against it without loading native state or recomputing an allowance.
+References release before save/on failure; original result still precedes
+directory→SQL→CAS seals. Caught admission uncertainty poisons subsequent work.
+Stable final RESULT_SCHEMA1 remains separate. Original native writer/paper/
+Store/schema/paths/caps/default DELETE+FILE/Cycle/Nightly/rawNightly/native-IO/
+directory-binding/prepared-transition/orders/results/receipt-capacity bytes are
+unchanged:13 full-file comparisons against5967370a. Public genuine and old
+bound-CAS raw-final refusals remain unchanged. No deployment or default-native
+API change. Function identities/advisory locks are not a hostile Python sandbox.
+
+Af9d86867 is an ACTUAL NEW native negative control, not an injected OOM: a
+synthetic native input1048568B (8B below unchanged1048576B limit) undergoes real
+native flush/fill5 and unchanged settle/apply_settlements. Actual output1048946B
+exceeds the original serialization bound by370B; the original serializer refuses
+after that fill. No save occurred and original input remains exact. Separate
+bounded in-RAM length measurement uses native limit+65536 ONLY to observe the
+oversize, never a raised writer/checkpoint/file cap. This is a native UNIT,
+not a full near-limit Cycle/Store run or adoption authority.
+
+B50cb7dd8 uses a fresh equivalent input/broker. New allowance refuses BEFORE
+flush; accepted broker bytes/status and original native input remain unchanged.
+Ce9f8c236 compares EIGHT fresh actual native broker journeys WITHIN ONE test:
+full/missing/partial/canceled/prior terminal/open/held-sell/empty. Native output
+lengths remain below original allowances across prior-journal merges, unresolved
+pending/rebalance, NaN diagnostics and Unicode. Original paper and postflush
+broker remain unchanged by pure fold; strict bool allowance metadata refuses.
+
+Dc18d6a02 completes actual private birth→prior close→Store stages→desired8/
+submitted5/filled5 partial native journal→Store OUTCOME→reopen/original recovery→
+same-session Nightly→historical final recovery. Original body313915B, original
+native-output allowance447099B, actual final314187B. Actual derived fold matches
+unchanged WHOLE reconcile_raw on a fresh independent native input using the same
+actual broker:314187 native JSON bytes SHA9813772b9f8603f12257ebd9113dbc23e8bc74c1a00ff88053ea2b93b07aa913
+and14300 finite evidence bytes. Profile proves allowance admission/consumption
+BEFORE flush and actual-byte check AFTER. Recovery/historical traces[], policy2/
+five original saves. This is the normal finite private graph, not near-limit
+fullhorizon/genuine/model admission.
+
+E513cbc1c injects an admission-boundary failure before output clone/flush;
+account/broker/cursors/latch/head unchanged and original recovery paused. H83263256
+mutates only the private original allowance metadata at a named negative hook;
+guard refuses before flush with original state retained. No unexpected native/
+operational/test failure or observed OOM. F77a173a0 and G0e6d5a93 each own PID7
+SIGKILL/reaped-9 in separate runtimes after allowance persistence BEFORE flush,
+and after authoritative OUTCOME with ownership released. First stays paused;
+committed recovery ONLY publishes original missing result/seals, no native
+load/init/flush/fold/save/capture/append/SQL generation/account restore. Four
+canonical cut/exit strings16051B reproduce exact SHA/length. Protocol process
+cuts, NOT powerloss/inside-syscall/SQLite-commit proof; immutable broker DATA
+witnesses never restore parent/account.
+
+Raw proofs+eight fixed results remain /tmp/native-output-20261019-v1-{a..h}
+and matching Spark1 scratch. Never replay/adopt pools. All four-phase transports
+0/emptyerr. Root folded8 complete inventories:4128CAS+296metadata+56SQL+32dir-
+metadata+48native-dir=4560 globally distinct originals/every name/field unchanged.
+Each case CAS34344960/meta9183232/SQL1843200/dir790528 allocated AND logicalB;
+native state bodies change outside these inventories. Complete423572B inventories
+29772B gzip. Payload511904B+pins4900B=516804B<524288/40payloads incl source-data
+mountpoints+pins/41source/47native fullSHA physical bookends/writer globals
+unchanged/forbidden[]. SEVEN whole SOURCE-only exact RO references plus TWO
+exact SOURCE data files; never old account/output/pools. Combined executed
+closure exceeds copied cap, not a RAM bound. Context/policy/program/calendar/
+source-manifest globals SYNTHETIC/constructors bypassed. Thirteen FULL mounts
+equal by unique destination; raw order only C/F/G/H equal. HostConfig only
+OomKillDisablefalse→null. UID1000/noneRO1CPU512MiB=swap/PIDs32/tmp64/dropALL/
+no-new-privileges/CPU30/nativeFSIZE1MiB/control-log256KiB unchanged.
+Per-case4.93197–27.83532s/max57912KiB; CPU30 is not a30s wall claim.
+
+New DATA-only collector ran ONCE:206inputs/four held fullSHA/physical reads;
+SOURCE4MiB+eight CONTROL4MiB each+DERIVED2MiB=38MiB maximum, NOT whole-process4MiB.
+Actual SOURCE3348524B/eachCONTROL<1.85MiB/DERIVED371144B including output readback.
+Exclusive main+sidecar185572B total, each<256KiB/fsync/readback. Control archive
+research/native-output-capacity-controls-2026-10-19.json19456B/
+2efb02184a301e65d49929d68f0987a770f3421e13f7fb425dec30447fc6b008 retains
+four small source files/four held reads/separate2MiB/214356B actual incl readback.
+Five product/test/runner files111 purpose functions, nine incl controls137;
+ASTwarnings/backspaces0/diff PASS. One pre-use read found a missing nested evidence
+key in the new recovery check and corrected it BEFORE source freeze/runtime.
+No failed attempt/old gate replay. Ruff unavailable; no fullunit/build/deploy/UI/
+model/local crash/kernel-FSIZE claim. Diagram impact: NONE — private byte admission.
+
+NEXT: NEW8 native-output byte boundary CLOSED. Never rerun its tests/preflight/
+stage/copy/getter/collector/archive or previous closed gates for docs. Never
+adopt failed/OPEN/completed pools or reopen COMPLETE phases. This descriptor
+does not solve late Python journal/list/evidence/encoding/save allocations,
+full horizon/model coexistence or native directory/journal capacity.
+
+Source-backed next independent boundary: inspect same-session RawNightly._close
+lines388–430 and the exact synthetic/native trade output contract. Its reservation
+precedes client.observe/policy, but entry/history/native serialization growth and
+post-save history reload remain late; do NOT blindly apply the final-settlement
+formula to policy output. Determine a separate finite source/head/input-bound
+pre-effect native output admission for explicitly synthetic policy callbacks,
+preserving actual policy results and no-replay recovery. Also preserve old exact
+count-one NIGHTLY_CLOSE leases: current unavailable-close branch produces zero
+saves and cannot complete in that mode. No weakening to optional counts or fake
+success; any different lease semantics need explicit version/source-bound branch
+admission and NEW assertions. Advance a coherent lifecycle boundary, not one
+allocation at a time. Full genuine entry remains closed until all admission.
+
+Authenticated live dashboard access request still has no reply; available
+browser stops at sign-in. No authentication bypass. Current live strategy→orders→
+fills→UI remains UNVERIFIED; historical cleanup is not current full acceptance.
+Native rename/journal/whole filesystem capacity remains BLOCKED on the missing
+source/runtime/filesystem-bound allocator acknowledgement at original paper.py433
+replace/failure unlink/parent fsync. Body fallocate/stat/names do not reserve it;
+capacity_reserved=False. NativeSQLiteFILE/whole832MB/modelRAM/twohost/powerloss/
+genuine constructors/Resolver/sender/providers/context/calendar/economics/native
+operation/adoption/independent publication/API/UI remain UNVERIFIED. Original
+timing FAILED/publication CLOSED/missing receipts/immutable roots unchanged;
+genuinev6 OPEN/PAUSED/no replay/adoption/new genuine run. No limited-worker
+retries/replacements/account/model switches/Spark2 load/guard-G08-cap weakening/
+fakeclock/actual-day replay/history rewrite/provider/service changes/denied-read
+bypass/paiddata/tuning/real-money orders. Never deploy historical main wholesale.
+Goal/heartbeat ACTIVE; meaningful progress only, no ETA.
+
 ## 2026-10-19 — Private native result storage before resolution VERIFIED; live acceptance remains UNVERIFIED
 
 Read research/prepared-results-proof-2026-10-19.json:
