@@ -1304,6 +1304,18 @@ ConversationService(reply_llm=...)). None of it is deployed:
 `.env` MAIN_LLM_BASE_URL back to :8000, REPLY_LLM_REASONING_EFFORT=high,
 and `systemctl --user disable --now reply-effort-shaper` on spark1.
 
+**opencode on spark1 (code.deepmatter) upgraded 1.18.25 -> 1.19.3
+(2026-10-20 14:54 ET; backup binary `~/dsv41/opencode-1.18.25.bak`):**
+same 1.x line, web restarted while idle, smoke run wrote a file through a
+tool call with effort max injected, watchdog still exits 0 against the new
+session API. State of that harness for the record: effort max on every
+request via effort-inject, DeepSeek-card sampling (T 1.0, top_p 0.95),
+thinking recorded and shown (9,711 reasoning parts in the last day),
+model entry `spark/deepseek-v4.1-flash-1017` at 262144/65536. OpenCode
+2.1.0 (released today) renames the session/event/plugin contracts the
+watchdog and web setup read; not installed - try it side by side with a
+bake-off task before switching, never in place.
+
 **Last gate miss closed (`432007ad`, not deployed):** `manage_check_ins`
 3/4 was "stop checking in on me" on a greedy near-tie that only lost under
 concurrent load (0/8 loaded, 8/8 alone). The routing prompt's sentence on
