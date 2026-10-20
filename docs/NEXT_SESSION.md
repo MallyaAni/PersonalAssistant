@@ -1,5 +1,126 @@
 # Next session
 
+## CURRENT HUMAN 12:39Z — standing reference integrated/tested; real preview still old backend; NOT deployed
+
+Human: “i still dont see consistency in the current size recommendation with the
+chart.” Real HPE reproduced the ambiguity: current “Buy Size10.6%” was a desired
+TOTAL position; original Oct16 09:45 simulated Buy2.5% was an ADDITION toward the
+then25% objective. They must not be labelled as the same quantity. Current preview
+NOW has separate Size% (trade amount) and Position% (desired total). Chart header
+and table use those same meanings; unconfirmed trade is —, not the position or0.
+Original markers/evidence stay unchanged. Actual HPE D/W/15m manual path retained
+original Oct16Buy2.5/then25% and current10.6% objective; screenshots/JSON at
+/tmp/strategy-position-consistency-real-ui-20261020-v1, scoped diagnostics[].
+The main ongoing-book mismatch is NOT declared finished merely from this label fix.
+
+PUSHED source0431ffc4bf28f0ef9999067671974249c84be5a9/tree
+5c528534dbc6f65669e3dbb07491dc80b548a520 on production-based codex/trading-fill-consistency-20261019 adds
+strategy_reference_entries.py and normal collector/API/original-history selection.
+It is NOT main or deployed. Productionb4 unchanged. Source approval35→40 includes
+reference adapter/core and actual history/installation/publication dependencies;
+no production approval/config/service/model/account/provider change. Old35-source
+bundle/f0 acquisition cannot certify new40-source code. Native numerical math,
+writer/Store/order semantics/caps/economic12-source identity remain unchanged.
+
+NEW integration: retain ORIGINAL native MarketPacket and its existing independently
+split-attested IEX prior_close anchors; no extra provider request. Authenticate
+actual source/head/forecast/config/window/quote receipts. Explicit IEX-relative
+return bridge values original adjusted reference units, NEVER raw-IEX=SIP claim.
+Actual native window determines terminal. Both positive owned-unit Sell trims/
+grade exits and Buy timing use the native decision engine. Separate trade amount
+and desired position are in current API/UI; unavailable/expired/foreign evidence
+cannot fall through to an invented legacy Sell. One missing grade does not erase
+the valid rest of the universe. First standing intent is immutable across quote
+refreshes/candles, indexed once and restored with its original Sell/amount/reason.
+Future selected original survives corrupt current view; ASGI owner200/foreign403/
+anonymous401 covered. Standing reference is COUNTERFACTUAL MODEL SCENARIO, NEVER
+viewer holdings, account, fills or historically published advice. Advice/polling
+does NOT advance units, assume fills or spend proposed sale proceeds.
+
+NEW9 cases plus28 changed-path regressions: FINAL backendv4 CID
+0103fd3aa2c09bd295a9af739492fcec55b5503b8d36b97a259a1c71fcd8f52b,
+37pass0fail/error/skip/1.206s/maxRSS300156KiB/exit0/noOOM12:13:34.959721626Z.
+Source5 exact pins in proof. Native capture/quote parsers and native math run with
+explicit synthetic provider JSON, NOT real current feed acceptance. Caps unchanged
+netnone/RO/UID1000/1CPU/512MiB=swap/PIDs32/tmp64/CPU30/FSIZE1MiB. First v1 FAILED
+34cases/1error: fixture omitted calculation_receipt before intended later-candle
+assertion; corrected fixture only. V2 34pass, v3/v4 37pass are changed-source
+cohorts, NOT142 distinct tests. Preserve all roots /tmp/strategy-reference-live-*
+and Spark1 scratch/strategy-reference-live-20261020-v{1..4}. Isolated v1 test
+checkout frozen; later exact files ROmounted. Active preview checkout untouched.
+
+UI evidence: original2 expected REDs, then56PASS205.071966s for reference mode.
+Human label finding added1 expectedRED14.218019s. Final product asset
+index-CI1Teezc.js921852B/SHA1664045a95d5512d58ce60a4b3dec0534377d695c712d9c17c26e6403295e1fd,
+TSC/build5.03s/diffPASS(existingCSS/chunk warnings). Final57-case run FAILED55pass/
+2fail211.974006s: original-foreign crossed REAL08:30 candle deadline and correctly
+lost current entry; second old assertion confused known0% objective with unknown
+sell amount. Changed only test preparation to avoid expiry in identity test
+(real wait if candle has<10s, no fake clock; expiry assertions unchanged), then
+3identity variants PASS9.53084s. Updated old assertion to Position0% AND Size—;
+one targeted case PASS5.936132s. Same final product artifact throughout. These
+cover57 unique cases across split cohorts, NOT one whole57 green run or59unique.
+Keep all RED/failed/green logs/traces/source/configs; never replay for docs.
+Two intermediate label builds completed but tests UNRUN. No deployment occurred.
+
+Proof docs/research/strategy-reference-live-integration-proof-2026-10-20.json
+186479B/SHA7c6c1b724015953d20ef7c10f1a23f5d1ef4b8b8ef7938d2b4f26358d64b20ad
+contains retained32fixed remote DATA files/reports/CIDs/sourcepins/controls and
+local artifact/realUI SHA metadata. Collector ONCE saved/fsynced/read back product
+proof then FAILED copying to absent main research/ parent. NO recollection/retest.
+Separate retained-local-proof-only copy to existing main docs/research succeeded;
+failure /tmp/strategy-reference-live-collector-copy-failure-20261020.json and exact
+failed collector preserved.33diagrams/page synchronize; changed flow dashed/
+unreleased. Unrelated renderer byte noise archived/restored from exact original
+unchanged-source SVGs, page rebuilt only; no additional full render/check needed.
+
+KEEP same signed-in previewtab4/Vite33452/tunnel70626/node_modules/tab3handoff.
+IMPORTANT actual read bridge STILL uses exactf0 source+normal metadata at
+scratch/strategy-history-real-install-20261020-v1/store. It does NOT select new40
+reference backend yet; frontend hot reload alone is NOT whole integration proof.
+Do not mutate that running source checkout or call old acquisition “latest code”.
+No samples/auth bypass/key/cookie copying. Source40 real metadata/activation and
+read-bridge migration need concrete reviewed binding first. Original snapshot
+expiresOct20 16:00ET, holding recompute09:30 separate; never extend either clock.
+
+NEXT finish coherent reference progression/real preview, not another tiny guard:
+1. Standing reference currently stays originalOct19 and has no assumed fills.
+   Automatic separately-labelled hypothetical progression and next-day rollover
+   remain OPEN. Only ORIGINAL LATER observed execution-price evidence may settle
+   a hypothetical intent; issuing/polling advice is not a fill. Preserve pending
+   objectives and ORIGINAL DAILY BUY CASH BUDGET separately from sale proceeds.
+   New snapshot cannot silently reseed from older history; preserve wealth through
+   any original basis restatement and retain actual returns. Add scoped new proof.
+2. Review exact40-source candidate activation plus original daily context for an
+   isolated real preview, retaining original source/receipt lineage; no weakened
+   source/config/publication guards. Prepare a NEW exact-source acquisition
+   controller; oldf0 /tmp/run_strategy_regular_preview_acquisition_20261020.py and
+   /tmp/acquire_strategy_regular_preview_20261020.py remain UNRUN and unsuitable.
+3. Actual current regular15m only NATURALLY Oct20>=09:45ET/<16:00. No early call,
+   fake clock, old-day replay, duplicate collector/watcher/cron, restart96763.
+   Unique strategy-current-regular-20261020-v1 must be absent; inspect original
+   attempt, never blindly retry. Original.env only private-process filemount,
+   APCA keys selected inside process; no extraction/copy/headerlogging/argv/env
+   exposure. GET-only configured IEX under unchanged caps/no account/orders/fit.
+   Capture authentic both-side actions/Size%/Position%/original reasons in SAME
+   signed-in preview before original quote30s expiry; no reacquire for screenshots.
+4. Full changed backend/routing gates require actual upgraded DeepSeek config
+   identity inspection, never old-setting restore/model/service swap. Canonical
+   release only scripts/deploy.sh AFTER real preview acceptance, proper new-source
+   approval/backups/rollback/post checks; NEVER historical main wholesale.
+
+All old closed cohorts/producers/audits/getters/collectors/gates stay closed;
+session94881 ENDED, no active full gate/model evaluation.2297historical microbuys
+remain original, no practical floor/tuning/hiding. No confidence/profitability/
+live-readiness claim. MissingOct15/60session intraday limit remain; paper LAST.
+No market_daily/balancer probes, reset/real orders, paiddata/provider/service/model
+change, denied-read bypass, Spark2load/G08 weakening/native-pool adoption/reopen.
+Physical rename/journal/SQLite/fullRAM/twohost/powerloss remain separate blocked/
+unverified. Automation ACTIVE; prior exactbytes archived at
+/tmp/strategy-reference-live-automation-before-20261020.toml9142B/SHA
+08813008b50a4ac341faa4f1e99aa910699d9c305343860a4aaacf90f1e7b2e2.
+Notify meaningful progress/failure/required action only, no ETA/question pending.
+
 ## CURRENT 2026-10-20 — reference transition contract VERIFIED; live selection remains OPEN
 
 Human task remains the real latest-strategy All names Buy/Sell/model Size%,
