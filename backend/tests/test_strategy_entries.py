@@ -168,8 +168,12 @@ class StrategyEntryTests(unittest.TestCase):
                 moved = entries.project(snapshot,cache,quotes,NOW)
                 shifted = probability.Distribution(distribution.mean+np.log(102/100),distribution.scale,distribution.residuals,distribution.weights)
                 expected = probability.decision(shifted,'buy',.17,10,horizon=probability.HORIZON)
-                self.assertEqual(moved['rows']['AAA']['state'],expected.state)
-                self.assertEqual(moved['rows']['AAA']['size_weight'],.17)
+                row = moved['rows']['AAA']
+                self.assertEqual(row['state'],expected.state)
+                self.assertEqual(row['size_weight'],
+                    .17 if expected.state=='execute' else 0)
+                self.assertEqual(row['verdict'],
+                    'buy' if expected.state=='execute' else 'nothing')
                 self.assertEqual(distribution.mean,mean)
 
     # Quote expiry and candle rollover cannot keep an old execute recommendation active.

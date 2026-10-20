@@ -139,9 +139,16 @@ class ReferenceEntryTests(unittest.TestCase):
             book = transition.ReferenceBook(cache['reference_plan'].reference.strategy_identity, snapshot['session'], 10,
                 (('AAA', .001, 100.),), .9, publication._digest(cache['reference_evidence']))
             changed['reference_plan'] = transition.prepare(snapshot, book, NOW)
-            bought = entries.project(snapshot, changed, quotes, NOW)['rows']['AAA']
+            bought_value = entries.project(snapshot, changed, quotes, NOW)
+            bought = bought_value['rows']['AAA']
             self.assertEqual(bought['action'], 'Buy')
-            self.assertAlmostEqual(bought['size_weight'], .07, places=14)
+            self.assertEqual(bought['verdict'],
+                'buy' if bought['state'] == 'execute' else 'nothing')
+            self.assertAlmostEqual(bought['size_weight'],
+                .07 if bought['state'] == 'execute' else 0, places=14)
+            self.assertAlmostEqual(
+                bought_value['reference_calculation']['rows']['AAA']['trade_weight'],
+                .07, places=14)
 
     # Equivalent percentage moves use the explicit IEX-return bridge, never an unlabelled raw/adjusted equality.
     def test_price_bridge_and_no_additional_requests(self):
@@ -163,7 +170,9 @@ class ReferenceEntryTests(unittest.TestCase):
             quotes['AAA']['t'] = (NOW-timedelta(seconds=31)).isoformat()
             row = entries.project(snapshot, cache, quotes, NOW)['rows']['AAA']
             self.assertEqual((row['action'], row['state']), ('Sell', 'unavailable'))
-            self.assertGreater(row['size_weight'], 0)
+            self.assertEqual((row['verdict'], row['reason_code']),
+                ('nothing', 'quote_stale'))
+            self.assertEqual(row['size_weight'], 0)
             self.assertIsNone(row['quote_at'])
 
     # Original packet mutation, resealed foreign heads and a changed source window all fail before advice.

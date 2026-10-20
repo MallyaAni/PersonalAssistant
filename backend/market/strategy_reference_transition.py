@@ -19,6 +19,7 @@ from backend.market import probabilistic_execution as timing
 from backend.market import strategy_model_history as history
 from backend.market import strategy_publication as publication
 from backend.market import strategy_entry_context, strategy_history_installation
+from backend.market import strategy_verdict as verdicts
 
 VERSION = "strategy-reference-transition/1"
 BASIS = "counterfactual_model_reference_not_viewer_holdings"
@@ -28,8 +29,9 @@ PRICE_BASIS = "adjusted_total_return"
 # Bind the exact numerical adapter and the unchanged rules it actually calls.
 def sources():
     return {Path(module.__file__).name: sha256(Path(module.__file__).read_bytes()).hexdigest()
-            for module in (history, timing, publication, inference, strategy_entry_context,
-                           strategy_history_installation, strategy_history_installation.history)} | {
+            for module in (history, timing, publication, inference,
+                           strategy_entry_context, strategy_history_installation,
+                           strategy_history_installation.history, verdicts)} | {
                 Path(__file__).name: sha256(Path(__file__).read_bytes()).hexdigest()}
 
 
@@ -175,11 +177,22 @@ def project(plan, marks, distributions, *, evidence_sha256, price_basis, termina
         else:
             choice = timing.decision(distributions.get(name), "buy" if buying else "sell",
                                      size, plan.reference.cost_bps, horizon=timing.HORIZON)
-        rows[name] = {"action": ("Sell" if mandatory or delta < 0 else "Buy") if amount > 0 else None,
-                      "state": choice.state, "trade_weight": size, "reference_units": units,
-                      "proposed_units": amount, "model_position_weight": target,
-                      "reference_position_weight": units * marks[name] / nav if units > 0 else 0.0,
-                      "reason": choice.reason, "waiting_log_utility": choice.expected_log_utility}
+        action = ("Sell" if mandatory or delta < 0 else "Buy") if amount > 0 else None
+        held = units * marks[name] / nav if units > 0 else 0.0
+        verdict, reason_code = verdicts.classify(
+            state=choice.state, action=action, timing_reason=choice.reason,
+            target_weight=target, held_weight=held,
+            distribution_available=distributions.get(name) is not None,
+            mandatory=mandatory)
+        rows[name] = {"action": action, "state": choice.state, "trade_weight": size,
+                      "size_weight": size if verdict in ("buy", "sell") else 0.0,
+                      "reference_units": units, "proposed_units": amount,
+                      "model_position_weight": target,
+                      "reference_position_weight": held,
+                      "reason": choice.reason, "verdict": verdict,
+                      "reason_code": reason_code,
+                      "verdict_reason": verdicts.REASONS[reason_code],
+                      "waiting_log_utility": choice.expected_log_utility}
     value = {"version": VERSION, "basis": BASIS, "price_basis": price_basis,
              "snapshot_id": plan.snapshot_id, "publication_receipt_sha256": plan.publication_receipt_sha256,
              "strategy_identity": plan.reference.strategy_identity, "reference_evidence_sha256": plan.reference.evidence_sha256,

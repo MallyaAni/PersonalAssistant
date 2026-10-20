@@ -25,6 +25,7 @@ from backend.market import strategy_publication as publication
 from backend.market import strategy_reference_transition as transition
 from backend.market import strategy_history_publication as history
 from backend.market import strategy_reference_book as reference_book
+from backend.market import strategy_verdict as verdicts
 
 VERSION = 'strategy-numerical-entries/2'
 BASIS = 'standing_counterfactual_reference_transition_not_viewer_order'
@@ -203,10 +204,26 @@ def project(snapshot, cache, quotes, now):
             evidence.update(waiting_advantage_mean=distribution.mean,
                 waiting_advantage_quantiles=probability.weighted_quantiles(
                     distribution.mean+distribution.scale*distribution.residuals, distribution.weights).tolist())
+        verdict, reason_code = verdicts.classify(
+            state=state, action=row['action'],
+            timing_reason=evidence['timing_reason'],
+            target_weight=row['model_position_weight'],
+            held_weight=row['reference_position_weight'],
+            quote_available=pair is not None,
+            distribution_available=forecast.distributions.get(name) is not None,
+            mandatory=row['reason'] == 'mandatory_grade_exit',
+            resolved=progressing and name in dict(book.resolved))
+        size_weight = row['trade_weight'] if verdict in ('buy','sell') else 0.0
+        evidence['trade_size'] = size_weight
         quoted = used[name]['as_of'] if pair else None
         until = min(completed+timedelta(minutes=15), datetime.fromisoformat(quoted)+timedelta(seconds=execution_quotes.MAX_AGE_SECONDS)) if pair else now
-        rows[name] = {'action': row['action'], 'state': state, 'size_weight': row['trade_weight'],
-                      'model_position_weight': row['model_position_weight'], 'reference_units': row['reference_units'],
+        rows[name] = {'action': row['action'], 'state': state,
+                      'size_weight': size_weight,
+                      'model_position_weight': row['model_position_weight'],
+                      'verdict': verdict,
+                      'reason_code': reason_code,
+                      'reason': verdicts.REASONS[reason_code],
+                      'reference_units': row['reference_units'],
                       'proposed_units': row['proposed_units'], 'quote_at': quoted, 'valid_until': until.isoformat(),
                       'intent_id': publication._digest({'day_id':book.day_id(),'ticker':name}) if progressing else publication._digest({'snapshot_id': plan.snapshot_id, 'reference': plan.reference.evidence_sha256, 'ticker': name}),
                       **({'attempt_resolved':name in dict(book.resolved),
@@ -277,9 +294,21 @@ def validate(value, snapshot, forecast=None):
         quoted = json.loads(body)['quotes']
     for name, row in value['rows'].items():
         saved = calculation['rows'][name]
+        expected_size = (saved['trade_weight']
+            if 'verdict' not in row or row['verdict'] in ('buy', 'sell') else 0)
+        if 'verdict' in row and (row['verdict'] not in verdicts.VERDICTS
+                or row['reason_code'] not in verdicts.REASON_CODES
+                or not isinstance(row['reason'], str)
+                or row['verdict'] in ('buy', 'sell') and row['state'] != 'execute'
+                or row['verdict'] == 'nothing' and row['state'] == 'execute'
+                or row['verdict'] == 'buy' and row['action'] != 'Buy'
+                or row['verdict'] == 'sell' and row['action'] != 'Sell'
+                or row['verdict'] == 'nothing' and row['size_weight'] != 0):
+            raise ValueError('Original reference verdict differs')
         if (row['action'] not in ('Buy', 'Sell', None) or row['state'] not in ('execute', 'wait', 'unavailable', 'no_trade')
                 or type(row['size_weight']) not in (int, float) or not math.isfinite(row['size_weight']) or not 0 <= row['size_weight'] <= 1
-                or row['size_weight'] != saved['trade_weight'] or row['action'] != saved['action']
+                or row['size_weight'] != expected_size
+                or row['action'] != saved['action']
                 or row['model_position_weight'] != original[name][3] or row['model_position_weight'] != saved['model_position_weight']
                 or row['proposed_units'] != saved['proposed_units'] or row['reference_units'] != saved['reference_units']
                 or (row['action'] == 'Sell' and not 0 < row['proposed_units'] <= row['reference_units'])
