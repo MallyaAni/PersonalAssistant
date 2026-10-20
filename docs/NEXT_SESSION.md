@@ -1,5 +1,37 @@
 # Next session
 
+## 2026-10-20 08:09 ET — Reply thinks at high; bounded calls do not; Mermaid generics fixed (VERIFIED)
+
+Why: the blind reply comparison (4213d837) showed 1017 with thinking off
+loses arithmetic/logic by stating a wrong headline it later corrects, and
+with thinking on wins 11/4/34. But vLLM counts thinking against
+`max_tokens`, and `MAIN_LLM_REASONING_EFFORT=high` reaches every call on the
+MAIN client: a 1,200-token request at high came back with EMPTY content
+(`finish_reason=length`, measured directly). So the live `.env` is back to
+`none` and `deploy/spark/reply-effort-shaper.py` (user unit on spark1, :8899)
+turns thinking on only for reply-shaped calls (`max_tokens >= 4096`, no
+tools, no grammar); `MAIN_LLM_BASE_URL=http://172.16.8.3:8899`,
+`MAIN_LLM_MAX_TOKENS=16384`. Verified inside `anios_backend`: reply stream
+shaped, 200-token chat not, `benchmark_inference` 5/5. Details and the
+engine-behaviour correction (this image DOES honour top-level
+`reasoning_effort`; reasoning returns as `message.reasoning`) in
+`deploy/spark/README.md`.
+
+**Code follow-up (not started):** give the reply its own effort in
+`backend/core/llm.py` / `dependencies.py` (reply client at high, every
+bounded client "none"), then retire the shaper. Until `~/deploy/anios` is
+reconciled nothing in main deploys anyway.
+
+**Landed:** `a6164e3c` Mermaid validator accepts generic member types
+(written by dsh in the harness bake-off; see README "Harness bake-off" for
+the opencode-vs-dsh numbers and the verdict: opencode primary, dsh second
+opinion). Remaining gate miss: `manage_check_ins` routing 3/4.
+
+**Observed, not changed:** spark1's `effort-inject.service` for opencode now
+runs with `INJECT_REASONING_EFFORT=max` (restarted 08:04:58 ET today, not by
+this session); opencode on spark1 sends `max_tokens` 32000, so that budget
+holds at max.
+
 ## 2026-10-19 22:56 ET — DeepSeek-V4.1-Flash-1017 is the main model (VERIFIED)
 
 Cutover log `test-results/dsv41-cutover-20261019T224234.log`; full evidence

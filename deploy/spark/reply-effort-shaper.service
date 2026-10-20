@@ -1,0 +1,13 @@
+[Unit]
+Description=AniOS reply-only thinking shaper between the backend and vLLM (port 8899)
+After=network.target
+
+[Service]
+Environment=REPLY_REASONING_EFFORT=high
+Environment=REPLY_MIN_MAX_TOKENS=4096
+ExecStart=/usr/bin/python3 %h/.local/lib/reply-effort-shaper.py
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=default.target

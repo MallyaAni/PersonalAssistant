@@ -94,10 +94,12 @@ excludes spark1's `.cache` - the copy was complete. Fixed; the rollback's ds4
 boot was stopped at 4 minutes and the cutover resumed. A probe f-string also
 failed on the Sparks' Python (backslash in an f-string expression); fixed.
 
-**Gate misses to decide on (not fixed - the owner's call was model only):**
+**Gate misses (one fixed 2026-10-20):**
 `test_diagram_generation_behaviour[class diagram]`: the model wrote generics
-(`List<Book>`), which `UNSAFE_MERMAID_PATTERN` rejects as an HTML tag; a
-validator limitation the old model never tripped. `manage_check_ins` routing
+(`List<Book>`), which `UNSAFE_MERMAID_PATTERN` rejected as an HTML tag; a
+validator limitation the old model never tripped - FIXED in `a6164e3c`; the
+real gate file passes (one repetition case flaked once with an empty message
+from the provider, then passed 3/3 reruns and 6/6 direct replays). `manage_check_ins` routing
 3/4 against a 0.8 floor (one case chose `none`).
 
 The planning text that follows is kept as written before the change.
@@ -144,14 +146,58 @@ and opencode asks for thinking explicitly), and a `socat` forwarder on
 spark2:8001 -> spark1:8000 plus a served-name alias `qwen3-vl-8b`, because the
 deployed compose still names the retired VLM literally (cutover step 5b).
 
-**Engine difference that reaches the app.** This image reads the reasoning
-level only from `chat_template_kwargs` and ignores the top-level field,
-with thinking ON by default. `backend/core/llm.py` and the vision provider
-send both forms since `bf5f67b3`, with "none" as `thinking: false`. Without
-that, every routing/classification call becomes a thinking call, silently.
-Also: literal DeepSeek special tokens in user text become real tokens on
-this image; the README's defuse (zero-width space after `<`) is not applied
-in AniOS yet.
+**Engine difference that reaches the app (corrected 2026-10-20).** This
+image honours BOTH the top-level OpenAI `reasoning_effort` field and
+`chat_template_kwargs` (measured: top-level `high` alone returns a populated
+`message.reasoning`; top-level `none` alone returns none), and thinking is ON
+by default when neither is sent, which is why the server runs
+`--default-chat-template-kwargs '{"thinking": false}'`. The thinking comes
+back as `message.reasoning` (streamed as `delta.reasoning`), not
+`reasoning_content`. Thinking tokens count against `max_tokens`: at `high`, a
+1,200-token design request came back `finish_reason=length` with EMPTY
+content and 4.6K characters of reasoning, and a 2,048-token one did the
+same. `backend/core/llm.py` and the vision provider send both forms since
+`bf5f67b3`, with "none" as `thinking: false`. Also: literal DeepSeek special
+tokens in user text become real tokens on this image; the README's defuse
+(zero-width space after `<`) is not applied in AniOS yet.
+
+**Reply thinking without starving the bounded calls (live since 2026-10-20
+08:09 ET).** The reply and the helper calls share one MAIN client, so
+`MAIN_LLM_REASONING_EFFORT=high` (set 07:05, after the reply comparison
+showed 1017 needs thinking on arithmetic/logic) would also have made the
+search planner (200 tokens), document facts (700), the vision reasoner
+(1,024) and the digest writer (2,048) think inside budgets that thinking
+exhausts. Live now: `.env` has `MAIN_LLM_REASONING_EFFORT=none`,
+`MAIN_LLM_BASE_URL=http://172.16.8.3:8899`, `MAIN_LLM_MAX_TOKENS=16384`, and
+`reply-effort-shaper.py` (this folder; user unit `reply-effort-shaper.service`
+on spark1, port 8899, same TCP-splice design as opencode's `effort-inject.py`)
+sets `reasoning_effort=high` on exactly the calls that look like the reply:
+`max_tokens >= 4096`, no `tools`, no `response_format`. Everything else
+passes through as sent. Verified from inside `anios_backend`: the reply
+stream is shaped (`~/.local/state/reply-effort-shaper.log` on spark1 records
+every decision), a 200-token `chat` is not, `benchmark_inference` 5/5 through
+it. Transitional: the real fix is a reply-only effort in the code (the reply
+node gets its own client/effort; bounded calls keep "none"); when that ships,
+point `MAIN_LLM_BASE_URL` back at :8000 and disable the unit. Backups of
+`.env` before each change: `~/dsv41/env.pre-main-effort-*`,
+`~/dsv41/env.pre-shaper-*`.
+
+**Harness bake-off (2026-10-20, one task, both on this model).** opencode
+1.18.x (spark1, effort via `effort-inject`) and the DeepSeek Harness `dsh`
+0.2.1-rc.2 (installed under `~/dsh` on spark1, headless profile in
+`~/dsh/home/profiles/headless/cordis.patch.yml`, run with
+`DSH_HOME=~/dsh/home SPARK_API_KEY=local ~/dsh/node_modules/.bin/dsh --profile
+headless "task"`) were each given the Mermaid-generics validator miss from
+the gate, in separate worktrees, with pytest available and no commit allowed.
+opencode: 695 s, 2.37M tokens, correct, 35 tests green, left a new C901.
+dsh: 945 s, 3.79M tokens, correct, broader (innermost-first blanking, an
+active-element allowlist), 34 tests green, no new lint, found and used the
+repo's docker test image on its own. dsh's patch is what landed (`a6164e3c`).
+Verdict for now: no quality gap on one sample; opencode is cheaper locally
+(the "8x fewer tokens" reports for dsh are against hosted APIs and did not
+reproduce here); keep opencode as the primary harness and dsh installed as
+the second opinion for validator/parsing work. More samples before changing
+that.
 
 **Apply, in order** (`scripts/spark-dsv41-cutover.sh` does 3-6 and rolls back
 on its own):
