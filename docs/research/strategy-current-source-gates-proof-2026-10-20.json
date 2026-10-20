@@ -1,0 +1,117 @@
+{
+  "deployed": false,
+  "files": {
+    "image.json": {
+      "bytes": 235,
+      "sha256": "cb5df69da076c6b911cb8d8d319bf0835f17f615901f52236b62eaa9cd8b069b"
+    },
+    "routing/result.json": {
+      "bytes": 1023,
+      "sha256": "327123b1ff5dce05b6be8e50cd0b8563497e02e3558b5a1df18059f1f1a4f9ba"
+    },
+    "routing/start.json": {
+      "bytes": 880,
+      "sha256": "2f270ab52447e21ec0a7fbfd7415a9127499ec3779fd1002f34b94847dd6220b"
+    },
+    "routing/stderr": {
+      "bytes": 246,
+      "sha256": "a64d579f14f84b721085f1f722b34a180a394391aea37f3f04d9678d796fa02a"
+    },
+    "routing/stdout": {
+      "bytes": 2062,
+      "sha256": "12979c98e00c1116483cd018bfa11d889aac4af1e3aefb3f92c16cc0e41baea4"
+    },
+    "unit/result.json": {
+      "bytes": 1034,
+      "sha256": "38c106cbcf9638de3a2dcb50ade1507d1667df875ae07ddeb44e20d04bd350f6"
+    },
+    "unit/start.json": {
+      "bytes": 891,
+      "sha256": "e97ddcea78e9243e672e7f66942a26d0ccf9c5f4bb0b070c55e4aecd99224a81"
+    },
+    "unit/stderr": {
+      "bytes": 620,
+      "sha256": "721ee645f7473a4e0d6db512ea4560aa1442d3c9cc4fc005e6862c62120d3be6"
+    },
+    "unit/stdout": {
+      "bytes": 52380,
+      "sha256": "4b2645055bc54fdcd128358a114f513f32c4fc7af341d85e52f07adc98f504e9"
+    }
+  },
+  "image": {
+    "Architecture": "arm64",
+    "Created": "2026-10-20T02:07:51.388365852-04:00",
+    "Id": "sha256:9bbf2844efe2a827176bbe227d66587cd382a29f6f04bd442080a915e68e872d",
+    "Os": "linux",
+    "RepoTags": [
+      "anios-functional-tests:strategy-final-6ce28f85"
+    ]
+  },
+  "local_root": "/tmp/strategy-current-source-gates-6ce28f85-20261020-evidence",
+  "observed_at": "2026-10-20T06:24:15.887632+00:00",
+  "regular_session_feed_to_preview_acceptance": "UNVERIFIED",
+  "remote_root": "/home/animallya96/scratch/strategy-final-source-gates-20261020-6ce28f85",
+  "results": {
+    "routing": {
+      "argv": [
+        "bash",
+        "/home/animallya96/scratch/strategy-final-source-gates-20261020-6ce28f85/checkout/scripts/gate.sh"
+      ],
+      "environment_overrides": {
+        "ANIOS_FUNCTIONAL_TESTS_IMAGE": "anios-functional-tests:strategy-final-6ce28f85",
+        "ANIOS_GATE_DB": "anios_gate_trading_224f9a53",
+        "ANIOS_GATE_SKIP_INFRA": "1",
+        "ANIOS_GATE_WORKERS": "1",
+        "COMPOSE_PROJECT_NAME": "anios",
+        "POSTGRES_DB": "anios_gate_trading_224f9a53"
+      },
+      "finished_at": "2026-10-20T06:24:05.891496+00:00",
+      "no_model_or_service_change": true,
+      "not_deployment": true,
+      "phase": "routing",
+      "pid": 1692767,
+      "private_environment": "original file symlink; never read/logged by controller",
+      "production_head_after": "b4b2eeb9ac3d1b0bb1f344b280ecd5f1b00be1b8",
+      "production_head_before": "b4b2eeb9ac3d1b0bb1f344b280ecd5f1b00be1b8",
+      "returncode": 0,
+      "revision": "6ce28f8594cda2f56a4d65bff02f17c4e66b0a5d",
+      "started_at": "2026-10-20T06:16:46.225855+00:00",
+      "tree": "59f5735a81ea75f0f75d432350448061e04704ee"
+    },
+    "unit": {
+      "argv": [
+        "bash",
+        "/home/animallya96/scratch/strategy-final-source-gates-20261020-6ce28f85/checkout/scripts/gate.sh",
+        "--unit"
+      ],
+      "environment_overrides": {
+        "ANIOS_FUNCTIONAL_TESTS_IMAGE": "anios-functional-tests:strategy-final-6ce28f85",
+        "ANIOS_GATE_DB": "anios_gate_trading_224f9a53",
+        "ANIOS_GATE_SKIP_INFRA": "1",
+        "ANIOS_GATE_WORKERS": "1",
+        "COMPOSE_PROJECT_NAME": "anios",
+        "POSTGRES_DB": "anios_gate_trading_224f9a53"
+      },
+      "finished_at": "2026-10-20T06:16:46.222849+00:00",
+      "no_model_or_service_change": true,
+      "not_deployment": true,
+      "phase": "unit",
+      "pid": 1692767,
+      "private_environment": "original file symlink; never read/logged by controller",
+      "production_head_after": "b4b2eeb9ac3d1b0bb1f344b280ecd5f1b00be1b8",
+      "production_head_before": "b4b2eeb9ac3d1b0bb1f344b280ecd5f1b00be1b8",
+      "returncode": 0,
+      "revision": "6ce28f8594cda2f56a4d65bff02f17c4e66b0a5d",
+      "started_at": "2026-10-20T06:07:44.827594+00:00",
+      "tree": "59f5735a81ea75f0f75d432350448061e04704ee"
+    }
+  },
+  "revision": "6ce28f8594cda2f56a4d65bff02f17c4e66b0a5d",
+  "schema": "strategy-current-source-gates/1",
+  "summaries": {
+    "routing": "100 passed in 437.50s (0:07:17)",
+    "unit": "10983 passed, 93 skipped, 6 xfailed, 439 warnings, 25 subtests passed in 528.46s (0:08:48)"
+  },
+  "tree": "59f5735a81ea75f0f75d432350448061e04704ee",
+  "whole_live_trading_readiness": "UNVERIFIED"
+}

@@ -1,5 +1,22 @@
 # Changelog
 
+## 2026-10-20 — Date fresh numerical signals to their actual session
+
+The independent board kept saying Awaiting15-minuteentries even when it already
+displayed a valid numerical Buy. It now uses15-minute signals and the original
+completed candle's session while a matching fresh numerical Buy or Wait exists.
+Expired/foreign evidence retains Awaiting; no allocation, timing, source or quote
+guard changes. One expected browser RED and the unchanged numerical
+Buy→Wait→foreign/expired journey pass after the change; TSC/build pass.
+This fixture check is not actual regular-session feed acceptance.
+
+Exact prior6ce28f85/tree59f5735a source passed both full canonical gates:
+10983unitPASS/93skip/6xfail/439warnings/25subtests528.46s and100routing/modelPASS
+437.50s. The later header correction changes only frontend rendering/tests;
+all backend and35reviewed strategy sources remain byte-identical to6ce.
+Production remains unchanged; canonical deployment and real current-feed preview
+are still pending. Diagram impact:NONE — no new path or component.
+
 ## 2026-10-20 — Align current chart actions across timeframes
 
 Daily and weekly charts previously displayed Buy while the same numerical entry

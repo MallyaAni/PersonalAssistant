@@ -1,5 +1,50 @@
 # Next session
 
+## 2026-10-20 06:29Z — exact6ce full gates PASS; final frontend header correction verified
+
+Exact6ce28f8594cda2f56a4d65bff02f17c4e66b0a5d/tree
+59f5735a81ea75f0f75d432350448061e04704ee passed unchanged canonical UNIT then
+ROUTING:10983PASS/93skip/6xfail/439warnings/25subtests528.46s, then100PASS437.50s.
+Original session6959 ENDED exit0; no gate/model evaluation remains running.
+Both original results0, source/argv/full stdout/stderr/productionHEADb4 unchanged,
+image9bbf2844efe2a827176bbe227d66587cd382a29f6f04bd442080a915e68e872d.
+Proof research/strategy-current-source-gates-proof-2026-10-20.json4520B/SHA
+53aa75a5b79906050ead753bfc2ced370d72bbe30b541053cb213acba43dc6d2;
+DATA-only9fixedfiles retained /tmp/strategy-current-source-gates-6ce28f85-20261020-evidence.
+This is exact6ce evidence, not an assertion every later tree ran those gates.
+
+One further FRONTEND-only header correction: valid numerical Buy/Wait still
+showed Awaiting15-minuteentries/previous nightly input date. Expected RED on
+prior t8TZ build preserved; changed existing numerical Buy→Wait→foreign/expired
+journeyPASS2.3s (runner4.3s), no skipped/flaky/unexpected. Header now uses fresh
+original completed-candle session; foreign/expired rows retain Awaiting. All
+backend and35strategy-source hashes unchanged; no math/source/quote guard edits.
+Final frontend index-XlmBO-ch.js911724B/SHA
+dab1d927979d3ef5f979a41d32957dcb7e8e6214e0749b5b723fd5dd85970616,
+TSC/buildPASS(existingwarnings). Proof strategy-current-header-proof-2026-10-20.json
+3474B/SHA dc19b279b7a14a81f34d12534e915706a2133f74fbe637191f1fd534c2cd6a78.
+Not a new distinct browser case: same numerical journey with stronger header
+assertions; prior29case final-body proof retains its exact two-cohort scope.
+
+REAL final preview tab4 still94names/fivemodelsizes COHR/GEV/MU25%,ALAB14.3%,
+HPE10.6%, closed regular session. HPE15m Wait10.6%, originalOct16 09:45Buy2.5%
+GradeA/model25%/technical explanation restored; diagnostics[]. Current screenshot
+/tmp/strategy-current-header-real-ui-20261020-v1/{all-names,hpe-original}.png and
+evidence.json. Vite33452/tunnel70626/symlink/tab4deliverable/tab3handoff KEEP.
+No samples/auth bypass/orders/paper operations, no current regular-entry claim.
+
+NEXT: real naturally available09:45ET current IEX15m→API→signed-in preview remains
+mandatory before deployment. While closed, complete the independent recorded-entry
+history list/preview original-read bridge if possible; scalar getter already
+exists. Preserve exact original first quote/size/reasons, no replay/re-inference/
+funded fallback or claimed Sell0%. Never restart oldwatcher96763 or duplicate
+cron/collector. Existing feed only/paperLAST/no realorders. Rebind final approval
+target ONLY, keep f3review/config/release/evidence strings and initial80476 JSON
+unchanged; original Oct20 16:00expiry/recompute09:30 separate. Canonical release
+onlyscripts/deploy.sh after real preview, never historical main wholesale.
+All closed gates/collectors remain CLOSED; no reruns for docs. State tests for
+check-ins use repository doubles; no live user preference/datastore was mutated.
+
 ## 2026-10-20 06:08Z — all-frame chart entry consistency verified; generated catalogue corrected
 
 HEAD1cf backend full gate ENDED/FAILED only generated TOOL_CATALOG drift:

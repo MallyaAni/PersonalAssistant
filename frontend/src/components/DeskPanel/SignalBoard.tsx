@@ -250,6 +250,10 @@ export const SignalBoard = ({latest, live, allocation, now, onOpen, closes}: {la
   const rows = useMemo(() => Object.keys(allocation?.version === 'strategy-model-allocation/2' ? allocation.grade_signals ?? {} : latest.grades ?? {}).map(ticker => signalsFor(latest, live, ticker, now, allocation)), [latest, live, now, allocation])
   const independent = independentAllocation(allocation)
   const showPriority = !independent || rows.some(row => row.setup)
+  // Date fresh numerical signals to their own session rather than the nightly input close.
+  const currentSession = allocation?.version === 'strategy-model-allocation/2' && publicationValid(allocation, now)
+    && rows.some(row => numericalEntry(allocation, row.ticker, now))
+    ? new Date(allocation.entry_assessment!.completed_at!).toLocaleDateString('en-CA', {timeZone: 'America/New_York'}) : null
   // Use directional evidence first, then actual target size for model buy setups, without calling size confidence.
   const selected = (row: Signals) => side === 'buy' ? row.buy : side === 'sell' ? row.sell : row.buy.rank <= row.sell.rank ? row.buy : row.sell
   const ranked = rows.filter(row => row.ticker.toLowerCase().includes(query.trim().toLowerCase()))
@@ -261,7 +265,7 @@ export const SignalBoard = ({latest, live, allocation, now, onOpen, closes}: {la
     <div className="space-y-2 p-3">
       <h3 className="text-sm font-semibold">All names · {rows.length}</h3>
       <p className="text-xs text-[#6e6e73]">{independent
-        ? `${live.market_status?.phase === 'open' ? allocation?.version === 'strategy-model-allocation/2' ? 'Awaiting 15-minute entries' : '15-minute signals' : 'Regular market closed · Next-session actions'} · ${allocation?.session ?? latest.session}`
+        ? `${live.market_status?.phase === 'open' ? allocation?.version === 'strategy-model-allocation/2' && !currentSession ? 'Awaiting 15-minute entries' : '15-minute signals' : 'Regular market closed · Next-session actions'} · ${currentSession ?? allocation?.session ?? latest.session}`
         : 'Regular-session signals and published strategy plans · no paper account or portfolio inputs required. Immediate signals first, then waiting, plans and unavailable; High → Medium → Low within each group. Equal priorities sort alphabetically.'}</p>
       <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Signal ranking">
         {(['all', 'buy', 'sell'] as const).map(value => <button key={value} type="button" aria-pressed={side === value} className={`rounded-full border px-3 py-1 text-xs ${side === value ? 'bg-[#e8f2ff] text-[#0071e3]' : ''}`} onClick={() => {setSide(value); setVisible(25)}}>{value === 'all' ? 'All names' : value === 'buy' ? 'Best buys' : 'Best sells'}</button>)}

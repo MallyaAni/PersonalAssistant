@@ -168,6 +168,8 @@ test('Numerical entries drive the action and 15m marker, with quote and snapshot
   const board=page.getByRole('region',{name:'All names signals',exact:true})
   await expect(board.getByLabel('BUYHIGH action',{exact:true})).toHaveText('Buy')
   await expect(board.getByLabel('BUYHIGH model size',{exact:true})).toHaveText('14.3%')
+  await expect(board).toContainText(`15-minute signals · ${new Date(state.entryAt).toLocaleDateString('en-CA',{timeZone:'America/New_York'})}`)
+  await expect(board).not.toContainText('Awaiting 15-minute entries')
   await board.getByRole('button',{name:'BUYHIGH',exact:true}).click()
   const dialog=page.getByRole('dialog',{name:'BUYHIGH history',exact:true})
   await dialog.getByRole('button',{name:'15m',exact:true}).click()
@@ -179,12 +181,15 @@ test('Numerical entries drive the action and 15m marker, with quote and snapshot
   state.numerical='wait'
   await refresh(page,state)
   await expect(board.getByLabel('BUYHIGH action',{exact:true})).toHaveText('Wait')
+  await expect(board).toContainText('15-minute signals')
   state.numerical='execute';state.numericalForeign=true
   await refresh(page,state)
   await expect(board.getByLabel('BUYHIGH action',{exact:true})).toHaveText('Wait')
+  await expect(board).toContainText('Awaiting 15-minute entries')
   state.numericalForeign=false;state.numericalExpired=true
   await refresh(page,state)
   await expect(board.getByLabel('BUYHIGH action',{exact:true})).toHaveText('Wait')
+  await expect(board).toContainText('Awaiting 15-minute entries')
   await expect(board.getByLabel('BUYHIGH model size',{exact:true})).toHaveText('14.3%')
   expect(state.diagnostics).toEqual([])
 })
