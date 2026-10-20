@@ -1,0 +1,755 @@
+{
+  "actual_original_94_stock_scenario": {
+    "actual_clock": "2026-10-20T11:38:03.858327+00:00",
+    "changes": {
+      "ALAB": {
+        "action": "Buy",
+        "model_position_weight": 0.057703296616977706,
+        "proposed_units": 3.1441624364488987e-07,
+        "reason": "missing calibrated distribution",
+        "reference_position_weight": 0.013445136017866436,
+        "reference_units": 0.0010063869592005252,
+        "state": "unavailable",
+        "trade_weight": 4.200540481357592e-06,
+        "waiting_log_utility": null
+      },
+      "COHR": {
+        "action": "Buy",
+        "model_position_weight": 0.08538166177285449,
+        "proposed_units": 7.491980618124899e-07,
+        "reason": "missing calibrated distribution",
+        "reference_position_weight": 0.0,
+        "reference_units": 0.0,
+        "state": "unavailable",
+        "trade_weight": 8.103570545804815e-06,
+        "waiting_log_utility": null
+      },
+      "GEV": {
+        "action": "Buy",
+        "model_position_weight": 0.2367972681385512,
+        "proposed_units": 1.534657321654396e-08,
+        "reason": "missing calibrated distribution",
+        "reference_position_weight": 0.22994948192948095,
+        "reference_units": 0.005429775131054806,
+        "state": "unavailable",
+        "trade_weight": 6.499231506575464e-07,
+        "waiting_log_utility": null
+      },
+      "HPE": {
+        "action": "Sell",
+        "model_position_weight": 0.10596667579662186,
+        "proposed_units": 0.05261988340419551,
+        "reason": "missing calibrated distribution",
+        "reference_position_weight": 0.24301788955037326,
+        "reference_units": 0.09330506941916286,
+        "state": "unavailable",
+        "trade_weight": 0.13705121375375143,
+        "waiting_log_utility": null
+      },
+      "MU": {
+        "action": "Buy",
+        "model_position_weight": 0.2488882464078146,
+        "proposed_units": 1.2973340111171566e-09,
+        "reason": "missing calibrated distribution",
+        "reference_position_weight": 0.2483116194645165,
+        "reference_units": 0.00588629604677953,
+        "state": "unavailable",
+        "trade_weight": 5.4727643109820635e-08,
+        "waiting_log_utility": null
+      }
+    },
+    "names": 94,
+    "native_reference_preparation": {
+      "audit_sha256": "8c47b5e95a149b83c9e1b83a27d4b35831000ea99419cf26b28aff81506bd107",
+      "basis": "counterfactual_model_reference_not_viewer_holdings",
+      "binding_sha256": "eac9489f52199e9045c16bfec86cd0e37e5d2619349c51f4147d8dd72813c2da",
+      "close_context": {
+        "account_inputs": false,
+        "arrays_sha256": "f346b1d379b9935f5d618ea7ac1fc32ca9ec8dee1c4877ee4081b6a9f1781762",
+        "close_receipt_sha256": "196fde8c2c3deda0f5d7bf4836d47403f240e392edf10aeb71ccd6345db2c976",
+        "contract": "strategy-entry-context/1",
+        "holding_forecast_recomputed": false,
+        "prior_session": "2026-10-19",
+        "publication_receipt_sha256": "b12ac719b7dbeeb0c02c6bdd12afb6e5d14f05b0d93a60efc48b33c90803e971",
+        "snapshot_id": "03c53af07c6af233d597a6e99ad9a833e4e69cdccadc55b878b353bbe4c38c7d",
+        "source_sha256": "3aade712c9bcdbf5b09759cdb700c25c9f6e8e731cd6a27d4364c4f93ea2176f",
+        "trade_session": "2026-10-20"
+      },
+      "history_sha256": "cc49039984d89b854505a0afdb2071570e3494b6d75c4d4bf3c6dfe973c471f9",
+      "publication_receipt_sha256": "b12ac719b7dbeeb0c02c6bdd12afb6e5d14f05b0d93a60efc48b33c90803e971",
+      "review_sha256": "f2de664d9ce31ecba0e31b9c2c39612f7135cdcdce7872dcb6498cd5df52af51",
+      "schema": "strategy-reference-preparation/1",
+      "snapshot_id": "03c53af07c6af233d597a6e99ad9a833e4e69cdccadc55b878b353bbe4c38c7d",
+      "source_sha256": {
+        "forward_probability_timing.py": "0103852d53be711fcf4eeec80f74d707f42ef2ec86599ff72a305376d5632a92",
+        "probabilistic_execution.py": "cfd586859920f06d385447b1aa171f17e515d8e34bc07a8752164ef2b3705af2",
+        "strategy_entry_context.py": "3aade712c9bcdbf5b09759cdb700c25c9f6e8e731cd6a27d4364c4f93ea2176f",
+        "strategy_history_installation.py": "33c96116cb2c516c9d9e629b5d899e0e5637daba239ad858d8c21bfef1042cda",
+        "strategy_history_publication.py": "bd3d1cab411863fa0d098df0269e8a10a139fe16e92c42674cfff58a8591d17b",
+        "strategy_model_history.py": "7a7bfb2e200a02cdcba61ed2c92d7c14cf6fc8fd7c0de6a3c6c394c0ff0f03a2",
+        "strategy_publication.py": "9272e399f94eac96e365298465e8840c384552f7769d98228fdc5814933f95f0",
+        "strategy_reference_transition.py": "daf1704651cc6058eab147706874e1acdcb4a1df712c58e0c500bbdcc33865f2"
+      }
+    },
+    "no_timing_or_market_data_acquisition": true,
+    "not_current_recommendations": true,
+    "original_curve_equity": 21.45090692060969,
+    "plan_sha256": "45298b56b75f82dbf98ca61b00dc00e5efa22d194b845e3b499e7736e0130262",
+    "reference_equity": 21.45090692060969,
+    "reference_is_counterfactual_not_live_or_historically_published_book": true,
+    "result_bytes": 28753,
+    "result_sha256": "14207f8eaeb471957ac6f209bcfdf5dd51fe67350179b01825621b9ccd5e70a2",
+    "source_evidence": {
+      "audit_sha256": "8c47b5e95a149b83c9e1b83a27d4b35831000ea99419cf26b28aff81506bd107",
+      "original_close_arrays_sha256": "f346b1d379b9935f5d618ea7ac1fc32ca9ec8dee1c4877ee4081b6a9f1781762",
+      "result_sha256": "cc49039984d89b854505a0afdb2071570e3494b6d75c4d4bf3c6dfe973c471f9",
+      "snapshot_raw_sha256": "80476bbb92dda4c3591e63f3718aed9d724c9164901e618b2c26377c2527d329"
+    },
+    "through": "2026-10-19"
+  },
+  "branch": "codex/trading-fill-consistency-20261019",
+  "cohorts": {
+    "v1": {
+      "cid": "9bd1b12173c883230db6d2599b7c5258592ff635016297397568f280a3ff5b44",
+      "evidence_root": "/tmp/strategy-reference-transition-evidence-20261020/v1",
+      "image": "sha256:136ebb46b7912f20472a375a6b29f6efec4cf2fdca13d56cbffb86a1be697db2",
+      "pins": {
+        "run.py": "e2b5383d8c39fef15b93231f4f814f490a8b0c23671efc4242f67f065faee63f",
+        "strategy_reference_transition.py": "8073e1c7aa8aceffe9365bdf15636ffe9405bf391d6429770d643b4c1c86aa25",
+        "test_strategy_reference_transition.py": "323d79f8352faaa66a4da073902cdf10cc96911f9a6ca80897dfae3265137f59"
+      },
+      "state": {
+        "Dead": false,
+        "Error": "",
+        "ExitCode": 1,
+        "FinishedAt": "2026-10-20T11:30:06.965509884Z",
+        "OOMKilled": false,
+        "Paused": false,
+        "Pid": 0,
+        "Restarting": false,
+        "Running": false,
+        "StartedAt": "2026-10-20T11:30:04.980709581Z",
+        "Status": "exited"
+      },
+      "stderr_sha256": "7a27001e8a8264fccfca47a5ce6bf13bb7d0c8e611e7b7366b172f92e5784311",
+      "stdout_sha256": "a9344faadd6635d11fe13d3dd5eab614c861ef14901fd74ee4f4a050e3296407",
+      "test_result": {
+        "accounts": false,
+        "broker": false,
+        "errors": 0,
+        "failures": 1,
+        "max_rss_kib": 185680,
+        "network": false,
+        "new_model_fit": false,
+        "scope": "NEW_reference_transition_native_math_and_replay_parity_NOT_live_publication",
+        "skipped": 0,
+        "tests": 9
+      }
+    },
+    "v2": {
+      "cid": "7f4a92ba09f8d8c4374fde3abf8bb2a8e5c1df75f70dbb564d9146da35cc9ce0",
+      "evidence_root": "/tmp/strategy-reference-transition-evidence-20261020/v2",
+      "image": "sha256:136ebb46b7912f20472a375a6b29f6efec4cf2fdca13d56cbffb86a1be697db2",
+      "pins": {
+        "run.py": "dd16500c83235515f760b5d97061fd2ddbc8652b3efb98ea9bcff3189d4d145a",
+        "snapshot.json": "80476bbb92dda4c3591e63f3718aed9d724c9164901e618b2c26377c2527d329",
+        "strategy_reference_transition.py": "cbe9314a4dbbae539be46a1f95f39a3559dd9592515bf049a061ef337f041923",
+        "test_strategy_reference_transition.py": "2b8931e8dcf1b9c73c0d11fccc08f1d315514c009627799f886371ea2920fdc1"
+      },
+      "state": {
+        "Dead": false,
+        "Error": "",
+        "ExitCode": 0,
+        "FinishedAt": "2026-10-20T11:31:57.966592004Z",
+        "OOMKilled": false,
+        "Paused": false,
+        "Pid": 0,
+        "Restarting": false,
+        "Running": false,
+        "StartedAt": "2026-10-20T11:31:55.986022617Z",
+        "Status": "exited"
+      },
+      "stderr_sha256": "dd716dd900fcbf54faf58ecd93a754a3f68d845218fdbff75215468c5b2cc97b",
+      "stdout_sha256": "b7ef23476d8b4a41278e6034160afa51609f497ae0062c55681f980b4338b262",
+      "test_result": {
+        "accounts": false,
+        "broker": false,
+        "errors": 0,
+        "failures": 0,
+        "max_rss_kib": 192816,
+        "network": false,
+        "new_model_fit": false,
+        "original_real_reference": {
+          "actual_clock": "2026-10-20T11:31:57.583693+00:00",
+          "changes": {
+            "ALAB": {
+              "action": "Buy",
+              "model_position_weight": 0.057703296616977706,
+              "proposed_units": 3.1441624364488987e-07,
+              "reason": "missing calibrated distribution",
+              "reference_position_weight": 0.013445136017866436,
+              "reference_units": 0.0010063869592005252,
+              "state": "unavailable",
+              "trade_weight": 4.200540481357592e-06,
+              "waiting_log_utility": null
+            },
+            "COHR": {
+              "action": "Buy",
+              "model_position_weight": 0.08538166177285449,
+              "proposed_units": 7.491980618124899e-07,
+              "reason": "missing calibrated distribution",
+              "reference_position_weight": 0.0,
+              "reference_units": 0.0,
+              "state": "unavailable",
+              "trade_weight": 8.103570545804815e-06,
+              "waiting_log_utility": null
+            },
+            "GEV": {
+              "action": "Buy",
+              "model_position_weight": 0.2367972681385512,
+              "proposed_units": 1.534657321654396e-08,
+              "reason": "missing calibrated distribution",
+              "reference_position_weight": 0.22994948192948095,
+              "reference_units": 0.005429775131054806,
+              "state": "unavailable",
+              "trade_weight": 6.499231506575464e-07,
+              "waiting_log_utility": null
+            },
+            "HPE": {
+              "action": "Sell",
+              "model_position_weight": 0.10596667579662186,
+              "proposed_units": 0.05261988340419551,
+              "reason": "missing calibrated distribution",
+              "reference_position_weight": 0.24301788955037326,
+              "reference_units": 0.09330506941916286,
+              "state": "unavailable",
+              "trade_weight": 0.13705121375375143,
+              "waiting_log_utility": null
+            },
+            "MU": {
+              "action": "Buy",
+              "model_position_weight": 0.2488882464078146,
+              "proposed_units": 1.2973340111171566e-09,
+              "reason": "missing calibrated distribution",
+              "reference_position_weight": 0.2483116194645165,
+              "reference_units": 0.00588629604677953,
+              "state": "unavailable",
+              "trade_weight": 5.4727643109820635e-08,
+              "waiting_log_utility": null
+            }
+          },
+          "names": 94,
+          "no_timing_or_market_data_acquisition": true,
+          "not_current_recommendations": true,
+          "original_curve_equity": 21.45090692060969,
+          "plan_sha256": "6c2c6a1ef0ed37828659d1512ad9495822d9f4ed0384db3ae4830b0386b08e48",
+          "reference_equity": 21.45090692060969,
+          "reference_is_counterfactual_not_live_or_historically_published_book": true,
+          "result_bytes": 28449,
+          "result_sha256": "6bb441bb8d94ebc435307c66088c88676034df930b946b1298399b38b4f10b05",
+          "source_evidence": {
+            "audit_sha256": "8c47b5e95a149b83c9e1b83a27d4b35831000ea99419cf26b28aff81506bd107",
+            "original_close_arrays_sha256": "f346b1d379b9935f5d618ea7ac1fc32ca9ec8dee1c4877ee4081b6a9f1781762",
+            "result_sha256": "cc49039984d89b854505a0afdb2071570e3494b6d75c4d4bf3c6dfe973c471f9",
+            "snapshot_raw_sha256": "80476bbb92dda4c3591e63f3718aed9d724c9164901e618b2c26377c2527d329"
+          },
+          "through": "2026-10-19"
+        },
+        "scope": "NEW_reference_transition_native_math_and_replay_parity_NOT_live_publication",
+        "skipped": 0,
+        "tests": 9
+      }
+    },
+    "v3": {
+      "cid": "8ec31d8e347984f6425b2990135f57c1d7e9d95a3760f48abbabf3a9f3d3ea9a",
+      "evidence_root": "/tmp/strategy-reference-transition-final-evidence-20261020/v3",
+      "image": "sha256:136ebb46b7912f20472a375a6b29f6efec4cf2fdca13d56cbffb86a1be697db2",
+      "pins": {
+        "run.py": "c5d8b499d6151c633eb4c36e9b1b48e3cc218a9bd2df7c6816b0522f54fb27e8",
+        "snapshot.json": "80476bbb92dda4c3591e63f3718aed9d724c9164901e618b2c26377c2527d329",
+        "strategy_reference_transition.py": "69c300c51e64df317e75efdacbe4a0cb0f08a93b76b6a9c8afe77a2f69867061",
+        "test_strategy_reference_transition.py": "fb390d826e5f637ab788ba5e966766e5511c7e5508b98d2f993217663bfc497d"
+      },
+      "state": {
+        "Dead": false,
+        "Error": "",
+        "ExitCode": 0,
+        "FinishedAt": "2026-10-20T11:35:26.127291275Z",
+        "OOMKilled": false,
+        "Paused": false,
+        "Pid": 0,
+        "Restarting": false,
+        "Running": false,
+        "StartedAt": "2026-10-20T11:35:23.961451904Z",
+        "Status": "exited"
+      },
+      "stderr_sha256": "72e4294c675fd6d5acc7fb49d0fb690e0347b872dc17001567630c9d49706e95",
+      "stdout_sha256": "63321d3b7280ed3ffa8fa055006080ab9a6599b08e897e478e37df8dadcb9ce4",
+      "test_result": {
+        "accounts": false,
+        "broker": false,
+        "errors": 0,
+        "failures": 0,
+        "max_rss_kib": 205924,
+        "network": false,
+        "new_model_fit": false,
+        "original_real_reference": {
+          "actual_clock": "2026-10-20T11:35:25.663221+00:00",
+          "changes": {
+            "ALAB": {
+              "action": "Buy",
+              "model_position_weight": 0.057703296616977706,
+              "proposed_units": 3.1441624364488987e-07,
+              "reason": "missing calibrated distribution",
+              "reference_position_weight": 0.013445136017866436,
+              "reference_units": 0.0010063869592005252,
+              "state": "unavailable",
+              "trade_weight": 4.200540481357592e-06,
+              "waiting_log_utility": null
+            },
+            "COHR": {
+              "action": "Buy",
+              "model_position_weight": 0.08538166177285449,
+              "proposed_units": 7.491980618124899e-07,
+              "reason": "missing calibrated distribution",
+              "reference_position_weight": 0.0,
+              "reference_units": 0.0,
+              "state": "unavailable",
+              "trade_weight": 8.103570545804815e-06,
+              "waiting_log_utility": null
+            },
+            "GEV": {
+              "action": "Buy",
+              "model_position_weight": 0.2367972681385512,
+              "proposed_units": 1.534657321654396e-08,
+              "reason": "missing calibrated distribution",
+              "reference_position_weight": 0.22994948192948095,
+              "reference_units": 0.005429775131054806,
+              "state": "unavailable",
+              "trade_weight": 6.499231506575464e-07,
+              "waiting_log_utility": null
+            },
+            "HPE": {
+              "action": "Sell",
+              "model_position_weight": 0.10596667579662186,
+              "proposed_units": 0.05261988340419551,
+              "reason": "missing calibrated distribution",
+              "reference_position_weight": 0.24301788955037326,
+              "reference_units": 0.09330506941916286,
+              "state": "unavailable",
+              "trade_weight": 0.13705121375375143,
+              "waiting_log_utility": null
+            },
+            "MU": {
+              "action": "Buy",
+              "model_position_weight": 0.2488882464078146,
+              "proposed_units": 1.2973340111171566e-09,
+              "reason": "missing calibrated distribution",
+              "reference_position_weight": 0.2483116194645165,
+              "reference_units": 0.00588629604677953,
+              "state": "unavailable",
+              "trade_weight": 5.4727643109820635e-08,
+              "waiting_log_utility": null
+            }
+          },
+          "names": 94,
+          "native_reference_preparation": {
+            "audit_sha256": "8c47b5e95a149b83c9e1b83a27d4b35831000ea99419cf26b28aff81506bd107",
+            "basis": "counterfactual_model_reference_not_viewer_holdings",
+            "binding_sha256": "eac9489f52199e9045c16bfec86cd0e37e5d2619349c51f4147d8dd72813c2da",
+            "close_context": {
+              "account_inputs": false,
+              "arrays_sha256": "f346b1d379b9935f5d618ea7ac1fc32ca9ec8dee1c4877ee4081b6a9f1781762",
+              "close_receipt_sha256": "196fde8c2c3deda0f5d7bf4836d47403f240e392edf10aeb71ccd6345db2c976",
+              "contract": "strategy-entry-context/1",
+              "holding_forecast_recomputed": false,
+              "prior_session": "2026-10-19",
+              "publication_receipt_sha256": "b12ac719b7dbeeb0c02c6bdd12afb6e5d14f05b0d93a60efc48b33c90803e971",
+              "snapshot_id": "03c53af07c6af233d597a6e99ad9a833e4e69cdccadc55b878b353bbe4c38c7d",
+              "source_sha256": "3aade712c9bcdbf5b09759cdb700c25c9f6e8e731cd6a27d4364c4f93ea2176f",
+              "trade_session": "2026-10-20"
+            },
+            "history_sha256": "cc49039984d89b854505a0afdb2071570e3494b6d75c4d4bf3c6dfe973c471f9",
+            "publication_receipt_sha256": "b12ac719b7dbeeb0c02c6bdd12afb6e5d14f05b0d93a60efc48b33c90803e971",
+            "review_sha256": "f2de664d9ce31ecba0e31b9c2c39612f7135cdcdce7872dcb6498cd5df52af51",
+            "schema": "strategy-reference-preparation/1",
+            "snapshot_id": "03c53af07c6af233d597a6e99ad9a833e4e69cdccadc55b878b353bbe4c38c7d",
+            "source_sha256": {
+              "forward_probability_timing.py": "0103852d53be711fcf4eeec80f74d707f42ef2ec86599ff72a305376d5632a92",
+              "probabilistic_execution.py": "cfd586859920f06d385447b1aa171f17e515d8e34bc07a8752164ef2b3705af2",
+              "strategy_entry_context.py": "3aade712c9bcdbf5b09759cdb700c25c9f6e8e731cd6a27d4364c4f93ea2176f",
+              "strategy_history_installation.py": "33c96116cb2c516c9d9e629b5d899e0e5637daba239ad858d8c21bfef1042cda",
+              "strategy_history_publication.py": "bd3d1cab411863fa0d098df0269e8a10a139fe16e92c42674cfff58a8591d17b",
+              "strategy_model_history.py": "7a7bfb2e200a02cdcba61ed2c92d7c14cf6fc8fd7c0de6a3c6c394c0ff0f03a2",
+              "strategy_publication.py": "9272e399f94eac96e365298465e8840c384552f7769d98228fdc5814933f95f0",
+              "strategy_reference_transition.py": "69c300c51e64df317e75efdacbe4a0cb0f08a93b76b6a9c8afe77a2f69867061"
+            }
+          },
+          "no_timing_or_market_data_acquisition": true,
+          "not_current_recommendations": true,
+          "original_curve_equity": 21.45090692060969,
+          "plan_sha256": "02de9735e44582b76baf9f75ed76adaf3b67aa7af18d7f9d0d19c41ce89662eb",
+          "reference_equity": 21.45090692060969,
+          "reference_is_counterfactual_not_live_or_historically_published_book": true,
+          "result_bytes": 28753,
+          "result_sha256": "848a703c2be0371c8c483eb227126ca8c865882f266c0c8a4ec5a47abc7b121c",
+          "source_evidence": {
+            "audit_sha256": "8c47b5e95a149b83c9e1b83a27d4b35831000ea99419cf26b28aff81506bd107",
+            "original_close_arrays_sha256": "f346b1d379b9935f5d618ea7ac1fc32ca9ec8dee1c4877ee4081b6a9f1781762",
+            "result_sha256": "cc49039984d89b854505a0afdb2071570e3494b6d75c4d4bf3c6dfe973c471f9",
+            "snapshot_raw_sha256": "80476bbb92dda4c3591e63f3718aed9d724c9164901e618b2c26377c2527d329"
+          },
+          "through": "2026-10-19"
+        },
+        "scope": "NEW_reference_transition_native_math_and_replay_parity_NOT_live_publication",
+        "skipped": 0,
+        "tests": 12
+      }
+    },
+    "v4": {
+      "cid": "431807edbbed0883e464e649037d3b048e6914fe77d46c74d4114557745da808",
+      "evidence_root": "/tmp/strategy-reference-transition-final-evidence-20261020/v4",
+      "image": "sha256:136ebb46b7912f20472a375a6b29f6efec4cf2fdca13d56cbffb86a1be697db2",
+      "pins": {
+        "run.py": "c5d8b499d6151c633eb4c36e9b1b48e3cc218a9bd2df7c6816b0522f54fb27e8",
+        "snapshot.json": "80476bbb92dda4c3591e63f3718aed9d724c9164901e618b2c26377c2527d329",
+        "strategy_reference_transition.py": "da7af2ca84e01126d0772cb8de22c44582ddd8f29eaef9874367733e2eace7fd",
+        "test_strategy_reference_transition.py": "c5e2e8842f735bac3d3ab6f41a0a3ab2688cfc30c57939a2e07ce004d99b5bf0"
+      },
+      "state": {
+        "Dead": false,
+        "Error": "",
+        "ExitCode": 0,
+        "FinishedAt": "2026-10-20T11:37:17.892727711Z",
+        "OOMKilled": false,
+        "Paused": false,
+        "Pid": 0,
+        "Restarting": false,
+        "Running": false,
+        "StartedAt": "2026-10-20T11:37:16.019309791Z",
+        "Status": "exited"
+      },
+      "stderr_sha256": "32556a3a1721dc2bdb50b8dc98c43e6f0317fc7a50cb8992742841df15d6c01e",
+      "stdout_sha256": "7572cafac611fc31cae45a33f279ea7685cbd77b6bad801f03b2d564551b9771",
+      "test_result": {
+        "accounts": false,
+        "broker": false,
+        "errors": 0,
+        "failures": 0,
+        "max_rss_kib": 206036,
+        "network": false,
+        "new_model_fit": false,
+        "original_real_reference": {
+          "actual_clock": "2026-10-20T11:37:17.498559+00:00",
+          "changes": {
+            "ALAB": {
+              "action": "Buy",
+              "model_position_weight": 0.057703296616977706,
+              "proposed_units": 3.1441624364488987e-07,
+              "reason": "missing calibrated distribution",
+              "reference_position_weight": 0.013445136017866436,
+              "reference_units": 0.0010063869592005252,
+              "state": "unavailable",
+              "trade_weight": 4.200540481357592e-06,
+              "waiting_log_utility": null
+            },
+            "COHR": {
+              "action": "Buy",
+              "model_position_weight": 0.08538166177285449,
+              "proposed_units": 7.491980618124899e-07,
+              "reason": "missing calibrated distribution",
+              "reference_position_weight": 0.0,
+              "reference_units": 0.0,
+              "state": "unavailable",
+              "trade_weight": 8.103570545804815e-06,
+              "waiting_log_utility": null
+            },
+            "GEV": {
+              "action": "Buy",
+              "model_position_weight": 0.2367972681385512,
+              "proposed_units": 1.534657321654396e-08,
+              "reason": "missing calibrated distribution",
+              "reference_position_weight": 0.22994948192948095,
+              "reference_units": 0.005429775131054806,
+              "state": "unavailable",
+              "trade_weight": 6.499231506575464e-07,
+              "waiting_log_utility": null
+            },
+            "HPE": {
+              "action": "Sell",
+              "model_position_weight": 0.10596667579662186,
+              "proposed_units": 0.05261988340419551,
+              "reason": "missing calibrated distribution",
+              "reference_position_weight": 0.24301788955037326,
+              "reference_units": 0.09330506941916286,
+              "state": "unavailable",
+              "trade_weight": 0.13705121375375143,
+              "waiting_log_utility": null
+            },
+            "MU": {
+              "action": "Buy",
+              "model_position_weight": 0.2488882464078146,
+              "proposed_units": 1.2973340111171566e-09,
+              "reason": "missing calibrated distribution",
+              "reference_position_weight": 0.2483116194645165,
+              "reference_units": 0.00588629604677953,
+              "state": "unavailable",
+              "trade_weight": 5.4727643109820635e-08,
+              "waiting_log_utility": null
+            }
+          },
+          "names": 94,
+          "native_reference_preparation": {
+            "audit_sha256": "8c47b5e95a149b83c9e1b83a27d4b35831000ea99419cf26b28aff81506bd107",
+            "basis": "counterfactual_model_reference_not_viewer_holdings",
+            "binding_sha256": "eac9489f52199e9045c16bfec86cd0e37e5d2619349c51f4147d8dd72813c2da",
+            "close_context": {
+              "account_inputs": false,
+              "arrays_sha256": "f346b1d379b9935f5d618ea7ac1fc32ca9ec8dee1c4877ee4081b6a9f1781762",
+              "close_receipt_sha256": "196fde8c2c3deda0f5d7bf4836d47403f240e392edf10aeb71ccd6345db2c976",
+              "contract": "strategy-entry-context/1",
+              "holding_forecast_recomputed": false,
+              "prior_session": "2026-10-19",
+              "publication_receipt_sha256": "b12ac719b7dbeeb0c02c6bdd12afb6e5d14f05b0d93a60efc48b33c90803e971",
+              "snapshot_id": "03c53af07c6af233d597a6e99ad9a833e4e69cdccadc55b878b353bbe4c38c7d",
+              "source_sha256": "3aade712c9bcdbf5b09759cdb700c25c9f6e8e731cd6a27d4364c4f93ea2176f",
+              "trade_session": "2026-10-20"
+            },
+            "history_sha256": "cc49039984d89b854505a0afdb2071570e3494b6d75c4d4bf3c6dfe973c471f9",
+            "publication_receipt_sha256": "b12ac719b7dbeeb0c02c6bdd12afb6e5d14f05b0d93a60efc48b33c90803e971",
+            "review_sha256": "f2de664d9ce31ecba0e31b9c2c39612f7135cdcdce7872dcb6498cd5df52af51",
+            "schema": "strategy-reference-preparation/1",
+            "snapshot_id": "03c53af07c6af233d597a6e99ad9a833e4e69cdccadc55b878b353bbe4c38c7d",
+            "source_sha256": {
+              "forward_probability_timing.py": "0103852d53be711fcf4eeec80f74d707f42ef2ec86599ff72a305376d5632a92",
+              "probabilistic_execution.py": "cfd586859920f06d385447b1aa171f17e515d8e34bc07a8752164ef2b3705af2",
+              "strategy_entry_context.py": "3aade712c9bcdbf5b09759cdb700c25c9f6e8e731cd6a27d4364c4f93ea2176f",
+              "strategy_history_installation.py": "33c96116cb2c516c9d9e629b5d899e0e5637daba239ad858d8c21bfef1042cda",
+              "strategy_history_publication.py": "bd3d1cab411863fa0d098df0269e8a10a139fe16e92c42674cfff58a8591d17b",
+              "strategy_model_history.py": "7a7bfb2e200a02cdcba61ed2c92d7c14cf6fc8fd7c0de6a3c6c394c0ff0f03a2",
+              "strategy_publication.py": "9272e399f94eac96e365298465e8840c384552f7769d98228fdc5814933f95f0",
+              "strategy_reference_transition.py": "da7af2ca84e01126d0772cb8de22c44582ddd8f29eaef9874367733e2eace7fd"
+            }
+          },
+          "no_timing_or_market_data_acquisition": true,
+          "not_current_recommendations": true,
+          "original_curve_equity": 21.45090692060969,
+          "plan_sha256": "6dce2bb9ec1d962ee20fb4e77455d4ead97043acef080dd746879160988252ee",
+          "reference_equity": 21.45090692060969,
+          "reference_is_counterfactual_not_live_or_historically_published_book": true,
+          "result_bytes": 28753,
+          "result_sha256": "b7e93a43ab6199a468b56dce1358101ea48ccb18dec14bbeed847a12eaf52c7f",
+          "source_evidence": {
+            "audit_sha256": "8c47b5e95a149b83c9e1b83a27d4b35831000ea99419cf26b28aff81506bd107",
+            "original_close_arrays_sha256": "f346b1d379b9935f5d618ea7ac1fc32ca9ec8dee1c4877ee4081b6a9f1781762",
+            "result_sha256": "cc49039984d89b854505a0afdb2071570e3494b6d75c4d4bf3c6dfe973c471f9",
+            "snapshot_raw_sha256": "80476bbb92dda4c3591e63f3718aed9d724c9164901e618b2c26377c2527d329"
+          },
+          "through": "2026-10-19"
+        },
+        "scope": "NEW_reference_transition_native_math_and_replay_parity_NOT_live_publication",
+        "skipped": 0,
+        "tests": 13
+      }
+    },
+    "v5": {
+      "cid": "f4ff08e61645cd89f0067d33b65c473b5978d8f81adc1194f4f32908b29c3356",
+      "evidence_root": "/tmp/strategy-reference-transition-final-evidence-20261020/v5",
+      "image": "sha256:136ebb46b7912f20472a375a6b29f6efec4cf2fdca13d56cbffb86a1be697db2",
+      "pins": {
+        "run.py": "c5d8b499d6151c633eb4c36e9b1b48e3cc218a9bd2df7c6816b0522f54fb27e8",
+        "snapshot.json": "80476bbb92dda4c3591e63f3718aed9d724c9164901e618b2c26377c2527d329",
+        "strategy_reference_transition.py": "daf1704651cc6058eab147706874e1acdcb4a1df712c58e0c500bbdcc33865f2",
+        "test_strategy_reference_transition.py": "28854bab2609571e0355e8aeea4425b7b905e4f56def2fa26156a3011414301d"
+      },
+      "state": {
+        "Dead": false,
+        "Error": "",
+        "ExitCode": 0,
+        "FinishedAt": "2026-10-20T11:38:04.320933355Z",
+        "OOMKilled": false,
+        "Paused": false,
+        "Pid": 0,
+        "Restarting": false,
+        "Running": false,
+        "StartedAt": "2026-10-20T11:38:02.251172541Z",
+        "Status": "exited"
+      },
+      "stderr_sha256": "5da6e753803f6a400bdb0792721381bcfd49607255c5e843fb7502f9f0ce6141",
+      "stdout_sha256": "e4734dc1d8b4aeb3a41587c2e1283a15ca37351c06dc0063ae6b41fd7033ef53",
+      "test_result": {
+        "accounts": false,
+        "broker": false,
+        "errors": 0,
+        "failures": 0,
+        "max_rss_kib": 206064,
+        "network": false,
+        "new_model_fit": false,
+        "original_real_reference": {
+          "actual_clock": "2026-10-20T11:38:03.858327+00:00",
+          "changes": {
+            "ALAB": {
+              "action": "Buy",
+              "model_position_weight": 0.057703296616977706,
+              "proposed_units": 3.1441624364488987e-07,
+              "reason": "missing calibrated distribution",
+              "reference_position_weight": 0.013445136017866436,
+              "reference_units": 0.0010063869592005252,
+              "state": "unavailable",
+              "trade_weight": 4.200540481357592e-06,
+              "waiting_log_utility": null
+            },
+            "COHR": {
+              "action": "Buy",
+              "model_position_weight": 0.08538166177285449,
+              "proposed_units": 7.491980618124899e-07,
+              "reason": "missing calibrated distribution",
+              "reference_position_weight": 0.0,
+              "reference_units": 0.0,
+              "state": "unavailable",
+              "trade_weight": 8.103570545804815e-06,
+              "waiting_log_utility": null
+            },
+            "GEV": {
+              "action": "Buy",
+              "model_position_weight": 0.2367972681385512,
+              "proposed_units": 1.534657321654396e-08,
+              "reason": "missing calibrated distribution",
+              "reference_position_weight": 0.22994948192948095,
+              "reference_units": 0.005429775131054806,
+              "state": "unavailable",
+              "trade_weight": 6.499231506575464e-07,
+              "waiting_log_utility": null
+            },
+            "HPE": {
+              "action": "Sell",
+              "model_position_weight": 0.10596667579662186,
+              "proposed_units": 0.05261988340419551,
+              "reason": "missing calibrated distribution",
+              "reference_position_weight": 0.24301788955037326,
+              "reference_units": 0.09330506941916286,
+              "state": "unavailable",
+              "trade_weight": 0.13705121375375143,
+              "waiting_log_utility": null
+            },
+            "MU": {
+              "action": "Buy",
+              "model_position_weight": 0.2488882464078146,
+              "proposed_units": 1.2973340111171566e-09,
+              "reason": "missing calibrated distribution",
+              "reference_position_weight": 0.2483116194645165,
+              "reference_units": 0.00588629604677953,
+              "state": "unavailable",
+              "trade_weight": 5.4727643109820635e-08,
+              "waiting_log_utility": null
+            }
+          },
+          "names": 94,
+          "native_reference_preparation": {
+            "audit_sha256": "8c47b5e95a149b83c9e1b83a27d4b35831000ea99419cf26b28aff81506bd107",
+            "basis": "counterfactual_model_reference_not_viewer_holdings",
+            "binding_sha256": "eac9489f52199e9045c16bfec86cd0e37e5d2619349c51f4147d8dd72813c2da",
+            "close_context": {
+              "account_inputs": false,
+              "arrays_sha256": "f346b1d379b9935f5d618ea7ac1fc32ca9ec8dee1c4877ee4081b6a9f1781762",
+              "close_receipt_sha256": "196fde8c2c3deda0f5d7bf4836d47403f240e392edf10aeb71ccd6345db2c976",
+              "contract": "strategy-entry-context/1",
+              "holding_forecast_recomputed": false,
+              "prior_session": "2026-10-19",
+              "publication_receipt_sha256": "b12ac719b7dbeeb0c02c6bdd12afb6e5d14f05b0d93a60efc48b33c90803e971",
+              "snapshot_id": "03c53af07c6af233d597a6e99ad9a833e4e69cdccadc55b878b353bbe4c38c7d",
+              "source_sha256": "3aade712c9bcdbf5b09759cdb700c25c9f6e8e731cd6a27d4364c4f93ea2176f",
+              "trade_session": "2026-10-20"
+            },
+            "history_sha256": "cc49039984d89b854505a0afdb2071570e3494b6d75c4d4bf3c6dfe973c471f9",
+            "publication_receipt_sha256": "b12ac719b7dbeeb0c02c6bdd12afb6e5d14f05b0d93a60efc48b33c90803e971",
+            "review_sha256": "f2de664d9ce31ecba0e31b9c2c39612f7135cdcdce7872dcb6498cd5df52af51",
+            "schema": "strategy-reference-preparation/1",
+            "snapshot_id": "03c53af07c6af233d597a6e99ad9a833e4e69cdccadc55b878b353bbe4c38c7d",
+            "source_sha256": {
+              "forward_probability_timing.py": "0103852d53be711fcf4eeec80f74d707f42ef2ec86599ff72a305376d5632a92",
+              "probabilistic_execution.py": "cfd586859920f06d385447b1aa171f17e515d8e34bc07a8752164ef2b3705af2",
+              "strategy_entry_context.py": "3aade712c9bcdbf5b09759cdb700c25c9f6e8e731cd6a27d4364c4f93ea2176f",
+              "strategy_history_installation.py": "33c96116cb2c516c9d9e629b5d899e0e5637daba239ad858d8c21bfef1042cda",
+              "strategy_history_publication.py": "bd3d1cab411863fa0d098df0269e8a10a139fe16e92c42674cfff58a8591d17b",
+              "strategy_model_history.py": "7a7bfb2e200a02cdcba61ed2c92d7c14cf6fc8fd7c0de6a3c6c394c0ff0f03a2",
+              "strategy_publication.py": "9272e399f94eac96e365298465e8840c384552f7769d98228fdc5814933f95f0",
+              "strategy_reference_transition.py": "daf1704651cc6058eab147706874e1acdcb4a1df712c58e0c500bbdcc33865f2"
+            }
+          },
+          "no_timing_or_market_data_acquisition": true,
+          "not_current_recommendations": true,
+          "original_curve_equity": 21.45090692060969,
+          "plan_sha256": "45298b56b75f82dbf98ca61b00dc00e5efa22d194b845e3b499e7736e0130262",
+          "reference_equity": 21.45090692060969,
+          "reference_is_counterfactual_not_live_or_historically_published_book": true,
+          "result_bytes": 28753,
+          "result_sha256": "14207f8eaeb471957ac6f209bcfdf5dd51fe67350179b01825621b9ccd5e70a2",
+          "source_evidence": {
+            "audit_sha256": "8c47b5e95a149b83c9e1b83a27d4b35831000ea99419cf26b28aff81506bd107",
+            "original_close_arrays_sha256": "f346b1d379b9935f5d618ea7ac1fc32ca9ec8dee1c4877ee4081b6a9f1781762",
+            "result_sha256": "cc49039984d89b854505a0afdb2071570e3494b6d75c4d4bf3c6dfe973c471f9",
+            "snapshot_raw_sha256": "80476bbb92dda4c3591e63f3718aed9d724c9164901e618b2c26377c2527d329"
+          },
+          "through": "2026-10-19"
+        },
+        "scope": "NEW_reference_transition_native_math_and_replay_parity_NOT_live_publication",
+        "skipped": 0,
+        "tests": 14
+      }
+    }
+  },
+  "collector": {
+    "bytes": 280922,
+    "fixed_data_only": true,
+    "new_inputs": 39,
+    "no_test_or_native_producer_replay": true,
+    "once": true
+  },
+  "current_regular_feed_acceptance": "UNVERIFIED",
+  "deployed": false,
+  "diagram_impact": "NONE: unselected internal numerical adapter; no runtime ownership/store/API/UI flow changed",
+  "failure": "V1 8 pass/1 failure: expected utility used position-weight subtraction instead of native desired-unit subtraction; one floating-point ULP. Original exact utility assertion retained and expected native unit formula corrected.",
+  "final_source": {
+    "backend/market/strategy_reference_transition.py": "daf1704651cc6058eab147706874e1acdcb4a1df712c58e0c500bbdcc33865f2",
+    "backend/tests/test_strategy_reference_transition.py": "28854bab2609571e0355e8aeea4425b7b905e4f56def2fa26156a3011414301d"
+  },
+  "limitations": [
+    "Reference is an explicit counterfactual model scenario, never viewer/paper holdings or historically published advice.",
+    "No automatic reference state, hypothetical fill progression, regular market adapter, API/UI reference selection, new source approval or deployment.",
+    "Pure projection caller must authenticate market clocks, quote eligibility, compatible price basis and distribution receipts; native terminal flag is not a live clock authority.",
+    "Whole current action coherence, practical microtrade policy, independent confidence ranking and live trading readiness remain unverified."
+  ],
+  "native_rules": [
+    "unchanged history.continuous_targets",
+    "unchanged native probability.decision for both sides",
+    "native desired units precede marked trade percentage",
+    "grade exit capped at reference owned units",
+    "sale advice cannot fund buys",
+    "advice does not mutate reference or imply fill"
+  ],
+  "next_source_fact": "Native forward_market_evidence.capture ALREADY obtains split-attested prior regular IEX close anchors in packet.prefixes[name].prior_close; retain/reuse that packet, do not duplicate requests or assume raw IEX equals historical SIP/adjusted prices.",
+  "production_selected": false,
+  "schema": "strategy-reference-transition-proof/1",
+  "scope": "typed_source_bound_reference_preparation_and_native_transition_math",
+  "source_evolution": {
+    "v2": "original 9 cases pass; full 94 original book marked at original adjusted close",
+    "v3": "new reviewed-original endpoint reader; 12 cases pass",
+    "v4": "unused unowned zero target does not require a quote; 13 cases pass",
+    "v5": "native pending-unit threshold also tolerates an unused missing tiny-position mark; 14 cases pass"
+  },
+  "starting_revision": "efaf389854294cae22307334b3145557a969666b",
+  "unchanged_baseline": {
+    "backend/market/forward_probability_timing.py": "0103852d53be711fcf4eeec80f74d707f42ef2ec86599ff72a305376d5632a92",
+    "backend/market/probabilistic_execution.py": "cfd586859920f06d385447b1aa171f17e515d8e34bc07a8752164ef2b3705af2",
+    "backend/market/strategy_entries.py": "e363dc2902b8d96040a88ec35cd9cb31335a3e00e131957375f920c877fb922a",
+    "backend/market/strategy_entry_context.py": "3aade712c9bcdbf5b09759cdb700c25c9f6e8e731cd6a27d4364c4f93ea2176f",
+    "backend/market/strategy_history_installation.py": "33c96116cb2c516c9d9e629b5d899e0e5637daba239ad858d8c21bfef1042cda",
+    "backend/market/strategy_history_publication.py": "bd3d1cab411863fa0d098df0269e8a10a139fe16e92c42674cfff58a8591d17b",
+    "backend/market/strategy_model_history.py": "7a7bfb2e200a02cdcba61ed2c92d7c14cf6fc8fd7c0de6a3c6c394c0ff0f03a2",
+    "backend/market/strategy_publication.py": "9272e399f94eac96e365298465e8840c384552f7769d98228fdc5814933f95f0",
+    "backend/tests/test_strategy_entries.py": "e9823e6184eb070daf684b65dcd4c38338662dd1598093a8742f0eeb427a6634",
+    "docs/research/strategy-history-install-review-2026-10-20.json": "6939c2f64cdf7bdeb98d6f89e8ef7cf3fbcdae6e6405344168ba7c4a7a53d92f"
+  },
+  "unique_final_unit_cases": 14
+}
