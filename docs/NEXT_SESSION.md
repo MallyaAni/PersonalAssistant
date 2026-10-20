@@ -1,5 +1,173 @@
 # Next session
 
+## CURRENT HUMAN 15:47Z — original full release ENDED1/deployed; separate check-in opt-out FAILED; small FE correction ready
+
+Original canonical31805 ENDED, canonical-result return1 at15:45:16.974367UTC,
+upstream-restoration.json origin/main VERIFIED. bf7a72fb remainsLIVE (postfailure
+does not rollback restartedapp). DO NOT replay that release/fullpost/cohorts.
+FullUNIT11050PASS552.78s/functionalgate100PASS636.84s/source41ADMITTED/47table+WAL
+backup and exactdeployed64browserPASS191.943931s remain their original proofs.
+FULLAPP POST FAILED: “stop checking in on me” selectedrouteNone, acknowledged saved
+opt-out but did not flip profile.check_ins or cancel enabledcheckins. Canonical's
+own one-case retry failedsame; searchharnessPASSED. Alert sent bycanonicalscript.
+Separate assistant defect, NOT fixed or waived; never relabel wholepostgreen
+under a later frontendcheap smoke. No model/role/account/provider/settingschanges.
+
+Permanent docs/research/strategy-position-live-release-proof-2026-10-20.json553945B/
+SHAef3dab5a0aff0ca698a87e04f2dbe35b1271b8d25ba6648922afb66185bf49bc retains
+originalfullcanonical log/result/upstream/post/source/services/deployed64/runtime,
+collectorONCE. Model ds41-head CID/image/state unchanged. Original fullrelease
+root scratch/strategy-position-release-20261020-v1 retained, no after.json expected
+because controllerraised after preservingfailedresult/restoringupstream.
+
+NEXT finish preview-accepted oneconditional Bestsells copy fix: pendingpositive
+Sell with no fresh quote => “No confirmed sell signals yet.” (previously falsely
+claimed no modelSell). SourceSignalBoard.tsx +1test only, existing2regressions,
+3PASS7.389522s/TSC/build4.08/diffpass, expectedRED7.7s preserved. Newproof7722B/SHA
+369dd90995dbb49977ee69e62ad389d30f5d51a8f621c8fa23e6a621e95af647. Commit/push
+thissmallFE+docs now oldattemptended; only canonical frontend release, no repeated
+modelgate/approvalrenewal/backendrestart. Prepared
+/tmp/release_strategy_pending_sell_20261020.py CURRENTLY UNRUN accepts exact new
+commit argument; checksoriginalfailedpost+restoredmain, parentBF, only2FE paths+docs,
+nativebackend/model/approval unchanged. Unique root strategy-pending-sell-release-20261020-v1
+mustnotexist; inspect original ifitdoes, neverblindretry. Afterrelease verifyexact
+servedcopy with three affected browsercases/currentlive-APIpreview. No whole65claim.
+
+Preview now NORMAL production owner API via Vite33452/tunnel70626, not private
+nativebridge. Actual15mOct20/94positions/HPEWaitSize—Position10.6/pendingSell13.781
+reason/currenttable and sourcecopyverified with realdata. AnonymousGET401/POST405.
+Oldprivatebridge/config/checkouts/stores/evidence retained untouched. Same tab4
+signedin/deliverable; tab3publicnormalSignIn/handoff, ONE humanrequestpending no
+reply yet; neverduplicate/copycredentials/bypass. Required publicownerUI remains
+UNVERIFIED untilhumanreply. Existingfeed/paperLAST/no orders/reset/paiddata/G08
+weakening/Spark2load/nativepooladoption. Natural next nightly/newdailyrollover
+runtime remains futureobservation, neverforce/replay. Priorproof details follow.
+
+## CURRENT HUMAN 15:40Z — live bf postchecks STILL original31805; preview now NORMAL LIVE API; small pending-Sell copy fix uncommitted
+
+DO NOT DUPLICATE ORIGINAL RELEASE/GATES. bf7a72fb is LIVE; original session31805/
+PID2997270/root scratch/strategy-position-release-20261020-v1 still in canonical
+buffered POST checks. FullUNIT11050PASS552.78s, functional100PASS636.84s, source41
+ADMITTED, backup47tables+WAL mirroredSpark2; original controllernotfinished yet.
+No manually repeated jobs/currentacquisitions. Wait original canonical result/
+postverdict/upstream-restoration/after. DO NOT push a new feature target or deploy
+another release while original controller holds temporary feature upstream.
+
+New exact deployed artifact64browserPASS191.943931s/0skip-flaky-unexpected/
+diagnostics. JSBphDP-90.js925768B/SHA
+b23b7ff7fe69fb030da646238da49f00d17ab3568616a073c04788ee678b38ef publicHTTPS
+bytes matchgatewaycopy exactly. Source64+deployed64 are same64@2builds, not128.
+NO rerun fordocs. Publictab3 normalSignIn: ONE requestpending human, no reply;
+never duplicate request or copy/inject credentials. Keep tab3handoff/tab4deliverable.
+
+IMPORTANT preview now uses NORMAL production owner HTTP API through existing
+tunnel18081→8100. Removed nativeHistoryPreview interception from localconfig
+/tmp/live-recommendations-preview-20261019.mjs AFTER deployment. Archived oldconfig
+/tmp/live-recommendations-preview-before-live-api-20261020.mjs; all nativebridge/
+private2b/bf checkouts/stores remain unchanged. No privatecollector/newservice.
+Normal native current15m responses now auto-update same signed-in preview.
+AnonymousGET401/non-authPOST405 verified; writeblock and normalauth unchanged.
+Actual94rows/current15mOct20/HPEWaitSize—Position10.6/modelprior24.4→10.6 with
+pendingSell13.781% lacking fresh compatiblequote. Allnames modelpositionslive.
+This is not a current executableSell; no fakequote or eligibilityweakening.
+
+Found NEW real trader-copy gap: Best sells correctly hides unconfirmedHPE but said
+“No sell signals in current strategy publication.” PREVIEW-ONLY one conditional now
+says “No confirmed sell signals yet.” when a Sell waits. New expectedRED7.7s on
+deployedBph preserved; same assertiongreen plus2 empty/unavailable regressions:
+3PASS7.389522s/0skip-flaky-unexpected/diagnostics. TSC/build4.08s/diffpass(existing
+warnings), sourcepreviewassethWMkfX5O. No math/ranking/eligibility/backend change.
+Actual NORMAL live-API preview now displays corrected status, saved
+/tmp/strategy-position-real-ui-20261020-v1/live-api-pending-sell-preview.{png,txt}.
+Proof docs/research/strategy-pending-sell-preview-proof-2026-10-20.json7722B/SHA
+369dd90995dbb49977ee69e62ad389d30f5d51a8f621c8fa23e6a621e95af647.
+Candidate UNCOMMITTED SignalBoard.tsx + all-names-signals.spec.ts plusdocs. Do not
+claim deployed or whole65green. AFTER original post attempt ends/restoresupstream,
+commit/push onlythissmallFE+proof, run one canonical FE-only release (native backend/
+41approval unchanged, no modelgate rerun, no approvalrenewal) and verify served
+copy. Preserve original fullpostverdict evenif unrelatedfailure; never relabel it
+green from a later cheap FE check. Publicowner screen still needs pendinglogin.
+
+All existingfeed/paperLAST/no reset/orders/paiddata/model-account-provider-service
+changes/G08weakening/Spark2load/deniedreadbypass/nativepooladoption constraints hold.
+Previous detailed proof/source/actualnative receipts follow; TOP overrides allolder.
+
+## CURRENT HUMAN 15:22Z — bf7a72fb IS LIVE; original canonical POST CHECKS RUNNING, public sign-in requested ONCE
+
+DO NOT REDEPLOY. Original canonical session31805/Spark1PID2997270/root
+scratch/strategy-position-release-20261020-v1 still running POST checks. Source
+bf7a72fb92168696a7be06671a40af7fad93a1a1/tree417b2f544cbf4d622507a209011ae6d18cec589f
+is now serving. Original exact fullUNIT11050PASS/93skip6xfail439warnings33subtests
+552.78s; upgraded-runtime functional gate100PASS636.84s. Source41 host/container
+ADMITTED; initialsnapshot/original94history5755 installed canonically. Backup47
+tables anios_db-20261020-111025.sql.gz and requiredWAL mirroredSpark2. Economic12
+unchanged. No model/account/provider/settings/order/reset change. Do not invoke
+new tests/gates/release/collector, await ORIGINAL canonicalresult/poststatus.
+
+Actual deployed JS index-BphDP-90.js925768B/SHAb23b7ff7fe69fb030da646238da49f00d17ab3568616a073c04788ee678b38ef.
+Public HTTPS GET bytes EXACT gatewaycopy. This differs from sourceCY57 build;
+fresh deployed-artifact whole64browserPASS3.2m/0skip-flaky-unexpected/diagnostics.
+Same64 cases at2builds, NOT128distinct. Archive104files1203429Bgzip at
+/tmp/strategy-position-deployed-static-20261020.tar.gz/manifestJSON. Testroot
+/tmp/strategy-position-deployed-ui-20261020-{results.json,artifacts}, session52911
+ENDED0. Native runtime READONLY getter /tmp/observe_strategy_position_runtime_20261020.py
+and /tmp/strategy-position-runtime-20261020-v1.json: actual11:15completed native
+assessment94rows, publication94, referencepositions94available, exactbf3consumer
+SHAs, packagedoriginalhistorybinding present. PositionsALAB5.7703296617/HPE10.5966675797/
+COHR8.5381661773/GEV23.6797268139/MU24.8888246408%. At observed11:15:55 quotes for
+proposedfourBuys/HPE Sell were unavailable, MU no_trade. No executable-action or
+actualpositivehypotheticalexecution claim from that read. Original16:00expiry kept.
+
+PUBLIC AUTHENTICATED SCREEN ACCEPTANCE STILL UNVERIFIED: tab3 normalreload NEW
+release returned sign-in. ONE async request sent asking human to sign in existing
+deep-matter.com tab, question accepted, no reply yet. Never duplicate question,
+inject/copy credentials/cookies or bypass authentication. Keep tab3handoff/tab4
+signed-in realpreview deliverable. Realpreview beforedeploy already VERIFIED
+ALAB5.8 table/D/W/15m/refresh and originalHPE Sell13.7/24.3→10.6 technicaldetails.
+Pending user login is independent of original canonical postchecks: continue
+observing post result without new jobs. After reply verify public Allnames/chart/
+originaldetails via normal user flow. Later fold originalrelease/log/post/asset/
+source/runtime/UI receipts once, update finalhandoff/automation, pushdocs only.
+Prior savedautomation update ACTIVE readback1792507949332/promptSHA35c82cc127d23d12ff2662aaa21501bc4f4f30c2c8c11e6dc1761a836e8a097d.
+Existingfeed/paperLAST/no paiddata/orders/reset/guardweakening/nativepooladoption.
+All previous failed/completed roots/gates retained; no reruns fordocs.
+
+## CURRENT HUMAN 14:50Z — ONE CANONICAL RELEASE RUNNING; NEVER DISPATCH AGAIN
+
+Exact pushed bf7a72fb92168696a7be06671a40af7fad93a1a1/tree
+417b2f544cbf4d622507a209011ae6d18cec589f. Whole64browserPASS178.321s,
+42backendPASS1.460s, actualrealALAB5.8 table/D/W/15m/refresh and originalHPE
+Sell13.7/Position24.3→10.6 loadedtechnicalreason VERIFIED signed-in samepreview,
+no new market acquisition. Screenshots /tmp/strategy-position-real-ui-20261020-v1.
+New read-only dailyobjective detachedview, numeric41/publication45 EXACT2bunchanged.
+
+ONE CANONICAL release DISPATCHED14:49:59.572624UTC, root tool session31805,
+Spark1 controller PID2997270, /home/animallya96/scratch/strategy-position-release-20261020-v1.
+Original claim.json EXISTS. Canonical exactbf7a72fb fullUNIT PASSED11050/93skip/
+6xfail/439warnings/33subtests in552.78s. Original old3fixture failures nowcorrected.
+Same canonical attempt NOW running upgraded-runtime functional routing gate.
+Controller /tmp/release_strategy_position_20261020.py, localstage
+/tmp/stage_strategy_position_release_20261020.py, transport
+/tmp/strategy-position-release-20261020.transport. NEVER retry/redeploy/duplicate.
+Observe original log/result/knownPID; no new gate/model evaluation beside it.
+scripts/deploy.sh --wait-post, no skips/fakeclock; fullUNIT/routing then preflight/
+backup/build/approval/history/rollback/post checks. Production stillb4 untilgates.
+Temporary production upstream restored in controllerfinally; originalorigin/main.
+Target-only bundle /tmp/strategy-position-bundle-bf7a72fb-20261020.json10778B/SHA
+feca33f19c0b6b33545c5151e746f7a0aa151028dbddebe159dbe440555c47d6;
+original config/release/evidence/review/initialsnapshot bytes unchanged. Runtime
+V4.1EXL3 ds41-head unchanged; no provider/account/model/service/subscriptionchange.
+
+Private preview newexactbf readonlyconsumer nowuses
+scratch/strategy-position-real-preview-20261020-v1/checkout and SAME original
+normal metadata store via symlink, old2b/f0checkouts untouched. Same Vite33452/
+tunnel70626/tab4signedin/tab3handoff KEEP. Loaded real94/ALABWaitSize—Position5.8,
+HPEWaitPosition10.6 plus originaldatedSell13.7 details; diagnostics[]. No fresh
+executable UI screenshot claim. After canonicalcompletion inspectactualserved
+asset/source/approval/currentmodelbook and signed-inpublicUI beforefullreadiness.
+No reacquire merelyscreenshots, no oldpool/cohort/getter/collector replay.
+Existingfeed/paperLAST/no reset/orders/paiddata. Priorverified/failed detailsfollow.
+
 ## CURRENT HUMAN 14:46Z — persistent daily Position boundary verified; real preview source migration and release next
 
 NEW scoped source fixes ALAB reference5.8→fresh14.3 fallback after15m expiry.

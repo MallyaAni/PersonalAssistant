@@ -288,6 +288,21 @@ test('Standing reference trim shows a positive Sell and separate position',async
   expect(state.diagnostics).toEqual([])
 })
 
+// Distinguish an unconfirmed positive model reduction from a publication containing no Sell objective.
+test('Best sells distinguishes a pending reduction from no model sell signal',async ({page,baseURL})=>{
+  const state=fixture()
+  Object.assign(state,{publicationV2:true,numerical:'execute',numericalExpired:true,referenceMode:'trim',referenceObserved:true,entryAt:Date.now()-100})
+  await install(page,baseURL!,state);await page.goto('/?deskView=strategy#desk')
+  const board=page.getByRole('region',{name:'All names signals',exact:true})
+  await expect(board.getByLabel('BUYHIGH action',{exact:true})).toHaveText('Wait')
+  await expect(board.getByLabel('BUYHIGH trade size',{exact:true})).toHaveText('—')
+  await page.getByRole('button',{name:'Best sells',exact:true}).click()
+  await expect(board.locator('tbody tr')).toHaveCount(0)
+  await expect(board.getByRole('status')).toHaveText('No confirmed sell signals yet.')
+  await expect(board).not.toContainText('No sell signals in the current strategy publication.')
+  expect(state.diagnostics).toEqual([])
+})
+
 // Keep an observed model reduction identical in the list and every current chart header.
 test('Observed reference Sell size and position agree across chart frames',async ({page,baseURL})=>{
   const state=fixture()
