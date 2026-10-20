@@ -7,8 +7,6 @@ from decimal import Decimal
 from threading import Thread
 
 import pytest
-import test_historical_conditional_market as generic
-from test_historical_conditional_cycle import intent
 
 from backend.agents.trading.desk import intraday_orders, paper
 from backend.market import historical_conditional_cycle as connected
@@ -17,6 +15,8 @@ from backend.market import historical_packet_demand as demand
 from backend.market import historical_session_completion as completion
 from backend.market import historical_timing_packet as packet
 from backend.market.historical_packet_store import StorePause
+from backend.tests import test_historical_conditional_market as generic
+from backend.tests.test_historical_conditional_cycle import intent
 
 CASES = []
 

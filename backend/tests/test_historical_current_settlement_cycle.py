@@ -10,8 +10,6 @@ from pathlib import Path
 
 import numpy as np
 import pytest
-import test_historical_conditional_market as generic
-from test_historical_conditional_cycle import import_capture, intent
 
 from backend.agents.trading.desk import intraday_orders, paper
 from backend.market import entry_timing
@@ -24,6 +22,8 @@ from backend.market import historical_timing_packet as packet
 from backend.market import probabilistic_execution as probability
 from backend.market import replay_broker as native
 from backend.market.historical_packet_store import Store, StorePause
+from backend.tests import test_historical_conditional_market as generic
+from backend.tests.test_historical_conditional_cycle import import_capture, intent
 
 CASES = []
 
