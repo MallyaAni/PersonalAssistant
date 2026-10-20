@@ -98,7 +98,7 @@ class PublicationTests(unittest.TestCase):
     # No new publication or HTTP read may treat an expired snapshot as current.
     def test_expired_original_refuses(self):
         value=snapshot()
-        with self.assertRaisesRegex(ValueError,'expired'):publication.validate(value,datetime.fromisoformat(value['valid_until']))
+        with self.assertRaisesRegex(publication.ExpiredError,'expired'):publication.validate(value,datetime.fromisoformat(value['valid_until']))
 
     # A changed installed source is rejected without revising the original publication.
     def test_source_change_refuses(self):

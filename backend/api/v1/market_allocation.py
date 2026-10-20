@@ -27,6 +27,15 @@ def allocation(root, now):
             return {**snapshot, 'entry_assessment':strategy_entries.read(root,snapshot,now),
                 **({'reference_positions': positions} if positions is not None else {}),
                 'recorded_history_version':strategy_entry_history.PAGE_SCHEMA}
+        except strategy_publication.ExpiredError as expired:
+            snapshot = expired.value
+            return {"version": strategy_publication.VERSION,
+                    "status": "awaiting_nightly", "policy": snapshot["policy"],
+                    "rows": {}, "expired_at": snapshot["valid_until"],
+                    "next_publication_at": strategy_publication.next_publication_at(
+                        now).isoformat(),
+                    "last_session": snapshot["session"], "last_rows": snapshot["rows"],
+                    "as_of": now.isoformat(), "valid_until": None}
         except (OSError, ValueError, TypeError, KeyError, AttributeError, OverflowError):
             return {"version": strategy_publication.VERSION, "status": "unavailable",
                     "policy": "grade-led-learned-sizing/1", "rows": {},

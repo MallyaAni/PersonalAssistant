@@ -1,12 +1,17 @@
 """Published strategy percentages never depend on current paper or personal accounts."""
 
+import json
 from copy import deepcopy
 from datetime import datetime
 
 import pytest
 
+from backend.api.v1 import market_allocation
 from backend.market import model_allocation_view as view
+from backend.market import strategy_publication as publication
 from backend.tests.test_live_model_decision import NOW, admitted
+from backend.tests.test_strategy_publication import CONFIG, snapshot
+from backend.tests.test_strategy_publication import NOW as PUBLISHED_AT
 
 
 # Return authenticated targets, including zero, without loading an account.
@@ -70,6 +75,75 @@ def test_corrupt_saved_allocation_is_unavailable(monkeypatch, field, value):
     else:
         record["paper"]["joint_funded"]["receipt"]["source_sha256"] = value
     result = view.read("unused", record, NOW)
+    assert result["status"] == "unavailable"
+    assert result["rows"] == {}
+
+
+# Publish the shared synthetic snapshot with its installed cost fixture.
+def publish_fixture(tmp_path, monkeypatch):
+    value = snapshot()
+    publication.publish(tmp_path, value, PUBLISHED_AT)
+    monkeypatch.setattr(
+        publication.learned_live_holding,
+        "read_configuration",
+        lambda root, at: (CONFIG, {"cost_bps": 10}),
+    )
+    return value
+
+
+# A current publication still serves the original snapshot unchanged.
+def test_current_publication_is_unchanged(monkeypatch, tmp_path):
+    value = publish_fixture(tmp_path, monkeypatch)
+    result = market_allocation.allocation(tmp_path, PUBLISHED_AT)
+    assert result == {
+        **value,
+        "entry_assessment": {
+            "version": "strategy-numerical-entries/1",
+            "status": "unavailable",
+            "rows": {},
+            "reason": "Fresh numerical 15-minute observation required",
+        },
+        "recorded_history_version": "strategy-recorded-entries/1",
+    }
+
+
+# A verified snapshot past its close waits for the nightly with no current rows.
+def test_expired_publication_awaits_the_nightly(monkeypatch, tmp_path):
+    value = publish_fixture(tmp_path, monkeypatch)
+    expired_at = datetime.fromisoformat("2026-01-07T17:00:00-05:00")
+    result = market_allocation.allocation(tmp_path, expired_at)
+    assert result == {
+        "version": publication.VERSION,
+        "status": "awaiting_nightly",
+        "policy": value["policy"],
+        "rows": {},
+        "expired_at": value["valid_until"],
+        "next_publication_at": "2026-01-07T19:30:00-05:00",
+        "last_session": value["session"],
+        "last_rows": value["rows"],
+        "as_of": expired_at.isoformat(),
+        "valid_until": None,
+    }
+
+
+# A re-signed but inconsistent snapshot stays unavailable, not awaiting the nightly.
+def test_tampered_expired_publication_is_unavailable(monkeypatch, tmp_path):
+    publish_fixture(tmp_path, monkeypatch)
+    folder = tmp_path / publication.DIRECTORY
+    pointer = json.loads((folder / "latest.json").read_bytes())
+    path = folder / (pointer["snapshot_id"] + ".json")
+    changed = json.loads(path.read_bytes())
+    changed["rows"]["AAA"]["target_weight"] = 0.18
+    changed["receipt_sha256"] = publication._digest(
+        {key: item for key, item in changed.items() if key != "receipt_sha256"}
+    )
+    raw = json.dumps(changed, sort_keys=True, allow_nan=False).encode()
+    path.write_bytes(raw)
+    pointer["receipt_sha256"] = changed["receipt_sha256"]
+    pointer["bytes_sha256"] = publication.sha256(raw).hexdigest()
+    (folder / "latest.json").write_text(json.dumps(pointer, sort_keys=True))
+    expired_at = datetime.fromisoformat("2026-01-07T17:00:00-05:00")
+    result = market_allocation.allocation(tmp_path, expired_at)
     assert result["status"] == "unavailable"
     assert result["rows"] == {}
 
