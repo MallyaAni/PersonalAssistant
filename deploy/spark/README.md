@@ -71,7 +71,36 @@ argument (`head` on spark1, `worker` on spark2), not from a different file. Keep
 it that way: a divergence between the two copies is a class of bug that shows up
 only as a hang during NCCL init.
 
-## DeepSeek-V4.1-Flash-1017 (ds41-*), prepared 2026-10-19
+## DeepSeek-V4.1-Flash-1017 (ds41-*), serving since 2026-10-19 22:56 ET
+
+**Applied and verified.** `scripts/spark-dsv41-cutover.sh` (RESUME=1, log
+`test-results/dsv41-cutover-20261019T224234.log`): boot 540 s; three served
+names; decode probes sane; vision "Red"; tool call well-formed; forwarder on
+spark2:8001 answering; 215,020-token prefill in 113 s (~1,900 tok/s) with the
+right answer; MemAvailable low point under it 6.1 GiB (spark1) / 10.5 GiB
+(spark2); soak clean at ~126 tok/s aggregate on two streams. Measured after:
+96 tok/s code / 48 tok/s prose single stream (0731: 67 / ~30). App gates on
+the live model: `benchmark_inference` 5/5 (vision 0.7 s via the forwarder,
+was 3.7 s); `scripts/gate.sh` 98/100 - the two misses are below. AniOS-style
+requests (top-level `none`, no kwargs) answer in 2 tokens with no reasoning;
+opencode-style requests think as asked. opencode's default is now
+`dgx-spark/deepseek-v4.1-flash-1017` (effort high; variants low/high/xhigh/
+max; 196608/65536; temperature 1.0, top_p 1.0).
+
+Two earlier attempts the same evening, for the record: 22:11 preflight stop
+(the DSpark token list was not yet on spark2); 22:19 a run that rolled back at
+22:35 because the post-rsync check compared whole-folder sizes while the rsync
+excludes spark1's `.cache` - the copy was complete. Fixed; the rollback's ds4
+boot was stopped at 4 minutes and the cutover resumed. A probe f-string also
+failed on the Sparks' Python (backslash in an f-string expression); fixed.
+
+**Gate misses to decide on (not fixed - the owner's call was model only):**
+`test_diagram_generation_behaviour[class diagram]`: the model wrote generics
+(`List<Book>`), which `UNSAFE_MERMAID_PATTERN` rejects as an HTML tag; a
+validator limitation the old model never tripped. `manage_check_ins` routing
+3/4 against a 0.8 floor (one case chose `none`).
+
+The planning text that follows is kept as written before the change.
 
 The next model: `ds41-tp2.sh` + `ds41-serve.sh` (both nodes, byte-identical) and
 `ds41-{head,worker}.service`, replacing `ds4-*` (V4-Flash-0731). HeNryous's

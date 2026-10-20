@@ -1,5 +1,25 @@
 # Next session
 
+## 2026-10-19 22:56 ET — DeepSeek-V4.1-Flash-1017 is the main model (VERIFIED)
+
+Cutover log `test-results/dsv41-cutover-20261019T224234.log`; full evidence
+in `deploy/spark/README.md` ("serving since"). Decode 96 tok/s code / 48
+prose single stream (was 67 / ~30); 215K prefill 113 s; memory low point
+6.1 / 10.5 GiB under it; benchmark_inference 5/5; gate.sh 98/100 (two misses
+recorded in the README, not fixed: a Mermaid-generics validator rejection and
+one manage_check_ins routing case). ds4-* and anios-vlm are disabled, not
+removed; `ROLLBACK=1 bash scripts/spark-dsv41-cutover.sh` restores them.
+
+**Transitional, remove when the trading session reconciles `~/deploy/anios`
+with main and `deploy.sh` ships bf5f67b3 + 47915387:** the `qwen3-vl-8b`
+served-name alias, the `anios-vision-forward` socat container on spark2:8001,
+and `--default-chat-template-kwargs '{"thinking": false}'` (keep that one
+unless every role is confirmed to send `chat_template_kwargs`).
+
+**Left as found:** `~/deploy/anios` diverged (10 trading commits with no
+upstream equivalent; Codex session live) - not mine, not touched. The special-
+token defuse for untrusted text is still not applied in AniOS.
+
 ## 2026-10-19 — DeepSeek-V4.1-Flash-1017 prepared for the Sparks (NOT applied)
 
 Decision and evidence: the first model that is both clearly smarter than

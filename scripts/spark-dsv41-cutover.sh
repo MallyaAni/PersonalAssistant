@@ -5,6 +5,7 @@
 #   bash scripts/spark-dsv41-cutover.sh            # refuses if an opencode agent is running
 #   FORCE=1 bash scripts/spark-dsv41-cutover.sh
 #   ROLLBACK=1 bash scripts/spark-dsv41-cutover.sh # just put ds4 + the VLM back
+#   RESUME=1 bash scripts/spark-dsv41-cutover.sh   # old server already stopped by an earlier run: skip the baseline
 #
 # Needs: key ssh to both Sparks; `sudo bash ~/install-ds41.sh` done on both (units +
 # the narrow sudoers rule); the model folder complete on spark1 (download_model.sh);
@@ -54,7 +55,8 @@ for line in urllib.request.urlopen(req, timeout=900):
         if ch and (ch[0]["delta"].get("content") or ch[0]["delta"].get("reasoning")):
             first = first or time.time(); n += 1; text.append(ch[0]["delta"].get("content") or "")
 dt = time.time() - first
-print(f"PROBE model={model} ttft={first-t0:.2f}s chunks={n} rate={n/dt:.1f}/s sane={\"class\" in \"\".join(text)}")
+sane = "class" in "".join(text)
+print("PROBE model=%s ttft=%.2fs chunks=%d rate=%.1f/s sane=%s" % (model, first - t0, n, n / dt, sane))
 '
 probe()   { s1 "python3 -c '$PROBE' ${1:-deepseek-v4-flash}"; }
 metrics() { s1 "curl -s localhost:8000/metrics | grep -E '^vllm:spec_decode_num_(accepted_tokens|drafts|draft_tokens)_total' || echo 'spec_decode metrics: NONE'"; }
@@ -102,14 +104,18 @@ running=$(s1 "curl -s localhost:8000/metrics | awk '/^vllm:num_requests_running/
 [[ "$running" == 0 || "${FORCE:-0}" == 1 ]] || die "old server has $running request(s) in flight (a Codex/opencode session?); FORCE=1 to proceed"
 n=$(s1 "ls $MODEL_DIR | wc -l"); sz=$(s1 "du -sb $MODEL_DIR | cut -f1")
 echo "model folder on spark1: $n files, $((sz/1000000000)) GB"
-(( n >= 192 && sz > 395000000000 )) || die "model folder incomplete on spark1 (expect >=192 files, ~402 GB)"
+(( n >= 179 && sz > 395000000000 )) || die "model folder incomplete on spark1 (expect >=179 files, ~402 GB)"
 s1 "for f in model-00047-of-00048.safetensors:101535150936 model-00048-of-00048.safetensors:101537926640; do n=\${f%%:*}; w=\${f##*:}; g=\$(stat -c %s $MODEL_DIR/\$n); [ \"\$g\" = \"\$w\" ] && echo \"size ok \$n\" || { echo \"SIZE MISMATCH \$n \$g\"; exit 1; }; done" || die "Engram shard size mismatch"
 s1 "test -f $MODEL_DIR/.engram_sha256_ok" || die "Engram shards not sha256-verified yet (prep step writes $MODEL_DIR/.engram_sha256_ok)"
 echo "before: $(mem)"; s1 'free -g | sed -n 2,3p'; s2 'free -g | sed -n 2,3p'
 
 say "1. baseline on the old server"
-up || die "old server is not answering; nothing to baseline"
-probe; probe; metrics
+if [[ "${RESUME:-0}" == 1 ]]; then
+  echo "RESUME=1: old server already stopped by an earlier run; baseline is in that run's log"
+else
+  up || die "old server is not answering; nothing to baseline"
+  probe; probe; metrics
+fi
 
 say "2. stop ds4-head, ds4-worker, anios-vlm (disabled, not just stopped)"
 s1 'sudo -n systemctl disable --now ds4-head' || rollback
@@ -123,8 +129,10 @@ say "3. spark2: image + model; both: JIT kernels"
 s2 "docker image inspect $IMAGE >/dev/null 2>&1" || s1 "docker save $IMAGE | ssh -o BatchMode=yes 192.168.100.2 docker load" || rollback
 s2 "docker image inspect $IMAGE >/dev/null 2>&1" || rollback
 s2 "mkdir -p $MODEL_DIR ~/.cache/dsv41-serve"
-s1 "rsync -a --info=progress2 --exclude .cache -e 'ssh -o BatchMode=yes' $MODEL_DIR/ 192.168.100.2:$MODEL_DIR/" || rollback
-[[ "$(s1 "du -sb $MODEL_DIR | cut -f1")" == "$(s2 "du -sb $MODEL_DIR | cut -f1")" ]] || rollback
+s1 "rsync -a --partial --info=progress2 --exclude .cache -e 'ssh -o BatchMode=yes' $MODEL_DIR/ 192.168.100.2:$MODEL_DIR/" || rollback
+# the rsync excludes spark1's .cache (hf download bookkeeping), so compare the model bytes without it
+# (this comparison, done on the whole folder, caused the 2026-10-19 22:35 rollback with a complete copy in place)
+[[ "$(s1 "du -sb --exclude=.cache $MODEL_DIR | cut -f1")" == "$(s2 "du -sb --exclude=.cache $MODEL_DIR | cut -f1")" ]] || rollback
 s1 "cp ~/.cache/dsv41-serve/markov_top_tokens.json /tmp/m.json" && s1 "scp -q -o BatchMode=yes /tmp/m.json 192.168.100.2:.cache/dsv41-serve/markov_top_tokens.json" || rollback
 JIT="docker run --rm --gpus all -v \$HOME/.cache/dsv41-serve:/root/.cache -e TORCH_EXTENSIONS_DIR=/root/.cache/torch_extensions -e MAX_JOBS=4 --entrypoint python3 $IMAGE -c 'from vllm_exl3_moe import tf_experts as t; t._ext()'"
 s1 "$JIT" || rollback; s2 "$JIT" || rollback

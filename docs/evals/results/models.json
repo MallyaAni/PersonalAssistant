@@ -1,5 +1,5 @@
 {
-  "decision": "DeepSeek-V4-Flash official FP8 across both DGX Sparks, vLLM tensor-parallel, B12X MoE kernel (2026-08-23). The second Spark arrived and settled the question the previous entry deferred: the official checkpoint is ~167 GB and does not fit on one box, so TP=2 is a requirement rather than a preference. Same model as before, but at release precision instead of a ~2-bit GGUF, and the thing that actually mattered was not speed - the new engine enforces JSON schemas, which the old one ignored. That removed the only reason six roles were pinned to a 4B, and 287 lines of workaround (JSONFallbackWriter, FallbackInferenceProvider) were deleted with it. Qwen3.6-35B-A3B was the better engineering fit - 25 GB, one box, 218-436 tok/s, perfect tool-calling - and was rejected on intelligence: 32 on the Artificial Analysis index against DeepSeek's 52, SWE-bench 73.4 against 79. The cost of that choice is stated plainly: both boxes are consumed, so image generation has no home on this hardware and vision keeps the ~27 GB left per box. Biggest single win was free: the boot log showed 'Using DEEPGEMM_MXFP4' - a silent fallback - and adding --moe-backend flashinfer_b12x, with no change to the model, took code decode from 26.2 to 63.5 tok/s. Full reasoning in docs/MODEL_EVALUATION.md.",
+  "decision": "DeepSeek-V4.1-Flash-1017 at EXL3 2.75 bpw across both Sparks (2026-10-19). Chosen for quality: the lowest measured KLD of any two-Spark quant (0.0201; code 0.0125), Engram tables unquantized on NVMe; 3.5 bpw builds do not fit. DeepSWE 77.0 vs 54.4 and Terminal-Bench 4.0 42.3 vs 7.0 over the 0731 model on DeepSeek's harness, and faster here: 96 vs 67 tok/s on code. The separate VLM is retired; this model serves vision. Previous decision kept below. Full reasoning in deploy/spark/README.md and NEXT_SESSION.md 2026-10-19.\n\nPREVIOUS: DeepSeek-V4-Flash official FP8 across both DGX Sparks, vLLM tensor-parallel, B12X MoE kernel (2026-08-23). The second Spark arrived and settled the question the previous entry deferred: the official checkpoint is ~167 GB and does not fit on one box, so TP=2 is a requirement rather than a preference. Same model as before, but at release precision instead of a ~2-bit GGUF, and the thing that actually mattered was not speed - the new engine enforces JSON schemas, which the old one ignored. That removed the only reason six roles were pinned to a 4B, and 287 lines of workaround (JSONFallbackWriter, FallbackInferenceProvider) were deleted with it. Qwen3.6-35B-A3B was the better engineering fit - 25 GB, one box, 218-436 tok/s, perfect tool-calling - and was rejected on intelligence: 32 on the Artificial Analysis index against DeepSeek's 52, SWE-bench 73.4 against 79. The cost of that choice is stated plainly: both boxes are consumed, so image generation has no home on this hardware and vision keeps the ~27 GB left per box. Biggest single win was free: the boot log showed 'Using DEEPGEMM_MXFP4' - a silent fallback - and adding --moe-backend flashinfer_b12x, with no change to the model, took code decode from 26.2 to 63.5 tok/s. Full reasoning in docs/MODEL_EVALUATION.md.",
   "columns": [
     "Model",
     "Serving",
@@ -11,7 +11,16 @@
   ],
   "rows": [
     [
-      "DeepSeek-V4-Flash FP8 (official) — CURRENT",
+      "DeepSeek-V4.1-Flash-1017 EXL3 2.75bpw (HeNryous; KLD 0.0201 vs native) — CURRENT",
+      "henryous/deepseek-v41-1017-dgx-spark:v4i (vLLM main + patches) TP=2 across 2 Sparks, DSpark k=5, Engram on NVMe, 262k ctx, 2 seqs, KV 2.5 GiB (712k tokens)",
+      "96 code / 48 prose single stream; ~126 agg @ c=2; draft acceptance 70.7%",
+      "~1,900 (215k prompt in 113 s)",
+      "yes (cold 0.91 s -> warm 0.13 s TTFT on the probe)",
+      "yes (deepseek_v41 parsers; json_schema)",
+      "yes (native; replaces Qwen3-VL-8B)"
+    ],
+    [
+      "DeepSeek-V4-Flash FP8 (official) (replaced 2026-10-19)",
       "vLLM 0.25.2 TP=2 across 2 Sparks, B12X MoE, DSpark k=5 (re-enabled 2026-09-26; off 2026-08-23..09-26), chunked prefill, 384k ctx",
       "~67 code single-stream (26.5 with DSpark off, measured 2026-09-26); ~200 agg @ c=6; draft acceptance 75%",
       "1785-2639",

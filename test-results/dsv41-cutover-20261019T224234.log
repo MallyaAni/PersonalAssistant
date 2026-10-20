@@ -1,0 +1,75 @@
+
+=== 0. preflight  [22:42:34]
+model folder on spark1: 179 files, 401 GB
+size ok model-00047-of-00048.safetensors
+size ok model-00048-of-00048.safetensors
+before: spark1 avail 112.8 GiB   spark2 avail 116.9 GiB
+Mem:             121           8           3           0         110         112
+Swap:             15           5          10
+Mem:             121           4          20           0          97         116
+Swap:             15           0          15
+
+=== 1. baseline on the old server  [22:42:48]
+RESUME=1: old server already stopped by an earlier run; baseline is in that run's log
+
+=== 2. stop ds4-head, ds4-worker, anios-vlm (disabled, not just stopped)  [22:42:48]
+pool empty: spark1 avail 113.1 GiB   spark2 avail 116.8 GiB
+
+=== 3. spark2: image + model; both: JIT kernels  [22:43:06]
+              0   0%    0.00kB/s    0:00:00 (xfr#0, to-chk=14/196)              0   0%    0.00kB/s    0:00:00 (xfr#0, to-chk=10/196)              0   0%    0.00kB/s    0:00:00 (xfr#0, to-chk=0/196) 
+
+=== 4. start ds41-worker, then ds41-head  [22:45:41]
+Created symlink /etc/systemd/system/multi-user.target.wants/ds41-worker.service → /etc/systemd/system/ds41-worker.service.
+Created symlink /etc/systemd/system/multi-user.target.wants/ds41-head.service → /etc/systemd/system/ds41-head.service.
+  waiting... 30s  (spark1 avail 111.3 GiB   spark2 avail 115.7 GiB)
+  waiting... 60s  (spark1 avail 15.2 GiB   spark2 avail 19.9 GiB)
+  waiting... 90s  (spark1 avail 17.1 GiB   spark2 avail 21.7 GiB)
+  waiting... 120s  (spark1 avail 20.2 GiB   spark2 avail 21.5 GiB)
+  waiting... 150s  (spark1 avail 19.9 GiB   spark2 avail 21.5 GiB)
+  waiting... 180s  (spark1 avail 19.7 GiB   spark2 avail 21.4 GiB)
+  waiting... 210s  (spark1 avail 19.5 GiB   spark2 avail 21.8 GiB)
+  waiting... 240s  (spark1 avail 18.1 GiB   spark2 avail 19.4 GiB)
+  waiting... 270s  (spark1 avail 18.6 GiB   spark2 avail 20.9 GiB)
+  waiting... 300s  (spark1 avail 15.1 GiB   spark2 avail 18.6 GiB)
+  waiting... 330s  (spark1 avail 15.1 GiB   spark2 avail 18.7 GiB)
+  waiting... 360s  (spark1 avail 12.9 GiB   spark2 avail 16.1 GiB)
+  waiting... 390s  (spark1 avail 10.9 GiB   spark2 avail 13.7 GiB)
+  waiting... 420s  (spark1 avail 8.4 GiB   spark2 avail 10.3 GiB)
+  waiting... 450s  (spark1 avail 6.4 GiB   spark2 avail 9.7 GiB)
+  waiting... 480s  (spark1 avail 8.1 GiB   spark2 avail 11.2 GiB)
+  waiting... 510s  (spark1 avail 7.8 GiB   spark2 avail 11.0 GiB)
+  waiting... 540s  (spark1 avail 7.6 GiB   spark2 avail 11.2 GiB)
+
+=== server up after 540s  [22:55:57]
+
+=== 5. smoke  [22:55:57]
+"id":"deepseek-v4.1-flash-1017" "id":"modelperm-8d8c5bb1425523e6" "id":"deepseek-v4-flash" "id":"modelperm-95cff04da565cd6c" "id":"qwen3-vl-8b" "id":"modelperm-b7f418ee165ebf0c" 
+PROBE model=deepseek-v4.1-flash-1017 ttft=0.91s chunks=172 rate=20.3/s sane=True
+PROBE model=deepseek-v4.1-flash-1017 ttft=0.13s chunks=174 rate=21.5/s sane=True
+vllm:spec_decode_num_drafts_total{engine="0",model_name="deepseek-v4.1-flash-1017"} 344.0
+vllm:spec_decode_num_draft_tokens_total{engine="0",model_name="deepseek-v4.1-flash-1017"} 1720.0
+vllm:spec_decode_num_accepted_tokens_total{engine="0",model_name="deepseek-v4.1-flash-1017"} 1258.0
+after boot: spark1 avail 7.0 GiB   spark2 avail 11.2 GiB
+VISION: Red
+TOOLCALL: [('get_weather', '{"city": "Boston"}')]
+
+=== 5b. transitional vision forwarder: spark2:8001 -> spark1:8000 (deployed compose still names spark2:8001)  [22:56:21]
+forwarder up: spark2:8001 answers with the V4.1 server's model list
+
+=== 6. memory probe: ~200K-token prefill, MemAvailable sampled on both nodes  [22:56:24]
+LONGPREFILL prompt_tokens= 215020 wall=113s answer= 19
+MEMMIN during long prefill: spark1 6113 MiB  spark2 10522 MiB  (watchdog at ~1536 MiB; want >= 3072)
+
+=== 7. short soak: 2 concurrent probes x 3 rounds  [22:58:29]
+PROBE model=deepseek-v4.1-flash-1017 ttft=0.26s chunks=176 rate=14.6/s sane=True
+PROBE model=deepseek-v4.1-flash-1017 ttft=0.15s chunks=185 rate=14.7/s sane=True
+PROBE model=deepseek-v4.1-flash-1017 ttft=0.31s chunks=175 rate=14.4/s sane=True
+PROBE model=deepseek-v4.1-flash-1017 ttft=0.14s chunks=183 rate=14.5/s sane=True
+PROBE model=deepseek-v4.1-flash-1017 ttft=0.32s chunks=175 rate=14.5/s sane=True
+PROBE model=deepseek-v4.1-flash-1017 ttft=0.15s chunks=181 rate=14.6/s sane=True
+vllm:spec_decode_num_drafts_total{engine="0",model_name="deepseek-v4.1-flash-1017"} 1423.0
+vllm:spec_decode_num_draft_tokens_total{engine="0",model_name="deepseek-v4.1-flash-1017"} 7115.0
+vllm:spec_decode_num_accepted_tokens_total{engine="0",model_name="deepseek-v4.1-flash-1017"} 5031.0
+end: spark1 avail 6.1 GiB   spark2 avail 11.0 GiB
+
+=== RESULT: V4.1-FLASH-1017 SERVING ON BOTH SPARKS (log: test-results/dsv41-cutover-20261019T224234.log). Next: app vision repoint via scripts/deploy.sh, then opencode.  [22:59:11]

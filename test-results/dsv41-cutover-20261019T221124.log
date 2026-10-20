@@ -1,0 +1,6 @@
+
+=== 0. preflight  [22:11:24]
+
+=== STOP: s2: ds41-tp2.sh / ds41-serve.sh / markov cache missing in home  [22:11:27]
+
+=== RESULT: ABORTED (old server untouched)  [22:11:27]
