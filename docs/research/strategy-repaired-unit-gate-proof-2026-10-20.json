@@ -1,0 +1,57 @@
+{
+  "files": {
+    "result.json": {
+      "bytes": 1030,
+      "sha256": "5d82cf3f3b56835f2d0af491653fb95de83c0ff29ccc6c8a5bae1f6c940fde2b"
+    },
+    "start.json": {
+      "bytes": 887,
+      "sha256": "d1b4ec241c448407d454eb30732fad8b608ab6d7405df306d84a6e6f61cfffaf"
+    },
+    "stderr": {
+      "bytes": 8379,
+      "sha256": "86d3bc11f96eaba40fa71672975504eea57512d3acfbdf20f12d9fa3fdc1adf7"
+    },
+    "stdout": {
+      "bytes": 52351,
+      "sha256": "87e65bd30d213031377af3ea99bcfd4d99a8905d961fcca151546c6e08ababd7"
+    }
+  },
+  "kind": "unit",
+  "local_root": "/tmp/strategy-repaired-unit-gate-20261020-evidence",
+  "not_deployment": true,
+  "observed_at": "2026-10-20T04:52:05.982388+00:00",
+  "pytest_summary": "10971 passed, 93 skipped, 6 xfailed, 439 warnings, 25 subtests passed in 535.28s (0:08:55)",
+  "real_current_entry_acceptance": "UNVERIFIED",
+  "remote_root": "/home/animallya96/scratch/strategy-unit-gate-20261020-224f9a53",
+  "result": {
+    "argv": [
+      "bash",
+      "/home/animallya96/scratch/strategy-unit-gate-20261020-224f9a53/checkout/scripts/gate.sh",
+      "--unit"
+    ],
+    "environment_overrides": {
+      "ANIOS_FUNCTIONAL_TESTS_IMAGE": "anios-functional-tests:strategy-224f9a53-gate",
+      "ANIOS_GATE_DB": "anios_gate_trading_224f9a53",
+      "ANIOS_GATE_SKIP_INFRA": "1",
+      "COMPOSE_PROJECT_NAME": "anios"
+    },
+    "finished_at": "2026-10-20T04:51:12.312648+00:00",
+    "not_deployment": true,
+    "pid": 1502091,
+    "private_environment": "original file symlink; never read or logged by this controller",
+    "production_head_after": "b4b2eeb9ac3d1b0bb1f344b280ecd5f1b00be1b8",
+    "production_head_before": "b4b2eeb9ac3d1b0bb1f344b280ecd5f1b00be1b8",
+    "reason": "New source repairs observed startup regression and adds tested exact source-renewal path",
+    "returncode": 0,
+    "revision": "224f9a5374022aae4a5ce7d6e190a68bf3b0d225",
+    "routing_gate_not_run": true,
+    "started_at": "2026-10-20T04:42:01.860205+00:00",
+    "tree": "ee8e9ae2c2e8a7f7fddc7854130333943a0adbc2"
+  },
+  "returncode": 0,
+  "schema": "strategy-terminal-gate-proof/1",
+  "source_revision": "224f9a5374022aae4a5ce7d6e190a68bf3b0d225",
+  "tree": "ee8e9ae2c2e8a7f7fddc7854130333943a0adbc2",
+  "whole_product_readiness": "UNVERIFIED"
+}

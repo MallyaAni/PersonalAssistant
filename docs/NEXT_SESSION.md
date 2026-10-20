@@ -1,5 +1,33 @@
 # Next session
 
+## 2026-10-20 — Initial independent publication installation candidate
+
+Exact224f9a53 full unit gate PASSED10971/93skip/6xfail/439warnings/25subtests,
+535.28s. Its real-model routing gate FAILED98pass/2fail444.69s, same two failures
+recorded by the separate model cutover: class-diagram generics rejected by active
+content validator, manage_check_ins3/4 below unchanged.80floor. Preserve raw logs,
+do not lower floors or relabel ready. No model/service changes were made here.
+
+A PRIVATE actual35-source/config/native-type component produced the unchanged
+94real allocations and actual ASGI owner200/foreign403/anon401/no-store with
+forbidden account/funded fallback. Original authenticated close/risk artifacts,
+no ordinary prepare/nightly/provider or account operation. Seed171058B/SHA
+80476bbb92dda4c3591e63f3718aed9d724c9164901e618b2c26377c2527d329 preserves actual
+clocks/Oct20 16:00ETexpiry and exact candidate config. Whole regular15m acceptance
+is still unavailable overnight. This is an initial independent recommendation
+publication, never adoption of paper/native pools or fabricated history.
+
+NEW code after224 lets the committed source review optionally bind this exact
+initial snapshot. Preflight checks original Git bytes/digest/size/clocks/current
+sources/config/model receipts/cost; canonical activate uses original publisher
+after installing admitted selectors and restores original selectors on failure.
+No extra deploy bypass or model inference. This prevents an empty independent
+dashboard after the source/config renewal. Original missing-pointer RED retained;
+43GREEN1.24s =4new+39existing tests, including activation/readback/rollback,
+committed-artifact tamper, expiry and injected publication failure. Exact new-tree
+full gate/private real-artifact install/deployment remain pending.
+Diagram impact: NONE — existing reviewed approval→independent snapshot boundaries.
+
 ## 2026-10-20 — Full-gate finding repaired; strict source renewal candidate
 
 71efb234/tree5da9e00f full unit gate FAILED:10961passed/1failed/93skipped/

@@ -1,5 +1,10 @@
 {
   "activation_state": "CANDIDATE_ONLY; real regular-session preview, full gates and canonical release still required",
+  "initial_publication": {
+    "path": "docs/research/strategy-initial-publication-2026-10-20.json",
+    "sha256": "80476bbb92dda4c3591e63f3718aed9d724c9164901e618b2c26377c2527d329",
+    "bytes": 171058
+  },
   "candidate_sources": {
     "backend/agents/trading/desk/event_execution.py": "76e49243ffb7fff8bb989df2c384ee1f2f0dcc7885c9421f98a986eda667202f",
     "backend/agents/trading/desk/event_risk.py": "34462a0ad3569022c90a3d7898b8f5a43ba053a38d2b7e44a63bc18e54de8973",

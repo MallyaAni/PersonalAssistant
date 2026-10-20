@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-10-20 — Candidate initial recommendation publication on canonical install
+
+An explicit committed approval review can include a finite initial model snapshot.
+Preflight verifies its exact Git bytes, original clocks and installed numerical
+sources/configuration. Activation uses the existing publisher after the approval
+change; a failure restores the original selectors and retains evidence. No account
+input, orders, new inference, clock extension or direct deployment path is added.
+This keeps independent model sizes available across the source/config renewal.
+Four new installation tests plus39existing checks pass43/43 after an expected
+missing-publication RED. Private real-input source35/API acceptance returned94
+unchanged allocations; current regular15m entries and deployed readiness remain
+unverified. Diagram impact: NONE — existing publication/approval paths unchanged.
+
 ## 2026-10-20 — Candidate portable startup and exact publication approval
 
 The independent publisher loads Unix locking only when publishing, so hosts

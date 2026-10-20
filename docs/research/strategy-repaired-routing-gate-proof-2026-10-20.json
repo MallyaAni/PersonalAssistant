@@ -1,0 +1,58 @@
+{
+  "files": {
+    "result.json": {
+      "bytes": 1104,
+      "sha256": "063e2a34653049eb8c575a8788e673008caff2b50bcf20439438b561a3a5e810"
+    },
+    "start.json": {
+      "bytes": 961,
+      "sha256": "5327213978a02d561baec4b0729277da8f6de83dd4d27aad1a564331f2555ac1"
+    },
+    "stderr": {
+      "bytes": 261,
+      "sha256": "faf3ae8a6b2ceb3316260fd3eb15a6bcdce90287cc8050c9cd7c5a359a5cdeae"
+    },
+    "stdout": {
+      "bytes": 14026,
+      "sha256": "ba51235698b80d28d1e76f9e36e410d663dae43aba22c08e26436074b17adff7"
+    }
+  },
+  "kind": "routing",
+  "local_root": "/tmp/strategy-repaired-routing-gate-20261020-evidence",
+  "not_deployment": true,
+  "observed_at": "2026-10-20T05:00:01.802860+00:00",
+  "pytest_summary": "2 failed, 98 passed in 444.69s (0:07:24)",
+  "real_current_entry_acceptance": "UNVERIFIED",
+  "remote_root": "/home/animallya96/scratch/strategy-routing-gate-20261020-224f9a53",
+  "result": {
+    "argv": [
+      "bash",
+      "/home/animallya96/scratch/strategy-unit-gate-20261020-224f9a53/checkout/scripts/gate.sh"
+    ],
+    "environment_overrides": {
+      "ANIOS_FUNCTIONAL_TESTS_IMAGE": "anios-functional-tests:strategy-224f9a53-gate",
+      "ANIOS_GATE_SKIP_INFRA": "1",
+      "ANIOS_GATE_WORKERS": "1",
+      "COMPOSE_PROJECT_NAME": "anios",
+      "POSTGRES_DB": "anios_gate_trading_224f9a53"
+    },
+    "existing_configured_model_only": true,
+    "finished_at": "2026-10-20T04:59:38.247485+00:00",
+    "model_service_or_selector_changed": false,
+    "not_deployment": true,
+    "pid": 1565237,
+    "production_head_after": "b4b2eeb9ac3d1b0bb1f344b280ecd5f1b00be1b8",
+    "production_head_before": "b4b2eeb9ac3d1b0bb1f344b280ecd5f1b00be1b8",
+    "returncode": 1,
+    "revision": "224f9a5374022aae4a5ce7d6e190a68bf3b0d225",
+    "sequential_files": "One worker preserves all canonical five suites while avoiding contention",
+    "started_at": "2026-10-20T04:52:11.449994+00:00",
+    "tree": "ee8e9ae2c2e8a7f7fddc7854130333943a0adbc2",
+    "unit_result_path": "/home/animallya96/scratch/strategy-unit-gate-20261020-224f9a53/result.json"
+  },
+  "returncode": 1,
+  "schema": "strategy-terminal-gate-proof/1",
+  "source_revision": "224f9a5374022aae4a5ce7d6e190a68bf3b0d225",
+  "tree": "ee8e9ae2c2e8a7f7fddc7854130333943a0adbc2",
+  "whole_product_readiness": "UNVERIFIED"
+}
