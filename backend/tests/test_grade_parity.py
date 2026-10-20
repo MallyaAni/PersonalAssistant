@@ -70,6 +70,50 @@ def test_parity_ok_on_the_pit_fixture(full_history):
     assert grade_parity.line(result) == f"grade parity: OK ({len(NAMES)} names)"
 
 
+# The nightly opts into the reporting-period safeguard while the research
+# scorecard keeps the generic corrected default. The difference is
+# deliberate, and every parity result reports it rather than replaying the
+# research mode as if it were tonight's.
+def test_the_deliberate_fundamental_mode_difference_is_reported(
+    monkeypatch, full_history
+):
+    import inspect
+
+    from backend.agents.trading.desk import desk as trading_desk
+    from backend.agents.trading.desk import fundamental
+    from backend.cli import market_pit_scorecard
+
+    report = _report()
+    result = grade_parity.compare(_record(report), report, LAST, full_history)
+    block = result["fundamentals"]
+    assert block["live"] == trading_desk.FUNDAMENTALS_CURRENT
+    assert block["replay"] == trading_desk.FUNDAMENTALS_CURRENT
+    assert block["research"] == trading_desk.FUNDAMENTALS_CORRECTED
+    assert block["live_source"] == fundamental.CURRENT_SOURCE
+    assert block["research_source"] == fundamental.CORRECTED_SOURCE
+    assert "deliberate" in block["note"]
+    assert f"fundamentals={block['live']}" in result["basis"]
+    assert f"research={block['research']}" in result["basis"]
+
+    # The nightly passes current explicitly; the scorecard leaves the desk's
+    # own default, which is corrected.
+    assert (
+        inspect.signature(trading_desk.run).parameters["fundamentals"].default
+        == trading_desk.FUNDAMENTALS_CORRECTED
+    )
+    seen = []
+
+    def fake_run(store, asof=None, **kwargs):
+        seen.append(kwargs)
+        return report
+
+    monkeypatch.setattr(trading_desk, "run", fake_run)
+    assert market_daily.desk_report(None, None) is report
+    market_pit_scorecard._desk_with_expiry(trading_desk, None, {"inputs": ()}, None)
+    assert seen[0]["fundamentals"] == trading_desk.FUNDAMENTALS_CURRENT
+    assert "fundamentals" not in seen[1]
+
+
 # The replay letter is the point-in-time report's letter at the record's
 # row: the same as the scorecard's restricted report, name for name.
 def test_replay_is_the_point_in_time_letter(fff_left):

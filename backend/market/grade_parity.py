@@ -30,7 +30,10 @@ into `current` (`/3`); a parity check that rebuilt the report on `/2`
 would fail every night the reporting-period safeguard reset a vote, which
 is the safeguard doing its job, not a drift. And the scorecard's curves
 are priced from earlier rows too; those are history, and the live board
-shows only row d. Both are stated in the result's `basis`.
+shows only row d. Both are stated in the result's `basis`, and the
+fundamental modes are carried on every result as `fundamentals` (live and
+replay `current` /3, research `corrected` /2, with the reason) so the
+deliberate difference is visible rather than silent.
 
 What is compared, for the record's session d:
 
@@ -139,6 +142,36 @@ EXPLAINABLE = frozenset({GRADE, TARGETS})
 # Top-level folders under the root that are outputs, never replay inputs;
 # a dated directory under one of them is not a moved input.
 NOT_INPUTS = frozenset({"desk", "history", "research"})
+
+
+# The fundamental modes the live and research paths choose, with the source
+# versions they read. The nightly and this replay opt into the
+# reporting-period safeguard (`current`); the research scorecard keeps the
+# generic desk default (`corrected`). The difference is deliberate - see the
+# module docstring - so every result states it rather than leaving it
+# implicit.
+def fundamentals_basis() -> dict:
+    """Return the live, replay and research fundamental modes and sources."""
+    from backend.agents.trading.desk import desk as trading_desk
+    from backend.agents.trading.desk import fundamental
+
+    live = trading_desk.FUNDAMENTALS_CURRENT
+    research = trading_desk.FUNDAMENTALS_CORRECTED
+    return {
+        "live": live,
+        "replay": live,
+        "research": research,
+        "live_source": fundamental.CURRENT_SOURCE,
+        "research_source": fundamental.CORRECTED_SOURCE,
+        "note": (
+            "The nightly and this replay use the reporting-period safeguard "
+            f"({live}, {fundamental.CURRENT_SOURCE}); the research scorecard "
+            f"uses the generic desk default ({research}, "
+            f"{fundamental.CORRECTED_SOURCE}). The difference is deliberate: "
+            "replaying the research mode here would report the safeguard's "
+            "vote resets as drift."
+        ),
+    }
 
 
 # Where the parity file lives under the market data root.
@@ -357,6 +390,7 @@ def compare(
     ctx = dict(context or {})
     moved_inputs = [str(x) for x in (ctx.get("moved_inputs") or [])]
     day_text = str(day)
+    fundamentals = fundamentals_basis()
     mismatches: list[dict] = []
     live_grades = {
         t: (g or {}).get("grade") for t, g in (record.get("grades") or {}).items()
@@ -444,10 +478,13 @@ def compare(
         "target_basis": target_basis,
         "replay_session": rep["last_session"],
         "membership_history": str(_history(history_path)),
+        "fundamentals": fundamentals,
         "basis": (
-            "replay = market_daily.desk_report (live inputs, fundamentals=current) "
-            "restricted by point_in_time.point_in_time, letter at the record's "
-            "session; "
+            "replay = market_daily.desk_report (live inputs, "
+            f"fundamentals={fundamentals['live']}) restricted by "
+            "point_in_time.point_in_time, letter at the record's session; "
+            f"fundamentals live/replay={fundamentals['live']}, "
+            f"research={fundamentals['research']}; "
             f"targets = {target_basis}"
         ),
         "mismatches": mismatches,

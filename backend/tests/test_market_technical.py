@@ -5,7 +5,7 @@ from datetime import UTC, date, datetime, timedelta
 import numpy as np
 import pytest
 
-from backend.market import technical
+from backend.market import calendar, technical
 from backend.market.panel import Panel, panel_from_histories
 from backend.market.yahoo import DailyBar, TickerHistory
 
@@ -23,6 +23,33 @@ def _history(
         day += timedelta(days=1)
     return TickerHistory(
         ticker, tuple(bars), (), bars[-1].session_date, datetime(2026, 1, 1, tzinfo=UTC)
+    )
+
+
+# The reviewed exchange sessions from the start of 2024 through `last`.
+def _sessions_through(last: str) -> np.ndarray:
+    _, sessions = calendar.reviewed_sessions()
+    days = np.arange(
+        np.datetime64("2024-01-02"),
+        np.datetime64(last, "D") + np.timedelta64(1, "D"),
+    ).astype("datetime64[D]")
+    return days[np.is_busday(days, busdaycal=sessions)]
+
+
+# A one-name panel from explicit sessions and closes.
+def _panel(days: np.ndarray, closes: np.ndarray) -> Panel:
+    close = np.asarray(closes, dtype=float).reshape(-1, 1)
+    return Panel(
+        dates=np.asarray(days, dtype="datetime64[D]"),
+        tickers=("AAA",),
+        open=close,
+        high=close,
+        low=close,
+        close=close,
+        adj_close=close,
+        volume=np.full_like(close, 1_000_000.0),
+        themes={"AAA": ()},
+        benchmark="AAA",
     )
 
 
@@ -96,7 +123,6 @@ def test_weekly_ema_is_carried_between_week_ends():
     weekly = technical._weekly_ema(panel, panel.adj_close, 4)
     a = panel.index("AAA")
     dates = panel.dates.astype("datetime64[D]")
-    weeks = (dates.astype(int) + 3) // 7  # Monday-to-Friday weeks
     changes = 0
     for t in range(1, len(dates)):
         if (
@@ -107,9 +133,44 @@ def test_weekly_ema_is_carried_between_week_ends():
             changes += 1
             # The weekly bar is known at a Friday close, or at the last
             # session of a week whose Friday is a holiday.
-            friday = (dates.astype(int) + 3) % 7 == 4
-            assert friday[t] or (t + 1 < len(dates) and weeks[t + 1] != weeks[t])
+            assert calendar.ends_week(dates[t]) is True
     assert changes >= 10
+
+
+# A Thursday before a Friday holiday closes the week live, as it does in a
+# historical panel that contains the following Monday. The old rule needed
+# the next row to see the week turn, so live it carried the prior week's EMA.
+def test_thursday_before_a_friday_holiday_closes_the_week_live():
+    days = _sessions_through("2024-03-28")
+    assert days[-1] == np.datetime64("2024-03-28")
+    assert calendar.ends_week(days[-1]) is True
+    close = np.linspace(100.0, 130.0, len(days))
+    panel = _panel(days, close)
+    live = technical._weekly_ema(panel, panel.adj_close, 3)
+    # A carry from the prior week would leave the value unchanged.
+    assert live[-1, 0] > live[-2, 0]
+    full_days = np.append(days, np.datetime64("2024-04-01"))
+    full_close = np.append(close, close[-1] + 1.0)
+    full_panel = _panel(full_days, full_close)
+    full = technical._weekly_ema(full_panel, full_panel.adj_close, 3)
+    assert full[len(days) - 1, 0] == pytest.approx(live[-1, 0])
+
+
+# A normal Thursday is mid-week: the weekly EMA carries the last completed
+# week's value, and a historical panel with the following Friday agrees.
+def test_a_normal_thursday_does_not_close_the_week():
+    days = _sessions_through("2024-03-21")
+    assert days[-1] == np.datetime64("2024-03-21")
+    assert calendar.ends_week(days[-1]) is False
+    close = np.linspace(100.0, 130.0, len(days))
+    panel = _panel(days, close)
+    live = technical._weekly_ema(panel, panel.adj_close, 3)
+    assert live[-1, 0] == pytest.approx(live[-2, 0])
+    full_days = np.append(days, np.datetime64("2024-03-22"))
+    full_close = np.append(close, close[-1] + 1.0)
+    full_panel = _panel(full_days, full_close)
+    full = technical._weekly_ema(full_panel, full_panel.adj_close, 3)
+    assert full[len(days) - 1, 0] == pytest.approx(live[-1, 0])
 
 
 # The weekly EMA must not change when later sessions are removed: the last
@@ -167,7 +228,10 @@ def test_52_week_high_uses_the_adjusted_basis():
     from backend.market.panel import Panel
 
     t = 300
-    dates = np.array([date(2024, 1, 1) + timedelta(days=i) for i in range(t)], dtype="datetime64[D]")
+    dates = np.array(
+        [date(2024, 1, 1) + timedelta(days=i) for i in range(t)],
+        dtype="datetime64[D]",
+    )
     raw = np.full((t, 2), 100.0)
     # Name 0 pays a dividend at t=150 that lifts the adjustment ratio 3%;
     # its adjusted series is flat, so it is always at its adjusted high.
@@ -176,8 +240,16 @@ def test_52_week_high_uses_the_adjusted_basis():
     high = raw * 1.0
     low = raw * 1.0
     panel = Panel(
-        dates=dates, tickers=("DIV", "SPY"), open=raw, high=high, low=low,
-        close=raw, adj_close=adj, volume=np.full((t, 2), 1e6), themes={}, benchmark="SPY",
+        dates=dates,
+        tickers=("DIV", "SPY"),
+        open=raw,
+        high=high,
+        low=low,
+        close=raw,
+        adj_close=adj,
+        volume=np.full((t, 2), 1e6),
+        themes={},
+        benchmark="SPY",
     )
     feats = tech.technical_features(panel)
     idx = tech.TECHNICAL_NAMES.index("high_52w_distance")

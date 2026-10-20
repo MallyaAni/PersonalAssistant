@@ -156,20 +156,28 @@ def _clean(values: np.ndarray) -> tuple[float | None, ...]:
 
 
 # Which sessions end a trading week, by the same rule `technical._weekly_ema`
-# uses: a Friday, or the last session on file before the week number turns.
-# Kept a separate function so the weekly bars and the weekly EMAs the desk
-# scored cannot drift apart.
+# uses: the exchange calendar's last session of the week, or the panel's next
+# row outside the reviewed years. The calendar sees a holiday-short week in
+# advance, so a Thursday before a Friday holiday closes the bar here exactly
+# as it closes the weekly EMA. Kept a separate function so the weekly bars and
+# the weekly EMAs the desk scored cannot drift apart.
 def _week_ends(dates: np.ndarray) -> np.ndarray:
     """Return the row indices that close a trading week."""
-    days = dates.astype("datetime64[D]").astype(int)
-    weeks = (days + 3) // 7
-    friday = (days + 3) % 7 == 4
+    days = dates.astype("datetime64[D]")
+    values = days.astype(int)
+    weeks = (values + 3) // 7
+    friday = (values + 3) % 7 == 4
     rows = len(days)
-    ends = [
-        bool(friday[t]) or (t + 1 < rows and weeks[t + 1] != weeks[t])
-        for t in range(rows)
-    ]
-    return np.flatnonzero(np.array(ends))
+    ends = np.zeros(rows, dtype=bool)
+    for t in range(rows):
+        known = calendar.ends_week(days[t])
+        if known is None:
+            ends[t] = bool(friday[t]) or (
+                t + 1 < rows and weeks[t + 1] != weeks[t]
+            )
+        else:
+            ends[t] = known
+    return np.flatnonzero(ends)
 
 
 # Roll daily bars up into weekly ones: the week's first open, its extremes,
@@ -191,7 +199,7 @@ def _weekly_bars(
     if not len(ends) or ends[-1] != len(dates) - 1:
         ends = np.append(ends, len(dates) - 1)
     starts = np.concatenate([[0], ends[:-1] + 1]) if len(ends) else np.array([], int)
-    keep = [i for i, (a, b) in enumerate(zip(starts, ends)) if b >= a]
+    keep = [i for i, (a, b) in enumerate(zip(starts, ends, strict=False)) if b >= a]
     starts, ends = starts[keep], ends[keep]
     complete = np.array(
         [
@@ -211,14 +219,20 @@ def _weekly_bars(
             np.where(
                 complete,
                 np.array(
-                    [np.nanmax(high[a : b + 1, 0]) for a, b in zip(starts, ends)]
+                    [
+                        np.nanmax(high[a : b + 1, 0])
+                        for a, b in zip(starts, ends, strict=False)
+                    ]
                 ).reshape(-1, 1),
                 np.nan,
             ),
             np.where(
                 complete,
                 np.array(
-                    [np.nanmin(low[a : b + 1, 0]) for a, b in zip(starts, ends)]
+                    [
+                        np.nanmin(low[a : b + 1, 0])
+                        for a, b in zip(starts, ends, strict=False)
+                    ]
                 ).reshape(-1, 1),
                 np.nan,
             ),
@@ -226,7 +240,10 @@ def _weekly_bars(
             np.where(
                 complete,
                 np.array(
-                    [np.nansum(volume[a : b + 1, 0]) for a, b in zip(starts, ends)]
+                    [
+                        np.nansum(volume[a : b + 1, 0])
+                        for a, b in zip(starts, ends, strict=False)
+                    ]
                 ).reshape(-1, 1),
                 np.nan,
             ),
@@ -269,7 +286,7 @@ def _quote_observation(
 
 # Build one name's chart straight from the store, without assembling the
 # whole 93-name panel: a single drill-down should not pay for the book.
-def build(
+def build(  # noqa: C901 - one chart build: bars, overlays, levels, status
     store: MarketStore,
     ticker: str,
     sessions: int = DEFAULT_SESSIONS,
@@ -469,7 +486,9 @@ def build(
         entries=tuple(
             str(d)
             for d, hit in zip(
-                dates[cut], (entry_fired[cut] if entry_fired is not None else [])
+                dates[cut],
+                (entry_fired[cut] if entry_fired is not None else []),
+                strict=False,
             )
             if hit
         ),
@@ -512,6 +531,7 @@ def payload(
                 chart.low,
                 chart.close,
                 chart.volume,
+                strict=False,
             )
         ],
         "entries": list(chart.entries),

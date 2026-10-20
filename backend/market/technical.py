@@ -39,6 +39,7 @@ its own; each is a claim a trader makes, made measurable.
 
 import numpy as np
 
+from backend.market import calendar
 from backend.market.alpha import _rolling_extreme
 from backend.market.panel import Panel
 
@@ -154,13 +155,18 @@ def _crossover(fast: np.ndarray, slow: np.ndarray, window: int) -> np.ndarray:
 
 # EMA over weekly closes, evaluated only at week ends and carried forward.
 #
-# The last row of the panel is NOT treated as a week end. Live, the panel
-# ends today and today's week is usually still forming; counting it as a
-# close would give the newest session a weekly EMA that includes a partial
-# week, while every historical row uses completed weeks. The desk would
-# then read a different weekly trend live than the one measured in the
-# backtest. A mid-week session carries the last completed week's value,
-# which is the same thing a backtest at that row sees.
+# The last row of the panel is not a week end merely because it is last.
+# Live, the panel ends today and today's week is usually still forming;
+# counting it as a close would give the newest session a weekly EMA that
+# includes a partial week, while every historical row uses completed weeks.
+# The desk would then read a different weekly trend live than the one
+# measured in the backtest. A session closes its week only when the exchange
+# calendar says no later session falls in the same Monday-to-Friday week:
+# a Friday, or the session before a Friday holiday. The calendar knows the
+# next session in advance, so a live panel ending on the Thursday before a
+# holiday closes that week exactly as a historical panel containing the
+# following Monday does. Outside the reviewed calendar years the panel's
+# next row is the only evidence available, so the old rule stands there.
 def _weekly_ema(panel: Panel, close: np.ndarray, span: int) -> np.ndarray:
     dates = panel.dates.astype("datetime64[D]")
     # NumPy's datetime64[W] buckets weeks from the epoch, a Thursday, so
@@ -169,18 +175,19 @@ def _weekly_ema(panel: Panel, close: np.ndarray, span: int) -> np.ndarray:
     # which is the week a trader means.
     weeks = (dates.astype(int) + 3) // 7
     rows = close.shape[0]
-    # A session ends the week when it is a Friday, or when the next session
-    # on file starts a new week (a short week whose Friday is a holiday).
-    # The next-session test alone would fail on the newest row, where
-    # there is no next session yet; the weekday test is what a trader
-    # uses at a Friday close and needs no future.
+    # The calendar decides week ends where it has coverage. The fallback is
+    # the panel's own next row, which is what history used before the
+    # calendar was consulted and is all a year nobody has reviewed offers.
     friday = (dates.astype(int) + 3) % 7 == 4
-    ends = np.array(
-        [
-            bool(friday[t]) or (t + 1 < rows and weeks[t + 1] != weeks[t])
-            for t in range(rows)
-        ]
-    )
+    ends = np.zeros(rows, dtype=bool)
+    for t in range(rows):
+        known = calendar.ends_week(dates[t])
+        if known is None:
+            ends[t] = bool(friday[t]) or (
+                t + 1 < rows and weeks[t + 1] != weeks[t]
+            )
+        else:
+            ends[t] = known
     week_rows = np.flatnonzero(ends)
     weekly = ema(close[week_rows], span)
     out = np.full_like(close, np.nan)

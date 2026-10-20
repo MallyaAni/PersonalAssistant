@@ -435,21 +435,27 @@ def _ema_step(
     return np.where(count >= span, state, np.nan)
 
 
-# The backtest's week-end sessions (`technical._weekly_ema`): a Friday, or
-# a session whose next session starts a new week.
+# The backtest's week-end sessions (`technical._weekly_ema`): the exchange
+# calendar's last session of the week, or the panel's next row outside the
+# reviewed years. The calendar sees a holiday-short week in advance, so a
+# Thursday before a Friday holiday closes the week here and live alike.
 def week_ends(dates: np.ndarray) -> np.ndarray:
     """Return the (T,) week-end flags."""
-    days = np.asarray(dates, dtype="datetime64[D]").astype(int)
-    weeks = (days + 3) // 7
-    friday = (days + 3) % 7 == 4
+    days = np.asarray(dates, dtype="datetime64[D]")
+    values = days.astype(int)
+    weeks = (values + 3) // 7
+    friday = (values + 3) % 7 == 4
     rows = len(days)
-    return np.array(
-        [
-            bool(friday[t]) or (t + 1 < rows and weeks[t + 1] != weeks[t])
-            for t in range(rows)
-        ],
-        dtype=bool,
-    )
+    ends = np.zeros(rows, dtype=bool)
+    for t in range(rows):
+        known = calendar.ends_week(days[t])
+        if known is None:
+            ends[t] = bool(friday[t]) or (
+                t + 1 < rows and weeks[t + 1] != weeks[t]
+            )
+        else:
+            ends[t] = known
+    return ends
 
 
 # The run length of each raw stance as `opinions.persist` counts it,
