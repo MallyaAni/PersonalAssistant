@@ -1304,6 +1304,20 @@ ConversationService(reply_llm=...)). None of it is deployed:
 `.env` MAIN_LLM_BASE_URL back to :8000, REPLY_LLM_REASONING_EFFORT=high,
 and `systemctl --user disable --now reply-effort-shaper` on spark1.
 
+**Reply effort above high measured and not adopted (2026-10-20 16:30 ET):**
+the 49 reply cases answered fresh at high, xhigh and max (16,384-token
+budget, the live one; `docs/evals/results/*-16k.json`), judged blind by two
+fresh Claude subagents in both orderings with disagreement = tie
+(`verdicts-v4.1-flash-1017-effort-high-vs-xhigh-vs-max.json`). high vs
+xhigh: 1 / 3 / 45 ties; high vs max: 5 / 5 / 39 ties. Every verdict held
+under the swap, so the differences are real but tiny and go both ways -
+no effort above high buys measurable reply quality on this set, and each
+step up adds thinking latency. The reply stays at high (shaper today,
+`REPLY_LLM_REASONING_EFFORT=high` once deployed). The two recurring
+cases: at high the deck-content answer (42) added an inference the source
+did not carry, and the conceptual case (45) was better at high than at
+either other level.
+
 **OpenCode 2.1.1 tried side by side (`~/opencode2`, isolated XDG dirs) on
 the three bake-off tasks against 1.19.3:** identical outcomes, 2.x 1.3-1.9x
 slower, and its contracts break the watchdog/web setup. Not adopted;
