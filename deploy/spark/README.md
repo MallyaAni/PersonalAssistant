@@ -85,7 +85,13 @@ was 3.7 s); `scripts/gate.sh` 98/100 - the two misses are below. AniOS-style
 requests (top-level `none`, no kwargs) answer in 2 tokens with no reasoning;
 opencode-style requests think as asked. opencode's default is now
 `dgx-spark/deepseek-v4.1-flash-1017` (effort high; variants low/high/xhigh/
-max; 196608/65536; temperature 1.0, top_p 1.0).
+max; 196608/65536; temperature 1.0, top_p 1.0). spark1's web opencode
+(code.deepmatter, `~/.config/opencode/opencode.json`) kept naming its
+entry `deepseek-v4-flash` after the cutover - that name is a served alias,
+so it was already V4.1 with the old label; since 2026-10-20 10:08 ET it
+defaults to `spark/deepseek-v4.1-flash-1017` (262144/65536) with the alias
+entry kept and relabelled so earlier sessions still resolve. A session
+opened before then remembers its own model name until it is switched.
 
 Two earlier attempts the same evening, for the record: 22:11 preflight stop
 (the DSpark token list was not yet on spark2); 22:19 a run that rolled back at
