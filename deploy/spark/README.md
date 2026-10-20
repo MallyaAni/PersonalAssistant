@@ -193,11 +193,35 @@ opencode: 695 s, 2.37M tokens, correct, 35 tests green, left a new C901.
 dsh: 945 s, 3.79M tokens, correct, broader (innermost-first blanking, an
 active-element allowlist), 34 tests green, no new lint, found and used the
 repo's docker test image on its own. dsh's patch is what landed (`a6164e3c`).
-Verdict for now: no quality gap on one sample; opencode is cheaper locally
-(the "8x fewer tokens" reports for dsh are against hosted APIs and did not
-reproduce here); keep opencode as the primary harness and dsh installed as
-the second opinion for validator/parsing work. More samples before changing
-that.
+Verdict after round 1: no quality gap on one sample.
+
+**Round 2 (2026-10-20 09:14-09:43 ET, three tasks, both harnesses at
+effort max; round 1 had been opencode max vs dsh high).** Worktrees off
+`514bd0b7`; task texts and every patch in `~/dsv41/bo2/` on spark1. A: a
+behaviour-preserving refactor to clear four lint findings including a C901
+(both ruff-clean, 34/34, identical test edits; dsh kept the explanatory
+comments beside their code, landed as `af26e31d`). B: the reply-only
+reasoning effort from a spec (both: same wiring, no new lint, end-to-end
+tests through fakes asserting which client streamed; opencode's None check
+is the precise one, landed as `d540458c` + `58e99e2f`). C: a bug
+described by symptom only, the diagram retry that never retried an empty
+engine message (both found the same cause and made the same one-line move
+of the call into the attempt; dsh's test double is parameterised, landed as
+`f84d443b`). Wall clock, A sequential / B and C with both harnesses on the
+server at once: opencode 162 / 518 / 176 s, dsh 298 / 566 / 397 s; tokens
+(A only, counted on the server) opencode 367K prompt + 10K generated, dsh
+702K + 18K.
+
+**Verdict after four tasks:** no accuracy difference. Every run was correct
+and complete; dsh was marginally more careful once (round 1, no new lint)
+and never worse; opencode was 1.1-2.3x faster on every task at the same
+effort. The harness is not where reply quality is decided on this stack -
+the model's thinking budget and the review loop are. opencode stays the
+daily harness; dsh stays installed (`~/dsh`, profile effort now max) for a
+second opinion on validator and parsing work. The next test worth running,
+if any: one long multi-file task (a trading-desk feature with a failing
+functional test), where the harnesses' context handling would differ more
+than on these.
 
 **Apply, in order** (`scripts/spark-dsv41-cutover.sh` does 3-6 and rolls back
 on its own):

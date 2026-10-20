@@ -1,5 +1,34 @@
 # Next session
 
+## 2026-10-20 09:50 ET — Harness bake-off round 2 done; reply-only effort is in main (VERIFIED, not deployed)
+
+Three real tasks to opencode and dsh (same commit, same effort, details in
+`deploy/spark/README.md` "Round 2"): all six runs correct; no accuracy
+difference across four tasks total; opencode 1.1-2.3x faster. opencode
+stays primary. Landed from the runs: `f84d443b` (diagram retry now covers
+an empty engine message - the cause of this morning's gate flake),
+`af26e31d` (validator split into helpers, lint clean), `d540458c` +
+`58e99e2f` (REPLY_LLM_REASONING_EFFORT, get_reply_llm_client,
+ConversationService(reply_llm=...)). None of it is deployed:
+`~/deploy/anios` is still the diverged trading checkout. When it deploys:
+`.env` MAIN_LLM_BASE_URL back to :8000, REPLY_LLM_REASONING_EFFORT=high,
+and `systemctl --user disable --now reply-effort-shaper` on spark1.
+
+**Unit suite on main, run in the test image with no database:** 11,427
+passed, 562 failed, 50 errors, 244 skipped (7.5 min, `~/dsv41/unit_all.log`).
+The failures seen are environmental (Postgres on :5432 absent, e.g.
+`test_search_limit.py`) or trading-area (one module imports a sibling test
+file by bare name: `test_historical_conditional_market.py` ->
+`test_historical_conditional_cycle`); not triaged further, not mine.
+
+**HeNryous image v5 (Hub commit 86f85253, today):** weights unchanged and
+byte-identical to ours (190 files, sizes match); patches 0040-0050 are
+decode-speed work (bit-exact kernels, adaptive verify window, RDMA
+all-gathers): single stream about flat, +2-11 % at 3-4 streams. Not an
+intelligence change. Not applied; a separate cutover if wanted
+(new image tag, seven JIT modules to prebuild, new switches in
+`serve/serve_example.sh`).
+
 ## 2026-10-20 08:09 ET — Reply thinks at high; bounded calls do not; Mermaid generics fixed (VERIFIED)
 
 Why: the blind reply comparison (4213d837) showed 1017 with thinking off
