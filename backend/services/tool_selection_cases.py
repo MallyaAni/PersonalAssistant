@@ -920,7 +920,10 @@ PER_TOOL_ACCURACY_FLOORS: dict[str, float] = {
     MANAGE_TASKS: 0.80,
     # Measured 12/12 on 2026-09-02 (four phrasings x 3, measure_selection_family
     # --category check_ins; the reminder and the passing mention held 3/3 each).
-    # Pinned at the siblings' level, below the measurement.
+    # Pinned at the siblings' level, below the measurement. 2026-10-20, on
+    # V4.1-Flash-1017: 3/4 in the gate, the stop phrasing lost to no-tool
+    # under concurrent load only; routing/select_action.md names stopping
+    # now and the family measures 8/8 after it.
     MANAGE_CHECK_INS: 0.80,
     # Measured 18/18 on 2026-08-26 with the tool (evaluate_tool_selection,
     # 3 reps); held at the task tools' level rather than at 1.0 so a single

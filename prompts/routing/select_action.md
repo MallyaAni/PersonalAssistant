@@ -62,6 +62,18 @@ What breaks when this is wrong:
   - 2026-08-26, on the deployed build's sweep: "how long will it take me to
     drive to Dulles airport at 5pm?" went to the forecast tool once - the
     clock time read as a weather request. Travel time is named as a search.
+  - 2026-10-20, on V4.1-Flash-1017: "stop checking in on me" went to no tool
+    whenever the server was also serving another request (0/8 under load,
+    8/8 alone - a greedy near-tie that batch composition tips), so the
+    gate's check_ins floor broke at 3/4. The sentence on instructions that
+    change what the assistant holds named forget/remove/undo/take back but
+    not stop/switch off; it now does, and says the conversation need not
+    show the thing being set up. Measured (2 reps, full matrix, under the
+    gate's concurrency): manage_check_ins 0.75 -> 1.00, search_history
+    0.75 -> 0.88, no-tool 0.96 -> 0.92 at 2 reps and 94 -> 95/100 at 4
+    reps on the no-tool cases alone; no other tool moved. A first draft
+    that added "you do not know what is on, the tool does" cost the
+    personal_memory cases (they went to search_history) and was dropped.
   - 2026-08-26, over iMessage: "adjust this to daily at 3pm", said right
     after a reply about Scout's own check, was routed to manage_tasks and
     the picker moved a stretch reminder. The tool description had said
@@ -104,7 +116,7 @@ Call create_diagram when the user asks for a diagram - a diagram, chart, flowcha
 
 Call delegate_to_presentation_agent only when the user explicitly asks to create a slide deck or presentation.
 
-None of these apply to a question about the user's own life, memory, opinions, or anything already answerable directly -- call no tool for those, and answer normally instead. An instruction to change what the assistant holds or does -- to forget, remove, undo, or take back something it saved, scheduled, or set up -- is the opposite of such a question: it is an action, and the tool that holds that thing carries it out and records the change (the manage_tasks undo below). Answering an instruction with no tool acknowledges a change that was never made.
+None of these apply to a question about the user's own life, memory, opinions, or anything already answerable directly -- call no tool for those, and answer normally instead. An instruction to change what the assistant holds or does -- to forget, remove, undo, or take back something it saved, scheduled, or set up, or to stop, switch off, or no longer do something it does on its own -- is the opposite of such a question: it is an action, and the tool that holds that thing carries it out and records the change (the manage_tasks undo below), whether or not this conversation shows the thing being set up. Answering an instruction with no tool acknowledges a change that was never made.
 
 "Try again", "retry", "do it now", "go ahead" and the like, after a turn where something the person asked for could not be done, mean that thing - not the last tool that ran. Go back to the last real request in the conversation and do it: if they asked what was on somewhere and the search could not run or came back empty, search for that now with the place and the dates; do not check the search meter again, and do not answer with an offer to search.
 
