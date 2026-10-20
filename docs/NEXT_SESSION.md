@@ -1,5 +1,108 @@
 # Next session
 
+## CURRENT 2026-10-20 — reference transition contract VERIFIED; live selection remains OPEN
+
+Human task remains the real latest-strategy All names Buy/Sell/model Size%,
+consistent original history/15m entries/reasons, preview BEFORE deployment;
+existing feed only, paper LAST. This advances the critical ongoing-book gap,
+not another allocation-capacity guard. Production b4 and the real preview are
+unchanged; no current regular market acquisition, account, orders, model/service
+change or deployment occurred. No question pending. Keep heartbeat ACTIVE.
+
+Source checkpoint 7e866b1b (production-based feature) adds ONLY
+strategy_reference_transition.py, its tests and proof. The new adapter is NOT
+selected by the ordinary publisher/collector/API/UI yet. Existing backend paths,
+source35 approvals/config/economic files and frontend bytes remain unchanged.
+Do not call this a whole live fix or rerun old full gates for documentation.
+Exact final new-source files passed 14 unit cases in v5 plus actual94-stock
+original-reference preparation; this is scoped evidence, not full-tree release
+acceptance. Proof research/strategy-reference-transition-proof-2026-10-20.json
+39421B/SHA6de57e99999c18089a02009ffd3eb7c493be25aa5dc7ea1036c551494fd1b33a.
+
+NEW typed immutable ReferenceBook and TransitionPlan own original fractional
+units/cash/adjusted-close marks, exact strategy/session/cost/original history/
+audit/review/native daily-prefix/source/snapshot receipts. The read-only reader
+uses the existing audited history validator and native entry-context reader;
+no holding inference, account load or simulated-market producer is rerun.
+The reference remains explicitly a counterfactual model scenario, NEVER viewer
+holdings, a live account book, actual fills or historically published advice.
+It cannot reseed a later close from an older endpoint. Original unit/cash/equity
+accounting must match. Native history.continuous_targets and probability.decision
+remain unchanged. Desired units precede marked trade amounts; both native Buy
+AND Sell timing are evaluated. A/A+ zero targets and missing grades preserve
+reference ownership. Grade exits sell positive owned amounts. Sales are capped
+at reference units; suggested sale proceeds cannot fund buys; issuing/repeating
+advice never mutates reference units. Unowned unused names do not demand fake
+quotes. Native 1e-12 pending-unit threshold remains, no new practical minimum,
+rounding, model tuning or hidden microtrades.
+
+V5 CIDf4ff08e61645cd89f0067d33b65c473b5978d8f81adc1194f4f32908b29c3356
+image136ebb46 exit0/noOOM11:38:04.320933355Z;14pass/0fail/error/skip,
+0.048s unit assertions/maxRSS206064KiB under unchanged RO/netnone/UID1000/1CPU/
+512MiB=swap/PIDs32/tmp64/dropALL/no-new-privileges/CPU30/FSIZE1MiB.
+Fresh independent inputs execute ACTUAL unchanged replay and native probability
+math; original still-A trim amount/utility exactly match. Original fresh path
+is ALSO asserted to remain Buy17% versus reference Sell13% (same target17%):
+the existing live mismatch is preserved as evidence, not claimed fixed.
+Full original reviewed94-name reader reproduces exact last curve equity
+21.45090692060969. Actual saved Oct19 HPE reference24.301788955% versus original
+target10.596667580% gives positive13.705121375% proposed reduction. State is
+UNAVAILABLE (no current numerical distribution acquired); these are PRIOR-CLOSE
+scenario calculations, NOT current recommendations. Buy funding is constrained
+by the saved reference cash0.0002793287887, not by assumed sale proceeds.
+
+V1 FAILED:8pass/1failure,0errors/skips; expected-utility test had subtracted
+position weights instead of native desired units, differing by one floating
+ULP. Corrected expected native unit formula; original exact utility assertion
+retained, no tolerance relaxation. V2 9pass; v3 native reviewed reader12pass;
+v4 unused-stock mark13pass; v5 pending-threshold edge14pass. These are successive
+source cohorts/regressions, NOT57 distinct cases. All original sources/results/
+CIDs/argv/inspects retained /tmp/strategy-reference-transition-*20261020* and
+matching Spark1 scratch/strategy-reference-transition-20261020-v{1..5}.
+Two DATA-only collectors each ONCE: first v1/v2; final reads ONLY new v3/v4/v5
+39fixed files, source/result readback and digest verification. No native producer,
+old test cohort, gate or getter repeated merely for docs. Final source/AST/
+purpose comments/zero backspaces/diff checks pass. Diagram impact NONE:
+unselected internal numerical adapter; no runtime ownership/store/API/UI flow.
+
+NEXT CONCRETE SOURCE INTEGRATION (do not stop at this calculator):
+1. Inspect/retain the existing native MarketPacket in strategy_entries.acquire.
+   IMPORTANT source fact: forward_market_evidence.capture ALREADY obtains split-
+   attested prior regular IEX anchors in packet.prefixes[name]['prior_close'].
+   Reuse original packet/receipts; no duplicate requests or missing-anchor detour.
+2. Bind the explicit model reference/plan to original snapshot and timing heads,
+   then derive a declared current IEX-relative-return mark bridge using those
+   anchors and the original adjusted reference close. Never relabel raw IEX as
+   historical SIP/adjusted-price equivalence. Verify quote, source, head, window,
+   distribution and first-result receipts. The pure project() caller currently
+   owns market-clock/eligibility/basis authentication; terminal=True is NOT a
+   live-clock authority. Derive terminal state from the actual native window.
+3. Integrate both-side transitions in the normal collector/API/UI with separate
+   model position and positive trade amount semantics. Carry explicit hypothetical
+   reference progression ONLY from original later observed execution-price
+   evidence; advice itself is not a fill. Pending objectives and original daily
+   spending budget must persist separately so sale proceeds cannot be recycled
+   intraday. No historical simulation adopted as actual live state.
+4. Add NEW scoped source/HTTP/UI proofs and reviewed source activation; old f0
+   acquisition and efaf bundle cannot certify this future integration. All current
+   and old full gates retain their original exact source/runtime scope. DeepSeek
+   upgrade remains user-reported; inspect actual config before future model gates,
+   do not restore old services. No model calls made for these numerical cases.
+
+Actual regular15m acceptance still ONLY after natural Oct20>=09:45ET/<16:00;
+deferred original acquisition scripts remain UNRUN. Do not run early, fakeclock,
+replay old sessions, restart96763, add watcher/cron, probe market_daily/balancer,
+or blindly call old f0 control after integration changes. Prepare exact new
+reviewed source/control binding first; reuse original feed and preserve private
+credential isolation/caps. Keep signed-in tab4/Vite33452/tunnel70626/symlink,
+tab3handoff. Show authentic real recommendations in SAME preview BEFORE canonical
+scripts/deploy.sh. Microtrade practicality, confidence ranking, full current
+ongoing-book coherence/readiness remain OPEN. Preserve every failed/completed
+root/proof; no native-pool adoption/reopening COMPLETE, denied-read bypass,
+paid data/provider/model/account/service changes, real orders or paper reset.
+Previous efaf source bundle remains archived/pre-release, NOT authorization to
+skip the new integration's source review. No historical main wholesale deploy.
+
 ## 2026-10-20 — whole-dashboard user workflow audit; five preview gaps fixed, material strategy gaps OPEN
 
 Human asked to use the whole dashboard like a trader and find logical gaps.
