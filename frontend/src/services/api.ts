@@ -2519,11 +2519,13 @@ export interface DeskModelAllocation {
   timing_basis?: string;
   identity?: {schema: string; strategy_identity: string; session: string; policy: string; basis: string};
   entry_assessment?: {
-    version: 'strategy-numerical-entries/1'; status: string; snapshot_id?: string;
+    version: 'strategy-numerical-entries/1' | 'strategy-numerical-entries/2'; status: string; snapshot_id?: string;
     publication_receipt_sha256?: string; strategy_identity?: string; receipt_sha256?: string;
     session?: string; completed_at?: string; generated_at?: string; valid_until?: string;
-    sizing_basis?: string; feed?: string; account_inputs?: boolean;
-    rows: Record<string, {state: string; action: 'Buy' | null; size_weight: number; quote_at: string | null;
+    sizing_basis?: string; feed?: string; account_inputs?: boolean; reference_progression?: string; recommendation_not_fill?: boolean;
+    rows: Record<string, {state: string; action: 'Buy' | 'Sell' | null; size_weight: number; model_position_weight?: number;
+      reference_units?: number; proposed_units?: number; quote_at: string | null;
+      original_intent?: {id: string; completed_at: string; at: string; size_weight: number; action: 'Buy' | 'Sell'; receipt_sha256: string};
       valid_until: string; evidence: DeskStrategyDecision['evidence']}>;
   };
   rows: Record<string, {target_weight: number; evidence?: DeskStrategyDecision['evidence'] & {timing_state?: string}}>;
@@ -3457,7 +3459,8 @@ export interface DeskStrategyDecision {
   evidence?: {
     reason?: string; inputs_as_of?: string; grade?: string | null;
     features?: Record<string, number>; band_blocked?: boolean;
-    model_position_size?: number | null; observed_price?: number;
+    model_position_size?: number | null; observed_price?: number; trade_size?: number; reference_position_size?: number;
+    sizing_basis?: string; price_bridge?: string; reference_basis?: string;
     timing_reason?: string; waiting_log_utility?: number | null;
     completed_candle_at?: string;
   };
@@ -3536,7 +3539,8 @@ export interface DeskOriginalStrategyRecommendation {
   schema: 'strategy-recorded-entry/1'; ticker: string; current_instruction: false;
   recommendation_not_fill: true; account_inputs: false; verified_against_installed_economics: true;
   original_bytes_sha256?: string;
-  original: {ticker: string; action: 'Buy'; at: string; completed_at: string; snapshot_id: string;
+  original: {ticker: string; action: 'Buy' | 'Sell'; at: string; completed_at: string; snapshot_id: string;
+    entry_version?: string; model_position_weight?: number; reference_units?: number; proposed_units?: number;
     strategy_identity: string; size_weight: number; evidence: NonNullable<DeskStrategyDecision['evidence']>};
 }
 
@@ -3549,19 +3553,24 @@ export const getDeskOriginalStrategyRecommendation = async (userId: string, tick
   const original=result.original;
   if (result.schema!=='strategy-recorded-entry/1' || result.ticker!==ticker || result.current_instruction!==false
       || result.recommendation_not_fill!==true || result.account_inputs!==false || result.verified_against_installed_economics!==true
-      || original?.ticker!==ticker || original.action!=='Buy' || original.snapshot_id!==snapshotId
+      || original?.ticker!==ticker || !['Buy','Sell'].includes(original.action) || original.snapshot_id!==snapshotId
       || original.completed_at!==completedAt || original.strategy_identity!==strategyIdentity
       || !Number.isFinite(Date.parse(original.at)) || Date.parse(original.at)>Date.now()
       || !Number.isFinite(original.size_weight) || !(original.size_weight>0 && original.size_weight<=1)
       || original.size_weight!==expectedSize
-      || original.evidence?.model_position_size!==original.size_weight
+      || (original.entry_version==='strategy-numerical-entries/2'
+        ? original.evidence?.model_position_size!==original.model_position_weight || original.evidence?.trade_size!==original.size_weight
+          || original.evidence?.sizing_basis!=='standing_counterfactual_reference_transition_not_viewer_order'
+          || original.action==='Sell' && !(typeof original.proposed_units==='number' && typeof original.reference_units==='number'
+            && original.proposed_units>0 && original.proposed_units<=original.reference_units)
+        : original.action!=='Buy' || original.evidence?.model_position_size!==original.size_weight)
       || expectedOriginal && (original.at!==expectedOriginal.at || result.original_bytes_sha256!==expectedOriginal.bytesSha)) throw new Error('Original model recommendation identity differs.');
   return result;
 };
 
 export interface DeskRecordedStrategyReference {
   id: string; ticker: string; at: string; completed_at: string; snapshot_id: string;
-  strategy_identity: string; action: 'Buy'; size_weight: number; valid_until: string; original_bytes_sha256: string;
+  strategy_identity: string; action: 'Buy' | 'Sell'; size_weight: number; valid_until: string; original_bytes_sha256: string;
 }
 
 export interface DeskRecordedStrategyPage {
@@ -3585,7 +3594,7 @@ export const getDeskRecordedStrategyRecommendations = async (userId: string, tic
   const ids=new Set<string>();
   for (const item of value.items) {
     const at=Date.parse(item.at),completed=Date.parse(item.completed_at),until=Date.parse(item.valid_until);
-    if (item.ticker!==ticker || item.action!=='Buy' || item.strategy_identity!==strategyIdentity
+    if (item.ticker!==ticker || !['Buy','Sell'].includes(item.action) || item.strategy_identity!==strategyIdentity
         || ![item.id,item.snapshot_id,item.original_bytes_sha256].every(hash=>/^[a-f0-9]{64}$/.test(hash))
         || ids.has(item.id) || !Number.isFinite(at) || !Number.isFinite(completed) || !Number.isFinite(until)
         || !(completed<=at && at<until && until<=completed+900000 && at<=Date.now())

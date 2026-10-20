@@ -619,6 +619,19 @@ costs. Original grade clocks use the next regular open, independently of a curre
 allocation's expiry. `strategy_entry_context` restores original daily inputs;
 `strategy_entries` uses native timing heads, calibration and current-price
 transport on completed regular-session IEX prefixes, without loading an account.
+When audited history is installed, the candidate `strategy_reference_entries`
+selects an explicitly counterfactual reference book and evaluates positive buy
+and sell changes, including still-A trims. It retains the original native market
+packet and uses its attested prior IEX close for a declared relative-return mark
+bridge; it does not equate IEX with historical SIP or raw with adjusted prices.
+Current trade amount and resulting model position are separate fields. A
+standing intent has one original saved recommendation across quote refreshes
+and later candles. Polling does not fill it, mutate reference holdings, finance
+purchases with proposed sales, or create repeated chart actions. Original history
+accepts the separately versioned reference Sell contract while retaining the
+strict old Buy-only contract. Automatic hypothetical reference progression and
+rollover to later closes remain unfinished; an older history endpoint cannot be
+silently reseeded as a later live book.
 The existing collector shares one forecast per candle and refreshes quotes; its
 finite original forecast parts and first recommendation retain technical reasons
 for later inspection. The candidate owner-only original-recommendation GET uses

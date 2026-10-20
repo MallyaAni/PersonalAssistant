@@ -4,8 +4,49 @@ const names = ['BUYLOW', 'BUYHIGH', 'SELLLOW', 'SELLHIGH', 'WAIT', 'MISSING']
 const session = '2026-10-13'
 type Fixture = {phase: string; paper: boolean; lost: boolean; expired: boolean; quoteMissing: boolean; liveReads: number; diagnostics: string[]; recordedMode?: 'original' | 'foreign' | 'bytes' | 'late' | 'paged'; recordedReads?: number; originalMode?: 'original' | 'foreign' | 'size'; originalReads?: number; originalDelay?: number; denseMarkers?: boolean; installedHistory?: boolean; numerical?: 'execute' | 'wait'; numericalForeign?: boolean; numericalExpired?: boolean; publicationV2?: boolean; noSellSignals?: boolean; simulationPolicy?: string; signalUntil?: string; allocationUntil?: string; allocationWrong?: boolean; allocationMissing?: boolean; regularFallback?: boolean; publishedPlan?: boolean; independentSizing?: boolean; independentSignalWrong?: boolean; targetWeight?: number; simulationIdentityWrong?: boolean; entryAt?: number; formingSignal?: boolean; chartFrames?: string[]; zoomHistory?: boolean; chartSessions?: number[]; currentSessionBars?: boolean}
 
+type ReferenceFixture = Fixture & {referenceMode?: 'trim' | 'exit' | 'buy'; referenceUnknown?: boolean}
+
+// Supply explicit reference-mode API fixtures without changing any production data or clocks.
+function referenceFixture(data: unknown, path: string, state: ReferenceFixture, at: string, now: number): unknown {
+  if (!state.referenceMode) return data
+  const value = data as Record<string, any>
+  const action = state.referenceMode==='buy' ? 'Buy' : 'Sell'
+  const size = state.referenceMode==='buy' ? .0005 : state.referenceMode==='exit' ? .2 : .13
+  const position = state.referenceMode==='exit' ? 0 : .143
+  const basis = 'standing_counterfactual_reference_transition_not_viewer_order'
+  if (path.endsWith('/model-allocation')) {
+    if (state.referenceUnknown) {
+      value.grade_signals.MISSING={...value.grade_signals.MISSING,grade:null,action:'unavailable'}
+      value.rows.MISSING.evidence={...value.rows.MISSING.evidence,grade:null}
+    }
+    if (state.referenceMode==='exit') {
+      value.rows.BUYHIGH.target_weight=0
+      value.rows.BUYHIGH.evidence={...value.rows.BUYHIGH.evidence,grade:'B',model_position_size:0}
+      value.grade_signals.BUYHIGH={...value.grade_signals.BUYHIGH,grade:'B',action:'sell'}
+    }
+    const entry=value.entry_assessment
+    entry.version='strategy-numerical-entries/2';entry.sizing_basis=basis
+    entry.reference_progression='standing_no_fills_assumed';entry.recommendation_not_fill=true
+    entry.rows=Object.fromEntries(Object.keys(value.rows).map(name=>[name,{state:'no_trade',action:null,size_weight:0,
+      model_position_weight:value.rows[name].target_weight,reference_units:0,proposed_units:0,quote_at:null,valid_until:at,
+      evidence:{...value.rows[name].evidence,trade_size:0,sizing_basis:basis,completed_candle_at:entry.completed_at}}]))
+    entry.rows.BUYHIGH={state:state.numerical,action,size_weight:size,model_position_weight:position,
+      reference_units:.003,proposed_units:state.referenceMode==='exit' ? .003 : .0013,quote_at:at,
+      valid_until:new Date(state.numericalExpired ? now-1000 : now+20000).toISOString(),
+      evidence:{...value.rows.BUYHIGH.evidence,model_position_size:position,trade_size:size,sizing_basis:basis,
+        completed_candle_at:entry.completed_at,timing_reason:'Original reference numerical timing',features:{ema_21_distance:-.0944}}}
+  } else if (path.endsWith('/recommendations') && path.includes('/strategy-simulation/')) {
+    value.items=value.items.map((item: Record<string, unknown>)=>({...item,action,size_weight:size}))
+  } else if (path.endsWith('/recommendation') && path.includes('/strategy-simulation/')) {
+    value.original={...value.original,action,size_weight:size,entry_version:'strategy-numerical-entries/2',
+      model_position_weight:position,reference_units:.003,proposed_units:state.referenceMode==='exit' ? .003 : .0013,
+      evidence:{...value.original.evidence,model_position_size:position,trade_size:size,sizing_basis:basis}}
+  }
+  return value
+}
+
 // Exercise live signal evidence with deliberately contrary paper allocations and executions.
-async function install(page: Page, baseURL: string, state: Fixture) {
+async function install(page: Page, baseURL: string, state: ReferenceFixture) {
   page.on('pageerror', error => state.diagnostics.push(error.message))
   page.on('console', message => {if (['error', 'warning'].includes(message.type())) state.diagnostics.push(message.text())})
   page.on('requestfailed', request => state.diagnostics.push(`Failed ${request.url()}`))
@@ -142,9 +183,109 @@ async function install(page: Page, baseURL: string, state: Fixture) {
       state.diagnostics.push(`Unspecified ${path}`)
       return route.fulfill({status: 418, json: {detail: 'Unexpected route'}})
     }
-    return route.fulfill({json})
+    return route.fulfill({json:referenceFixture(json,path,state,at,now)})
   })
 }
+
+// A still-A model reduction is a Sell, with its positive trade size separate from the remaining position.
+test('Standing reference trim shows a positive Sell and separate position',async ({page,baseURL})=>{
+  const state=fixture()
+  Object.assign(state,{publicationV2:true,numerical:'execute',referenceMode:'trim',entryAt:Date.now()-100,currentSessionBars:true})
+  await install(page,baseURL!,state);await page.goto('/?deskView=strategy#desk')
+  const board=page.getByRole('region',{name:'All names signals',exact:true})
+  await expect(board.getByLabel('BUYHIGH action',{exact:true})).toHaveText('Sell')
+  await expect(board.getByLabel('BUYHIGH displayed grade',{exact:true})).toHaveText('A')
+  await expect(board.getByLabel('BUYHIGH trade size',{exact:true})).toHaveText('13.0%')
+  await expect(board.getByLabel('BUYHIGH model size',{exact:true})).toHaveText('14.3%')
+  await board.getByRole('button',{name:'Best sells',exact:true}).click()
+  await expect(board.locator('tbody tr')).toHaveCount(1)
+  await board.getByRole('button',{name:'BUYHIGH',exact:true}).click()
+  const dialog=page.getByRole('dialog',{name:'BUYHIGH history',exact:true})
+  for(const frame of ['D','W','15m']){
+    await dialog.getByRole('group',{name:'Chart timeframe',exact:true}).getByRole('button',{name:frame,exact:true}).click()
+    await expect(dialog.getByLabel('BUYHIGH current chart target',{exact:true})).toHaveText('Sell · Size 13.0%')
+    await expect(dialog.getByLabel('BUYHIGH current chart position',{exact:true})).toHaveText('Position 14.3%')
+    await expect(dialog.getByLabel('BUYHIGH target chart markers',{exact:true})).toHaveText('')
+  }
+  expect(state.diagnostics).toEqual([])
+})
+
+// A missing grade in one stock cannot erase an independently validated recommendation elsewhere.
+test('Standing reference unknown grade does not erase the whole universe',async ({page,baseURL})=>{
+  const state=fixture()
+  Object.assign(state,{publicationV2:true,numerical:'execute',referenceMode:'trim',referenceUnknown:true,entryAt:Date.now()-100})
+  await install(page,baseURL!,state);await page.goto('/?deskView=strategy#desk')
+  const board=page.getByRole('region',{name:'All names signals',exact:true})
+  await expect(board.getByLabel('BUYHIGH action',{exact:true})).toHaveText('Sell')
+  await expect(board.getByLabel('BUYHIGH trade size',{exact:true})).toHaveText('13.0%')
+  await expect(board.getByLabel('MISSING action',{exact:true})).toHaveText('Unavailable')
+  expect(state.diagnostics).toEqual([])
+})
+
+// Full exits sell a positive amount while retaining an explicitly zero resulting model position.
+test('Standing reference exit never renders Sell zero percent',async ({page,baseURL})=>{
+  const state=fixture()
+  Object.assign(state,{publicationV2:true,numerical:'execute',referenceMode:'exit',entryAt:Date.now()-100,currentSessionBars:true})
+  await install(page,baseURL!,state);await page.goto('/?deskView=strategy#desk')
+  const board=page.getByRole('region',{name:'All names signals',exact:true})
+  await expect(board.getByLabel('BUYHIGH action',{exact:true})).toHaveText('Sell')
+  await expect(board.getByLabel('BUYHIGH trade size',{exact:true})).toHaveText('20.0%')
+  await expect(board.getByLabel('BUYHIGH model size',{exact:true})).toHaveText('0.0%')
+  await board.getByRole('button',{name:'BUYHIGH',exact:true}).click()
+  const dialog=page.getByRole('dialog',{name:'BUYHIGH history',exact:true})
+  await expect(dialog.getByLabel('BUYHIGH current chart target',{exact:true})).toHaveText('Sell · Size 20.0%')
+  await expect(dialog.getByLabel('BUYHIGH current chart position',{exact:true})).toHaveText('Position 0.0%')
+  expect(state.diagnostics).toEqual([])
+})
+
+// Expired quotes and foreign publication identities cannot become reference sells through the legacy grade fallback.
+test('Standing reference expired and foreign evidence cannot produce immediate Sell',async ({page,baseURL})=>{
+  const state=fixture()
+  Object.assign(state,{publicationV2:true,numerical:'execute',referenceMode:'exit',numericalExpired:true,entryAt:Date.now()-100})
+  await install(page,baseURL!,state);await page.goto('/?deskView=strategy#desk')
+  const board=page.getByRole('region',{name:'All names signals',exact:true})
+  await expect(board.getByLabel('BUYHIGH action',{exact:true})).toHaveText('Wait')
+  await expect(board.getByLabel('BUYHIGH trade size',{exact:true})).toHaveText('—')
+  state.numericalExpired=false;state.numericalForeign=true
+  await refresh(page,state)
+  await expect(board.getByLabel('BUYHIGH action',{exact:true})).toHaveText('Unavailable')
+  await board.getByRole('button',{name:'Best sells',exact:true}).click()
+  await expect(board.locator('tbody tr')).toHaveCount(0)
+  expect(state.diagnostics).toEqual([])
+})
+
+// A genuine micro-adjustment is not rounded to zero or mistaken for the whole desired position.
+test('Standing reference tiny Buy keeps its separate model position',async ({page,baseURL})=>{
+  const state=fixture()
+  Object.assign(state,{publicationV2:true,numerical:'execute',referenceMode:'buy',entryAt:Date.now()-100})
+  await install(page,baseURL!,state);await page.goto('/?deskView=strategy#desk')
+  const board=page.getByRole('region',{name:'All names signals',exact:true})
+  await expect(board.getByLabel('BUYHIGH action',{exact:true})).toHaveText('Buy')
+  await expect(board.getByLabel('BUYHIGH trade size',{exact:true})).toHaveText('<0.1%')
+  await expect(board.getByLabel('BUYHIGH model size',{exact:true})).toHaveText('14.3%')
+  expect(state.diagnostics).toEqual([])
+})
+
+// One original recorded Sell survives all chart frames and restores its saved reason rather than the current quote.
+test('Standing reference original Sell is clickable once across chart frames',async ({page,baseURL})=>{
+  const state=fixture()
+  Object.assign(state,{publicationV2:true,numerical:'execute',referenceMode:'trim',recordedMode:'original',entryAt:Date.now()-100,currentSessionBars:true})
+  await install(page,baseURL!,state);await page.goto('/?deskView=strategy#desk')
+  await page.getByRole('button',{name:'BUYHIGH',exact:true}).click()
+  const dialog=page.getByRole('dialog',{name:'BUYHIGH history',exact:true})
+  for(const frame of ['D','W','15m']){
+    await dialog.getByRole('group',{name:'Chart timeframe',exact:true}).getByRole('button',{name:frame,exact:true}).click()
+    await expect(dialog.getByLabel('BUYHIGH target chart markers',{exact:true})).toHaveText('Sell · Size 13.0%')
+  }
+  await dialog.getByText('Recommendations',{exact:true}).click()
+  await expect(dialog.locator('button[data-recommendation-id^="recorded:"]')).toHaveCount(1)
+  await dialog.locator('button[data-recommendation-id^="recorded:"]').click()
+  const details=dialog.getByRole('region',{name:'Recommendation details',exact:true})
+  await expect(details).toContainText('Sell · Size 13.0%')
+  await expect(details).toContainText('Original saved timing decision before refresh')
+  await expect(details).toContainText('Model position size 14.3%')
+  expect(state.diagnostics).toEqual([])
+})
 
 // Supply complete weekday candle geometry so zoom checks exercise hundreds of real canvas points.
 function zoomCandles(sessions: number) {
@@ -159,7 +300,7 @@ function zoomCandles(sessions: number) {
 }
 
 // Supply fresh evidence without modifying the wall clock or any real account.
-function fixture(): Fixture {
+function fixture(): ReferenceFixture {
   return {phase: 'open', paper: false, lost: false, expired: false, quoteMissing: false, liveReads: 0, diagnostics: []}
 }
 
@@ -169,6 +310,26 @@ async function refresh(page: Page, state: Fixture) {
   await page.getByRole('button', {name: 'Refresh', exact: true}).click()
   await expect.poll(() => state.liveReads).toBeGreaterThan(prior)
 }
+
+// Separate the current desired position from trade-sized historical markers and an unconfirmed next-session entry.
+test('Current position and historical trade sizes have distinct labels on every timeframe',async ({page,baseURL})=>{
+  const state=fixture()
+  Object.assign(state,{publicationV2:true,phase:'post-market',installedHistory:true,simulationPolicy:'grade-led-learned-sizing/1',currentSessionBars:true,entryAt:Date.now()-100})
+  await install(page,baseURL!,state);await page.goto('/?deskView=strategy#desk')
+  const board=page.getByRole('region',{name:'All names signals',exact:true})
+  await expect(board.getByRole('columnheader',{name:'Position %',exact:true})).toHaveCount(1)
+  await expect(board.getByLabel('BUYHIGH trade size',{exact:true})).toHaveText('—')
+  await expect(board.getByLabel('BUYHIGH model size',{exact:true})).toHaveText('14.3%')
+  await board.getByRole('button',{name:'BUYHIGH',exact:true}).click()
+  const dialog=page.getByRole('dialog',{name:'BUYHIGH history',exact:true})
+  for(const frame of ['D','W','15m']){
+    await dialog.getByRole('group',{name:'Chart timeframe',exact:true}).getByRole('button',{name:frame,exact:true}).click()
+    await expect(dialog.getByLabel('BUYHIGH current chart target',{exact:true})).toHaveText('Buy · Size —')
+    await expect(dialog.getByLabel('BUYHIGH current chart position',{exact:true})).toHaveText('Position 14.3%')
+    await expect(dialog.getByLabel('BUYHIGH target chart markers',{exact:true})).not.toContainText('Size 14.3%')
+  }
+  expect(state.diagnostics).toEqual([])
+})
 
 // Keep the table and every chart headline consistent about a next-session plan without inventing a current entry.
 test('Next-session Buy labels match the table on every chart without creating an entry marker',async ({page,baseURL})=>{
@@ -182,7 +343,8 @@ test('Next-session Buy labels match the table on every chart without creating an
   const dialog=page.getByRole('dialog',{name:'BUYHIGH history',exact:true})
   for(const frame of ['D','W','15m']){
     await dialog.getByRole('group',{name:'Chart timeframe',exact:true}).getByRole('button',{name:frame,exact:true}).click()
-    await expect(dialog.getByLabel('BUYHIGH current chart target',{exact:true})).toHaveText('Buy · Size 14.3%')
+    await expect(dialog.getByLabel('BUYHIGH current chart target',{exact:true})).toHaveText('Buy · Size —')
+    await expect(dialog.getByLabel('BUYHIGH current chart position',{exact:true})).toHaveText('Position 14.3%')
     await expect(dialog.getByLabel('BUYHIGH chart plan timing',{exact:true})).toHaveText('Next session')
     await expect(dialog.getByLabel('BUYHIGH target chart markers',{exact:true})).toHaveText('')
   }
@@ -191,7 +353,8 @@ test('Next-session Buy labels match the table on every chart without creating an
   await refresh(page,state)
   await expect(board.getByLabel('BUYHIGH action',{exact:true})).toHaveText('Wait')
   await board.getByRole('button',{name:'BUYHIGH',exact:true}).click()
-  await expect(dialog.getByLabel('BUYHIGH current chart target',{exact:true})).toHaveText('Wait · Size 14.3%')
+  await expect(dialog.getByLabel('BUYHIGH current chart target',{exact:true})).toHaveText('Wait · Size —')
+  await expect(dialog.getByLabel('BUYHIGH current chart position',{exact:true})).toHaveText('Position 14.3%')
   await expect(dialog.getByLabel('BUYHIGH chart plan timing',{exact:true})).toHaveCount(0)
   expect(state.diagnostics).toEqual([])
 })
@@ -354,6 +517,9 @@ test('Daily weekly and 15m charts require the same confirmed numerical entry',as
 for (const mode of ['original','foreign','size'] as const) {
   // Read the saved first decision instead of refreshed quote evidence, refusing foreign identity or altered model size.
   test(`Current marker restores original numerical recommendation: ${mode}`,async ({page,baseURL})=>{
+    // Start this identity test inside a real candle; dedicated expiry cases cover its deadline.
+    const remaining=900000-Date.now()%900000
+    if(remaining<10000) await new Promise(resolve=>setTimeout(resolve,remaining+25))
     const state=fixture()
     Object.assign(state,{publicationV2:true,numerical:'execute',entryAt:Date.now()-100,simulationPolicy:'grade-led-learned-sizing/1',originalMode:mode})
     await install(page,baseURL!,state)
@@ -432,7 +598,8 @@ test('Independent grade exits show Sell without a fabricated zero-percent trade'
   await page.goto('/?deskView=strategy#desk')
   const board=page.getByRole('region',{name:'All names signals',exact:true})
   await expect(board.getByLabel('SELLHIGH action',{exact:true})).toHaveText('Sell')
-  await expect(board.getByLabel('SELLHIGH model size',{exact:true})).toHaveText('—')
+  await expect(board.getByLabel('SELLHIGH model size',{exact:true})).toHaveText('0.0%')
+  await expect(board.getByLabel('SELLHIGH trade size',{exact:true})).toHaveText('—')
   await expect(board.getByLabel('BUYHIGH action',{exact:true})).toHaveText('Wait')
   state.quoteMissing=true
   await refresh(page,state)
@@ -605,7 +772,9 @@ test('All names shows strategy percentages despite unavailable paper funding', a
     await expect(board.getByLabel('BUYHIGH action', {exact: true})).toHaveCSS('color', theme === 'light' ? 'rgb(36, 138, 61)' : 'rgb(48, 209, 88)')
     await expect(board.getByLabel('SELLHIGH action', {exact: true})).toHaveCSS('color', theme === 'light' ? 'rgb(180, 35, 24)' : 'rgb(255, 105, 97)')
   }
-  await expect(board.getByLabel('SELLHIGH model size', {exact: true})).toHaveText('—')
+  await expect(board.getByLabel('SELLHIGH model size', {exact: true})).toHaveText('0.0%')
+  await expect(board.getByLabel('SELLHIGH trade size', {exact: true})).toHaveText('—')
+  await expect(board.getByRole('columnheader', {name: 'Position %', exact: true})).toHaveCount(1)
   await expect(board.getByLabel('SELLLOW action', {exact: true})).toHaveText('Avoid')
   await expect(board.getByLabel('SELLLOW model size', {exact: true})).toHaveText('0.0%')
   await expect(board.getByRole('columnheader', {name: 'Size %', exact: true})).toHaveCount(1)
@@ -869,7 +1038,8 @@ test('Trader audit guide describes model sizes and retrospective chart actions',
   await page.goto('/?deskView=strategy#desk')
   await page.getByRole('button',{name:'How to use this page',exact:true}).click()
   const guide=page.getByRole('region',{name:'Strategy guide',exact:true})
-  await expect(guide).toContainText('Size % is the model’s desired position')
+  await expect(guide).toContainText('Size % is the buy or sell amount.')
+  await expect(guide).toContainText('Position % is the model’s desired total position.')
   await expect(guide).toContainText('Historical markers are retrospective simulations')
   await expect(guide).not.toContainText('Sizes belong to optional personal sizing')
   await expect(guide).not.toContainText('High, Medium and Low')
@@ -917,7 +1087,8 @@ test('Trader audit Avoid and Sell chart headers match their list actions',async 
   const dialog=page.getByRole('dialog')
   for(const frame of ['D','W','15m']){
     await dialog.getByRole('button',{name:frame,exact:true}).click()
-    await expect(dialog.getByLabel('SELLLOW current chart target',{exact:true})).toHaveText('Avoid · Size 0.0%')
+    await expect(dialog.getByLabel('SELLLOW current chart target',{exact:true})).toHaveText('Avoid · Size —')
+    await expect(dialog.getByLabel('SELLLOW current chart position',{exact:true})).toHaveText('Position 0.0%')
   }
   await dialog.getByRole('button',{name:'Close',exact:true}).click()
   await page.getByRole('button',{name:'SELLHIGH',exact:true}).click()

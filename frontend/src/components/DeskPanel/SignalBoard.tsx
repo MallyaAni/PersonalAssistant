@@ -7,10 +7,10 @@ import {StrategyTechnicalEvidence} from './StrategyTechnicalEvidence'
 
 type Side = 'all' | 'buy' | 'sell'
 type Signal = {word: string; ready: boolean; priority: string; rank: number; reason: string}
-type Signals = {ticker: string; grade: string; setup: DeskCurrentSetup | null; buy: Signal; sell: Signal; evidence?: DeskStrategyDecision['evidence']; plan?: {session: string; published: string; validUntil: string; calculated?: string}}
+type Signals = {ticker: string; grade: string; setup: DeskCurrentSetup | null; buy: Signal; sell: Signal; evidence?: DeskStrategyDecision['evidence']; current?: {completed: string; quote: string; until: string}; plan?: {session: string; published: string; validUntil: string; calculated?: string}}
 const PRIORITY: Record<string, number> = {high: 3, medium: 2, low: 1}
 
-export type StrategyChartTarget = {ticker: string; date: string; at: string; validUntil: string | null; action: 'Buy' | 'Sell' | null; weight: number; record: string; strategyIdentity?: string; evidence?: DeskStrategyDecision['evidence']; entry?: {at: string; validUntil: string}; entryReason?: string; recordedHistoryAvailable?: boolean; nextSessionPlan?: boolean; displayAction?: string}
+export type StrategyChartTarget = {ticker: string; date: string; at: string; validUntil: string | null; action: 'Buy' | 'Sell' | null; weight: number; record: string; strategyIdentity?: string; evidence?: DeskStrategyDecision['evidence']; entry?: {at: string; validUntil: string}; entryReason?: string; recordedHistoryAvailable?: boolean; nextSessionPlan?: boolean; displayAction?: string; referenceTransition?: boolean; positionWeight?: number; tradeWeight?: number | null}
 
 // Recognize the independently authenticated publication formats without consulting an account.
 const independentAllocation = (allocation?: DeskModelAllocation): boolean => allocation?.version === 'strategy-model-allocation/1' || allocation?.version === 'strategy-model-allocation/2'
@@ -33,7 +33,7 @@ const publicationValid = (allocation: DeskModelAllocation | undefined, now: numb
     const row = allocation.rows[name], grade = allocation.grade_signals?.[name], evidence = row.evidence
     if (!grade || grade.session !== allocation.session || grade.basis !== 'observed_close_grade'
         || !['buy', 'hold', 'sell', 'avoid', 'unavailable'].includes(grade.action)
-        || !['A+', 'A', 'B', 'C'].includes(grade.grade ?? '') || evidence?.grade !== grade.grade
+        || !(grade.grade===null && grade.action==='unavailable' || ['A+', 'A', 'B', 'C'].includes(grade.grade ?? '')) || evidence?.grade !== grade.grade
         || evidence?.inputs_as_of !== allocation.session || evidence?.model_position_size !== row.target_weight
         || typeof row.target_weight !== 'number' || !Number.isFinite(row.target_weight) || row.target_weight < 0 || row.target_weight > 1
         || (row.target_weight > 0 && (!['A+', 'A'].includes(grade.grade!) || !['buy', 'hold'].includes(grade.action)))) return false
@@ -47,18 +47,44 @@ const numericalEntry = (allocation: DeskModelAllocation, ticker: string, now: nu
   const entry = allocation.entry_assessment, row = entry?.rows?.[ticker]
   const completed = Date.parse(entry?.completed_at ?? ''), generated = Date.parse(entry?.generated_at ?? '')
   const quoted = Date.parse(row?.quote_at ?? ''), until = Date.parse(row?.valid_until ?? '')
-  if (entry?.version !== 'strategy-numerical-entries/1' || entry.status !== 'available'
+  const reference = entry?.version === 'strategy-numerical-entries/2'
+  const referenceSize = reference && row && typeof row.model_position_weight === 'number' && Number.isFinite(row.model_position_weight)
+    && row.model_position_weight >= 0 && row.model_position_weight <= 1 && row.evidence?.model_position_size === row.model_position_weight
+    && row.evidence?.trade_size === row.size_weight && row.evidence?.sizing_basis === entry.sizing_basis
+    && ['Buy','Sell'].includes(row.action ?? '') && (row.action !== 'Sell' || typeof row.reference_units === 'number'
+      && typeof row.proposed_units === 'number' && row.proposed_units > 0 && row.proposed_units <= row.reference_units)
+  if (!['strategy-numerical-entries/1','strategy-numerical-entries/2'].includes(entry?.version ?? '') || entry?.status !== 'available'
       || entry.snapshot_id !== allocation.snapshot_id || entry.publication_receipt_sha256 !== allocation.receipt_sha256
       || entry.strategy_identity !== allocation.strategy_identity || !/^[a-f0-9]{64}$/.test(entry.receipt_sha256 ?? '')
-      || entry.feed !== 'iex' || entry.account_inputs !== false || entry.sizing_basis !== 'fresh_unit_capital_allocation_not_account_trade_quantity'
-      || !row || row.size_weight !== allocation.rows[ticker]?.target_weight || !['execute','wait'].includes(row.state)
-      || row.action !== 'Buy' || !(row.size_weight > 0) || row.evidence?.model_position_size !== row.size_weight
+      || entry.feed !== 'iex' || entry.account_inputs !== false
+      || (reference ? entry.sizing_basis !== 'standing_counterfactual_reference_transition_not_viewer_order'
+        || entry.reference_progression !== 'standing_no_fills_assumed' || entry.recommendation_not_fill !== true || !referenceSize
+        : entry.sizing_basis !== 'fresh_unit_capital_allocation_not_account_trade_quantity'
+          || row?.size_weight !== allocation.rows[ticker]?.target_weight || row?.action !== 'Buy' || row.evidence?.model_position_size !== row.size_weight)
+      || !row || !['execute','wait'].includes(row.state) || !(row.size_weight > 0 && row.size_weight <= 1)
       || row.evidence?.grade !== allocation.grade_signals?.[ticker]?.grade || row.evidence?.inputs_as_of !== allocation.session
       || row.evidence?.completed_candle_at !== entry.completed_at
       || !(completed <= generated && generated <= now && now < completed + 900000)
       || Date.parse(entry.valid_until ?? '') !== completed + 900000
       || !(completed <= quoted && quoted <= generated && now < until && until <= quoted + 30000)) return null
   return {row, at: entry.generated_at!, validUntil: row.valid_until}
+}
+
+// Keep the model's desired position distinct from its standing buy or sell amount.
+const referencePosition = (allocation: DeskModelAllocation, ticker: string, now: number): number | null => {
+  const entry = allocation.entry_assessment, row = entry?.rows?.[ticker]
+  const completed = Date.parse(entry?.completed_at ?? ''), generated = Date.parse(entry?.generated_at ?? '')
+  return publicationValid(allocation,now) && entry?.version==='strategy-numerical-entries/2' && entry.status==='available'
+    && entry.sizing_basis==='standing_counterfactual_reference_transition_not_viewer_order'
+    && entry.reference_progression==='standing_no_fills_assumed' && entry.recommendation_not_fill===true
+    && entry.snapshot_id===allocation.snapshot_id && entry.publication_receipt_sha256===allocation.receipt_sha256
+    && entry.strategy_identity===allocation.strategy_identity && /^[a-f0-9]{64}$/.test(entry.receipt_sha256 ?? '')
+    && completed<=generated && generated<=now && now<completed+900000
+    && typeof row?.model_position_weight==='number' && Number.isFinite(row.model_position_weight)
+    && row.model_position_weight>=0 && row.model_position_weight<=1 && row.evidence?.model_position_size===row.model_position_weight
+    && row.evidence?.grade===allocation.grade_signals?.[ticker]?.grade && row.evidence?.inputs_as_of===allocation.session
+    && row.evidence?.completed_candle_at===entry.completed_at
+    ? row.model_position_weight : null
 }
 
 // Match authenticated history by its validated economics contract while retaining legacy exact-record checks.
@@ -78,7 +104,7 @@ export const strategyHistoryMatches = (simulation: DeskStrategyStock | null | un
 // Require a dated authenticated strategy target, with an explicit independent or legacy published basis.
 export const modelWeight = (latest: DeskRecord, allocation: DeskModelAllocation | undefined, ticker: string, now: number): number | null => {
   const weight = allocation?.rows?.[ticker]?.target_weight
-  if (allocation?.version === 'strategy-model-allocation/2') return publicationValid(allocation, now) && typeof weight === 'number' ? weight : null
+  if (allocation?.version === 'strategy-model-allocation/2') return referencePosition(allocation,ticker,now) ?? (publicationValid(allocation, now) && typeof weight === 'number' ? weight : null)
   const basis = allocation?.version === 'published-model-allocation/1'
     ? allocation.basis === 'original_published_strategy_allocation_not_trade_quantity'
     : allocation?.version === 'strategy-model-allocation/1' && allocation.basis === 'account_independent_unit_capital_targets'
@@ -104,14 +130,16 @@ export const strategyChartTarget = (latest: DeskRecord, allocation: DeskModelAll
     const action = allocation.grade_signals?.[ticker]?.action
     const current = live.market_status?.phase === 'open' ? numericalEntry(allocation,ticker,now) : null
     const displayed = signalsFor(latest,live,ticker,now,allocation)
+    const reference = allocation.entry_assessment?.version==='strategy-numerical-entries/2' && referencePosition(allocation,ticker,now)!==null
     return {ticker, date: current ? allocation.entry_assessment!.session! : allocation.session!, at: current?.at ?? allocation.as_of, validUntil: allocation.valid_until,
-      action: weight > 0 && ['buy', 'hold'].includes(action ?? '') ? 'Buy' : action === 'sell' ? 'Sell' : null,
-      weight, record: allocation.snapshot_id!, strategyIdentity: allocation.strategy_identity,
+      action: reference ? current?.row.action ?? null : weight > 0 && ['buy', 'hold'].includes(action ?? '') ? 'Buy' : action === 'sell' ? 'Sell' : null,
+      weight:reference ? current?.row.size_weight ?? 0 : weight, positionWeight:weight, tradeWeight:current?.row.size_weight ?? null, referenceTransition:reference,
+      record: allocation.snapshot_id!, strategyIdentity: allocation.strategy_identity,
       recordedHistoryAvailable:allocation.recorded_history_version==='strategy-recorded-entries/1',
       nextSessionPlan:displayed.buy.word==='Buy setup' || displayed.sell.word==='Exit',entryReason:actionFor(displayed).reason,
       displayAction:actionLabel(actionFor(displayed).word),
       evidence: current?.row.evidence ?? allocation.rows[ticker].evidence,
-      entry: current?.row.state === 'execute' ? {at:current.at,validUntil:current.validUntil} : undefined}
+      entry: !reference && current?.row.state === 'execute' ? {at:current.at,validUntil:current.validUntil} : undefined}
   }
   const action = allocation.grade_signals?.[ticker]?.action
   if (weight > 0 && (action === 'buy' || action === 'hold')) {
@@ -133,11 +161,16 @@ export const strategyChartTarget = (latest: DeskRecord, allocation: DeskModelAll
 export const ModelSize = ({latest, allocation, ticker, now}: {latest: DeskRecord; allocation?: DeskModelAllocation; ticker: string; now: number}) => {
   const weight = modelWeight(latest, allocation, ticker, now)
   const independent = independentAllocation(allocation)
-  const unknownExit = independent && allocation?.grade_signals?.[ticker]?.action === 'sell' && weight === 0
   return <div aria-label={`${ticker} model size`}>
-    <span className="font-medium" title={unknownExit ? 'Sell size requires the strategy position history' : independent ? `Strategy position size · ${allocation?.session}` : undefined}>{unknownExit ? '—' : weight === null ? 'Unavailable' : `${(weight * 100).toFixed(1)}%${independent ? '' : ' target'}`}</span>
+    <span className="font-medium" title={independent ? `Strategy position size · ${allocation?.session}` : undefined}>{weight === null ? 'Unavailable' : `${(weight * 100).toFixed(1)}%${independent ? '' : ' target'}`}</span>
     {!independent && <p className="text-[10px] text-[#6e6e73]">{weight === null ? allocation?.reason ?? 'Verified current model allocation required' : `Strategy allocation · ${allocation!.session}`}</p>}
   </div>
+}
+
+// Show a positive trade amount independently of the model's resulting position percentage.
+const TradeSize = ({allocation,ticker,now}: {allocation?: DeskModelAllocation;ticker:string;now:number}) => {
+  const entry=allocation?numericalEntry(allocation,ticker,now):null
+  return <>{entry ? entry.row.size_weight<.001 ? '<0.1%' : `${(entry.row.size_weight*100).toFixed(1)}%` : '—'}</>
 }
 
 // Preserve model priorities while keeping immediate, waiting and unavailable evidence distinct.
@@ -185,6 +218,21 @@ export const signalsFor = (latest: DeskRecord, live: DeskLive, ticker: string, n
     const unavailable = signal('Unavailable', false, '', 'Verified current strategy publication required.', 3)
     const plan = publishedPlanFor(latest, live, allocation, ticker, now)
     const entry = publicationValid(allocation,now) && live.market_status?.phase === 'open' ? numericalEntry(allocation,ticker,now) : null
+    if (live.market_status?.phase === 'open' && allocation.entry_assessment?.version==='strategy-numerical-entries/2') {
+      const position = referencePosition(allocation,ticker,now)
+      const row = allocation.entry_assessment.rows[ticker]
+      if (position===null || !row) return {ticker,grade:'—',setup:null,buy:unavailable,sell:unavailable}
+      const grade = allocation.grade_signals?.[ticker]?.grade ?? '—'
+      if (grade==='—' && position===0) return {ticker,grade,setup:null,buy:unavailable,sell:unavailable,evidence:row.evidence}
+      const inactive = signal('—',false,'','',2)
+      const side = row.action
+      const ready = entry?.row.state==='execute'
+      const reason = side ? `${side} ${(row.size_weight*100).toFixed(3)}% of model reference capital toward a ${(position*100).toFixed(1)}% position. ${entry?.row.evidence?.timing_reason ?? 'Await a fresh compatible regular-session quote.'} This is a standing model reference, not your holdings or a recorded fill.`
+        : position>0 ? grade==='—' ? 'Grade unavailable; preserve the existing model reference without initiating a new trade.' : 'The reference position already meets the model objective; no additional trade is recommended.' : 'The model has no position to sell and no new allocation.'
+      const selected = signal(side ? ready ? side==='Buy' ? 'Buy now' : 'Sell review now' : 'Wait' : position>0 ? 'Hold' : 'Avoid',ready,'',reason,ready?0:1)
+      return {ticker,grade,setup:null,buy:side==='Sell'?inactive:selected,sell:side==='Sell'?selected:inactive,evidence:row.evidence,
+        current:entry ? {completed:allocation.entry_assessment.completed_at!,quote:entry.row.quote_at!,until:entry.validUntil} : undefined}
+    }
     const quote = displayedBoardPrice(live,ticker,now)
     if (plan && allocation.grade_signals?.[ticker]?.action === 'sell' && live.market_status?.phase === 'open'
         && quote?.current && quote.kind === 'midpoint' && quote.word === 'regular')
@@ -236,12 +284,13 @@ const actionLabel = (word: string): string => ['Buy now', 'Buy plan', 'Buy setup
 
 // Show the same directional reasons and evidence in row expansion and the full stock chart.
 export const SignalDetail = ({signals}: {signals: Signals}) => <section aria-label={`${signals.ticker} signal details`} className="space-y-1 text-xs">
-  <p><b>{actionLabel(signals.buy.word)}</b> · {signals.buy.reason}</p>
+  {signals.buy.word!=='—' && <p><b>{actionLabel(signals.buy.word)}</b> · {signals.buy.reason}</p>}
   {signals.sell.word !== '—' && <p><b>{actionLabel(signals.sell.word)}</b> · {signals.sell.reason}</p>}
   {signals.setup && <>
     <p>{confirmationText(signals.setup)} {invalidationText(signals.setup)}</p>
     <p>Completed candle {evidenceTime(signals.setup.bar)} · assessed {evidenceTime(signals.setup.generated_at)} · Valid until {evidenceTime(signals.setup.valid_until)}.</p>
   </>}
+  {signals.current && <p>15m {evidenceTime(signals.current.completed)} · Quote {evidenceTime(signals.current.quote)} · Valid until {evidenceTime(signals.current.until)}.</p>}
   {signals.plan && <p>{signals.plan.calculated ? 'Strategy model' : 'Published plan'} {signals.plan.session} · inputs published {evidenceTime(signals.plan.published)}{signals.plan.calculated ? ` · calculated ${evidenceTime(signals.plan.calculated)}` : ''} · Valid until {evidenceTime(signals.plan.validUntil)}. Grade and {signals.plan.calculated ? 'size' : 'target'} are not a current candle assessment.</p>}
   {signals.evidence && <div><p>Prior-close technicals · {signals.evidence.inputs_as_of}</p><StrategyTechnicalEvidence evidence={signals.evidence} /></div>}
   {!signals.evidence && <p className="text-[#6e6e73]">Sell review means reassess or reduce an existing holding. Not a short-sale signal. Strength is the model’s qualitative priority, not a return probability or funded size.</p>}
@@ -285,7 +334,7 @@ export const SignalBoard = ({latest, live, allocation, now, onOpen, closes}: {la
       {!independent && <p className="text-xs text-[#6e6e73]">Model size is the published strategy target percentage, not shares or an instruction to buy that percentage now. Entry and exit reviews use fresh chart assessments; they do not recalculate the model’s allocation.</p>}
     </div>
     <table aria-label="Ranked stock signals" className="w-full text-left text-xs">
-      <thead className="border-y bg-[#f5f5f7]"><tr><th className="p-2">Stock / price</th><th className="p-2">Grade</th><th className="p-2">Action</th><th className="p-2" title="Model position size as a percentage of portfolio capital">{independent ? 'Size %' : 'Position size %'}</th>{showPriority && <th className="p-2">Strength</th>}<th className="p-2">{independent ? '' : 'Reason / timing'}</th></tr></thead>
+      <thead className="border-y bg-[#f5f5f7]"><tr><th className="p-2">Stock / price</th><th className="p-2">Grade</th><th className="p-2">Action</th>{independent && <th className="p-2" title="Buy or sell amount as a percentage of model capital">Size %</th>}<th className="p-2" title="Model position size as a percentage of portfolio capital">{independent ? 'Position %' : 'Position size %'}</th>{showPriority && <th className="p-2">Strength</th>}<th className="p-2">{independent ? '' : 'Reason / timing'}</th></tr></thead>
       <tbody>{ranked.slice(0, visible).map(row => {
         const action = side === 'all' ? actionFor(row) : selected(row)
         const label = actionLabel(action.word)
@@ -293,13 +342,14 @@ export const SignalBoard = ({latest, live, allocation, now, onOpen, closes}: {la
         <td className="p-2"><button type="button" className="font-semibold text-[#0071e3]" onClick={() => onOpen(row.ticker)}>{row.ticker}</button><SessionPrice live={live} ticker={row.ticker} now={now} compact close={closes?.[row.ticker]} closeSession={latest.session} /></td>
         <td aria-label={`${row.ticker} displayed grade`} className="p-2">{row.grade}</td>
         <td aria-label={`${row.ticker} action`} title={action.reason} className={`p-2 font-semibold ${label === 'Sell' ? 'text-[#b42318]' : label === 'Buy' ? 'text-[#248a3d]' : 'text-[#6e6e73]'}`}>{label}</td>
+        {independent && <td className="p-2" aria-label={`${row.ticker} trade size`}><TradeSize allocation={allocation} ticker={row.ticker} now={now} /></td>}
         <td className="p-2"><ModelSize latest={latest} allocation={allocation} ticker={row.ticker} now={now} /></td>
         {showPriority && <td aria-label={`${row.ticker} signal strength`} className="p-2">{selected(row).priority ? selected(row).priority[0].toUpperCase() + selected(row).priority.slice(1) : '—'}</td>}
         <td className="max-w-sm p-2">{!independent && <p>{selected(row).reason}</p>}<button type="button" aria-label={`details for ${row.ticker}`} aria-expanded={opened === row.ticker} className="text-[#0071e3]" onClick={() => setOpened(opened === row.ticker ? null : row.ticker)}>Details</button>{opened === row.ticker && <SignalDetail signals={row} />}</td>
       </tr>})}</tbody>
     </table>
     {!ranked.length && <p role="status" className="p-3 text-xs">{recommendationsUnavailable ? 'Strategy recommendations unavailable. Refresh to retry.' : query.trim() ? 'No matching stocks.' : side === 'sell' ? 'No sell signals in the current strategy publication.' : side === 'buy' ? rows.some(row=>row.buy.word==='Wait') ? 'No confirmed buy signals yet.' : 'No buy signals in the current strategy publication.' : 'No matching stocks.'}</p>}
-    {independent && <p className="px-3 py-2 text-[11px] text-[#6e6e73]">Size % is the strategy position size, not a profit target.</p>}
+    {independent && <p className="px-3 py-2 text-[11px] text-[#6e6e73]">Size % is the buy or sell amount. Position % is the model’s desired total position. — means no confirmed trade size.</p>}
     {ranked.length > visible && <button type="button" className="p-3 text-xs text-[#0071e3]" onClick={() => setVisible(value => value + 25)}>Show more · {visible} of {ranked.length}</button>}
   </section>
 }

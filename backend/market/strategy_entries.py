@@ -23,6 +23,7 @@ from backend.market import forward_market_evidence as market
 from backend.market import forward_probability_timing as inference
 from backend.market import learned_live_timing, probabilistic_execution as probability
 from backend.market import strategy_entry_context, strategy_publication as publication
+from backend.market import strategy_reference_entries as reference_entries
 
 VERSION = 'strategy-numerical-entries/1'
 DIRECTORY = 'desk/strategy-entries'
@@ -34,7 +35,7 @@ FORECAST_PART_BYTES = 262144
 # Bind the adapter and unchanged numerical/market input mechanisms in each observation.
 def sources():
     result = inference._inference_sources()
-    for module in (market, learned_live_timing, strategy_entry_context):
+    for module in (market, learned_live_timing, strategy_entry_context, reference_entries, reference_entries.transition):
         result['backend/market/' + Path(module.__file__).name] = sha256(Path(module.__file__).read_bytes()).hexdigest()
     result['backend/market/strategy_entries.py'] = sha256(Path(__file__).read_bytes()).hexdigest()
     return result
@@ -131,9 +132,12 @@ def acquire(root, snapshot, *, clock, transport):
     market._same_window(completed, available, started)
     if (Path(root) / learned_live_timing.CONFIG).read_bytes() != raw:
         raise ValueError('Timing configuration changed during independent inference')
-    return {'completed':completed, 'snapshot_id':snapshot['snapshot_id'], 'forecast':forecast,
+    result = {'completed':completed, 'snapshot_id':snapshot['snapshot_id'], 'forecast':forecast, 'packet': packet,
         'quotes':deepcopy(packet.snapshot['quotes']), 'config_bytes':raw, 'config':config,
         'context':context.receipt, 'sources':sources(), 'available':available}
+    if reference_entries.configured(root):
+        result['reference_plan'], result['reference_evidence'] = reference_entries.prepare(root, snapshot, available)
+    return result
 
 
 # Reprice the native distribution using exactly the native midpoint-to-original-next-open transport.
@@ -144,6 +148,8 @@ def project(snapshot, cache, quotes, now):
             or inference._digest(forecast.receipt) != forecast.receipt_sha256
             or inference._forecast_identity(forecast.distributions) != forecast.receipt['distributions']):
         raise ValueError('Original numerical observation changed')
+    if 'reference_plan' in cache:
+        return reference_entries.project(snapshot, cache, quotes, now)
     rows = {}
     for name, allocation in snapshot['rows'].items():
         weight = allocation['target_weight']
@@ -206,6 +212,22 @@ def publish(root, value):
     history = folder / 'recommendations' / value['session']
     history.mkdir(mode=0o700, parents=True, exist_ok=True)
     for name, row in value['rows'].items():
+        if value['version'] == reference_entries.VERSION:
+            original = reference_entries.original_intent(root, value, name)
+            if original is None:
+                continue
+            key = publication._digest({'ticker':name,'completed_at':original['completed_at'],'snapshot_id':value['snapshot_id']})
+            original_raw = json.dumps(original,sort_keys=True,allow_nan=False).encode()
+            path = history/(key+'.json')
+            try:
+                with path.open('xb') as stream:
+                    stream.write(original_raw);stream.flush();os.fsync(stream.fileno())
+            except FileExistsError:
+                if path.read_bytes() != original_raw:
+                    raise ValueError('Original standing intent alias differs')
+            row['original_intent'] = {'id':key, 'completed_at':original['completed_at'], 'at':original['at'],
+                'size_weight':original['size_weight'], 'action':original['action'], 'receipt_sha256':original['receipt_sha256']}
+            continue
         if row['state'] != 'execute':
             continue
         original = {'ticker':name, **row, 'at':value['generated_at'], 'completed_at':value['completed_at'],
@@ -223,6 +245,11 @@ def publish(root, value):
             if (publication._digest({k:v for k,v in stored.items() if k!='receipt_sha256'}) != stored['receipt_sha256']
                     or any(stored[field] != original[field] for field in ('ticker','completed_at','snapshot_id','strategy_identity'))):
                 raise ValueError('Original first recommendation evidence differs')
+    if value['version'] == reference_entries.VERSION:
+        value['receipt_sha256'] = publication._digest({k:v for k,v in value.items() if k!='receipt_sha256'})
+        raw = json.dumps(value,sort_keys=True,allow_nan=False).encode()
+        if len(raw) > MAX_BYTES:
+            raise ValueError('Finite numerical reference publication required')
     temporary = folder/('latest-'+uuid4().hex+'.tmp')
     try:
         with temporary.open('xb') as stream:
@@ -242,16 +269,20 @@ def read(root, snapshot, now):
         if path.is_symlink() or path.stat().st_size > MAX_BYTES:
             raise ValueError('Finite original entry observation required')
         value = json.loads(path.read_bytes())
-        if (value['version'] != VERSION or value['sources'] != sources()
+        if (value['version'] not in (VERSION, reference_entries.VERSION) or value['sources'] != sources()
                 or value['snapshot_id'] != snapshot['snapshot_id'] or value['strategy_identity'] != snapshot['strategy_identity']
                 or value['publication_receipt_sha256'] != snapshot['receipt_sha256']
                 or publication._digest({k:v for k,v in value.items() if k!='receipt_sha256'}) != value['receipt_sha256']
                 or not datetime.fromisoformat(value['generated_at']) <= now < datetime.fromisoformat(value['valid_until'])
                 or set(value['rows']) != set(snapshot['rows'])):
             raise ValueError('Original current numerical entry observation differs')
-        if sha256(read_forecast(root,value['forecast_evidence'])).hexdigest()!=value['forecast_receipt_sha256']:
+        forecast_raw = read_forecast(root,value['forecast_evidence'])
+        if sha256(forecast_raw).hexdigest()!=value['forecast_receipt_sha256']:
             raise ValueError('Original numerical forecast evidence differs')
         market._window(market._as_of(now))
+        if value['version'] == reference_entries.VERSION:
+            reference_entries.validate(value, snapshot, json.loads(forecast_raw))
+            return value
         for name, row in value['rows'].items():
             if (row['size_weight'] != snapshot['rows'][name]['target_weight']
                     or row['state'] not in ('execute','wait','unavailable','no_trade')

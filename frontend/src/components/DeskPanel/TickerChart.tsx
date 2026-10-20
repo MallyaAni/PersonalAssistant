@@ -364,7 +364,7 @@ const strategyTargetMarkers = (simulation: DeskStrategyStock | null | undefined,
   for (const original of recorded) {
     const day=recordedSession(original.at)
     if (!day || original.ticker!==(current?.ticker ?? simulation?.ticker)) continue
-    targets.push({ticker:original.ticker,date:day,at:original.at,validUntil:original.valid_until,action:'Buy',
+    targets.push({ticker:original.ticker,date:day,at:original.at,validUntil:original.valid_until,action:original.action,
       weight:original.size_weight,record:original.snapshot_id,strategyIdentity:original.strategy_identity,
       entry:{at:original.at,validUntil:original.valid_until},recorded:original})
   }
@@ -1238,7 +1238,8 @@ export const TickerChart = ({
   }
 
   const chartAction = modelTarget?.displayAction ?? (!modelTarget?.entry && !modelTarget?.nextSessionPlan ? 'Wait' : modelTarget?.action ?? 'Avoid')
-  const chartSize = modelTarget?.action === 'Sell' && modelTarget.weight === 0 ? '—' : modelTarget ? `${sizePercent(modelTarget.weight)}%` : '—'
+  const displayedTradeWeight = modelTarget && 'tradeWeight' in modelTarget ? modelTarget.tradeWeight : modelTarget?.weight
+  const chartSize = displayedTradeWeight == null || displayedTradeWeight <= 0 ? '—' : `${sizePercent(displayedTradeWeight)}%`
   if (strategy) return <section className="mb-4" aria-label={`${ticker} price chart`}>
     {live && <div className="mb-2 text-xs"><SessionPrice live={live} ticker={ticker} now={now} close={close} closeSession={closeSession} compact /></div>}
     <div className="mb-2 flex flex-wrap items-center justify-between gap-2 text-xs">
@@ -1246,6 +1247,7 @@ export const TickerChart = ({
         <span title={modelTarget.entry ? `${recordedTime(modelTarget.entry.at)} · Confirmed entry; ${recordedTime(modelTarget.entry.validUntil)} expiry` : modelTarget.entryReason} className={`font-semibold ${chartAction === 'Sell' ? 'text-[#b42318]' : chartAction === 'Buy' ? 'text-[#248a3d]' : 'text-[#6e6e73]'}`} aria-label={`${ticker} current chart target`}>
           {chartAction} · Size {chartSize}
         </span>
+        {modelTarget.positionWeight != null && <span className="text-[#6e6e73]" aria-label={`${ticker} current chart position`}>Position {sizePercent(modelTarget.positionWeight)}%</span>}
         {modelTarget.nextSessionPlan && <span className="text-[#6e6e73]" aria-label={`${ticker} chart plan timing`}>Next session</span>}
       </div> : null) : <span className="text-[#6e6e73]" aria-label={`${ticker} current chart target`}>Current recommendation unavailable</span>}
       <div role="group" aria-label="Chart range" className="flex gap-2">

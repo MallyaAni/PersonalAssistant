@@ -63,10 +63,11 @@ def read(root, ticker, completed_at, snapshot_id, now):
         raise ValueError('Original recommendation namespace required')
     raw=_read(folder/(key+'.json'),MAX_RECORD_BYTES)
     original=json.loads(raw)
+    reference = original.get('entry_version') == entries.reference_entries.VERSION
     at=_instant(original['at'])
     if (original['ticker']!=ticker or original['completed_at']!=completed.isoformat()
             or original['snapshot_id']!=snapshot_id or original['recommendation_not_fill'] is not True
-            or original['state']!='execute' or original['action']!='Buy'
+            or original['state']!='execute' or original['action'] not in (('Buy','Sell') if reference else ('Buy',))
             or publication._digest({k:v for k,v in original.items() if k!='receipt_sha256'})!=original['receipt_sha256']
             or not completed<=at<=now or at>=completed+timedelta(minutes=15)):
         raise ValueError('Original first recommendation identity differs')
@@ -79,16 +80,24 @@ def read(root, ticker, completed_at, snapshot_id, now):
     if (snapshot['snapshot_id']!=snapshot_id or snapshot['receipt_sha256']!=original['publication_receipt_sha256']
             or installed!=snapshot['strategy_identity'] or installed!=original['strategy_identity']
             or type(original['size_weight']) not in (int,float) or not 0<original['size_weight']<=1
-            or original['size_weight']!=allocation['target_weight']
-            or any(evidence[key]!=allocation['evidence'][key] for key in ('grade','inputs_as_of','model_position_size','features'))
+            or not reference and original['size_weight']!=allocation['target_weight']
+            or any(evidence[key]!=allocation['evidence'][key] for key in (('grade','inputs_as_of','features') if reference else ('grade','inputs_as_of','model_position_size','features')))
             or evidence['completed_candle_at']!=completed.isoformat()
-            or evidence['sizing_basis']!='fresh_unit_capital_allocation_not_account_trade_quantity'):
+            or evidence['sizing_basis']!=(entries.reference_entries.BASIS if reference else 'fresh_unit_capital_allocation_not_account_trade_quantity')):
         raise ValueError('Original recommendation economics or position differs')
     forecast_raw=entries.read_forecast(root,original['forecast_evidence'])
     if sha256(forecast_raw).hexdigest()!=original['forecast_receipt_sha256']:
         raise ValueError('Original recommendation forecast differs')
     forecast=json.loads(forecast_raw)
-    if ticker not in forecast['symbols'] or forecast['distributions'].get(ticker) is None:
+    if reference:
+        proof = original['reference_proof']
+        entries.reference_entries.validate(proof,snapshot,forecast)
+        saved = proof['rows'][ticker]
+        if any(original[field] != saved[field] for field in ('action','state','size_weight','model_position_weight','reference_units','proposed_units','quote_at','valid_until','evidence','intent_id')):
+            raise ValueError('Original standing reference record differs')
+    untimed_reference = reference and (original['evidence']['timing_reason']=='mandatory_grade_exit'
+        or original['reference_proof']['reference_calculation']['terminal'] is True and entries.market._window(completed)[1]==25)
+    if ticker not in forecast['symbols'] or forecast['distributions'].get(ticker) is None and not untimed_reference:
         raise ValueError('Original stock timing distribution required')
     quote=original['quote_receipt']
     body=base64.b64decode(quote['body_base64'],validate=True)
@@ -110,7 +119,7 @@ def read(root, ticker, completed_at, snapshot_id, now):
         'recorded_at':original['at'],'original_valid_until':original['valid_until'],
         'current_instruction':False,'recommendation_not_fill':True,'account_inputs':False,
         'verified_against_installed_economics':True,'historical_training_feed_matches':False,
-        'basis':'original_recorded_model_recommendation_not_counterfactual_or_execution'}
+        'basis':'original_recorded_counterfactual_reference_recommendation_not_execution' if reference else 'original_recorded_model_recommendation_not_counterfactual_or_execution'}
 
 
 # Enumerate a finite dedicated namespace without following substituted directories or files.
@@ -128,8 +137,9 @@ def _index(raw, ticker, day, key):
     value=json.loads(raw)
     fields={'schema','id','ticker','at','completed_at','snapshot_id','strategy_identity','action','size_weight',
         'valid_until','original_bytes_sha256','original_receipt_sha256','indexed_view_at','indexed_view_sha256','receipt_sha256'}
-    if (set(value)!=fields or value['schema']!=INDEX_SCHEMA or value['ticker']!=ticker or value['id']!=key
-            or value['action']!='Buy' or type(value['size_weight']) not in (int,float)
+    reference = value.get('schema') == 'strategy-recorded-entry-index/2'
+    if (set(value)!=fields or value['schema'] not in (INDEX_SCHEMA,'strategy-recorded-entry-index/2') or value['ticker']!=ticker or value['id']!=key
+            or value['action'] not in (('Buy','Sell') if reference else ('Buy',)) or type(value['size_weight']) not in (int,float)
             or not math.isfinite(value['size_weight']) or not 0<value['size_weight']<=1
             or publication._digest({name:item for name,item in value.items() if name!='receipt_sha256'})!=value['receipt_sha256']
             or _instant(value['completed_at']).astimezone(calendar.NEW_YORK).date().isoformat()!=day
@@ -138,7 +148,8 @@ def _index(raw, ticker, day, key):
     for name in ('id','snapshot_id','strategy_identity','original_bytes_sha256','original_receipt_sha256','indexed_view_sha256','receipt_sha256'):
         publication._sha(value[name])
     if (not _instant(value['completed_at'])<=_instant(value['at'])<_instant(value['valid_until'])
-            or not _instant(value['at'])<=_instant(value['indexed_view_at'])<_instant(value['completed_at'])+timedelta(minutes=15)):
+            or not _instant(value['at'])<=_instant(value['indexed_view_at'])
+            or not reference and _instant(value['indexed_view_at'])>=_instant(value['completed_at'])+timedelta(minutes=15)):
         raise ValueError('Original recorded-index clocks differ')
     return value
 
@@ -146,7 +157,7 @@ def _index(raw, ticker, day, key):
 # Save only a fully validated original reference; partial or conflicting references are never overwritten.
 def _write_index(root, restored, view):
     original=restored['original']
-    value={'schema':INDEX_SCHEMA,'id':restored['id'],'ticker':restored['ticker'],
+    value={'schema':'strategy-recorded-entry-index/2' if original.get('entry_version')==entries.reference_entries.VERSION else INDEX_SCHEMA,'id':restored['id'],'ticker':restored['ticker'],
         **{key:original[key] for key in ('at','completed_at','snapshot_id','strategy_identity','action','size_weight','valid_until')},
         'original_bytes_sha256':restored['original_bytes_sha256'],'original_receipt_sha256':original['receipt_sha256'],
         'indexed_view_at':view['generated_at'],'indexed_view_sha256':view['receipt_sha256']}
@@ -222,7 +233,7 @@ def remember_latest(root, now):
     raw=_read(path,entries.MAX_BYTES)
     value=json.loads(raw)
     completed,generated=(_instant(value[key]) for key in ('completed_at','generated_at'))
-    if (value['version']!=entries.VERSION or value['sources']!=entries.sources()
+    if (value['version'] not in (entries.VERSION,entries.reference_entries.VERSION) or value['sources']!=entries.sources()
             or publication._digest({key:item for key,item in value.items() if key!='receipt_sha256'})!=value['receipt_sha256']
             or not completed<=generated<completed+timedelta(minutes=15) or generated>now
             or value['session']!=completed.astimezone(calendar.NEW_YORK).date().isoformat()
@@ -246,26 +257,31 @@ def remember_latest(root, now):
         count=0
         counts=dict(previous['counts']) if previous else {}
         for ticker,row in value['rows'].items():
-            if row['state']!='execute':
+            reference = value['version']==entries.reference_entries.VERSION
+            first = row.get('original_intent') if reference else None
+            if (reference and first is None) or (not reference and row['state']!='execute'):
                 continue
-            key=publication._digest({'ticker':ticker,'completed_at':value['completed_at'],'snapshot_id':value['snapshot_id']})
+            recorded_completed = first['completed_at'] if reference else value['completed_at']
+            recorded_size = first['size_weight'] if reference else row['size_weight']
+            key=publication._digest({'ticker':ticker,'completed_at':recorded_completed,'snapshot_id':value['snapshot_id']})
             target=index_folder/ticker/value['session']/(key+'.json')
             if target.exists():
                 indexed=_index(_read(target,MAX_INDEX_BYTES),ticker,value['session'],key)
                 if (indexed['snapshot_id']!=value['snapshot_id'] or indexed['strategy_identity']!=value['strategy_identity']
-                        or indexed['size_weight']!=row['size_weight']):
+                        or indexed['size_weight']!=recorded_size):
                     raise ValueError('Published observation and original recorded reference differ')
                 if previous is None or _instant(indexed['indexed_view_at'])>_instant(previous['through']):
-                    restored=read(root,ticker,value['completed_at'],value['snapshot_id'],now)
+                    restored=read(root,ticker,recorded_completed,value['snapshot_id'],now)
                     if (indexed['indexed_view_sha256']!=value['receipt_sha256'] or indexed['indexed_view_at']!=value['generated_at']
                             or indexed['original_bytes_sha256']!=restored['original_bytes_sha256']):
                         raise ValueError('Only original interrupted index metadata can complete')
                     counts[ticker]=counts.get(ticker,0)+1
                 continue
-            restored=read(root,ticker,value['completed_at'],value['snapshot_id'],now)
+            restored=read(root,ticker,recorded_completed,value['snapshot_id'],now)
             original=restored['original']
             if (original['publication_receipt_sha256']!=value['publication_receipt_sha256']
-                    or original['strategy_identity']!=value['strategy_identity'] or original['size_weight']!=row['size_weight']):
+                    or original['strategy_identity']!=value['strategy_identity'] or original['size_weight']!=recorded_size
+                    or reference and original['receipt_sha256'] != first['receipt_sha256']):
                 raise ValueError('Original first decision differs from published observation')
             _write_index(root,restored,value);count+=1
             counts[ticker]=counts.get(ticker,0)+1

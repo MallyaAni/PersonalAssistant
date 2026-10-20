@@ -1009,7 +1009,7 @@ const TrackRecord = ({ curve, latest }: { curve: DeskCurve | undefined; latest: 
 const HowToUse = ({ onClose, compact = false, plan, strategy = false }: { onClose?: () => void; compact?: boolean; plan?: DeskPaperPlan; strategy?: boolean }) => strategy ? (
   <section aria-label="Strategy guide" className="my-2 max-w-2xl rounded-xl border p-3 text-xs">
     <p>All names uses the strategy model independently of paper holdings and personal cash. Best buys and Best sells contain matching actions only.</p>
-    <p>Size % is the model’s desired position as a percentage of portfolio capital, not an additional purchase amount or a profit target. Buy candidates sort by readiness, then model size; size is not confidence.</p>
+    <p>Size % is the buy or sell amount. Position % is the model’s desired total position. Neither is a profit target. Next-session buy plans sort by readiness, then desired position size; size is not confidence.</p>
     <p>A regular-session Buy requires a completed 15-minute assessment and a fresh quote. Next-session actions are plans, not confirmed entries. Old prices show their observation time.</p>
     <p>Sell means reduce or exit an existing long position, not open a short. Avoid means no new entry; it is not a sell instruction.</p>
     <p>Historical markers are retrospective simulations of this strategy, not advice published at the time. Their sizes are trade amounts at that time. Click a marker for original sizes, technical inputs and timing; daily or weekly candles can contain several decisions.</p>

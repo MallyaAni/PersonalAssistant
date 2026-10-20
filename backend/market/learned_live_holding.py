@@ -83,6 +83,11 @@ def source_identity():
         root / "backend/market/strategy_publication.py",
         root / "backend/market/strategy_entry_context.py",
         root / "backend/market/strategy_entries.py",
+        root / "backend/market/strategy_reference_transition.py",
+        root / "backend/market/strategy_reference_entries.py",
+        root / "backend/market/strategy_model_history.py",
+        root / "backend/market/strategy_history_installation.py",
+        root / "backend/market/strategy_history_publication.py",
         root / "backend/market/personal_history.py",
         root / "backend/api/v1/market.py",
     )

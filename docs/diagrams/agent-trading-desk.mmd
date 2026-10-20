@@ -16,15 +16,16 @@ flowchart TB
     Admission -.-> Independent[Candidate independent model publication<br/>nightly percentages and original technical evidence<br/>before paper-account access]
     Grades -.-> Independent
     Independent -.-> ModelSnapshot[(Immutable source-bound model snapshot<br/>own universe, grades, sizes and original expiry)]
-    ModelSnapshot -.-> Numerical[Candidate numerical 15-minute collector<br/>original daily context and installed timing heads<br/>fresh IEX quote transport; no account or orders]
+    ModelSnapshot -.-> Numerical[Candidate numerical 15-minute collector<br/>fresh entries or standing reference buys and sells<br/>original IEX packet and timing heads; no orders]
     Providers -.-> Numerical
-    Numerical -.-> EntryEvidence[(Original entry and quote evidence<br/>first recommendation retained per candle)]
+    Numerical -.-> EntryEvidence[(Original recommendation and quote evidence<br/>standing intent retained once across candles<br/>viewing never implies a fill)]
     EntryEvidence -.-> RecordedIndex[(Candidate source-bound per-stock index<br/>original decisions remain discoverable after expiry<br/>completed coverage and original-byte checks)]
     ModelSnapshot -.-> View
     RecordedIndex -.-> View
     EntryEvidence -.->|Original reasons on marker selection| View
     Frozen -.-> HistoryPublication[Candidate audited numerical history import<br/>same economic code and trading costs<br/>original actions and next-open grade clocks]
     HistoryPublication -.-> View
+    HistoryPublication -.->|Explicit counterfactual reference units and cash| Numerical
     Admission --> LearnedTiming[Shared learned completed-bar inference<br/>original published models; no runtime fitting]
     Quotes --> LearnedTiming
     LearnedTiming -->|Observed execute or wait verdict| Journal
