@@ -218,6 +218,20 @@ server at once: opencode 162 / 518 / 176 s, dsh 298 / 566 / 397 s; tokens
 (A only, counted on the server) opencode 367K prompt + 10K generated, dsh
 702K + 18K.
 
+**Round 3 (2026-10-20 15:00-15:27 ET): opencode 1.19.3 vs OpenCode 2.1.1,
+same three tasks, same base, one run at a time, both at effort max through
+the injector.** 2.1.1 installed side by side under `~/opencode2` (own
+XDG config/data/cache/state via `~/opencode2/env.sh`, so the 1.x session
+database is untouched). All six patches correct, ruff-clean on what they
+touched, tests green (A 34/34 both; B 27 passed + 6 skipped both, five new
+tests each, same design as what landed; C the same one-hunk fix as
+`f84d443b`, 36/36 both). 1.19.3 also documented the new setting in
+DEVELOPMENT_GUIDE.md unasked. Wall clock: 1.19.3 154 / 348 / 150 s,
+2.1.1 295 / 452 / 226 s - 2.x was 1.3-1.9x slower for identical outcomes.
+2.1.1 also renames the session/event/plugin contracts the watchdog and
+web unit read. Decision: code.deepmatter stays on 1.19.3; 2.1.1 stays
+installed for a later look, never swapped in place.
+
 **Verdict after four tasks:** no accuracy difference. Every run was correct
 and complete; dsh was marginally more careful once (round 1, no new lint)
 and never worse; opencode was 1.1-2.3x faster on every task at the same

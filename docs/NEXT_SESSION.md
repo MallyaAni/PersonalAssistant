@@ -1304,6 +1304,11 @@ ConversationService(reply_llm=...)). None of it is deployed:
 `.env` MAIN_LLM_BASE_URL back to :8000, REPLY_LLM_REASONING_EFFORT=high,
 and `systemctl --user disable --now reply-effort-shaper` on spark1.
 
+**OpenCode 2.1.1 tried side by side (`~/opencode2`, isolated XDG dirs) on
+the three bake-off tasks against 1.19.3:** identical outcomes, 2.x 1.3-1.9x
+slower, and its contracts break the watchdog/web setup. Not adopted;
+details in `deploy/spark/README.md` "Round 3".
+
 **opencode on spark1 (code.deepmatter) upgraded 1.18.25 -> 1.19.3
 (2026-10-20 14:54 ET; backup binary `~/dsv41/opencode-1.18.25.bak`):**
 same 1.x line, web restarted while idle, smoke run wrote a file through a
