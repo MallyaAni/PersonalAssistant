@@ -1,5 +1,94 @@
 # Next session
 
+## CURRENT HUMAN 16:00Z — consistency fix and pending-Sell copy DEPLOYED; no active release/gate; public owner sign-in still pending
+
+Additional completed NORMAL production-API preview path: ALABtable/D/W/15m all5.8
+after actual candle loads, HPEOct16 09:45 originalBuy2.5/then25%/gradeA/EMA21−9.44/
+EMA63+1.50 detail restored whilecurrentPosition10.6 stayed separate, diagnostics[].
+Saved /tmp/strategy-position-real-ui-20261020-v1/normal-live-api-{alab-15m.png,
+alab-frames.json,hpe-original.png,hpe-original.txt}. HPEcold15mCua3s selector timed
+out whileLoading; later originalresponse completed without repeatedfetch/pageerror.
+No sub3s performanceclaim. Evidence3022B/SHA89e733cf0b3b83afa1f7b33a79ff259769a033b7528b93aaab2dffa6cb64f9a4
+at docs/research/strategy-normal-live-api-preview-proof-2026-10-20.json. This proves
+normal deployed ownerHTTP via localhostpreview, not public-origin authenticatedUI.
+Keep tab4 HPEoriginaldetails deliverable; tab3publicSignIn handoff/pendingquestion.
+
+LATEST LIVE CODE efc649a0d58edc2c652623fb0270a666514f797c/tree
+790d1345131dac5911705e00693ad11948b3cb28, pushedproduction-based feature
+codex/trading-fill-consistency-20261019. Backend remains exactbf7a72fb image/source
+(all backend/scripts bytes unchanged); model ds41-head and original41approval
+config/release/evidence unchanged across latest FE release. Upstream origin/main
+restored. Tracked productsource clean before finaldocs; keep untrackednode_modules/
+tsconfig.tsbuildinfo. NEVER deploy historical main wholesale. Readonly original
+~/desk_daily.sh confirmed scheduledjob uses ~/deploy/anios and DOES NOT gitpull;
+future nightly therefore uses deployedsource, not historical developmentcheckout.
+
+Current Position uses original persisted daily modelbook target across Allnames/
+daily/weekly/15m, quote/candleexpiry and refresh. Size% is positive trade amount,
+Position% desired total; expired/unconfirmed permission showsWait/Size—. Actual
+ALAB5.8 allframes vs oldfresh14.3 fallback fixed; HPE original13.7 Sell reducing
+24.3→10.6 with originaltechnicalreasons restored. Historical5755counterfactual
+actions/94stocks retainoriginaldates/sizes, no paper/personalaccount requirement.
+New pendingSell emptycopy is LIVE: waitingmodelreduction no longer falselyclaims
+noSell; Bestsells says “No confirmed sell signals yet.” ifnonecurrentlyconfirmed.
+
+LATEST exactpublic/gateway JS index-D9GaJYMW.js925833B/SHA
+8e9f4a4e8a09249d7fbc14032ba6abc1a806a782d69b58ebe829a1278d69fd79.
+ONE distinct canonical FE-only release after originalfullattempt ENDED:
+session5293ENDED0/root scratch/strategy-pending-sell-release-20261020-v1,
+post15:51:53UTC efc649a0 ok(cheap), backend/modelCID+image and41approval hashes
+exactbeforeafter. No skipped flags/fakeclock/approvalrenewal/newmodeljob. Three
+affectedcases sourcePASS7.389522s ANDdeployedPASS6.974065s/0skip-flaky-unexpected/
+diagnostics:1new+2regressions, NOT6new or whole65green. EarlierBFwhole64@source+
+deployed retainsoriginalproof, NOT128unique. ExpectednewcopyRED7.7s retained.
+TSC/build4.08/diffPASS(existingwarnings). Original PythonpublicJSgetterFAILED
+missinglocalissuer BEFORE download/hash/manifest; sameextractedstaticretained,
+systemcurl defaultverifiedTLS comparisonpassed, NO TLSbypass/re-extraction.
+FinalFEproof docs/research/strategy-pending-sell-live-release-proof-2026-10-20.json
+30453B/SHA06adfd6c5aaa10e224c5ea6329969d1aa48eeedecf4f432314eb298db08f5997,
+collectorONCE. Archives/manifests/testresults remain /tmp/strategy-pending-sell-*.
+Diagramlabels now describe deployedseparatehypothetical path,33/page sync passed.
+
+DO NOT ERASE ORIGINAL FAILED FULLPOST: firstbf canonical31805ENDED1 at15:45:16;
+deployedsource remainsLIVE. FullUNIT11050PASS/93skip6xfail439warnings33subtests
+552.78s; upgradedV4.1functional100PASS636.84s; source41ADMITTED/47tables+WALbackup
+mirroredSpark2. Wholeapp sweep FAILED “stop checking in on me”: routeNone,
+acknowledged but profileoptout and enabledcheckins unchanged; canonicalownretry
+failedsame. SearchharnessPASSED. Separate assistant issue tracked, NOT fixed/waived
+or relabelledgreen by laterFEcheap smoke. Original proof553945B/SHA
+ef3dab5a0aff0ca698a87e04f2dbe35b1271b8d25ba6648922afb66185bf49bc, alloriginal
+logs/results/status retained. Neverrerun closedcohorts/gates/getters/collectors fordocs.
+
+REAL PREVIEW now NORMAL authenticated DEPLOYED API through existing18081→8100
+tunnel, no privatehistory interception. Keep Vite33452/tunnel70626/node_modules/
+tab4signedin deliverable. Oldprivatebridge/config/2b+bf checkouts/stores retained
+unchanged; no standalonecurrentcollector/newservice. ActualnormalAPI current15m
+Oct20/94positions; HPEWait/Position10.6 with pendingSell13.781% and no fresh
+compatiblequote observed. No executable currentaction invented. Originalpubexpiry
+Oct20 16:00ET(20:00UTC), nativeholdingrecompute09:30ET separate, neverextend.
+AnonymouspreviewGET401/non-authPOST405; same normal auth/writeblock.
+
+ONLY MISSING PUBLIC SCREEN ACCESS: publictab3 is normalSignIn. ONE asyncrequest
+already sent askinghuman to sign in existing deep-matter.com tab, accepted and
+still NO reply. NEVERduplicate question, copy/inject credentials/cookies or bypass
+auth. Keep tab3handoff. On humanreply, use currentnormalpublic Allnames→ALAB/HPE→
+D/W/15m/refresh and originalmarkers/details/BestSellstatus; failonrequirednetwork/
+console/content issues. Publicauthenticated acceptance stillUNVERIFIED. Preview/
+gatewayfixture tests are not that proof. No ETA/fullprofitability/readinessclaim.
+
+Independent next NATURAL observation: ordinary19:30ET nightly/newsource41 daily
+publication BEFORE paperaccess, then observedreference next-day rollover/current
+regular15m. Inspect onlynewboundedoriginal logs/snapshot/book/sourcebindings and
+firstnew failingboundary. Do not invoke market_daily/balancer as probes (orders/
+cancels/writes), replay olddays, restart96763/newwatcher/cron or repeatclosed
+original09:49acquisition/two10:08progression. No manuallyreacquire for screenshots.
+Whole41 ordinary-nightly/runtime-next-dayrollover remainsfutureUNVERIFIED, no
+genuine/powerloss/full832MB/modelRAM claim. Nativeallocatorack block remains
+separate; no privateguardtreadmill. Existingfeedonly/paperLAST/no reset/realorders/
+paiddata/tuning/model-account-provider-servicechanges/Spark2load/G08weakening/
+deniedcurrent-opportunitiesreadbypass/nativepooladoption/reopen. KeepACTIVE quiet
+unchanged, meaningfulprogress/failure/requiredhuman action only. Prior details follow.
+
 ## CURRENT HUMAN 15:47Z — original full release ENDED1/deployed; separate check-in opt-out FAILED; small FE correction ready
 
 Original canonical31805 ENDED, canonical-result return1 at15:45:16.974367UTC,

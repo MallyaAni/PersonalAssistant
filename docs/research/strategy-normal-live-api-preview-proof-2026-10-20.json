@@ -1,0 +1,70 @@
+{
+  "alab": [
+    {
+      "action": "Wait \u00b7 Size \u2014",
+      "frame": "D",
+      "list": "5.8%",
+      "position": "Position 5.8%"
+    },
+    {
+      "action": "Wait \u00b7 Size \u2014",
+      "frame": "W",
+      "list": "5.8%",
+      "position": "Position 5.8%"
+    },
+    {
+      "action": "Wait \u00b7 Size \u2014",
+      "frame": "15m",
+      "list": "5.8%",
+      "position": "Position 5.8%"
+    }
+  ],
+  "backend_source": "bf7a72fb92168696a7be06671a40af7fad93a1a1",
+  "console": "Scoped error/warn logs []",
+  "frontend_source": "efc649a0d58edc2c652623fb0270a666514f797c",
+  "hpe_original": "Oct16 09:45 Buy2.5%, original gradeA/priorOct15 close/modelposition25%/EMA21-9.44/EMA63+1.50; currentmodelposition10.6 remains separate.",
+  "loading_observation": "Cua three-second selector deadline expired while HPE cold15m response was still Loading. Subsequent normal response loaded actual candles and original details; no repeated fetch or page error. Not a sub-three-second latency claim.",
+  "not_claimed": [
+    "Every94chart manually inspected",
+    "Profitability",
+    "Complete Oct15 intraday history",
+    "Actual broker fills",
+    "Real-money execution",
+    "Whole next-day native rollover observed"
+  ],
+  "pending_sell": "Normal production HPE pendingSell13.781% with no compatible freshquote; Bestsells says no confirmed sell signals yet. No executable action invented.",
+  "preview_access": {
+    "anonymous_get": 401,
+    "non_auth_post": 405
+  },
+  "preview_config": {
+    "bytes": 1672,
+    "sha256": "60484bf278b1897c96ee5bf195e1cd5e540d860967672c68aec544c9194452ac"
+  },
+  "proxy": "Existing localhost18081 tunnel forwards normal authenticated production GETs; no private data interception or sample substitutions.",
+  "public_owner_screen": "UNVERIFIED; one normal sign-in request pending and no reply. No duplicate request or credential copying.",
+  "schema": "strategy-normal-live-api-preview-proof/1",
+  "screenshots_and_dom": {
+    "/tmp/strategy-position-real-ui-20261020-v1/live-api-pending-sell-preview.txt": {
+      "bytes": 1289,
+      "sha256": "8a26a810c60d265d3c9f51823c143c5c797fa65a5bebd8c8e4baa255dbc6f755"
+    },
+    "/tmp/strategy-position-real-ui-20261020-v1/normal-live-api-alab-15m.png": {
+      "bytes": 42180,
+      "sha256": "c10283d5c571ac2bdd2802f9d73d708a1a0d0cfac300eeaa7a9a983ced2e81d8"
+    },
+    "/tmp/strategy-position-real-ui-20261020-v1/normal-live-api-alab-frames.json": {
+      "bytes": 252,
+      "sha256": "fb8d27140608215d1be0fd2f28fe9f38c0e65113177ed6c370bd6c78bb5f78b8"
+    },
+    "/tmp/strategy-position-real-ui-20261020-v1/normal-live-api-hpe-original.png": {
+      "bytes": 55070,
+      "sha256": "e6ac9a521ba0881deef075f9dbf3375cb5ad1c5874ee5ec6e61eb506cde383a1"
+    },
+    "/tmp/strategy-position-real-ui-20261020-v1/normal-live-api-hpe-original.txt": {
+      "bytes": 5480,
+      "sha256": "de5d3a24cbc87fbd28c7b4edf717163a959704e93e3db9aa3c6921f99919ee64"
+    }
+  },
+  "status": "VERIFIED_SIGNED_IN_LOCAL_FRONTEND_NORMAL_DEPLOYED_OWNER_API"
+}
