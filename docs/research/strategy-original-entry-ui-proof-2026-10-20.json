@@ -1,0 +1,66 @@
+{
+  "backend_proof": "82ad8ebf823de85e41f11ac89b4dfcbc0d91f88c5a326a9ca192ddbad33abcb1",
+  "browser_stats": {
+    "duration": 126333.424,
+    "expected": 35,
+    "flaky": 0,
+    "skipped": 0,
+    "startTime": "2026-10-20T04:14:12.686Z",
+    "unexpected": 0
+  },
+  "failed_cases": [],
+  "files": {
+    "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/all-names-signals.spec.ts": {
+      "bytes": 61467,
+      "sha256": "38a62cc86a4ce2e4876ada0a1a4ee51397e0ea89056b17e7d88cb13c50c7b75b"
+    },
+    "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/src/components/DeskPanel/TickerChart.tsx": {
+      "bytes": 99871,
+      "sha256": "38961385cc47bbaa4297591c97aafc645f859863b3a24254086ebffb5719823a"
+    },
+    "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/src/services/api.ts": {
+      "bytes": 156230,
+      "sha256": "be353e903dc7891f390c79430792864e54739dd84101c2545691564ccf6476cf"
+    },
+    "/tmp/original-entry-ui-20261020-dist/assets/index-BC54DTAT.js": {
+      "bytes": 911636,
+      "sha256": "556a63a4574f728cd7296441aa144f55db7869e81d31d349731a54fe20f6c27c"
+    },
+    "/tmp/original-entry-ui-20261020-results.json": {
+      "bytes": 545770,
+      "sha256": "28ce4230d494b1ffc50fbac326780a5f9f94836c4cb81eac3cab3c711c2694fa"
+    },
+    "/tmp/original-entry-ui-20261020.config.mjs": {
+      "bytes": 492,
+      "sha256": "20a535d9cf1d45507a7492f91d49d5c8ea1ad190fa039915b43f9fef9bf64fef"
+    },
+    "/tmp/original-entry-ui-build-20261020.log": {
+      "bytes": 14211,
+      "sha256": "8d1d5e2ec649e2407b02bb3063e40f0e8b172c348aea35fba78e7080976e41dd"
+    },
+    "/tmp/original-entry-ui-final-tsc-20261020.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    }
+  },
+  "head": "b4b2eeb9ac3d1b0bb1f344b280ecd5f1b00be1b8",
+  "new_named_cases": 3,
+  "production_changes": false,
+  "regression_named_cases": 32,
+  "schema": "strategy-original-entry-ui-proof/1",
+  "source_state": "UNCOMMITTED_PRODUCTION_BASED_CANDIDATE",
+  "status": "FIXTURE_BROWSER_VERIFIED_NOT_DEPLOYED",
+  "unverified": [
+    "Actual current regular-session numerical entry and original-record read in the real preview",
+    "Real-preview bridge to the new GET before deployment; current live backend does not yet expose it",
+    "Full backend/routing/source approval and canonical deployment"
+  ],
+  "verified": [
+    "Selecting a current numerical marker calls the owner-scoped original-recommendation GET using ticker/candle/snapshot",
+    "Detail shows original recorded time/price99/EMA21-22% rather than refreshed price102/EMA21-9.44%",
+    "Foreign snapshot and changed model size produce unavailable details without refreshed-row fallback",
+    "Selection/user/ticker/snapshot/candle/strategy/size bind read state and stale responses cannot cross selections",
+    "Original simulated markers retain their existing details and do not request recorded-entry API",
+    "All35 browser cases passed with zero skipped/flaky/unexpected and fixture diagnostics empty; TSC/build/diff pass"
+  ]
+}

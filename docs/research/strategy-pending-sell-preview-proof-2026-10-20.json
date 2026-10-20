@@ -1,0 +1,68 @@
+{
+  "artifact": {
+    "build_seconds": 4.08,
+    "bytes": 925610,
+    "diff": "PASS",
+    "name": "index-hWMkfX5O.js",
+    "sha256": "23d1c76ca50de4a91b4944156141041d51a81387a72dfdaa404d2e5438b67618",
+    "tsc": "PASS"
+  },
+  "backend_numerical_sources_and_runtime": "UNCHANGED",
+  "base_revision": "bf7a72fb92168696a7be06671a40af7fad93a1a1",
+  "change": "When a Sell is waiting, the empty list now says No confirmed sell signals yet. No actionable Sell or trade size is invented.",
+  "changed_path_regressions": 2,
+  "defect": "Best sells omitted the unconfirmed model reduction correctly but falsely said no model sell signal existed.",
+  "green_gzip_base64": "H4sIAAAAAAACE+1YS2/cNhC++1cQOod6Zl8+tUUTwIc0BeyiQIOg4IqjXcYUqZKU7W3i/94htdqV1utHmrSAAceXcGY4D3K+j7P6fEJIVGpViVV0Sj7jCtfMrK5w9SGscJ38ZsHYhClRMyk3LIlLVq4hKTWHG2pa5UQNdrtsDFqZTS9OODSgOKhSoIlCk2QpVPhP9OqBAN5Xcq3NpTOAG9fCOm1EySQG0FegmCqB5mk+zdJslvyK27Vi8kdr0ZApl1RGK4eBQ6Q/a81biW5+aCTbXBuxWrvEgXVJKUX8ye4z8cL9itLt0ewzdXWTWGeYg9WG+sqEWlELUtIVJqq2KeVp3O2M66F36o2a/fonjEb8Zks45o2uWmHXYAkjW9fEAG9LJ7T6cmEYB0NYy4UjrWJXTEi2lIAmpa5rtGfezhIFV2C+/CxQ7gVMEseWlmBCjglFtJKbKGTwsUtke/9vhQS89W8pMTJaOwwc3PyHdwp53zxRhafwXr2V7HJzgadpMXTFpIVerc1S8Pe+5ANFi0n9ygzmBvJAt5J6yeQ5uLZBjULLkeICmOH6Wh3VYcvr1qEq7eX+xhFat4P1mcIbcuP9Nbt5i7W0Buxgdw2O4b2yHTg9PEvXMvk7niOeECqyoOj9N+gAzBW8b10TEomYvGab3RXhUX/CxrADgPeeUavDrv4Kn9oJlBknKua9vtr7wkKBuTdIFT7JkcIZMSzzvlIfKHdQcrAS3Gc8DK9YDYcyD+//tT93Uc9WShufz4ePB5p3zIUT+jAqGs/YF2CpFSsMYmPbQBmPDtgjtzUGlKPMWrAWOcAdt2u2uVIkGB7K2NKHkMJt7vG9xlul2aTeqXfaUQm7ji9S/LdV3I4I5q9WgDsAGXaHNg7MoPL9CURSDHiYBJycHMQeWH/C4gbWo/bpOvqryY0ijFrpbBx871uuz2JUX1fLudTXPQftwIqwxuVk/8Cs0fFaS94fWDpCr8VD52NicGxlB30TtQ2iBM4Va9BPCBbVAntQ9c9Ub6FbU8I7cGsdsNGEPtuaIP9YfBu8PIuneZz1ius9znoJLM89oZhhWf7FYSr4TVprEqkRJuFlbzYYUBWE1mTtXBMHMjJkki8mhFK04CTLZ3GKfxkKeHimtNmQp18NHzZH1BrP35EPdpokO9+nPuLeykBr4c1N98ru6gkNedJfbLiEyLbCwZ4edyU74boeehybUSWebFpq2dZqyIXY/ApGAr/Jjihi1OK7zL5mniDIVjVRmuBsBDLsIl2SYxrQl+jZmRZG0oOmHNCZPaCyca7HKOPVoZ4ppV03zNyJEQzgBg/EAT9Hq9Z2zY0MyKM7ltvX7uzwdRirf7n7VOzaJrDAnZqO1TXAzxlOvDfj920YdTt2PGxlHysuWPHWhJPygH09zY/agDHaHD/KbSTeXcf9enRxv96/55uH6jDOz0W+FI9hmqWI5YtsclpMTrMizub5H8eLe6wROiPncMTwb9/xa7rvqkZDAtJOCUeT6CdkfNjdxabpYN00EucCn1jyt2ju34ecu/6Xk1Ryhzuoh7ffRHm1YEAV9RCmStMA4c5dZ5uEemKf29HUbo9IP548ZnUXiPse7SE5jjf0MKaKbl6b59Wk4NN8Oi2WWbmoqlnGaJ6VBUyKqlrOeFqwguW8HHPS0+l1yKf5Ih8POD3zHp0ojzPs1/0II0svBaRfvKTAsKVkon4h2OdJsIv59Pnx6yTOp+kLvz6FXztwU0YB0nRBPYJph2CUbRFMA4KfNb/OFlBURcHTMp3k02Wx5Gz+Pfg1y4vZNxPsg5+tSO1/w/gxlpUdzeJvED/DdjNvDSyICNSN25CD35AvVPucZtn5YvL8uHYaF9kL1z6Ja3uc09fzbDqjHblaGiBMmaIBwtRD+FlzbZblOV/MWZmzCZTZLK/48vtw7XzyKNeOvlX5VUj7EEKh8P03q8d6PIuLdN73+BCys2K+iCf5dsbeHyIyY/9x61I0TZD0n7dbNTDrhZX/mO/X/pPMye0/FW0x/6MaAAA=",
+  "green_stats": {
+    "duration": 7389.522,
+    "expected": 3,
+    "flaky": 0,
+    "skipped": 0,
+    "startTime": "2026-10-20T15:35:11.308Z",
+    "unexpected": 0
+  },
+  "live_preview": "Normal authenticated deployed API via existing localhost18081 tunnel; native private bridge removed from preview config after deployment, preserved unchanged.",
+  "new_cases": 1,
+  "preview_read_only": {
+    "anonymous_get": 401,
+    "non_auth_post": 405,
+    "normal_sign_in_unchanged": true
+  },
+  "production_release": "Original bf canonical POST checks still running; do not duplicate release or push a new feature target during that attempt.",
+  "public_authentication": "One sign-in request pending; no duplicate request or credential copying",
+  "ranking_and_trade_eligibility": "UNCHANGED",
+  "red_gzip_base64": "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",
+  "red_stats": {
+    "duration": 18796.514000000003,
+    "expected": 0,
+    "flaky": 0,
+    "skipped": 0,
+    "startTime": "2026-10-20T15:34:15.168Z",
+    "unexpected": 1
+  },
+  "schema": "strategy-pending-sell-preview-proof/1",
+  "sources_and_manual_evidence": {
+    "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/all-names-signals.spec.ts": {
+      "bytes": 110772,
+      "sha256": "b92443303fe842979a26694fd4ee1d98037761f11f67940fc0cfc171bd6b08f8"
+    },
+    "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/src/components/DeskPanel/SignalBoard.tsx": {
+      "bytes": 40072,
+      "sha256": "0e68d017acd6f8a4f60543eb4be476d778c31b70a5c59c981955dc8c606fc41b"
+    },
+    "/tmp/live-recommendations-preview-20261019.mjs": {
+      "bytes": 1672,
+      "sha256": "60484bf278b1897c96ee5bf195e1cd5e540d860967672c68aec544c9194452ac"
+    },
+    "/tmp/strategy-position-real-ui-20261020-v1/live-api-pending-sell-preview.png": {
+      "bytes": 31381,
+      "sha256": "45db4e1a19833218396d74201d3939f31ade493ccdd2c8d357e25acc736c40de"
+    },
+    "/tmp/strategy-position-real-ui-20261020-v1/live-api-pending-sell-preview.txt": {
+      "bytes": 1289,
+      "sha256": "8a26a810c60d265d3c9f51823c143c5c797fa65a5bebd8c8e4baa255dbc6f755"
+    }
+  },
+  "status": "VERIFIED_PREVIEW_ONLY_NOT_DEPLOYED",
+  "whole_bf64cases_at_source_and_deployed_build": "Original separate verification retained; this is not a whole65-case pass."
+}

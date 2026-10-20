@@ -252,8 +252,78 @@ def reconciliation_review(old, new, review):
         raise ValueError("Unreviewed numeric decision or terminal conclusion change")
 
 
+# Admit the independent publisher hook only when the entire original strategy module reconstructs exactly.
+def independent_publication_review(old, new, review):
+    added = {f"backend/market/{name}.py" for name in (
+        "strategy_model_allocation", "strategy_publication", "strategy_entry_context", "strategy_entries"
+    )}
+    _publication_review(old, new, review, added)
+
+
+# Admit the separate observed model-book closure without weakening the earlier four-component review.
+def observed_reference_review(old, new, review):
+    added = {f"backend/market/{name}.py" for name in (
+        "strategy_model_allocation", "strategy_publication", "strategy_entry_context", "strategy_entries",
+        "strategy_reference_transition", "strategy_reference_entries", "strategy_reference_book",
+        "strategy_model_history", "strategy_history_installation", "strategy_history_publication"
+    )}
+    _publication_review(old, new, review, added)
+
+
+# Reconstruct the entire admitted original holding module after removing only the declared guard additions and publisher hook.
+def _publication_review(old, new, review, added):
+    from backend.market import learned_live_holding as runtime
+
+    holding = "backend/market/learned_live_holding.py"
+    changes = {name for name in old.keys() | new.keys() if old.get(name) != new.get(name)}
+    if (
+        len(old) != 31 or len(new) != 31 + len(added) or set(new) - set(old) != added or set(old) - set(new)
+        or changes != added | {holding} or set(review["source_changes"]) != changes
+        or old[holding] != "25fee57bd3dc57c2b945e204aa3b83e39434cf4f84f8a165a4b9e41f9f6183e1"
+        or type(review["other_reviewed_sources_unchanged"]) is not int
+        or review["other_reviewed_sources_unchanged"] != 30
+        or new != runtime.source_identity()
+        or review["original_holding_module_ast_sha256"]
+        != "458218fde5e6136cdd44fdf19bf03d4d382a1dc0e3327a6c7b707d315f86c880"
+        or any(review["source_changes"][name] != {"before_sha256": old.get(name), "after_sha256": new[name]} for name in changes)
+    ):
+        raise ValueError("Exact independent publication source review required")
+    code = Path(__file__).resolve().parents[2]
+    for name in added:
+        require_hash((code / name).read_bytes(), new[name])
+    raw = Path(runtime.__file__).read_bytes()
+    require_hash(raw, new[holding])
+    tree = ast.parse(raw)
+    source = next(node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name == "source_identity")
+    prepare = next(node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name == "prepare")
+    paths = next(node.value for node in source.body if isinstance(node, ast.Assign)
+        and any(isinstance(target, ast.Name) and target.id == "paths" for target in node.targets))
+    expected_paths = {ast.dump(ast.parse("root / " + repr(name), mode="eval").body, include_attributes=False) for name in added}
+    removed = [node for node in paths.elts if ast.dump(node, include_attributes=False) in expected_paths]
+    if len(removed) != len(added) or {ast.dump(node, include_attributes=False) for node in removed} != expected_paths:
+        raise ValueError("Exact independent publication guard additions required")
+    paths.elts = [node for node in paths.elts if node not in removed]
+    expected_tail = ast.parse('''selected = factory(reader, config["cost_bps"], root, raw, admission, completed)
+if config["policy"] == grade_led_policy.POLICY:
+    from backend.market import strategy_publication
+    strategy_publication.publish_prepared(selected, report, clock=clock)
+return selected
+''').body
+    if [ast.dump(node, include_attributes=False) for node in prepare.body[-3:]] != [ast.dump(node, include_attributes=False) for node in expected_tail]:
+        raise ValueError("Exact pre-account publication callback required")
+    prepare.body[-3:] = [ast.Return(value=prepare.body[-3].value)]
+    if digest(ast.dump(tree, include_attributes=False).encode()) != review["original_holding_module_ast_sha256"]:
+        raise ValueError("Independent publication changed original holding economics or guards")
+
+
 # Require an exact reviewed transition without broadening the production source guard.
 def reviewed_sources(old, new, review):
+    if review["status"] == "REVIEWED_EXACT_OBSERVED_REFERENCE_PUBLICATION":
+        observed_reference_review(old, new, review)
+        return
+    if review["status"] == "REVIEWED_EXACT_INDEPENDENT_STRATEGY_PUBLICATION":
+        independent_publication_review(old, new, review)
+        return
     if review["status"] == "REVIEWED_NATIVE_PAPER_OWNERSHIP_PRESERVATION":
         paper_ownership_review(old, new, review)
         return
@@ -305,6 +375,41 @@ def reviewed_sources(old, new, review):
     }
     if functions != review["original_holding_function_ast_sha256"]:
         raise ValueError("Trading approval changed an existing holding function")
+
+
+# Read an optional committed initial model snapshot without inference, clock extension or account access.
+def initial_publication(review, revision, config_raw, now):
+    metadata = review.get("initial_publication")
+    if metadata is None:
+        return None
+    from backend.market import strategy_publication as publication
+
+    if (review["status"] not in ("REVIEWED_EXACT_INDEPENDENT_STRATEGY_PUBLICATION", "REVIEWED_EXACT_OBSERVED_REFERENCE_PUBLICATION")
+            or not isinstance(metadata, dict) or set(metadata) != {"path", "sha256", "bytes"}
+            or type(metadata["bytes"]) is not int or not 0 < metadata["bytes"] <= publication.MAX_BYTES):
+        raise ValueError("Exact reviewed initial publication required")
+    relative = Path(metadata["path"])
+    code = Path(__file__).resolve().parents[2]
+    if relative.is_absolute() or ".." in relative.parts or relative.parts[:2] != ("docs", "research"):
+        raise ValueError("Committed initial publication path required")
+    path = (code / relative).resolve()
+    if not path.is_relative_to(code) or path.stat().st_size != metadata["bytes"]:
+        raise ValueError("Finite reviewed initial publication required")
+    raw = path.read_bytes()
+    require_hash(raw, metadata["sha256"])
+    committed = subprocess.check_output(["git", "-C", str(code), "show", revision + ":" + relative.as_posix()])
+    if raw != committed:
+        raise ValueError("Initial publication is not the committed original")
+    value = publication.validate(json.loads(raw), now, expected_sources=publication._sources(),
+        config_sha256=digest(config_raw))
+    config = json.loads(config_raw)
+    if (value["identity"]["economic_parameters"]["cost_bps"] != config["cost_bps"]
+            or any(value["identity"][name] != config[key] for name, key in (
+                ("holding_model_receipt_sha256", "model_receipt_sha256"),
+                ("risk_receipt_sha256", "risk_receipt_sha256"),
+                ("timing_config_sha256", "timing_config_sha256")))):
+        raise ValueError("Initial publication changed original model configuration")
+    return value
 
 
 # Validate reviewed renewal bytes while preserving all original model/economic fields.
@@ -386,6 +491,7 @@ def candidate(root, bundle_path, bundle_sha, revision):
         )
     review = committed_review(bundle, revision)
     reviewed_sources(old_release["source_sha256"], new_release["source_sha256"], review)
+    initial_publication(review, revision, after["config.json"], datetime.now(UTC))
     with tempfile.TemporaryDirectory(prefix="trading-approval-check-") as temporary:
         parent = (Path(temporary) / CONFIG).parent
         parent.mkdir(parents=True)
@@ -427,13 +533,17 @@ def replace_file(path, raw):
         temporary.unlink(missing_ok=True)
 
 
-# Archive the original selectors exclusively before applying already reviewed bytes.
+# Archive original selectors and install only reviewed approval and optional initial model bytes.
 def activate(root, bundle_path, bundle_sha, revision, archive_dir):
     from backend.agents.trading.desk import paper
 
     root = Path(root)
     with paper.transaction(root):
         before, after, _ = candidate(root, bundle_path, bundle_sha, revision)
+        raw_bundle = Path(bundle_path).read_bytes()
+        require_hash(raw_bundle, bundle_sha)
+        review = committed_review(json.loads(raw_bundle), revision)
+        initial = initial_publication(review, revision, after["config.json"], datetime.now(UTC))
         archive = Path(archive_dir) / (
             datetime.now(UTC).strftime("%Y%m%dT%H%M%S") + "-" + uuid4().hex
         )
@@ -451,6 +561,8 @@ def activate(root, bundle_path, bundle_sha, revision, archive_dir):
             "before": {name: digest(raw) for name, raw in before.items()},
             "after": {name: digest(raw) for name, raw in after.items()},
         }
+        if initial is not None:
+            receipt["initial_publication"] = {**review["initial_publication"], "snapshot_id": initial["snapshot_id"]}
         with (archive / "receipt.json").open("x") as stream:
             json.dump(receipt, stream, sort_keys=True)
         (archive / "receipt.json").chmod(0o600)
@@ -458,11 +570,18 @@ def activate(root, bundle_path, bundle_sha, revision, archive_dir):
             for name in ("release.json", "config.json"):
                 replace_file((root / CONFIG).with_name(name), after[name])
             admitted = check(root)
+            if initial is not None:
+                from backend.market import strategy_publication as publication
+
+                publication.publish(root, initial, datetime.now(UTC))
         except Exception:
             for name in ("release.json", "config.json"):
                 replace_file((root / CONFIG).with_name(name), before[name])
             raise
-    return {**admitted, "archive": str(archive.resolve()), "bundle_sha256": bundle_sha}
+    result = {**admitted, "archive": str(archive.resolve()), "bundle_sha256": bundle_sha}
+    if initial is not None:
+        result["initial_snapshot_id"] = initial["snapshot_id"]
+    return result
 
 
 # Restore exact prior approval bytes when an unrestarted deployment rolls back its code.

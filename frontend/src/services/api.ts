@@ -2500,7 +2500,8 @@ export type DeskOptionsEvidence = {
 });
 
 export interface DeskModelAllocation {
-  version: 'published-model-allocation/1';
+  version: 'published-model-allocation/1' | 'strategy-model-allocation/1' | 'strategy-model-allocation/2';
+  recorded_history_version?: 'strategy-recorded-entries/1';
   status: 'available' | 'stale' | 'unavailable';
   reason?: string | null;
   policy: string;
@@ -2511,7 +2512,33 @@ export interface DeskModelAllocation {
   record_sha256?: string;
   receipt_sha256?: string;
   basis?: string;
-  rows: Record<string, {target_weight: number}>;
+  published_at?: string;
+  strategy_identity?: string;
+  snapshot_id?: string;
+  account_basis?: string;
+  timing_basis?: string;
+  identity?: {schema: string; strategy_identity: string; session: string; policy: string; basis: string};
+  reference_positions?: {
+    version: 'strategy-reference-positions/1'; basis: string; status: 'available' | 'unavailable'; reason?: string;
+    snapshot_id: string; publication_receipt_sha256: string; strategy_identity: string; session: string;
+    valid_until: string; day_id?: string; book_sha256?: string; generation?: number; trade_session?: string;
+    reader_sha256: string; receipt_sha256: string;
+    rows: Record<string, {target_weight: number; evidence: DeskStrategyDecision['evidence']}>;
+  };
+  entry_assessment?: {
+    version: 'strategy-numerical-entries/1' | 'strategy-numerical-entries/2' | 'strategy-numerical-entries/3'; status: string; snapshot_id?: string;
+    publication_receipt_sha256?: string; strategy_identity?: string; receipt_sha256?: string;
+    session?: string; completed_at?: string; generated_at?: string; valid_until?: string;
+    sizing_basis?: string; feed?: string; account_inputs?: boolean; reference_progression?: string; recommendation_not_fill?: boolean;
+    day_id?: string; book_sha256?: string; execution_basis?: string;
+    rows: Record<string, {state: string; action: 'Buy' | 'Sell' | null; size_weight: number; model_position_weight?: number;
+      reference_units?: number; proposed_units?: number; quote_at: string | null;
+      attempt_resolved?: boolean; objective_pending?: boolean;
+      original_intent?: {id: string; completed_at: string; at: string; size_weight: number; action: 'Buy' | 'Sell'; receipt_sha256: string};
+      valid_until: string; evidence: DeskStrategyDecision['evidence']}>;
+  };
+  rows: Record<string, {target_weight: number; evidence?: DeskStrategyDecision['evidence'] & {timing_state?: string}}>;
+  grade_signals?: Record<string, {action: string; grade: string | null; session: string; basis: string}>;
 }
 
 // Read published strategy weights without supplying a balance or accessing a paper account.
@@ -3437,6 +3464,15 @@ export interface DeskStrategyDecision {
   timing: string | null;
   executed_qty: number;
   state: 'executed' | 'partial' | 'not_executed';
+  valid_until?: string;
+  evidence?: {
+    reason?: string; inputs_as_of?: string; grade?: string | null;
+    features?: Record<string, number>; band_blocked?: boolean;
+    model_position_size?: number | null; observed_price?: number; trade_size?: number; reference_position_size?: number;
+    sizing_basis?: string; price_bridge?: string; reference_basis?: string;
+    timing_reason?: string; waiting_log_utility?: number | null;
+    completed_candle_at?: string;
+  };
 }
 
 export interface DeskStrategyTrade {
@@ -3459,10 +3495,12 @@ export interface DeskStrategySimulation {
   through: string;
   counterfactual: true;
   real_orders: false;
-  provenance: {cost_bps: number; account_sha256: string; config_sha256: string; basis: string};
+  provenance: {cost_bps: number; account_sha256: string; config_sha256: string; basis: string; source_record_sha256?: string;
+    strategy_identity?: string; verified_against_installed_strategy?: boolean; strategy_contract?: {schema: string; strategy_identity: string; history_sha256: string; audit_sha256: string; source_record_sha256: string; config_sha256: string}};
 }
 
 export interface DeskStrategyStock extends DeskStrategySimulation {
+  recorded_history_version?: 'strategy-recorded-entries/1';
   ticker: string;
   decisions: DeskStrategyDecision[];
   trades: DeskStrategyTrade[];
@@ -3470,6 +3508,7 @@ export interface DeskStrategyStock extends DeskStrategySimulation {
   latest_target: number | null;
   latest_holding: number;
   splits?: {date: string; ratio: number}[];
+  grade_rows?: {date: string; at?: string; grade: string | null; said: boolean}[];
 }
 
 export interface DeskStrategySummary extends DeskStrategySimulation {
@@ -3503,6 +3542,75 @@ export const getDeskStrategyStock = async (userId: string, ticker: string): Prom
   const result = await response.json() as DeskStrategyStock;
   if (result.schema !== 'latest-strategy-simulation/1' || result.ticker !== ticker || result.counterfactual !== true || result.real_orders !== false || !Array.isArray(result.splits)) throw new Error('Invalid latest-strategy simulation.');
   return result;
+};
+
+export interface DeskOriginalStrategyRecommendation {
+  schema: 'strategy-recorded-entry/1'; ticker: string; current_instruction: false;
+  recommendation_not_fill: true; account_inputs: false; verified_against_installed_economics: true;
+  original_bytes_sha256?: string;
+  original: {ticker: string; action: 'Buy' | 'Sell'; at: string; completed_at: string; snapshot_id: string;
+    entry_version?: string; model_position_weight?: number; reference_units?: number; proposed_units?: number;
+    strategy_identity: string; size_weight: number; evidence: NonNullable<DeskStrategyDecision['evidence']>};
+}
+
+// Restore the first saved numerical recommendation, never substituting today's quote or another snapshot.
+export const getDeskOriginalStrategyRecommendation = async (userId: string, ticker: string, snapshotId: string, completedAt: string, strategyIdentity: string, expectedSize: number, expectedOriginal?: {at: string; bytesSha: string}): Promise<DeskOriginalStrategyRecommendation> => {
+  const query=new URLSearchParams({snapshot_id:snapshotId,completed_at:completedAt});
+  const response=await authenticatedFetch(`${API_BASE_URL}/api/v1/market/${encodeURIComponent(userId)}/desk/strategy-simulation/${encodeURIComponent(ticker)}/recommendation?${query}`);
+  if (!response.ok) throw new Error('Original model recommendation unavailable.');
+  const result=await response.json() as DeskOriginalStrategyRecommendation;
+  const original=result.original;
+  if (result.schema!=='strategy-recorded-entry/1' || result.ticker!==ticker || result.current_instruction!==false
+      || result.recommendation_not_fill!==true || result.account_inputs!==false || result.verified_against_installed_economics!==true
+      || original?.ticker!==ticker || !['Buy','Sell'].includes(original.action) || original.snapshot_id!==snapshotId
+      || original.completed_at!==completedAt || original.strategy_identity!==strategyIdentity
+      || !Number.isFinite(Date.parse(original.at)) || Date.parse(original.at)>Date.now()
+      || !Number.isFinite(original.size_weight) || !(original.size_weight>0 && original.size_weight<=1)
+      || original.size_weight!==expectedSize
+      || (['strategy-numerical-entries/2','strategy-numerical-entries/3'].includes(original.entry_version ?? '')
+        ? original.evidence?.model_position_size!==original.model_position_weight || original.evidence?.trade_size!==original.size_weight
+          || original.evidence?.sizing_basis!==(original.entry_version==='strategy-numerical-entries/3' ? 'observed_hypothetical_reference_not_viewer_order' : 'standing_counterfactual_reference_transition_not_viewer_order')
+          || original.action==='Sell' && !(typeof original.proposed_units==='number' && typeof original.reference_units==='number'
+            && original.proposed_units>0 && original.proposed_units<=original.reference_units)
+        : original.action!=='Buy' || original.evidence?.model_position_size!==original.size_weight)
+      || expectedOriginal && (original.at!==expectedOriginal.at || result.original_bytes_sha256!==expectedOriginal.bytesSha)) throw new Error('Original model recommendation identity differs.');
+  return result;
+};
+
+export interface DeskRecordedStrategyReference {
+  id: string; ticker: string; at: string; completed_at: string; snapshot_id: string;
+  strategy_identity: string; action: 'Buy' | 'Sell'; size_weight: number; valid_until: string; original_bytes_sha256: string;
+}
+
+export interface DeskRecordedStrategyPage {
+  schema: 'strategy-recorded-entries/1'; ticker: string; current_instruction: false; account_inputs: false;
+  recommendation_not_fill: true; strategy_identity: string | null; items: DeskRecordedStrategyReference[];
+  next_cursor: string | null; coverage_from: string | null; indexed_through: string | null;
+}
+
+// Discover original source-matched decisions after quote expiry without replacing them with refreshed instructions.
+export const getDeskRecordedStrategyRecommendations = async (userId: string, ticker: string, strategyIdentity: string, before?: string): Promise<DeskRecordedStrategyPage> => {
+  const query=new URLSearchParams({limit:'64'});
+  if (before) query.set('before',before);
+  const response=await authenticatedFetch(`${API_BASE_URL}/api/v1/market/${encodeURIComponent(userId)}/desk/strategy-simulation/${encodeURIComponent(ticker)}/recommendations?${query}`);
+  if (!response.ok) throw new Error('Recorded recommendation history unavailable.');
+  const value=await response.json() as DeskRecordedStrategyPage;
+  if (value.schema!=='strategy-recorded-entries/1' || value.ticker!==ticker || value.current_instruction!==false
+      || value.account_inputs!==false || value.recommendation_not_fill!==true || !Array.isArray(value.items) || value.items.length>64
+      || value.strategy_identity!==null && value.strategy_identity!==strategyIdentity
+      || value.items.length>0 && value.strategy_identity!==strategyIdentity
+      || value.next_cursor!==null && (typeof value.next_cursor!=='string' || !value.next_cursor || value.next_cursor.length>256)) throw new Error('Recorded recommendation history identity differs.');
+  const ids=new Set<string>();
+  for (const item of value.items) {
+    const at=Date.parse(item.at),completed=Date.parse(item.completed_at),until=Date.parse(item.valid_until);
+    if (item.ticker!==ticker || !['Buy','Sell'].includes(item.action) || item.strategy_identity!==strategyIdentity
+        || ![item.id,item.snapshot_id,item.original_bytes_sha256].every(hash=>/^[a-f0-9]{64}$/.test(hash))
+        || ids.has(item.id) || !Number.isFinite(at) || !Number.isFinite(completed) || !Number.isFinite(until)
+        || !(completed<=at && at<until && until<=completed+900000 && at<=Date.now())
+        || !Number.isFinite(item.size_weight) || !(item.size_weight>0 && item.size_weight<=1)) throw new Error('Original recorded decision identity differs.');
+    ids.add(item.id);
+  }
+  return value;
 };
 
 export interface DeskLiveModelDecision {

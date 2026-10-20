@@ -2,12 +2,13 @@
 
 import asyncio
 from datetime import UTC, datetime
+from pathlib import Path
 
 from fastapi import APIRouter, Depends, Response
 
 from backend.api.v1 import market
 from backend.core.auth import authorize_path_user
-from backend.market import deskrecord, model_allocation_view
+from backend.market import deskrecord, model_allocation_view, strategy_publication, strategy_entries, strategy_entry_history, strategy_position_view
 
 router = APIRouter(
     prefix="/market/{user_id}",
@@ -16,8 +17,21 @@ router = APIRouter(
 )
 
 
-# Read only the original record, never current accounts or personal inputs.
+# Read original publication and persisted model objectives without recovering, recalculating or accessing accounts.
 def allocation(root, now):
+    root = Path(root)
+    if (root / strategy_publication.DIRECTORY).exists():
+        try:
+            snapshot = strategy_publication.read(root, now)
+            positions = strategy_position_view.read(root, snapshot, now)
+            return {**snapshot, 'entry_assessment':strategy_entries.read(root,snapshot,now),
+                **({'reference_positions': positions} if positions is not None else {}),
+                'recorded_history_version':strategy_entry_history.PAGE_SCHEMA}
+        except (OSError, ValueError, TypeError, KeyError, AttributeError, OverflowError):
+            return {"version": strategy_publication.VERSION, "status": "unavailable",
+                    "policy": "grade-led-learned-sizing/1", "rows": {},
+                    "reason": "Independent strategy publication could not be verified",
+                    "as_of": now.isoformat(), "valid_until": None}
     try:
         record, _ = deskrecord.latest_pair(root)
     except (OSError, ValueError, TypeError):

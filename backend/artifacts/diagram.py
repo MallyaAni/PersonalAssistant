@@ -259,7 +259,20 @@ def _validate_source_limits(source: str) -> None:
         raise ValueError("Mermaid diagram must contain a body")
 
 
-# Validate and normalize a provider-produced Mermaid specification.
+# Convert already validated class type delimiters without changing inheritance arrows.
+def _renderable_class_types(source: str) -> str:
+    pattern = re.compile(
+        r"(?<![A-Za-z0-9_.])([A-Za-z_][A-Za-z0-9_.]*)"
+        r"<([A-Za-z_][A-Za-z0-9_.,~ ]*)>"
+    )
+    while True:
+        normalized = pattern.sub(r"\1~\2~", source)
+        if normalized == source:
+            return source
+        source = normalized
+
+
+# Validate active content before normalizing passive class types for the renderer.
 def validate_diagram_specification(payload: dict[str, Any]) -> DiagramSpecification:
     title = _validated_title(payload)
     source = _normalized_source(payload)
@@ -274,10 +287,13 @@ def validate_diagram_specification(payload: dict[str, Any]) -> DiagramSpecificat
     # slash, and any type list naming an element that can act on its own
     # (<script>, <a>, <img> ...) all survive the blanking and are caught
     # exactly as before.
-    if UNSAFE_MERMAID_PATTERN.search(_without_generic_type_parameters(source)):
+    source, diagram_type = _typed_source(payload, source)
+    scanned = _without_generic_type_parameters(source) if diagram_type == "class" else source
+    if UNSAFE_MERMAID_PATTERN.search(scanned):
         raise ValueError("Mermaid source contains unsupported active content")
 
-    source, diagram_type = _typed_source(payload, source)
+    if diagram_type == "class":
+        source = _renderable_class_types(source)
     _validate_source_limits(source)
     return DiagramSpecification(
         title=title,

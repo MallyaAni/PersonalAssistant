@@ -32,7 +32,6 @@ test('Stocks and chart details refresh assessments without personal guidance', a
     else if (path.includes('/chart/')) json = {ticker: 'CRWV', timeframe: 'daily', adjusted: true, bars: [{date: previous, open: 78, high: 79, low: 76, close: 77.81, volume: 100}, {date: session, open: 72, high: 72.4, low: 65.55, close: 66, volume: 100}], overlays: {}, levels: {}, entries: []}
     else if (path.includes('/live/read/')) json = {symbol: 'CRWV', now: .28, read: 'The current price is below falling averages. Support is 0.9% below; resistance is 29.7% above.', lines: {short: ['23.8% below the 21-day average'], medium: ['weekly trend down'], long: ['33.1% below the 200-day average']}, data_at: bar, read_at: at, stale: false}
     else if (path.includes('/earnings/')) json = {symbol: 'CRWV', read: null}
-    else if (path.includes('/live-model-history/')) json = {schema: 'live-model-historical-sizing/1', policy: 'grade-led-learned-sizing/1', ticker: 'CRWV', start: '2019-03-01', through: previous, starting_cash: 100000, starting_holdings: {}, counterfactual: true, real_orders: false, provenance: {cost_bps: 10}, decisions: [], trades: [], targets: []}
     else if (path.includes('/strategy-simulation/')) json = {schema: 'latest-strategy-simulation/1', ticker: 'CRWV', counterfactual: true, real_orders: false, decisions: [], trades: [], targets: [], provenance: {cost_bps: 10}}
     else errors.push(`Unexpected endpoint ${path}`)
     await route.fulfill({json})
@@ -41,7 +40,7 @@ test('Stocks and chart details refresh assessments without personal guidance', a
   await page.getByRole('textbox', {name: 'Find a stock'}).fill('CRWV')
   const cell = page.getByRole('cell', {name: 'CRWV displayed grade'})
   await expect(cell).toContainText('A+')
-  await expect(page.getByLabel('CRWV buy signal', {exact: true})).toHaveText('Unavailable')
+  await expect(page.getByLabel('CRWV action', {exact: true})).toHaveText('Unavailable')
   await expect(page.getByLabel('CRWV size', {exact: true})).toHaveCount(0)
   await page.getByRole('button', {name: 'CRWV', exact: true}).click()
   const assessment = page.getByRole('region', {name: 'Current assessment', exact: true})

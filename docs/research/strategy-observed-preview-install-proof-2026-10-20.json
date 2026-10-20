@@ -1,0 +1,849 @@
+{
+  "bundle_sha256": "110652ae70652bc37daaf375dec1b0953dc807f0f0d0f8482e6ca7801fe418fe",
+  "collector_argv": [
+    "ssh",
+    "-o",
+    "BatchMode=yes",
+    "-o",
+    "StrictHostKeyChecking=yes",
+    "-o",
+    "HostKeyAlgorithms=ssh-ed25519",
+    "-o",
+    "ConnectTimeout=10",
+    "animallya96@172.16.8.3",
+    "python3 -c 'from pathlib import Path\nfrom hashlib import sha256\nimport base64,json,sys,os\nroot=Path('\"'\"'/home/animallya96/scratch/strategy-observed-real-preview-20261020-v1'\"'\"');result={}\nfor name in json.load(sys.stdin):\n path=root/name;assert not path.is_symlink()\n with path.open('\"'\"'rb'\"'\"') as stream:\n  before=os.fstat(stream.fileno());assert 0<before.st_size<=1048576\n  raw=stream.read(1048577);after=os.fstat(stream.fileno())\n assert len(raw)==before.st_size and all(getattr(before,key)==getattr(after,key) for key in ('\"'\"'st_dev'\"'\"','\"'\"'st_ino'\"'\"','\"'\"'st_size'\"'\"','\"'\"'st_mtime_ns'\"'\"'))\n result[name]={'\"'\"'sha256'\"'\"':sha256(raw).hexdigest(),'\"'\"'bytes'\"'\"':len(raw),'\"'\"'raw'\"'\"':base64.b64encode(raw).decode()}\nprint(json.dumps(result))\n'"
+  ],
+  "observed_at": "2026-10-20T13:34:47.037985+00:00",
+  "old_preview_checkout_and_store_unchanged": true,
+  "original_94_histories_installed_not_simulated_again": true,
+  "production_activation": false,
+  "real_current_entry": "UNVERIFIED_before_natural_0945",
+  "retained": {
+    "bundle.json": {
+      "bytes": 10778,
+      "content": {
+        "config_json": "{\n  \"cost_bps\": 10,\n  \"model_directory\": \"model\",\n  \"model_receipt_sha256\": \"858163d5e414ee658f28a10532a934528c72fe98fd1cb685e655d6d3a2c75825\",\n  \"policy\": \"grade-led-learned-sizing/1\",\n  \"release_receipt_sha256\": \"1aff9dd3743ea9356dfa5d09732e6257b7531365b7e455592d490dd50add18b4\",\n  \"risk_directory\": \"risk\",\n  \"risk_receipt_sha256\": \"79b33d54253001ba0f907ae0b41f49c81ae436800e43e05b75cd5f58bb653cfe\",\n  \"timing_config_sha256\": \"d03339a3ad4b590ef8ed4205375d39d634df12a6fb49e290ab5b0f3642ea679a\"\n}",
+        "evidence_json": "{\n  \"authorization\": \"Human approved grade direction with learned sizing, visible blocked signals and separate model-only research.\",\n  \"comparative_performance\": \"UNVERIFIED; no superiority claim\",\n  \"contract\": \"grade-led-learned-sizing/1\",\n  \"fresh_ordinary_paper_acceptance\": \"UNVERIFIED; next normal nightly and following real session required\",\n  \"model_publications_unchanged\": true,\n  \"no_new_fits\": true,\n  \"original_evidence_sha256\": \"d480d5deb44f4983c34cf616ca89c6760039a69376aa7b6c5a2e806ccee80a2a\",\n  \"source_revision\": \"09688defba94fa3260f6ecc85c69fdf2dcbcd2e7\",\n  \"source_sha256\": {\n    \"backend/agents/trading/desk/event_execution.py\": \"76e49243ffb7fff8bb989df2c384ee1f2f0dcc7885c9421f98a986eda667202f\",\n    \"backend/agents/trading/desk/event_risk.py\": \"34462a0ad3569022c90a3d7898b8f5a43ba053a38d2b7e44a63bc18e54de8973\",\n    \"backend/agents/trading/desk/funded_execution.py\": \"6b913621d11ad81b78394c1f3eb9e4aef8e52ed6585b0a0716b3b45a9d6f909c\",\n    \"backend/agents/trading/desk/intraday_orders.py\": \"ca8c236746441e204f36a263e972104d48d442538ea189fd4cad9d4ccf9f0f1c\",\n    \"backend/agents/trading/desk/nightly_plan.py\": \"9fe2c223f24086a8a978cf3d373f39f24e3f6dc810a624a5e8773cc3ae91a7ca\",\n    \"backend/agents/trading/desk/paper.py\": \"e2eef2f0270497d9a5944212d6581b7ebf503d2675687a172e76690fcc7bc3c3\",\n    \"backend/api/v1/market.py\": \"0647fb9b2986451676b9ab9fcc730d9263b89b6eb4ab32e3c25c6edda1377882\",\n    \"backend/cli/market_daily.py\": \"0db03a31af2400d777d3a5b46b8fda96dbb3cc4ec32d8a39bee41be362afe819\",\n    \"backend/market/adaptive_growth_policy.py\": \"35a2d6a07276096acee78078886c9aefe02051f2b746a8739442814920114e34\",\n    \"backend/market/alpaca_trading.py\": \"105c5800d90b7f17b142d1678a781ecbf116ff89575466bec5e3c553eb24c3e2\",\n    \"backend/market/decision_view.py\": \"8315ec2b8f647dc02a46bec3d2a77a15b2d31b9777baed1ec5aa3aacdea97aca\",\n    \"backend/market/entry_timing.py\": \"f23d286c0d613d99620ce4a4ea8aa889be88ca224c5fbfc945b4360eae944a88\",\n    \"backend/market/forward_arithmetic.py\": \"9617f9dc3252d3ce48891eb800de1dfc135383a88cb3f15b377c480d60d8d882\",\n    \"backend/market/forward_execution.py\": \"62fa03e76d6f186a5084afe7ed1087891ce06f1d4b74040c6491f9c0b32ff295\",\n    \"backend/market/forward_market_evidence.py\": \"737f14c2ab3b4c12501d8707184871dd7c1f84287d4b43d182e2add0a02490a2\",\n    \"backend/market/forward_probability_timing.py\": \"0103852d53be711fcf4eeec80f74d707f42ef2ec86599ff72a305376d5632a92\",\n    \"backend/market/grade_led_policy.py\": \"4dec4ba263efa21b3a534b826b594d57e1a8cb99097e73ea53e8fbb0e96dfd66\",\n    \"backend/market/holding_risk_bank.py\": \"4024753161e21521309e265c5e96a70de94a75e81a8f151a4e59fe659c7f6158\",\n    \"backend/market/joint_funded_policy.py\": \"5b5b96c685f78f867bb590f00f83cdbaca88c1de45681ca178f0c5b84d6bb339\",\n    \"backend/market/learned_holding_transition.py\": \"c271f6ff649058d43aec226789e62cc08dc41bcc177755f0d17be87f4abfeb55\",\n    \"backend/market/learned_live_holding.py\": \"992d9efe47a73afe7077c9dd3d377035daa1b4df66792d8289a9de688cae022f\",\n    \"backend/market/learned_live_timing.py\": \"80223f1fe3a6ea81318cbb64a663b3805bfead1e8c2190aa176234ef294ccb7f\",\n    \"backend/market/learned_order_observation.py\": \"e5ab7151ab010137fe682a73da98d19496331176e1fc7c67b33827e6b63839ff\",\n    \"backend/market/learned_personal_guidance.py\": \"37e1fadba7cfb85d05464b1848d0e268015d43c53f33dd7481a6fed1ca999721\",\n    \"backend/market/live_probability_timing.py\": \"3fc9da7ae628e3fdd98388bbaa0e08bbaf5b8c36da78fb7c0e0efdcab63c1721\",\n    \"backend/market/market_conditioned_holding.py\": \"e2de45ca5b79ad1547299b131deb23e898aa7a9c33c13e7ec28bc4210d4950e4\",\n    \"backend/market/personal_history.py\": \"8f60457e598f0cf2c234739f9754a61ccc88b79e8907aaf53cd22c661177746a\",\n    \"backend/market/sequential_shadow_context.py\": \"5af947b74af12de1914b192c41d243494bd89ab90d5329564d86c31ff9c40a92\",\n    \"docs/research/grade-led-sizing-contract-2026-10-13.md\": \"51e4f718ed73a29188cb134a342615927a48c12f4647b30307cb996efd1393c6\",\n    \"docs/research/learned-held-transition-2026-10-07.md\": \"f2669e1a40f74f6ccccd3cfdfae6f299a1bd1d416ae916dc622d2fa61837218a\"\n  },\n  \"targeted_tests\": {\n    \"backend\": 226,\n    \"browser\": 8,\n    \"skipped\": 0\n  }\n}",
+        "predecessor": {
+          "config_sha256": "a237bfe4e21db38a0fabf8d31a2c78542b8bff58a5d26895ac98f2387c144f7c",
+          "evidence_sha256": "4d6af1bb755243bdce9a5c74477ae43cf91a72cbe7fa9e2985d13bfd5d3cacb9",
+          "release_sha256": "fc3259718eb55daabc748120aa1c3791e87ee02b6f536762afbe2e16b8686c0c"
+        },
+        "release_json": "{\n  \"approved\": true,\n  \"approved_at\": \"2026-10-20T13:24:42.572642+00:00\",\n  \"evidence_sha256\": \"4d6af1bb755243bdce9a5c74477ae43cf91a72cbe7fa9e2985d13bfd5d3cacb9\",\n  \"policy\": \"grade-led-learned-sizing/1\",\n  \"schema\": \"learned-holding-release/1\",\n  \"source_sha256\": {\n    \"backend/agents/trading/desk/event_execution.py\": \"76e49243ffb7fff8bb989df2c384ee1f2f0dcc7885c9421f98a986eda667202f\",\n    \"backend/agents/trading/desk/event_risk.py\": \"34462a0ad3569022c90a3d7898b8f5a43ba053a38d2b7e44a63bc18e54de8973\",\n    \"backend/agents/trading/desk/funded_execution.py\": \"6b913621d11ad81b78394c1f3eb9e4aef8e52ed6585b0a0716b3b45a9d6f909c\",\n    \"backend/agents/trading/desk/intraday_orders.py\": \"ca8c236746441e204f36a263e972104d48d442538ea189fd4cad9d4ccf9f0f1c\",\n    \"backend/agents/trading/desk/nightly_plan.py\": \"9fe2c223f24086a8a978cf3d373f39f24e3f6dc810a624a5e8773cc3ae91a7ca\",\n    \"backend/agents/trading/desk/paper.py\": \"1a96dd96c254abb4799c6f14cb99938c65fb2907d6777fbc4b1194bfaa851bc4\",\n    \"backend/api/v1/market.py\": \"fb35aa6865890b8c75c3b354fcb65b24a2dea3454efb892eaa88f486cde4ba88\",\n    \"backend/cli/market_daily.py\": \"70201cfb771fb873a75b1356654a5dce9ab1b0900094ddcc23bcb6da56f1549b\",\n    \"backend/market/adaptive_growth_policy.py\": \"35a2d6a07276096acee78078886c9aefe02051f2b746a8739442814920114e34\",\n    \"backend/market/alpaca_trading.py\": \"105c5800d90b7f17b142d1678a781ecbf116ff89575466bec5e3c553eb24c3e2\",\n    \"backend/market/decision_view.py\": \"8315ec2b8f647dc02a46bec3d2a77a15b2d31b9777baed1ec5aa3aacdea97aca\",\n    \"backend/market/entry_timing.py\": \"f23d286c0d613d99620ce4a4ea8aa889be88ca224c5fbfc945b4360eae944a88\",\n    \"backend/market/forward_arithmetic.py\": \"9617f9dc3252d3ce48891eb800de1dfc135383a88cb3f15b377c480d60d8d882\",\n    \"backend/market/forward_execution.py\": \"62fa03e76d6f186a5084afe7ed1087891ce06f1d4b74040c6491f9c0b32ff295\",\n    \"backend/market/forward_market_evidence.py\": \"737f14c2ab3b4c12501d8707184871dd7c1f84287d4b43d182e2add0a02490a2\",\n    \"backend/market/forward_probability_timing.py\": \"0103852d53be711fcf4eeec80f74d707f42ef2ec86599ff72a305376d5632a92\",\n    \"backend/market/grade_led_policy.py\": \"4dec4ba263efa21b3a534b826b594d57e1a8cb99097e73ea53e8fbb0e96dfd66\",\n    \"backend/market/holding_risk_bank.py\": \"4024753161e21521309e265c5e96a70de94a75e81a8f151a4e59fe659c7f6158\",\n    \"backend/market/joint_funded_policy.py\": \"5b5b96c685f78f867bb590f00f83cdbaca88c1de45681ca178f0c5b84d6bb339\",\n    \"backend/market/learned_holding_transition.py\": \"c271f6ff649058d43aec226789e62cc08dc41bcc177755f0d17be87f4abfeb55\",\n    \"backend/market/learned_live_holding.py\": \"9229f33542dcd4dc65afd6a3d3abf6fd9ae386813dad9d37ee9ed17d3a978261\",\n    \"backend/market/learned_live_timing.py\": \"80223f1fe3a6ea81318cbb64a663b3805bfead1e8c2190aa176234ef294ccb7f\",\n    \"backend/market/learned_order_observation.py\": \"e5ab7151ab010137fe682a73da98d19496331176e1fc7c67b33827e6b63839ff\",\n    \"backend/market/learned_personal_guidance.py\": \"37e1fadba7cfb85d05464b1848d0e268015d43c53f33dd7481a6fed1ca999721\",\n    \"backend/market/live_model_decision.py\": \"06bd5150ec8cdfce5399e2ce1bc96f9a07c43231fc2b47fb6dbf5b1ea6f89aea\",\n    \"backend/market/live_probability_timing.py\": \"3fc9da7ae628e3fdd98388bbaa0e08bbaf5b8c36da78fb7c0e0efdcab63c1721\",\n    \"backend/market/market_conditioned_holding.py\": \"e2de45ca5b79ad1547299b131deb23e898aa7a9c33c13e7ec28bc4210d4950e4\",\n    \"backend/market/personal_history.py\": \"8f60457e598f0cf2c234739f9754a61ccc88b79e8907aaf53cd22c661177746a\",\n    \"backend/market/sequential_shadow_context.py\": \"5af947b74af12de1914b192c41d243494bd89ab90d5329564d86c31ff9c40a92\",\n    \"backend/market/strategy_entries.py\": \"9c35896f9e0e19bd42e746fc65a0b9f4c46c55e01cd0a28bfee275b8ec9a532e\",\n    \"backend/market/strategy_entry_context.py\": \"3aade712c9bcdbf5b09759cdb700c25c9f6e8e731cd6a27d4364c4f93ea2176f\",\n    \"backend/market/strategy_history_installation.py\": \"33c96116cb2c516c9d9e629b5d899e0e5637daba239ad858d8c21bfef1042cda\",\n    \"backend/market/strategy_history_publication.py\": \"bd3d1cab411863fa0d098df0269e8a10a139fe16e92c42674cfff58a8591d17b\",\n    \"backend/market/strategy_model_allocation.py\": \"4b7521147199b3c115f5b78c448795a0233ef4cd2aef5401ad3f418bfee994bf\",\n    \"backend/market/strategy_model_history.py\": \"7a7bfb2e200a02cdcba61ed2c92d7c14cf6fc8fd7c0de6a3c6c394c0ff0f03a2\",\n    \"backend/market/strategy_publication.py\": \"9272e399f94eac96e365298465e8840c384552f7769d98228fdc5814933f95f0\",\n    \"backend/market/strategy_reference_book.py\": \"94522bdf61d4e4075e33b831b25664e81e6f6b830c7821b523454715433e3355\",\n    \"backend/market/strategy_reference_entries.py\": \"522d47016ac934d2c29b5f0801743fb33c8efc66a4b0db22c18f0125ba8dab85\",\n    \"backend/market/strategy_reference_transition.py\": \"daf1704651cc6058eab147706874e1acdcb4a1df712c58e0c500bbdcc33865f2\",\n    \"docs/research/grade-led-sizing-contract-2026-10-13.md\": \"51e4f718ed73a29188cb134a342615927a48c12f4647b30307cb996efd1393c6\",\n    \"docs/research/learned-held-transition-2026-10-07.md\": \"f2669e1a40f74f6ccccd3cfdfae6f299a1bd1d416ae916dc622d2fa61837218a\"\n  }\n}",
+        "review_path": "docs/research/strategy-observed-source-review-2026-10-20.json",
+        "review_sha256": "8725e9c74e8c2e9cd569a0b41d640099298d7a379f1a297660854770dca41ae9",
+        "schema": "learned-holding-approval-bundle/1",
+        "target_revision": "2b5834ca8fc1beb9d1d21b0da9da8965386b9cbb"
+      },
+      "sha256": "110652ae70652bc37daaf375dec1b0953dc807f0f0d0f8482e6ca7801fe418fe"
+    },
+    "cid": {
+      "bytes": 64,
+      "content": "c1958827c59ea930a67fbe0fb43370ac74f02d1b8091c14d109addb1d5e0f17f",
+      "sha256": "c0bc6193c6cf35e84e107f2124d5af026f4fc10e1c95f1967866c2429913d43c"
+    },
+    "create-argv.json": {
+      "bytes": 1197,
+      "content": [
+        "docker",
+        "create",
+        "--name",
+        "strategy-observed-real-preview-20261020-v1",
+        "--read-only",
+        "--user",
+        "1000:1000",
+        "--network",
+        "none",
+        "--cap-drop",
+        "ALL",
+        "--security-opt",
+        "no-new-privileges",
+        "--cpus",
+        "1",
+        "--memory",
+        "512m",
+        "--memory-swap",
+        "512m",
+        "--pids-limit",
+        "32",
+        "--log-driver",
+        "none",
+        "--tmpfs",
+        "/tmp:rw,nosuid,nodev,size=64m",
+        "--workdir",
+        "/app",
+        "-e",
+        "PYTHONPATH=/app",
+        "-e",
+        "ANIOS_TEST_MODE=1",
+        "-e",
+        "PYTHONDONTWRITEBYTECODE=1",
+        "-e",
+        "OPENBLAS_NUM_THREADS=1",
+        "-e",
+        "OMP_NUM_THREADS=1",
+        "--mount",
+        "type=bind,src=/home/animallya96/scratch/strategy-observed-real-preview-20261020-v1/checkout,dst=/app,readonly",
+        "--mount",
+        "type=bind,src=/home/animallya96/deploy/anios/.git,dst=/home/animallya96/deploy/anios/.git,readonly",
+        "--mount",
+        "type=bind,src=/home/animallya96/scratch/strategy-observed-real-preview-20261020-v1,dst=/input,readonly",
+        "--mount",
+        "type=bind,src=/home/animallya96/scratch/strategy-observed-real-preview-20261020-v1/out,dst=/out",
+        "--mount",
+        "type=bind,src=/home/animallya96/scratch/strategy-observed-real-preview-20261020-v1/store,dst=/view",
+        "sha256:136ebb46b7912f20472a375a6b29f6efec4cf2fdca13d56cbffb86a1be697db2",
+        "python",
+        "-B",
+        "/input/run.py"
+      ],
+      "sha256": "3b072da10b2815fb2f17bc6e56b8983382cbf03c57332bdd014642a52d99be09"
+    },
+    "inspect-after.json": {
+      "bytes": 7151,
+      "content": {
+        "AppArmorProfile": "docker-default",
+        "Args": [
+          "-B",
+          "/input/run.py"
+        ],
+        "Config": {
+          "AttachStderr": true,
+          "AttachStdin": false,
+          "AttachStdout": true,
+          "Cmd": [
+            "python",
+            "-B",
+            "/input/run.py"
+          ],
+          "Domainname": "",
+          "Entrypoint": null,
+          "Env": [
+            "ANIOS_TEST_MODE=1",
+            "PYTHONDONTWRITEBYTECODE=1",
+            "OPENBLAS_NUM_THREADS=1",
+            "OMP_NUM_THREADS=1",
+            "PYTHONPATH=/app",
+            "PATH=/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+            "LANG=C.UTF-8",
+            "GPG_KEY=7169605F62C751356D054A26A821E680E5FA6305",
+            "PYTHON_VERSION=3.12.14",
+            "PYTHON_SHA256=5c8462af5790baf43a321a1559dbe0db06d1be4300fb85fb53c40060668e548a",
+            "PYTHONUNBUFFERED=1",
+            "OPENSSL_CONF=/etc/ssl/classic-tls-groups.cnf"
+          ],
+          "Hostname": "c1958827c59e",
+          "Image": "sha256:136ebb46b7912f20472a375a6b29f6efec4cf2fdca13d56cbffb86a1be697db2",
+          "Labels": {
+            "com.docker.compose.project": "anios",
+            "com.docker.compose.service": "functional-tests",
+            "com.docker.compose.version": "5.0.2"
+          },
+          "OpenStdin": false,
+          "StdinOnce": false,
+          "Tty": false,
+          "User": "1000:1000",
+          "Volumes": null,
+          "WorkingDir": "/app"
+        },
+        "Created": "2026-10-20T13:29:47.945535854Z",
+        "Driver": "overlay2",
+        "ExecIDs": null,
+        "GraphDriver": {
+          "Data": {
+            "ID": "c1958827c59ea930a67fbe0fb43370ac74f02d1b8091c14d109addb1d5e0f17f",
+            "LowerDir": "/var/lib/docker/overlay2/a68c76301a938b8eb26b3d712bb64d763083ea670c6a80b34f1945e210ad1cf5-init/diff:/var/lib/docker/overlay2/dmzlfsi0s42edfbfgtets622z/diff:/var/lib/docker/overlay2/w97jkcp8lemp6w4z7bvdxfz9a/diff:/var/lib/docker/overlay2/w8ezofh5fqyferylgmb3paoqq/diff:/var/lib/docker/overlay2/kuhbevynrq254am1q4zslmis0/diff:/var/lib/docker/overlay2/xe91ikvftkw9q6liyxhqwewi6/diff:/var/lib/docker/overlay2/rgp12b0jxij29dolrbd2g57as/diff:/var/lib/docker/overlay2/v3ytc1hlxf2ei16nikiq5iso6/diff:/var/lib/docker/overlay2/e3b34453d765aa0fd2300759d0d053b84eeedc8e26e8298630edc1e9149d1d10/diff:/var/lib/docker/overlay2/f1dd94ef7ac12a89db1b82d051fddb99b50532757ade333584eb94c5d77cb4fd/diff:/var/lib/docker/overlay2/deee9142730a4f9efd89dd924308291874bf451720fb0d00193f6b89fd414b98/diff:/var/lib/docker/overlay2/da0bbfbef6a4bbea221d39a22b0d1afa21bd28e7824afb3b30f8ff28791f9c7e/diff",
+            "MergedDir": "/var/lib/docker/overlay2/a68c76301a938b8eb26b3d712bb64d763083ea670c6a80b34f1945e210ad1cf5/merged",
+            "UpperDir": "/var/lib/docker/overlay2/a68c76301a938b8eb26b3d712bb64d763083ea670c6a80b34f1945e210ad1cf5/diff",
+            "WorkDir": "/var/lib/docker/overlay2/a68c76301a938b8eb26b3d712bb64d763083ea670c6a80b34f1945e210ad1cf5/work"
+          },
+          "Name": "overlay2"
+        },
+        "HostConfig": {
+          "AutoRemove": false,
+          "Binds": null,
+          "BlkioDeviceReadBps": [],
+          "BlkioDeviceReadIOps": [],
+          "BlkioDeviceWriteBps": [],
+          "BlkioDeviceWriteIOps": [],
+          "BlkioWeight": 0,
+          "BlkioWeightDevice": [],
+          "CapAdd": null,
+          "CapDrop": [
+            "ALL"
+          ],
+          "Cgroup": "",
+          "CgroupParent": "",
+          "CgroupnsMode": "private",
+          "ConsoleSize": [
+            0,
+            0
+          ],
+          "ContainerIDFile": "",
+          "CpuCount": 0,
+          "CpuPercent": 0,
+          "CpuPeriod": 0,
+          "CpuQuota": 0,
+          "CpuRealtimePeriod": 0,
+          "CpuRealtimeRuntime": 0,
+          "CpuShares": 0,
+          "CpusetCpus": "",
+          "CpusetMems": "",
+          "DeviceCgroupRules": null,
+          "DeviceRequests": null,
+          "Devices": [],
+          "Dns": null,
+          "DnsOptions": [],
+          "DnsSearch": [],
+          "ExtraHosts": null,
+          "GroupAdd": null,
+          "IOMaximumBandwidth": 0,
+          "IOMaximumIOps": 0,
+          "IpcMode": "private",
+          "Isolation": "",
+          "Links": null,
+          "LogConfig": {
+            "Config": {},
+            "Type": "none"
+          },
+          "MaskedPaths": [
+            "/proc/acpi",
+            "/proc/asound",
+            "/proc/interrupts",
+            "/proc/kcore",
+            "/proc/keys",
+            "/proc/latency_stats",
+            "/proc/sched_debug",
+            "/proc/scsi",
+            "/proc/timer_list",
+            "/proc/timer_stats",
+            "/sys/devices/virtual/powercap",
+            "/sys/firmware"
+          ],
+          "Memory": 536870912,
+          "MemoryReservation": 0,
+          "MemorySwap": 536870912,
+          "MemorySwappiness": null,
+          "Mounts": [
+            {
+              "ReadOnly": true,
+              "Source": "/home/animallya96/scratch/strategy-observed-real-preview-20261020-v1/checkout",
+              "Target": "/app",
+              "Type": "bind"
+            },
+            {
+              "ReadOnly": true,
+              "Source": "/home/animallya96/deploy/anios/.git",
+              "Target": "/home/animallya96/deploy/anios/.git",
+              "Type": "bind"
+            },
+            {
+              "ReadOnly": true,
+              "Source": "/home/animallya96/scratch/strategy-observed-real-preview-20261020-v1",
+              "Target": "/input",
+              "Type": "bind"
+            },
+            {
+              "Source": "/home/animallya96/scratch/strategy-observed-real-preview-20261020-v1/out",
+              "Target": "/out",
+              "Type": "bind"
+            },
+            {
+              "Source": "/home/animallya96/scratch/strategy-observed-real-preview-20261020-v1/store",
+              "Target": "/view",
+              "Type": "bind"
+            }
+          ],
+          "NanoCpus": 1000000000,
+          "NetworkMode": "none",
+          "OomKillDisable": null,
+          "OomScoreAdj": 0,
+          "PidMode": "",
+          "PidsLimit": 32,
+          "PortBindings": {},
+          "Privileged": false,
+          "PublishAllPorts": false,
+          "ReadonlyPaths": [
+            "/proc/bus",
+            "/proc/fs",
+            "/proc/irq",
+            "/proc/sys",
+            "/proc/sysrq-trigger"
+          ],
+          "ReadonlyRootfs": true,
+          "RestartPolicy": {
+            "MaximumRetryCount": 0,
+            "Name": "no"
+          },
+          "Runtime": "runc",
+          "SecurityOpt": [
+            "no-new-privileges"
+          ],
+          "ShmSize": 67108864,
+          "Tmpfs": {
+            "/tmp": "rw,nosuid,nodev,size=64m"
+          },
+          "UTSMode": "",
+          "Ulimits": [],
+          "UsernsMode": "",
+          "VolumeDriver": "",
+          "VolumesFrom": null
+        },
+        "HostnamePath": "/var/lib/docker/containers/c1958827c59ea930a67fbe0fb43370ac74f02d1b8091c14d109addb1d5e0f17f/hostname",
+        "HostsPath": "/var/lib/docker/containers/c1958827c59ea930a67fbe0fb43370ac74f02d1b8091c14d109addb1d5e0f17f/hosts",
+        "Id": "c1958827c59ea930a67fbe0fb43370ac74f02d1b8091c14d109addb1d5e0f17f",
+        "Image": "sha256:136ebb46b7912f20472a375a6b29f6efec4cf2fdca13d56cbffb86a1be697db2",
+        "LogPath": "",
+        "MountLabel": "",
+        "Mounts": [
+          {
+            "Destination": "/view",
+            "Mode": "",
+            "Propagation": "rprivate",
+            "RW": true,
+            "Source": "/home/animallya96/scratch/strategy-observed-real-preview-20261020-v1/store",
+            "Type": "bind"
+          },
+          {
+            "Destination": "/app",
+            "Mode": "",
+            "Propagation": "rprivate",
+            "RW": false,
+            "Source": "/home/animallya96/scratch/strategy-observed-real-preview-20261020-v1/checkout",
+            "Type": "bind"
+          },
+          {
+            "Destination": "/home/animallya96/deploy/anios/.git",
+            "Mode": "",
+            "Propagation": "rprivate",
+            "RW": false,
+            "Source": "/home/animallya96/deploy/anios/.git",
+            "Type": "bind"
+          },
+          {
+            "Destination": "/input",
+            "Mode": "",
+            "Propagation": "rprivate",
+            "RW": false,
+            "Source": "/home/animallya96/scratch/strategy-observed-real-preview-20261020-v1",
+            "Type": "bind"
+          },
+          {
+            "Destination": "/out",
+            "Mode": "",
+            "Propagation": "rprivate",
+            "RW": true,
+            "Source": "/home/animallya96/scratch/strategy-observed-real-preview-20261020-v1/out",
+            "Type": "bind"
+          }
+        ],
+        "Name": "/strategy-observed-real-preview-20261020-v1",
+        "NetworkSettings": {
+          "Networks": {
+            "none": {
+              "Aliases": null,
+              "DNSNames": null,
+              "DriverOpts": null,
+              "EndpointID": "",
+              "Gateway": "",
+              "GlobalIPv6Address": "",
+              "GlobalIPv6PrefixLen": 0,
+              "GwPriority": 0,
+              "IPAMConfig": null,
+              "IPAddress": "",
+              "IPPrefixLen": 0,
+              "IPv6Gateway": "",
+              "Links": null,
+              "MacAddress": "",
+              "NetworkID": "2d6b0719b5723333142b371c446039c390468970df8f8c4692d677a6ab4579b4"
+            }
+          },
+          "Ports": {},
+          "SandboxID": "",
+          "SandboxKey": ""
+        },
+        "Path": "python",
+        "Platform": "linux",
+        "ProcessLabel": "",
+        "ResolvConfPath": "/var/lib/docker/containers/c1958827c59ea930a67fbe0fb43370ac74f02d1b8091c14d109addb1d5e0f17f/resolv.conf",
+        "RestartCount": 0,
+        "State": {
+          "Dead": false,
+          "Error": "",
+          "ExitCode": 0,
+          "FinishedAt": "2026-10-20T13:29:55.018846632Z",
+          "OOMKilled": false,
+          "Paused": false,
+          "Pid": 0,
+          "Restarting": false,
+          "Running": false,
+          "StartedAt": "2026-10-20T13:29:48.11242652Z",
+          "Status": "exited"
+        }
+      },
+      "sha256": "688c26fd70aad7ad35980bc83f53dc6bf57df4f1e39b0b18e2344a5f76ad7080"
+    },
+    "inspect-before.json": {
+      "bytes": 10679,
+      "content": [
+        {
+          "AppArmorProfile": "",
+          "Args": [
+            "-B",
+            "/input/run.py"
+          ],
+          "Config": {
+            "AttachStderr": true,
+            "AttachStdin": false,
+            "AttachStdout": true,
+            "Cmd": [
+              "python",
+              "-B",
+              "/input/run.py"
+            ],
+            "Domainname": "",
+            "Entrypoint": null,
+            "Env": [
+              "ANIOS_TEST_MODE=1",
+              "PYTHONDONTWRITEBYTECODE=1",
+              "OPENBLAS_NUM_THREADS=1",
+              "OMP_NUM_THREADS=1",
+              "PYTHONPATH=/app",
+              "PATH=/usr/local/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
+              "LANG=C.UTF-8",
+              "GPG_KEY=7169605F62C751356D054A26A821E680E5FA6305",
+              "PYTHON_VERSION=3.12.14",
+              "PYTHON_SHA256=5c8462af5790baf43a321a1559dbe0db06d1be4300fb85fb53c40060668e548a",
+              "PYTHONUNBUFFERED=1",
+              "OPENSSL_CONF=/etc/ssl/classic-tls-groups.cnf"
+            ],
+            "Hostname": "c1958827c59e",
+            "Image": "sha256:136ebb46b7912f20472a375a6b29f6efec4cf2fdca13d56cbffb86a1be697db2",
+            "Labels": {
+              "com.docker.compose.project": "anios",
+              "com.docker.compose.service": "functional-tests",
+              "com.docker.compose.version": "5.0.2"
+            },
+            "OpenStdin": false,
+            "StdinOnce": false,
+            "Tty": false,
+            "User": "1000:1000",
+            "Volumes": null,
+            "WorkingDir": "/app"
+          },
+          "Created": "2026-10-20T13:29:47.945535854Z",
+          "Driver": "overlay2",
+          "ExecIDs": null,
+          "GraphDriver": {
+            "Data": {
+              "ID": "c1958827c59ea930a67fbe0fb43370ac74f02d1b8091c14d109addb1d5e0f17f",
+              "LowerDir": "/var/lib/docker/overlay2/a68c76301a938b8eb26b3d712bb64d763083ea670c6a80b34f1945e210ad1cf5-init/diff:/var/lib/docker/overlay2/dmzlfsi0s42edfbfgtets622z/diff:/var/lib/docker/overlay2/w97jkcp8lemp6w4z7bvdxfz9a/diff:/var/lib/docker/overlay2/w8ezofh5fqyferylgmb3paoqq/diff:/var/lib/docker/overlay2/kuhbevynrq254am1q4zslmis0/diff:/var/lib/docker/overlay2/xe91ikvftkw9q6liyxhqwewi6/diff:/var/lib/docker/overlay2/rgp12b0jxij29dolrbd2g57as/diff:/var/lib/docker/overlay2/v3ytc1hlxf2ei16nikiq5iso6/diff:/var/lib/docker/overlay2/e3b34453d765aa0fd2300759d0d053b84eeedc8e26e8298630edc1e9149d1d10/diff:/var/lib/docker/overlay2/f1dd94ef7ac12a89db1b82d051fddb99b50532757ade333584eb94c5d77cb4fd/diff:/var/lib/docker/overlay2/deee9142730a4f9efd89dd924308291874bf451720fb0d00193f6b89fd414b98/diff:/var/lib/docker/overlay2/da0bbfbef6a4bbea221d39a22b0d1afa21bd28e7824afb3b30f8ff28791f9c7e/diff",
+              "MergedDir": "/var/lib/docker/overlay2/a68c76301a938b8eb26b3d712bb64d763083ea670c6a80b34f1945e210ad1cf5/merged",
+              "UpperDir": "/var/lib/docker/overlay2/a68c76301a938b8eb26b3d712bb64d763083ea670c6a80b34f1945e210ad1cf5/diff",
+              "WorkDir": "/var/lib/docker/overlay2/a68c76301a938b8eb26b3d712bb64d763083ea670c6a80b34f1945e210ad1cf5/work"
+            },
+            "Name": "overlay2"
+          },
+          "HostConfig": {
+            "AutoRemove": false,
+            "Binds": null,
+            "BlkioDeviceReadBps": [],
+            "BlkioDeviceReadIOps": [],
+            "BlkioDeviceWriteBps": [],
+            "BlkioDeviceWriteIOps": [],
+            "BlkioWeight": 0,
+            "BlkioWeightDevice": [],
+            "CapAdd": null,
+            "CapDrop": [
+              "ALL"
+            ],
+            "Cgroup": "",
+            "CgroupParent": "",
+            "CgroupnsMode": "private",
+            "ConsoleSize": [
+              0,
+              0
+            ],
+            "ContainerIDFile": "",
+            "CpuCount": 0,
+            "CpuPercent": 0,
+            "CpuPeriod": 0,
+            "CpuQuota": 0,
+            "CpuRealtimePeriod": 0,
+            "CpuRealtimeRuntime": 0,
+            "CpuShares": 0,
+            "CpusetCpus": "",
+            "CpusetMems": "",
+            "DeviceCgroupRules": null,
+            "DeviceRequests": null,
+            "Devices": [],
+            "Dns": null,
+            "DnsOptions": [],
+            "DnsSearch": [],
+            "ExtraHosts": null,
+            "GroupAdd": null,
+            "IOMaximumBandwidth": 0,
+            "IOMaximumIOps": 0,
+            "IpcMode": "private",
+            "Isolation": "",
+            "Links": null,
+            "LogConfig": {
+              "Config": {},
+              "Type": "none"
+            },
+            "MaskedPaths": [
+              "/proc/acpi",
+              "/proc/asound",
+              "/proc/interrupts",
+              "/proc/kcore",
+              "/proc/keys",
+              "/proc/latency_stats",
+              "/proc/sched_debug",
+              "/proc/scsi",
+              "/proc/timer_list",
+              "/proc/timer_stats",
+              "/sys/devices/virtual/powercap",
+              "/sys/firmware"
+            ],
+            "Memory": 536870912,
+            "MemoryReservation": 0,
+            "MemorySwap": 536870912,
+            "MemorySwappiness": null,
+            "Mounts": [
+              {
+                "ReadOnly": true,
+                "Source": "/home/animallya96/scratch/strategy-observed-real-preview-20261020-v1/checkout",
+                "Target": "/app",
+                "Type": "bind"
+              },
+              {
+                "ReadOnly": true,
+                "Source": "/home/animallya96/deploy/anios/.git",
+                "Target": "/home/animallya96/deploy/anios/.git",
+                "Type": "bind"
+              },
+              {
+                "ReadOnly": true,
+                "Source": "/home/animallya96/scratch/strategy-observed-real-preview-20261020-v1",
+                "Target": "/input",
+                "Type": "bind"
+              },
+              {
+                "Source": "/home/animallya96/scratch/strategy-observed-real-preview-20261020-v1/out",
+                "Target": "/out",
+                "Type": "bind"
+              },
+              {
+                "Source": "/home/animallya96/scratch/strategy-observed-real-preview-20261020-v1/store",
+                "Target": "/view",
+                "Type": "bind"
+              }
+            ],
+            "NanoCpus": 1000000000,
+            "NetworkMode": "none",
+            "OomKillDisable": false,
+            "OomScoreAdj": 0,
+            "PidMode": "",
+            "PidsLimit": 32,
+            "PortBindings": {},
+            "Privileged": false,
+            "PublishAllPorts": false,
+            "ReadonlyPaths": [
+              "/proc/bus",
+              "/proc/fs",
+              "/proc/irq",
+              "/proc/sys",
+              "/proc/sysrq-trigger"
+            ],
+            "ReadonlyRootfs": true,
+            "RestartPolicy": {
+              "MaximumRetryCount": 0,
+              "Name": "no"
+            },
+            "Runtime": "runc",
+            "SecurityOpt": [
+              "no-new-privileges"
+            ],
+            "ShmSize": 67108864,
+            "Tmpfs": {
+              "/tmp": "rw,nosuid,nodev,size=64m"
+            },
+            "UTSMode": "",
+            "Ulimits": [],
+            "UsernsMode": "",
+            "VolumeDriver": "",
+            "VolumesFrom": null
+          },
+          "HostnamePath": "",
+          "HostsPath": "",
+          "Id": "c1958827c59ea930a67fbe0fb43370ac74f02d1b8091c14d109addb1d5e0f17f",
+          "Image": "sha256:136ebb46b7912f20472a375a6b29f6efec4cf2fdca13d56cbffb86a1be697db2",
+          "LogPath": "",
+          "MountLabel": "",
+          "Mounts": [
+            {
+              "Destination": "/app",
+              "Mode": "",
+              "Propagation": "rprivate",
+              "RW": false,
+              "Source": "/home/animallya96/scratch/strategy-observed-real-preview-20261020-v1/checkout",
+              "Type": "bind"
+            },
+            {
+              "Destination": "/home/animallya96/deploy/anios/.git",
+              "Mode": "",
+              "Propagation": "rprivate",
+              "RW": false,
+              "Source": "/home/animallya96/deploy/anios/.git",
+              "Type": "bind"
+            },
+            {
+              "Destination": "/input",
+              "Mode": "",
+              "Propagation": "rprivate",
+              "RW": false,
+              "Source": "/home/animallya96/scratch/strategy-observed-real-preview-20261020-v1",
+              "Type": "bind"
+            },
+            {
+              "Destination": "/out",
+              "Mode": "",
+              "Propagation": "rprivate",
+              "RW": true,
+              "Source": "/home/animallya96/scratch/strategy-observed-real-preview-20261020-v1/out",
+              "Type": "bind"
+            },
+            {
+              "Destination": "/view",
+              "Mode": "",
+              "Propagation": "rprivate",
+              "RW": true,
+              "Source": "/home/animallya96/scratch/strategy-observed-real-preview-20261020-v1/store",
+              "Type": "bind"
+            }
+          ],
+          "Name": "/strategy-observed-real-preview-20261020-v1",
+          "NetworkSettings": {
+            "Networks": {
+              "none": {
+                "Aliases": null,
+                "DNSNames": null,
+                "DriverOpts": null,
+                "EndpointID": "",
+                "Gateway": "",
+                "GlobalIPv6Address": "",
+                "GlobalIPv6PrefixLen": 0,
+                "GwPriority": 0,
+                "IPAMConfig": null,
+                "IPAddress": "",
+                "IPPrefixLen": 0,
+                "IPv6Gateway": "",
+                "Links": null,
+                "MacAddress": "",
+                "NetworkID": ""
+              }
+            },
+            "Ports": {},
+            "SandboxID": "",
+            "SandboxKey": ""
+          },
+          "Path": "python",
+          "Platform": "linux",
+          "ProcessLabel": "",
+          "ResolvConfPath": "",
+          "RestartCount": 0,
+          "State": {
+            "Dead": false,
+            "Error": "",
+            "ExitCode": 0,
+            "FinishedAt": "0001-01-01T00:00:00Z",
+            "OOMKilled": false,
+            "Paused": false,
+            "Pid": 0,
+            "Restarting": false,
+            "Running": false,
+            "StartedAt": "0001-01-01T00:00:00Z",
+            "Status": "created"
+          }
+        }
+      ],
+      "sha256": "4d539792d725a95ae2decafdbf14d990ddbf310ff18666db0bce5eae4592505d"
+    },
+    "out/result.json": {
+      "bytes": 11770,
+      "content": {
+        "account_broker_inference_simulation_calls": 0,
+        "actual_clock": "2026-10-20T13:29:53.748897+00:00",
+        "approval_activation": {
+          "archive": "/out/approval-archive/20261020T132949-911bea284cbd456db14f46b96be1c960",
+          "bundle_sha256": "110652ae70652bc37daaf375dec1b0953dc807f0f0d0f8482e6ca7801fe418fe",
+          "config_sha256": "e2ff6426e8f6aa7f8c334e56303f066d9015f1710a36d10e8c04d19861933553",
+          "evidence_sha256": "4d6af1bb755243bdce9a5c74477ae43cf91a72cbe7fa9e2985d13bfd5d3cacb9",
+          "initial_snapshot_id": "7df7df35110c68d31642f1a52a67292a701ead394738edcf27e83522b1d23eb2",
+          "release_sha256": "1aff9dd3743ea9356dfa5d09732e6257b7531365b7e455592d490dd50add18b4",
+          "source_sha256": {
+            "backend/agents/trading/desk/event_execution.py": "76e49243ffb7fff8bb989df2c384ee1f2f0dcc7885c9421f98a986eda667202f",
+            "backend/agents/trading/desk/event_risk.py": "34462a0ad3569022c90a3d7898b8f5a43ba053a38d2b7e44a63bc18e54de8973",
+            "backend/agents/trading/desk/funded_execution.py": "6b913621d11ad81b78394c1f3eb9e4aef8e52ed6585b0a0716b3b45a9d6f909c",
+            "backend/agents/trading/desk/intraday_orders.py": "ca8c236746441e204f36a263e972104d48d442538ea189fd4cad9d4ccf9f0f1c",
+            "backend/agents/trading/desk/nightly_plan.py": "9fe2c223f24086a8a978cf3d373f39f24e3f6dc810a624a5e8773cc3ae91a7ca",
+            "backend/agents/trading/desk/paper.py": "1a96dd96c254abb4799c6f14cb99938c65fb2907d6777fbc4b1194bfaa851bc4",
+            "backend/api/v1/market.py": "fb35aa6865890b8c75c3b354fcb65b24a2dea3454efb892eaa88f486cde4ba88",
+            "backend/cli/market_daily.py": "70201cfb771fb873a75b1356654a5dce9ab1b0900094ddcc23bcb6da56f1549b",
+            "backend/market/adaptive_growth_policy.py": "35a2d6a07276096acee78078886c9aefe02051f2b746a8739442814920114e34",
+            "backend/market/alpaca_trading.py": "105c5800d90b7f17b142d1678a781ecbf116ff89575466bec5e3c553eb24c3e2",
+            "backend/market/decision_view.py": "8315ec2b8f647dc02a46bec3d2a77a15b2d31b9777baed1ec5aa3aacdea97aca",
+            "backend/market/entry_timing.py": "f23d286c0d613d99620ce4a4ea8aa889be88ca224c5fbfc945b4360eae944a88",
+            "backend/market/forward_arithmetic.py": "9617f9dc3252d3ce48891eb800de1dfc135383a88cb3f15b377c480d60d8d882",
+            "backend/market/forward_execution.py": "62fa03e76d6f186a5084afe7ed1087891ce06f1d4b74040c6491f9c0b32ff295",
+            "backend/market/forward_market_evidence.py": "737f14c2ab3b4c12501d8707184871dd7c1f84287d4b43d182e2add0a02490a2",
+            "backend/market/forward_probability_timing.py": "0103852d53be711fcf4eeec80f74d707f42ef2ec86599ff72a305376d5632a92",
+            "backend/market/grade_led_policy.py": "4dec4ba263efa21b3a534b826b594d57e1a8cb99097e73ea53e8fbb0e96dfd66",
+            "backend/market/holding_risk_bank.py": "4024753161e21521309e265c5e96a70de94a75e81a8f151a4e59fe659c7f6158",
+            "backend/market/joint_funded_policy.py": "5b5b96c685f78f867bb590f00f83cdbaca88c1de45681ca178f0c5b84d6bb339",
+            "backend/market/learned_holding_transition.py": "c271f6ff649058d43aec226789e62cc08dc41bcc177755f0d17be87f4abfeb55",
+            "backend/market/learned_live_holding.py": "9229f33542dcd4dc65afd6a3d3abf6fd9ae386813dad9d37ee9ed17d3a978261",
+            "backend/market/learned_live_timing.py": "80223f1fe3a6ea81318cbb64a663b3805bfead1e8c2190aa176234ef294ccb7f",
+            "backend/market/learned_order_observation.py": "e5ab7151ab010137fe682a73da98d19496331176e1fc7c67b33827e6b63839ff",
+            "backend/market/learned_personal_guidance.py": "37e1fadba7cfb85d05464b1848d0e268015d43c53f33dd7481a6fed1ca999721",
+            "backend/market/live_model_decision.py": "06bd5150ec8cdfce5399e2ce1bc96f9a07c43231fc2b47fb6dbf5b1ea6f89aea",
+            "backend/market/live_probability_timing.py": "3fc9da7ae628e3fdd98388bbaa0e08bbaf5b8c36da78fb7c0e0efdcab63c1721",
+            "backend/market/market_conditioned_holding.py": "e2de45ca5b79ad1547299b131deb23e898aa7a9c33c13e7ec28bc4210d4950e4",
+            "backend/market/personal_history.py": "8f60457e598f0cf2c234739f9754a61ccc88b79e8907aaf53cd22c661177746a",
+            "backend/market/sequential_shadow_context.py": "5af947b74af12de1914b192c41d243494bd89ab90d5329564d86c31ff9c40a92",
+            "backend/market/strategy_entries.py": "9c35896f9e0e19bd42e746fc65a0b9f4c46c55e01cd0a28bfee275b8ec9a532e",
+            "backend/market/strategy_entry_context.py": "3aade712c9bcdbf5b09759cdb700c25c9f6e8e731cd6a27d4364c4f93ea2176f",
+            "backend/market/strategy_history_installation.py": "33c96116cb2c516c9d9e629b5d899e0e5637daba239ad858d8c21bfef1042cda",
+            "backend/market/strategy_history_publication.py": "bd3d1cab411863fa0d098df0269e8a10a139fe16e92c42674cfff58a8591d17b",
+            "backend/market/strategy_model_allocation.py": "4b7521147199b3c115f5b78c448795a0233ef4cd2aef5401ad3f418bfee994bf",
+            "backend/market/strategy_model_history.py": "7a7bfb2e200a02cdcba61ed2c92d7c14cf6fc8fd7c0de6a3c6c394c0ff0f03a2",
+            "backend/market/strategy_publication.py": "9272e399f94eac96e365298465e8840c384552f7769d98228fdc5814933f95f0",
+            "backend/market/strategy_reference_book.py": "94522bdf61d4e4075e33b831b25664e81e6f6b830c7821b523454715433e3355",
+            "backend/market/strategy_reference_entries.py": "522d47016ac934d2c29b5f0801743fb33c8efc66a4b0db22c18f0125ba8dab85",
+            "backend/market/strategy_reference_transition.py": "daf1704651cc6058eab147706874e1acdcb4a1df712c58e0c500bbdcc33865f2",
+            "docs/research/grade-led-sizing-contract-2026-10-13.md": "51e4f718ed73a29188cb134a342615927a48c12f4647b30307cb996efd1393c6",
+            "docs/research/learned-held-transition-2026-10-07.md": "f2669e1a40f74f6ccccd3cfdfae6f299a1bd1d416ae916dc622d2fa61837218a"
+          },
+          "status": "ADMITTED"
+        },
+        "approval_bundle_sha256": "110652ae70652bc37daaf375dec1b0953dc807f0f0d0f8482e6ca7801fe418fe",
+        "approval_preflight": {
+          "bundle_sha256": "110652ae70652bc37daaf375dec1b0953dc807f0f0d0f8482e6ca7801fe418fe",
+          "config_sha256": "e2ff6426e8f6aa7f8c334e56303f066d9015f1710a36d10e8c04d19861933553",
+          "evidence_sha256": "4d6af1bb755243bdce9a5c74477ae43cf91a72cbe7fa9e2985d13bfd5d3cacb9",
+          "release_sha256": "1aff9dd3743ea9356dfa5d09732e6257b7531365b7e455592d490dd50add18b4",
+          "source_sha256": {
+            "backend/agents/trading/desk/event_execution.py": "76e49243ffb7fff8bb989df2c384ee1f2f0dcc7885c9421f98a986eda667202f",
+            "backend/agents/trading/desk/event_risk.py": "34462a0ad3569022c90a3d7898b8f5a43ba053a38d2b7e44a63bc18e54de8973",
+            "backend/agents/trading/desk/funded_execution.py": "6b913621d11ad81b78394c1f3eb9e4aef8e52ed6585b0a0716b3b45a9d6f909c",
+            "backend/agents/trading/desk/intraday_orders.py": "ca8c236746441e204f36a263e972104d48d442538ea189fd4cad9d4ccf9f0f1c",
+            "backend/agents/trading/desk/nightly_plan.py": "9fe2c223f24086a8a978cf3d373f39f24e3f6dc810a624a5e8773cc3ae91a7ca",
+            "backend/agents/trading/desk/paper.py": "1a96dd96c254abb4799c6f14cb99938c65fb2907d6777fbc4b1194bfaa851bc4",
+            "backend/api/v1/market.py": "fb35aa6865890b8c75c3b354fcb65b24a2dea3454efb892eaa88f486cde4ba88",
+            "backend/cli/market_daily.py": "70201cfb771fb873a75b1356654a5dce9ab1b0900094ddcc23bcb6da56f1549b",
+            "backend/market/adaptive_growth_policy.py": "35a2d6a07276096acee78078886c9aefe02051f2b746a8739442814920114e34",
+            "backend/market/alpaca_trading.py": "105c5800d90b7f17b142d1678a781ecbf116ff89575466bec5e3c553eb24c3e2",
+            "backend/market/decision_view.py": "8315ec2b8f647dc02a46bec3d2a77a15b2d31b9777baed1ec5aa3aacdea97aca",
+            "backend/market/entry_timing.py": "f23d286c0d613d99620ce4a4ea8aa889be88ca224c5fbfc945b4360eae944a88",
+            "backend/market/forward_arithmetic.py": "9617f9dc3252d3ce48891eb800de1dfc135383a88cb3f15b377c480d60d8d882",
+            "backend/market/forward_execution.py": "62fa03e76d6f186a5084afe7ed1087891ce06f1d4b74040c6491f9c0b32ff295",
+            "backend/market/forward_market_evidence.py": "737f14c2ab3b4c12501d8707184871dd7c1f84287d4b43d182e2add0a02490a2",
+            "backend/market/forward_probability_timing.py": "0103852d53be711fcf4eeec80f74d707f42ef2ec86599ff72a305376d5632a92",
+            "backend/market/grade_led_policy.py": "4dec4ba263efa21b3a534b826b594d57e1a8cb99097e73ea53e8fbb0e96dfd66",
+            "backend/market/holding_risk_bank.py": "4024753161e21521309e265c5e96a70de94a75e81a8f151a4e59fe659c7f6158",
+            "backend/market/joint_funded_policy.py": "5b5b96c685f78f867bb590f00f83cdbaca88c1de45681ca178f0c5b84d6bb339",
+            "backend/market/learned_holding_transition.py": "c271f6ff649058d43aec226789e62cc08dc41bcc177755f0d17be87f4abfeb55",
+            "backend/market/learned_live_holding.py": "9229f33542dcd4dc65afd6a3d3abf6fd9ae386813dad9d37ee9ed17d3a978261",
+            "backend/market/learned_live_timing.py": "80223f1fe3a6ea81318cbb64a663b3805bfead1e8c2190aa176234ef294ccb7f",
+            "backend/market/learned_order_observation.py": "e5ab7151ab010137fe682a73da98d19496331176e1fc7c67b33827e6b63839ff",
+            "backend/market/learned_personal_guidance.py": "37e1fadba7cfb85d05464b1848d0e268015d43c53f33dd7481a6fed1ca999721",
+            "backend/market/live_model_decision.py": "06bd5150ec8cdfce5399e2ce1bc96f9a07c43231fc2b47fb6dbf5b1ea6f89aea",
+            "backend/market/live_probability_timing.py": "3fc9da7ae628e3fdd98388bbaa0e08bbaf5b8c36da78fb7c0e0efdcab63c1721",
+            "backend/market/market_conditioned_holding.py": "e2de45ca5b79ad1547299b131deb23e898aa7a9c33c13e7ec28bc4210d4950e4",
+            "backend/market/personal_history.py": "8f60457e598f0cf2c234739f9754a61ccc88b79e8907aaf53cd22c661177746a",
+            "backend/market/sequential_shadow_context.py": "5af947b74af12de1914b192c41d243494bd89ab90d5329564d86c31ff9c40a92",
+            "backend/market/strategy_entries.py": "9c35896f9e0e19bd42e746fc65a0b9f4c46c55e01cd0a28bfee275b8ec9a532e",
+            "backend/market/strategy_entry_context.py": "3aade712c9bcdbf5b09759cdb700c25c9f6e8e731cd6a27d4364c4f93ea2176f",
+            "backend/market/strategy_history_installation.py": "33c96116cb2c516c9d9e629b5d899e0e5637daba239ad858d8c21bfef1042cda",
+            "backend/market/strategy_history_publication.py": "bd3d1cab411863fa0d098df0269e8a10a139fe16e92c42674cfff58a8591d17b",
+            "backend/market/strategy_model_allocation.py": "4b7521147199b3c115f5b78c448795a0233ef4cd2aef5401ad3f418bfee994bf",
+            "backend/market/strategy_model_history.py": "7a7bfb2e200a02cdcba61ed2c92d7c14cf6fc8fd7c0de6a3c6c394c0ff0f03a2",
+            "backend/market/strategy_publication.py": "9272e399f94eac96e365298465e8840c384552f7769d98228fdc5814933f95f0",
+            "backend/market/strategy_reference_book.py": "94522bdf61d4e4075e33b831b25664e81e6f6b830c7821b523454715433e3355",
+            "backend/market/strategy_reference_entries.py": "522d47016ac934d2c29b5f0801743fb33c8efc66a4b0db22c18f0125ba8dab85",
+            "backend/market/strategy_reference_transition.py": "daf1704651cc6058eab147706874e1acdcb4a1df712c58e0c500bbdcc33865f2",
+            "docs/research/grade-led-sizing-contract-2026-10-13.md": "51e4f718ed73a29188cb134a342615927a48c12f4647b30307cb996efd1393c6",
+            "docs/research/learned-held-transition-2026-10-07.md": "f2669e1a40f74f6ccccd3cfdfae6f299a1bd1d416ae916dc622d2fa61837218a"
+          },
+          "status": "REVIEWED_BUNDLE_ADMITTED"
+        },
+        "history_sha256": "cc49039984d89b854505a0afdb2071570e3494b6d75c4d4bf3c6dfe973c471f9",
+        "http": {
+          "actual_regular_entry": "UNVERIFIED_before_natural_regular_session",
+          "allocation_rows": 94,
+          "anonymous": 401,
+          "foreign": 403,
+          "original_recommendations": 5755,
+          "recorded_current_entries": 0,
+          "stocks": {
+            "AAOI": {
+              "decisions": 145,
+              "grade_changes": 81,
+              "http": 200,
+              "trades": 0
+            },
+            "COHR": {
+              "decisions": 87,
+              "grade_changes": 89,
+              "http": 200,
+              "trades": 0
+            },
+            "HPE": {
+              "decisions": 42,
+              "grade_changes": 85,
+              "http": 200,
+              "trades": 0
+            }
+          },
+          "summary_http": 200
+        },
+        "installation": {
+          "archive": "/out/archive/20261020T132949-965d6cb5f66a4e47bdd4992cf923cf45",
+          "history_sha256": "cc49039984d89b854505a0afdb2071570e3494b6d75c4d4bf3c6dfe973c471f9",
+          "recommendations": 5755,
+          "status": "ORIGINAL_AUDITED_HISTORY_INSTALLED",
+          "stocks": 94
+        },
+        "max_rss_kib": 311836,
+        "preview_store_retained": true,
+        "production_activation": false,
+        "raw_stock_bytes": 8953411,
+        "revision": "2b5834ca8fc1beb9d1d21b0da9da8965386b9cbb",
+        "snapshot_sha256": "de05a6063b1a9d37cb7f9f17f1763897f07631a8b579eb21c0e6207163907f4c",
+        "source_approval_sha256": {
+          "config": "e2ff6426e8f6aa7f8c334e56303f066d9015f1710a36d10e8c04d19861933553",
+          "evidence": "4d6af1bb755243bdce9a5c74477ae43cf91a72cbe7fa9e2985d13bfd5d3cacb9",
+          "release": "1aff9dd3743ea9356dfa5d09732e6257b7531365b7e455592d490dd50add18b4"
+        },
+        "status": "VERIFIED_PRIVATE_EXACT41_ACTIVATION_HISTORY_AND_API"
+      },
+      "sha256": "4f774de287677cb237ef07d58c50270ce782c44bf35360ce34f4a99e24f31583"
+    },
+    "production-unchanged.json": {
+      "bytes": 329,
+      "content": {
+        "approval_sha256": {
+          "config": "a237bfe4e21db38a0fabf8d31a2c78542b8bff58a5d26895ac98f2387c144f7c",
+          "evidence": "4d6af1bb755243bdce9a5c74477ae43cf91a72cbe7fa9e2985d13bfd5d3cacb9",
+          "release": "fc3259718eb55daabc748120aa1c3791e87ee02b6f536762afbe2e16b8686c0c"
+        },
+        "head": "b4b2eeb9ac3d1b0bb1f344b280ecd5f1b00be1b8",
+        "unchanged": true
+      },
+      "sha256": "917c96934ca9f2e97ef8dc6ebf761101b9034003655bf8c7984c6acde7f67460"
+    }
+  },
+  "source_revision": "2b5834ca8fc1beb9d1d21b0da9da8965386b9cbb",
+  "status": "VERIFIED_PRIVATE_EXACT41_APPROVAL_HISTORY_AND_HTTP",
+  "tree": "3c524e37557769b2370da9a8ce529dff472f3404"
+}

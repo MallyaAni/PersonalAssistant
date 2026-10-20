@@ -1,5 +1,1261 @@
 # Next session
 
+## CURRENT HUMAN — publish live dashboard source on main for Claude review; retire only merged branches
+
+The human now requests deleting merged/unwanted branches so Claude can review
+the latest live dashboard from main. This authorizes the code integration and
+branch cleanup independently of the still-pending public sign-in walkthrough.
+Do not turn that missing UI acceptance into a claim of full trading readiness.
+Do not message Claude or start another agent; provide the reviewable main SHA.
+
+Integration parents: origin/main 3a9e0b8b72f20734616af3206f72704eced5aaf6 and
+feature 39daad27e7e4d312012eb5f2b35157ff3d5ad3d1. Eighteen conflicts reconciled:
+deployed trading UI/source preserved; main's legacy historical route/types,
+model/settings/reply-effort/check-ins source and diagram retry/security retained.
+The diagram renderer validates active content before converting passive class
+types to Mermaid delimiters; both security and rendering assertions remain.
+All 45 publication source files equal the live feature byte for byte. The new
+frontend builds index-hWMkfX5O.js925610B/SHA23d1c76ca50de4a91b4944156141041d51a81387a72dfdaa404d2e5438b67618,
+exactly equal to the previously verified live-source build. No browser replay.
+TSC PASS; Vite8.2.2 build PASS6.12s with existing warnings;33diagram/pagecheckPASS.
+
+New isolated merge validation: first run55PASS/47FAIL4.80s because I omitted two
+original required protocol documents from the mount. Failure/source/CID retained.
+Corrected mount (no source/assertion changes)49PASS3.43s/noOOM, CID
+6e3fca5d0111655713b0f4dd636b828bd42133ee3ed201847466a612465058da.
+These cover102distinct cases across split cohorts, not one whole102-green run.
+Proof docs/research/dashboard-main-integration-review-2026-10-20.json contains
+exact parents/source45/build/source-tree/results/cleanup receipts. This is NOT
+a merged whole-app gate, a new deployment, or a new current-feed acquisition.
+
+Cleanup already removed12inactive merged local branches and29actual merged
+remote branches.45other remote-tracking candidates were already absent remotely;
+v1 stopped before remote mutation on that mismatch, then v2 rechecked actual refs
+and ancestry. Active checkouts and branches with unique commits were preserved.
+After pushing the merge, retire the now-merged trading feature and temporary
+integration branch; detach the preview checkout at its unchanged exact commit
+before deleting its branch, keeping Vite33452/tunnel70626/node_modules intact.
+
+LIVE remains frontend efc649a0/backend bf7a72fb, not the whole integrated main.
+No deployment/restart/feed/account/order/model changes occurred. Main also has
+newer independent assistant/model work; do NOT deploy historical main wholesale.
+The original deployed full-app check-ins sweep staysFAILED; newer main source
+fixes are not a retroactive pass. Public authenticated-origin acceptance still
+UNVERIFIED; one sign-in request is pending, never duplicate or bypass it.
+Next natural19:30ET ordinary publication/next-day rollover remains unverified.
+Existing feed only, paperLAST, ACTIVE heartbeat quiet on unchanged state.
+
+## CURRENT HUMAN — merge accepted dashboard code into main and push when finished
+
+Human explicitly authorized: “can you merge the code to main and push to git when
+this is done?” No further Git permission question is needed. Complete the final
+public authenticated dashboard acceptance, then reconcile the production-based
+codex/trading-fill-consistency-20261019 feature with latest origin/main, validate
+the actual integrated tree, and push main without force or rewriting published
+history. Do not deploy historical main wholesale; merging/pushing does not itself
+authorize an additional deployment or bypass canonical release checks.
+
+Readonly integration inspection: feature fece2bb1f1c32d32e4374e0cd5d3504312acb895,
+origin/main a4eed35ff3c22c04d69ae843d4e88ed9f9dadcce, merge base
+ad44d536a70d5c037cb931836a3c9f48b014d84a; 397 main-only/41 feature-only commits.
+git merge-tree --write-tree returned conflicts in 18 files: API registration,
+market_allocation, diagram renderer, release admission, CHANGELOG/NEXT_SESSION,
+architecture HTML and trading diagram pair, four frontend tests, DeskPanel,
+SignalBoard, StockBoard, TickerChart and api.ts. This was a READONLY conflict
+preview, not a merge or main push. Preserve independent model/runtime/main work;
+recheck latest main at integration time. Desktop checkout has unrelated modified
+AGENTS.md and untracked Wi-Fi watchdog files/trader-board.bundle; leave them alone.
+No main integration checkout or new release/job was started.
+
+Public sign-in request remains pending ONCE; never ask it again or copy/bypass
+authentication. Existing signed-in localhost preview uses normal production API.
+Trading release proof remains as below. Separate assistant check-in opt-out
+full-post failure remains FAILED; do not falsely claim that issue fixed by this
+Git integration. Keep heartbeat ACTIVE and preserve all closed evidence.
+
+## CURRENT HUMAN 16:00Z — consistency fix and pending-Sell copy DEPLOYED; no active release/gate; public owner sign-in still pending
+
+Additional completed NORMAL production-API preview path: ALABtable/D/W/15m all5.8
+after actual candle loads, HPEOct16 09:45 originalBuy2.5/then25%/gradeA/EMA21−9.44/
+EMA63+1.50 detail restored whilecurrentPosition10.6 stayed separate, diagnostics[].
+Saved /tmp/strategy-position-real-ui-20261020-v1/normal-live-api-{alab-15m.png,
+alab-frames.json,hpe-original.png,hpe-original.txt}. HPEcold15mCua3s selector timed
+out whileLoading; later originalresponse completed without repeatedfetch/pageerror.
+No sub3s performanceclaim. Evidence3022B/SHA89e733cf0b3b83afa1f7b33a79ff259769a033b7528b93aaab2dffa6cb64f9a4
+at docs/research/strategy-normal-live-api-preview-proof-2026-10-20.json. This proves
+normal deployed ownerHTTP via localhostpreview, not public-origin authenticatedUI.
+Keep tab4 HPEoriginaldetails deliverable; tab3publicSignIn handoff/pendingquestion.
+
+LATEST LIVE CODE efc649a0d58edc2c652623fb0270a666514f797c/tree
+790d1345131dac5911705e00693ad11948b3cb28, pushedproduction-based feature
+codex/trading-fill-consistency-20261019. Backend remains exactbf7a72fb image/source
+(all backend/scripts bytes unchanged); model ds41-head and original41approval
+config/release/evidence unchanged across latest FE release. Upstream origin/main
+restored. Tracked productsource clean before finaldocs; keep untrackednode_modules/
+tsconfig.tsbuildinfo. NEVER deploy historical main wholesale. Readonly original
+~/desk_daily.sh confirmed scheduledjob uses ~/deploy/anios and DOES NOT gitpull;
+future nightly therefore uses deployedsource, not historical developmentcheckout.
+
+Current Position uses original persisted daily modelbook target across Allnames/
+daily/weekly/15m, quote/candleexpiry and refresh. Size% is positive trade amount,
+Position% desired total; expired/unconfirmed permission showsWait/Size—. Actual
+ALAB5.8 allframes vs oldfresh14.3 fallback fixed; HPE original13.7 Sell reducing
+24.3→10.6 with originaltechnicalreasons restored. Historical5755counterfactual
+actions/94stocks retainoriginaldates/sizes, no paper/personalaccount requirement.
+New pendingSell emptycopy is LIVE: waitingmodelreduction no longer falselyclaims
+noSell; Bestsells says “No confirmed sell signals yet.” ifnonecurrentlyconfirmed.
+
+LATEST exactpublic/gateway JS index-D9GaJYMW.js925833B/SHA
+8e9f4a4e8a09249d7fbc14032ba6abc1a806a782d69b58ebe829a1278d69fd79.
+ONE distinct canonical FE-only release after originalfullattempt ENDED:
+session5293ENDED0/root scratch/strategy-pending-sell-release-20261020-v1,
+post15:51:53UTC efc649a0 ok(cheap), backend/modelCID+image and41approval hashes
+exactbeforeafter. No skipped flags/fakeclock/approvalrenewal/newmodeljob. Three
+affectedcases sourcePASS7.389522s ANDdeployedPASS6.974065s/0skip-flaky-unexpected/
+diagnostics:1new+2regressions, NOT6new or whole65green. EarlierBFwhole64@source+
+deployed retainsoriginalproof, NOT128unique. ExpectednewcopyRED7.7s retained.
+TSC/build4.08/diffPASS(existingwarnings). Original PythonpublicJSgetterFAILED
+missinglocalissuer BEFORE download/hash/manifest; sameextractedstaticretained,
+systemcurl defaultverifiedTLS comparisonpassed, NO TLSbypass/re-extraction.
+FinalFEproof docs/research/strategy-pending-sell-live-release-proof-2026-10-20.json
+30453B/SHA06adfd6c5aaa10e224c5ea6329969d1aa48eeedecf4f432314eb298db08f5997,
+collectorONCE. Archives/manifests/testresults remain /tmp/strategy-pending-sell-*.
+Diagramlabels now describe deployedseparatehypothetical path,33/page sync passed.
+
+DO NOT ERASE ORIGINAL FAILED FULLPOST: firstbf canonical31805ENDED1 at15:45:16;
+deployedsource remainsLIVE. FullUNIT11050PASS/93skip6xfail439warnings33subtests
+552.78s; upgradedV4.1functional100PASS636.84s; source41ADMITTED/47tables+WALbackup
+mirroredSpark2. Wholeapp sweep FAILED “stop checking in on me”: routeNone,
+acknowledged but profileoptout and enabledcheckins unchanged; canonicalownretry
+failedsame. SearchharnessPASSED. Separate assistant issue tracked, NOT fixed/waived
+or relabelledgreen by laterFEcheap smoke. Original proof553945B/SHA
+ef3dab5a0aff0ca698a87e04f2dbe35b1271b8d25ba6648922afb66185bf49bc, alloriginal
+logs/results/status retained. Neverrerun closedcohorts/gates/getters/collectors fordocs.
+
+REAL PREVIEW now NORMAL authenticated DEPLOYED API through existing18081→8100
+tunnel, no privatehistory interception. Keep Vite33452/tunnel70626/node_modules/
+tab4signedin deliverable. Oldprivatebridge/config/2b+bf checkouts/stores retained
+unchanged; no standalonecurrentcollector/newservice. ActualnormalAPI current15m
+Oct20/94positions; HPEWait/Position10.6 with pendingSell13.781% and no fresh
+compatiblequote observed. No executable currentaction invented. Originalpubexpiry
+Oct20 16:00ET(20:00UTC), nativeholdingrecompute09:30ET separate, neverextend.
+AnonymouspreviewGET401/non-authPOST405; same normal auth/writeblock.
+
+ONLY MISSING PUBLIC SCREEN ACCESS: publictab3 is normalSignIn. ONE asyncrequest
+already sent askinghuman to sign in existing deep-matter.com tab, accepted and
+still NO reply. NEVERduplicate question, copy/inject credentials/cookies or bypass
+auth. Keep tab3handoff. On humanreply, use currentnormalpublic Allnames→ALAB/HPE→
+D/W/15m/refresh and originalmarkers/details/BestSellstatus; failonrequirednetwork/
+console/content issues. Publicauthenticated acceptance stillUNVERIFIED. Preview/
+gatewayfixture tests are not that proof. No ETA/fullprofitability/readinessclaim.
+
+Independent next NATURAL observation: ordinary19:30ET nightly/newsource41 daily
+publication BEFORE paperaccess, then observedreference next-day rollover/current
+regular15m. Inspect onlynewboundedoriginal logs/snapshot/book/sourcebindings and
+firstnew failingboundary. Do not invoke market_daily/balancer as probes (orders/
+cancels/writes), replay olddays, restart96763/newwatcher/cron or repeatclosed
+original09:49acquisition/two10:08progression. No manuallyreacquire for screenshots.
+Whole41 ordinary-nightly/runtime-next-dayrollover remainsfutureUNVERIFIED, no
+genuine/powerloss/full832MB/modelRAM claim. Nativeallocatorack block remains
+separate; no privateguardtreadmill. Existingfeedonly/paperLAST/no reset/realorders/
+paiddata/tuning/model-account-provider-servicechanges/Spark2load/G08weakening/
+deniedcurrent-opportunitiesreadbypass/nativepooladoption/reopen. KeepACTIVE quiet
+unchanged, meaningfulprogress/failure/requiredhuman action only. Prior details follow.
+
+## CURRENT HUMAN 15:47Z — original full release ENDED1/deployed; separate check-in opt-out FAILED; small FE correction ready
+
+Original canonical31805 ENDED, canonical-result return1 at15:45:16.974367UTC,
+upstream-restoration.json origin/main VERIFIED. bf7a72fb remainsLIVE (postfailure
+does not rollback restartedapp). DO NOT replay that release/fullpost/cohorts.
+FullUNIT11050PASS552.78s/functionalgate100PASS636.84s/source41ADMITTED/47table+WAL
+backup and exactdeployed64browserPASS191.943931s remain their original proofs.
+FULLAPP POST FAILED: “stop checking in on me” selectedrouteNone, acknowledged saved
+opt-out but did not flip profile.check_ins or cancel enabledcheckins. Canonical's
+own one-case retry failedsame; searchharnessPASSED. Alert sent bycanonicalscript.
+Separate assistant defect, NOT fixed or waived; never relabel wholepostgreen
+under a later frontendcheap smoke. No model/role/account/provider/settingschanges.
+
+Permanent docs/research/strategy-position-live-release-proof-2026-10-20.json553945B/
+SHAef3dab5a0aff0ca698a87e04f2dbe35b1271b8d25ba6648922afb66185bf49bc retains
+originalfullcanonical log/result/upstream/post/source/services/deployed64/runtime,
+collectorONCE. Model ds41-head CID/image/state unchanged. Original fullrelease
+root scratch/strategy-position-release-20261020-v1 retained, no after.json expected
+because controllerraised after preservingfailedresult/restoringupstream.
+
+NEXT finish preview-accepted oneconditional Bestsells copy fix: pendingpositive
+Sell with no fresh quote => “No confirmed sell signals yet.” (previously falsely
+claimed no modelSell). SourceSignalBoard.tsx +1test only, existing2regressions,
+3PASS7.389522s/TSC/build4.08/diffpass, expectedRED7.7s preserved. Newproof7722B/SHA
+369dd90995dbb49977ee69e62ad389d30f5d51a8f621c8fa23e6a621e95af647. Commit/push
+thissmallFE+docs now oldattemptended; only canonical frontend release, no repeated
+modelgate/approvalrenewal/backendrestart. Prepared
+/tmp/release_strategy_pending_sell_20261020.py CURRENTLY UNRUN accepts exact new
+commit argument; checksoriginalfailedpost+restoredmain, parentBF, only2FE paths+docs,
+nativebackend/model/approval unchanged. Unique root strategy-pending-sell-release-20261020-v1
+mustnotexist; inspect original ifitdoes, neverblindretry. Afterrelease verifyexact
+servedcopy with three affected browsercases/currentlive-APIpreview. No whole65claim.
+
+Preview now NORMAL production owner API via Vite33452/tunnel70626, not private
+nativebridge. Actual15mOct20/94positions/HPEWaitSize—Position10.6/pendingSell13.781
+reason/currenttable and sourcecopyverified with realdata. AnonymousGET401/POST405.
+Oldprivatebridge/config/checkouts/stores/evidence retained untouched. Same tab4
+signedin/deliverable; tab3publicnormalSignIn/handoff, ONE humanrequestpending no
+reply yet; neverduplicate/copycredentials/bypass. Required publicownerUI remains
+UNVERIFIED untilhumanreply. Existingfeed/paperLAST/no orders/reset/paiddata/G08
+weakening/Spark2load/nativepooladoption. Natural next nightly/newdailyrollover
+runtime remains futureobservation, neverforce/replay. Priorproof details follow.
+
+## CURRENT HUMAN 15:40Z — live bf postchecks STILL original31805; preview now NORMAL LIVE API; small pending-Sell copy fix uncommitted
+
+DO NOT DUPLICATE ORIGINAL RELEASE/GATES. bf7a72fb is LIVE; original session31805/
+PID2997270/root scratch/strategy-position-release-20261020-v1 still in canonical
+buffered POST checks. FullUNIT11050PASS552.78s, functional100PASS636.84s, source41
+ADMITTED, backup47tables+WAL mirroredSpark2; original controllernotfinished yet.
+No manually repeated jobs/currentacquisitions. Wait original canonical result/
+postverdict/upstream-restoration/after. DO NOT push a new feature target or deploy
+another release while original controller holds temporary feature upstream.
+
+New exact deployed artifact64browserPASS191.943931s/0skip-flaky-unexpected/
+diagnostics. JSBphDP-90.js925768B/SHA
+b23b7ff7fe69fb030da646238da49f00d17ab3568616a073c04788ee678b38ef publicHTTPS
+bytes matchgatewaycopy exactly. Source64+deployed64 are same64@2builds, not128.
+NO rerun fordocs. Publictab3 normalSignIn: ONE requestpending human, no reply;
+never duplicate request or copy/inject credentials. Keep tab3handoff/tab4deliverable.
+
+IMPORTANT preview now uses NORMAL production owner HTTP API through existing
+tunnel18081→8100. Removed nativeHistoryPreview interception from localconfig
+/tmp/live-recommendations-preview-20261019.mjs AFTER deployment. Archived oldconfig
+/tmp/live-recommendations-preview-before-live-api-20261020.mjs; all nativebridge/
+private2b/bf checkouts/stores remain unchanged. No privatecollector/newservice.
+Normal native current15m responses now auto-update same signed-in preview.
+AnonymousGET401/non-authPOST405 verified; writeblock and normalauth unchanged.
+Actual94rows/current15mOct20/HPEWaitSize—Position10.6/modelprior24.4→10.6 with
+pendingSell13.781% lacking fresh compatiblequote. Allnames modelpositionslive.
+This is not a current executableSell; no fakequote or eligibilityweakening.
+
+Found NEW real trader-copy gap: Best sells correctly hides unconfirmedHPE but said
+“No sell signals in current strategy publication.” PREVIEW-ONLY one conditional now
+says “No confirmed sell signals yet.” when a Sell waits. New expectedRED7.7s on
+deployedBph preserved; same assertiongreen plus2 empty/unavailable regressions:
+3PASS7.389522s/0skip-flaky-unexpected/diagnostics. TSC/build4.08s/diffpass(existing
+warnings), sourcepreviewassethWMkfX5O. No math/ranking/eligibility/backend change.
+Actual NORMAL live-API preview now displays corrected status, saved
+/tmp/strategy-position-real-ui-20261020-v1/live-api-pending-sell-preview.{png,txt}.
+Proof docs/research/strategy-pending-sell-preview-proof-2026-10-20.json7722B/SHA
+369dd90995dbb49977ee69e62ad389d30f5d51a8f621c8fa23e6a621e95af647.
+Candidate UNCOMMITTED SignalBoard.tsx + all-names-signals.spec.ts plusdocs. Do not
+claim deployed or whole65green. AFTER original post attempt ends/restoresupstream,
+commit/push onlythissmallFE+proof, run one canonical FE-only release (native backend/
+41approval unchanged, no modelgate rerun, no approvalrenewal) and verify served
+copy. Preserve original fullpostverdict evenif unrelatedfailure; never relabel it
+green from a later cheap FE check. Publicowner screen still needs pendinglogin.
+
+All existingfeed/paperLAST/no reset/orders/paiddata/model-account-provider-service
+changes/G08weakening/Spark2load/deniedreadbypass/nativepooladoption constraints hold.
+Previous detailed proof/source/actualnative receipts follow; TOP overrides allolder.
+
+## CURRENT HUMAN 15:22Z — bf7a72fb IS LIVE; original canonical POST CHECKS RUNNING, public sign-in requested ONCE
+
+DO NOT REDEPLOY. Original canonical session31805/Spark1PID2997270/root
+scratch/strategy-position-release-20261020-v1 still running POST checks. Source
+bf7a72fb92168696a7be06671a40af7fad93a1a1/tree417b2f544cbf4d622507a209011ae6d18cec589f
+is now serving. Original exact fullUNIT11050PASS/93skip6xfail439warnings33subtests
+552.78s; upgraded-runtime functional gate100PASS636.84s. Source41 host/container
+ADMITTED; initialsnapshot/original94history5755 installed canonically. Backup47
+tables anios_db-20261020-111025.sql.gz and requiredWAL mirroredSpark2. Economic12
+unchanged. No model/account/provider/settings/order/reset change. Do not invoke
+new tests/gates/release/collector, await ORIGINAL canonicalresult/poststatus.
+
+Actual deployed JS index-BphDP-90.js925768B/SHAb23b7ff7fe69fb030da646238da49f00d17ab3568616a073c04788ee678b38ef.
+Public HTTPS GET bytes EXACT gatewaycopy. This differs from sourceCY57 build;
+fresh deployed-artifact whole64browserPASS3.2m/0skip-flaky-unexpected/diagnostics.
+Same64 cases at2builds, NOT128distinct. Archive104files1203429Bgzip at
+/tmp/strategy-position-deployed-static-20261020.tar.gz/manifestJSON. Testroot
+/tmp/strategy-position-deployed-ui-20261020-{results.json,artifacts}, session52911
+ENDED0. Native runtime READONLY getter /tmp/observe_strategy_position_runtime_20261020.py
+and /tmp/strategy-position-runtime-20261020-v1.json: actual11:15completed native
+assessment94rows, publication94, referencepositions94available, exactbf3consumer
+SHAs, packagedoriginalhistorybinding present. PositionsALAB5.7703296617/HPE10.5966675797/
+COHR8.5381661773/GEV23.6797268139/MU24.8888246408%. At observed11:15:55 quotes for
+proposedfourBuys/HPE Sell were unavailable, MU no_trade. No executable-action or
+actualpositivehypotheticalexecution claim from that read. Original16:00expiry kept.
+
+PUBLIC AUTHENTICATED SCREEN ACCEPTANCE STILL UNVERIFIED: tab3 normalreload NEW
+release returned sign-in. ONE async request sent asking human to sign in existing
+deep-matter.com tab, question accepted, no reply yet. Never duplicate question,
+inject/copy credentials/cookies or bypass authentication. Keep tab3handoff/tab4
+signed-in realpreview deliverable. Realpreview beforedeploy already VERIFIED
+ALAB5.8 table/D/W/15m/refresh and originalHPE Sell13.7/24.3→10.6 technicaldetails.
+Pending user login is independent of original canonical postchecks: continue
+observing post result without new jobs. After reply verify public Allnames/chart/
+originaldetails via normal user flow. Later fold originalrelease/log/post/asset/
+source/runtime/UI receipts once, update finalhandoff/automation, pushdocs only.
+Prior savedautomation update ACTIVE readback1792507949332/promptSHA35c82cc127d23d12ff2662aaa21501bc4f4f30c2c8c11e6dc1761a836e8a097d.
+Existingfeed/paperLAST/no paiddata/orders/reset/guardweakening/nativepooladoption.
+All previous failed/completed roots/gates retained; no reruns fordocs.
+
+## CURRENT HUMAN 14:50Z — ONE CANONICAL RELEASE RUNNING; NEVER DISPATCH AGAIN
+
+Exact pushed bf7a72fb92168696a7be06671a40af7fad93a1a1/tree
+417b2f544cbf4d622507a209011ae6d18cec589f. Whole64browserPASS178.321s,
+42backendPASS1.460s, actualrealALAB5.8 table/D/W/15m/refresh and originalHPE
+Sell13.7/Position24.3→10.6 loadedtechnicalreason VERIFIED signed-in samepreview,
+no new market acquisition. Screenshots /tmp/strategy-position-real-ui-20261020-v1.
+New read-only dailyobjective detachedview, numeric41/publication45 EXACT2bunchanged.
+
+ONE CANONICAL release DISPATCHED14:49:59.572624UTC, root tool session31805,
+Spark1 controller PID2997270, /home/animallya96/scratch/strategy-position-release-20261020-v1.
+Original claim.json EXISTS. Canonical exactbf7a72fb fullUNIT PASSED11050/93skip/
+6xfail/439warnings/33subtests in552.78s. Original old3fixture failures nowcorrected.
+Same canonical attempt NOW running upgraded-runtime functional routing gate.
+Controller /tmp/release_strategy_position_20261020.py, localstage
+/tmp/stage_strategy_position_release_20261020.py, transport
+/tmp/strategy-position-release-20261020.transport. NEVER retry/redeploy/duplicate.
+Observe original log/result/knownPID; no new gate/model evaluation beside it.
+scripts/deploy.sh --wait-post, no skips/fakeclock; fullUNIT/routing then preflight/
+backup/build/approval/history/rollback/post checks. Production stillb4 untilgates.
+Temporary production upstream restored in controllerfinally; originalorigin/main.
+Target-only bundle /tmp/strategy-position-bundle-bf7a72fb-20261020.json10778B/SHA
+feca33f19c0b6b33545c5151e746f7a0aa151028dbddebe159dbe440555c47d6;
+original config/release/evidence/review/initialsnapshot bytes unchanged. Runtime
+V4.1EXL3 ds41-head unchanged; no provider/account/model/service/subscriptionchange.
+
+Private preview newexactbf readonlyconsumer nowuses
+scratch/strategy-position-real-preview-20261020-v1/checkout and SAME original
+normal metadata store via symlink, old2b/f0checkouts untouched. Same Vite33452/
+tunnel70626/tab4signedin/tab3handoff KEEP. Loaded real94/ALABWaitSize—Position5.8,
+HPEWaitPosition10.6 plus originaldatedSell13.7 details; diagnostics[]. No fresh
+executable UI screenshot claim. After canonicalcompletion inspectactualserved
+asset/source/approval/currentmodelbook and signed-inpublicUI beforefullreadiness.
+No reacquire merelyscreenshots, no oldpool/cohort/getter/collector replay.
+Existingfeed/paperLAST/no reset/orders/paiddata. Priorverified/failed detailsfollow.
+
+## CURRENT HUMAN 14:46Z — persistent daily Position boundary verified; real preview source migration and release next
+
+NEW scoped source fixes ALAB reference5.8→fresh14.3 fallback after15m expiry.
+strategy_position_view reads original persisted book.plan objectives through original
+16:00 publication expiry, independent of candle/quote permission. API GET never
+prepares/recovers/calculates/writes. Normal collector prepares/rolls objective before
+closed acquisition. Missing/corrupt/foreign book namespace explicitly unavailable,
+never fresh-capital fallback. Table/chart share Position; trade Size/Buy/Sell still
+require exact original current book/day/15m/30s quote. Numeric41/publication45 source
+bytes checked EXACT2b unchanged. Native timing/size maths/caps not changed.
+
+Final backendv3 CIDf8f91586e622085774dc6b9336b44536158e253faee75700a19e7b514e689ef9
+exit0/noOOM14:39:29.203104136Z/42PASS/0fail-error-skip/1.460s/maxRSS298712;
+5new objective/HTTP/collector cases+37 original changed-path regressions. V1failed
+38pass1fail3errors missing isolatedtestSECRET_KEY/config fixture, v2failed40pass2fail
+missing synthetic config_sha256. Fresh process-only testkey/no productionsecret;
+fixture config identity corrected, original assertions unchanged. CLOSED roots.
+Two new expected browserREDs retained; finalwhole64PASS178.321274s/0skip-flaky-
+unexpected/diagnostics on index-CY57b0Lt.js. TSC/build3.54s/diff/ASTpass(existing
+warnings).33diagrams/page synchronized, changed node candidate/dashedunreleased.
+First scoped renderer failed resolving browser import BEFORE rendering, corrected
+explicit installed module. Allclosed tests/getters/collector MUST NOT rerun fordocs.
+
+Permanent proof docs/research/strategy-position-objective-delivery-proof-2026-10-20.json
+1276320B/SHAa9d246cb681c7b23fc4998887884cc6db6eec1835e09b1a6a88ca81d088fb60e,
+57fixed originals includes actual original09:49HPE result/two10:08normalcycles/old
+failed fullUNIT/corrected16cases/current42/browser64/sourcepins; collectorONCE.
+No new market acquisition. Original currentroot and normalprogression CLOSED.
+
+NEXT migrate same signed-in real preview to exact new committed read-only source,
+same original normal metadata; verify ALAB5.8/table/D/W/15m/refresh/original HPE
+Sell13.7 details. Do not mutate healthy2b checkout or reacquire justscreenshots.
+Then target-only rebind original2b approval bundle, numerical/config/release/evidence
+bytes unchanged, use canonical scripts/deploy.sh with full correctedUNIT+actual
+upgradedV4.1routing/backups/rollback/postchecks. Whole correctedgate/release remain
+UNVERIFIED. No active gate, old4307ended1/old94881ended0; neverrestart. Productionb4
+unchanged. Existingfeed/paperLAST/no reset/orders/paiddata/model-servicechanges.
+KEEP Vite33452/tunnel70626/node_modules/tab4signedin/tab3handoff. Prior details follow.
+
+## CURRENT HUMAN 14:45Z — persisted position objective gap is being fixed; real acquisitions CLOSED
+
+Continue accurately. Actual original exact2b current acquisition at09:49 produced
+HPE Sell13.7% toward Position10.6%, later clicked as a recorded15m recommendation
+with original technical evidence. Its30s executable UI capture was MISSED; do not
+claim that screenshot or reacquire merely for it. A distinct two-normal-cycle
+journey at10:08 resolved the expired HPE intent UNFILLED, unchanged units/cash/fees,
+original intentSHA/index unchanged and bookgeneration1 on both passes. Current
+10:00 completed assessment correctly showed Wait, no executable buys/sells.
+Both actual acquisition/normal progression roots are CLOSED, never repeat fordocs.
+
+REAL next gap: ALAB reference Position5.7703296617% changed to fresh-capital14.3034%
+when15m assessment expired. Source2b modelWeight falls back between sizing methods.
+IN PROGRESS uncommitted read-only strategy_position_view exposes original book.plan
+targets through original daily publication16:00 expiry; API GET does not recover,
+calculate or write. Normal collector prepares/rolls book before closed acquisition.
+Frontend separates persistent Position from expiring action/trade Size. New scoped
+backend/HTTP/browser tests and real preview source activation still REQUIRED.
+Numeric guard41/publication45 sources remain byte-identical2b; do not change/rebind
+original numeric provenance after09:30 cutoff. New consumer has own detached source
+receipt. Missing/corrupt reference namespace MUST NOT fall back to fresh weights.
+
+Source2b5834ca8fc1beb9d1d21b0da9da8965386b9cbb pushed, productionb4 unchanged.
+Current uncommitted previous UI fixes: original Modelposition before→desired details,
+fresh no-trade assessment date, own quote/candle deadline timer.61-case cohort
+FAILED59PASS2FAIL; old expiredquote header assertion corrected to date+Wait/Size—,
+real-boundary fixture margin25→250ms avoids backdating its-100ms marker. Four
+affected cases nowPASS10.2s on SAME CMTLrtBq artifact. Splitcohorts, notwhole61green.
+FullUNIT exact2b FAILED11042pass3fail/93skip/6xfail/33subtests767.91s: all3 fail
+legacy35-source testfixture before intended assertions. Fixture only updated to41,
+16targetedPASS1.70s unchanged assertions. Corrected fullUNIT/routing stillUNRUN.
+Actual runtime upgraded DeepSeekV4.1 EXL3 ds41-head, aliasesdeepseek-v4-flash; no
+model/service changes. Old e7 gates do not prove newruntime. Session4307 ENDED1,
+68541 ENDED0, no active gate; never restart oldsessions.
+
+KEEP real signed-in tab4/Vite33452/tunnel70626/node_modules; current bridge exact2b
+normal metadata root scratch/strategy-observed-real-preview-20261020-v1/store.
+Oldf0 retained untouched. Existingfeed/paperLAST/no realorders/reset. New source
+read-view/API not activated yet. Persist screenshots/evidence/failures; only
+canonical deploy after concrete real preview acceptance and corrected gates.
+Actual receipts/newinstall proof in docs/research/strategy-observed-preview-install-proof-2026-10-20.json.
+Previous full factual history follows; current section governs outdated directions.
+
+## CURRENT HUMAN 13:30Z — observed model-book progression and exact41 private snapshot verified; real preview migration next
+
+Continue till finished accurately. All names and charts must share original model
+units, trade Size%, desired Position%, both-side timing and original reasons.
+Existing feed only; paper LAST; real signed-in preview BEFORE deployment. No
+question pending. Productionb4 and old native preview source remain unchanged.
+
+NEW normal collector supports strategy-numerical-entries/3 and a separately named
+observed hypothetical reference book. Original later eligible IEX bid/ask inside
+the original recommendation deadline supplies a proxy, NEVER an actual fill or
+viewer holding. Advice and GETs do not advance units. Original first recommendation
+survives execution, refresh and pointer interruption. One original attempt per
+stock/day prevents repeated sells; expired attempts stay unfilled. Daily Buy cash
+budget excludes same-day sale proceeds. Next-day original-close rollover rebases
+units mechanically, retains actual returns/cash/fees and never silently reseeds
+from an older history endpoint. Shared finite proof keeps full original evidence
+without enlarging native caps. Core transition/native economic12 sources unchanged.
+
+FINAL flow-v4 CID3b8a87c5f8e4735e9f73cd448d4603fd62be7c2218dc5165ba76a6516418ba65
+exit0/noOOM13:21:57.534720204Z:44PASS/0fail/error/skip,2.191s/maxRSS297052KiB;
+21new ledger/flow/source-review cases+23changed-path regressions. Explicit synthetic
+JSON through actual native capture/collector/accounting/ASGI, NOT real current
+feed. Original native replay on independent inputs exactly matches units/cash/
+fees; current source-review reconstructs every original holding AST statement and
+rejects old35 review for new41. RO/netnone/UID1000/1CPU/512MiB=swap/PIDs32/tmp64/
+CPU30/FSIZE1MiB unchanged. These are source cohorts, not summed unique test counts.
+
+FAILURES preserved: book-v1 Docker RO missing mount target BEFORE interpreter;
+v2 harness package-prefix identity10errors; v3 tuple/list readback5pass5error;
+v4 original10pass. Integrated flow-v1 original39pass. New deadline regression in
+flow-v2 reproduced late-arriving response backdating an execution:39pass1fail.
+Targeted observed_at<original expiry fix, original assertion unchanged;flow-v3
+40pass. Source-review additions then finalv4 44pass. All original controls/pins/
+CIDs/inspects/stdout/stderr/results retained /tmp/strategy-reference-book-* and
+matching Spark1 scratch roots; never rerun for docs.
+
+Frontend 3NEW observed-format journeys PASS11.8s, then57regressions PASS~2.7m on
+SAME index-DKyr5O1I.js922554B (exact SHA in proof),0skip/flaky/unexpected/
+diagnostics.60distinct across split3+57, not one60-case cohort. TSC/build5.90s/diff
+pass(existingCSS/chunk warnings). Table/chart D/W/15m agree on Sell13%/Position
+14.3%; resolved current Wait/Size— retains original Sell marker/reason. Malformed
+book cannot fall back to a grade-only Sell. Fixtures are NOT real recommendations.
+
+NEW ACTUAL exact41 native calculation CID32c4c6397c6bc8aaa2146dce7b6cd2d7f136bbad59f0918edbbede85a65be6d1
+exit0/noOOM13:24:47.12348098Z/maxRSS320076KiB, before original09:30 recompute
+cutoff. Restores original admitted Oct19 close and runs actual new-source native
+publisher with unchanged economics, no account/broker/holding forecast fit.
+All94targets/grades/technical evidence EXACTLY equal original v8;96input symbols.
+New snapshot7df7df35110c68d31642f1a52a67292a701ead394738edcf27e83522b1d23eb2/
+receipt e344b2c91a338ea986cf39165bfe029f8280506661a4c8b36913916b61bd1327;
+171755B/SHAde05a6063b1a9d37cb7f9f17f1763897f07631a8b579eb21c0e6207163907f4c
+at docs/research/strategy-observed-initial-publication-2026-10-20.json.
+Original expiry Oct20 16:00ET unchanged. Private selectors41 only; original31
+production selectors byte-identical before/after; ordinary41 nightly NOT run.
+New explicit reviewed41 status retains old strict35 path. Initial snapshot was
+ACTUALLY recalculated by exact41 native publisher, not predecessor bytes rehashed.
+Review docs/research/strategy-observed-source-review-2026-10-20.json SHA
+8725e9c74e8c2e9cd569a0b41d640099298d7a379f1a297660854770dca41ae9.
+
+Proof docs/research/strategy-observed-book-proof-2026-10-20.json866086B/SHA
+0e74bab314db970958194916c402930ea4b8ef4e2ef8843de9396a0a46d8b746.
+ONE fixed-file collector retained9roots/72fields with exact SHA/physical bookends,
+fsync/readback; no gate replay or crash/powerloss claim. Source maps in proof.
+
+NEXT: finish committed exact41 private activation/normal history selection in a
+NEW private preview root/checkout; do not mutate old running f0 checkout/store.
+Use original94 audited history throughOct19, same economics contract, original
+native context/arrays/timing sources. No simulator/producer/audit rerun. Update
+authenticated preview read bridge only after actual native API checks; retain
+normal upstream owner auth/401/403/nonread405. KEEP Vite33452/tunnel70626/tab4
+signed-in/tab3handoff/node_modules. Real current math is NOT yet shown there.
+
+Then ONLY NATURALLY Oct20>=09:45ET/<16:00, ONE bounded GET-only acquisition with
+NEW exact41-source controller. Old f0 scripts remain UNRUN/UNSUITABLE. Require
+unique strategy-current-regular-20261020-v1 absent and no active model/full gate.
+Original.env only private filemount/keys selected INSIDE process; never expose
+keys/headers in argv/DockerEnv/evidence. Existing feed IEX; same caps; no account/
+orders/holding fit/provider change. Immediate SAME-preview refresh/capture before
+original30s quote expiry; no re-acquire merely for screenshots. Actual feed→API→
+preview and full current backend/routing/canonical release acceptance remain OPEN.
+
+Before model gates read MODEL_EVALUATION and inspect actual upgraded DeepSeek
+runtime/config; never restore old settings or change model/service/account.
+No duplicate jobs/watchers/cron/releases, usage-limitedworker retries/replacement,
+agents absent explicit delegation, paid data/tuning/G08weakening/Spark2load,
+denied-read bypass/history rewrite/native-pool adoption/reopening. No market_daily
+or balancer probes; they write/send/cancel. No paper reset/real orders. All older
+closed roots/gates/producers/audits stay closed. Separate physical allocator/
+filesystem/SQLite/fullRAM/twohost/powerloss remain blocked/unverified. No full
+live-readiness/profitability claim. ACTIVE/quiet unchanged, meaningful progress
+only; no ETA.
+
+## CURRENT HUMAN 12:39Z — standing reference integrated/tested; real preview still old backend; NOT deployed
+
+Human: “i still dont see consistency in the current size recommendation with the
+chart.” Real HPE reproduced the ambiguity: current “Buy Size10.6%” was a desired
+TOTAL position; original Oct16 09:45 simulated Buy2.5% was an ADDITION toward the
+then25% objective. They must not be labelled as the same quantity. Current preview
+NOW has separate Size% (trade amount) and Position% (desired total). Chart header
+and table use those same meanings; unconfirmed trade is —, not the position or0.
+Original markers/evidence stay unchanged. Actual HPE D/W/15m manual path retained
+original Oct16Buy2.5/then25% and current10.6% objective; screenshots/JSON at
+/tmp/strategy-position-consistency-real-ui-20261020-v1, scoped diagnostics[].
+The main ongoing-book mismatch is NOT declared finished merely from this label fix.
+
+PUSHED source0431ffc4bf28f0ef9999067671974249c84be5a9/tree
+5c528534dbc6f65669e3dbb07491dc80b548a520 on production-based codex/trading-fill-consistency-20261019 adds
+strategy_reference_entries.py and normal collector/API/original-history selection.
+It is NOT main or deployed. Productionb4 unchanged. Source approval35→40 includes
+reference adapter/core and actual history/installation/publication dependencies;
+no production approval/config/service/model/account/provider change. Old35-source
+bundle/f0 acquisition cannot certify new40-source code. Native numerical math,
+writer/Store/order semantics/caps/economic12-source identity remain unchanged.
+
+NEW integration: retain ORIGINAL native MarketPacket and its existing independently
+split-attested IEX prior_close anchors; no extra provider request. Authenticate
+actual source/head/forecast/config/window/quote receipts. Explicit IEX-relative
+return bridge values original adjusted reference units, NEVER raw-IEX=SIP claim.
+Actual native window determines terminal. Both positive owned-unit Sell trims/
+grade exits and Buy timing use the native decision engine. Separate trade amount
+and desired position are in current API/UI; unavailable/expired/foreign evidence
+cannot fall through to an invented legacy Sell. One missing grade does not erase
+the valid rest of the universe. First standing intent is immutable across quote
+refreshes/candles, indexed once and restored with its original Sell/amount/reason.
+Future selected original survives corrupt current view; ASGI owner200/foreign403/
+anonymous401 covered. Standing reference is COUNTERFACTUAL MODEL SCENARIO, NEVER
+viewer holdings, account, fills or historically published advice. Advice/polling
+does NOT advance units, assume fills or spend proposed sale proceeds.
+
+NEW9 cases plus28 changed-path regressions: FINAL backendv4 CID
+0103fd3aa2c09bd295a9af739492fcec55b5503b8d36b97a259a1c71fcd8f52b,
+37pass0fail/error/skip/1.206s/maxRSS300156KiB/exit0/noOOM12:13:34.959721626Z.
+Source5 exact pins in proof. Native capture/quote parsers and native math run with
+explicit synthetic provider JSON, NOT real current feed acceptance. Caps unchanged
+netnone/RO/UID1000/1CPU/512MiB=swap/PIDs32/tmp64/CPU30/FSIZE1MiB. First v1 FAILED
+34cases/1error: fixture omitted calculation_receipt before intended later-candle
+assertion; corrected fixture only. V2 34pass, v3/v4 37pass are changed-source
+cohorts, NOT142 distinct tests. Preserve all roots /tmp/strategy-reference-live-*
+and Spark1 scratch/strategy-reference-live-20261020-v{1..4}. Isolated v1 test
+checkout frozen; later exact files ROmounted. Active preview checkout untouched.
+
+UI evidence: original2 expected REDs, then56PASS205.071966s for reference mode.
+Human label finding added1 expectedRED14.218019s. Final product asset
+index-CI1Teezc.js921852B/SHA1664045a95d5512d58ce60a4b3dec0534377d695c712d9c17c26e6403295e1fd,
+TSC/build5.03s/diffPASS(existingCSS/chunk warnings). Final57-case run FAILED55pass/
+2fail211.974006s: original-foreign crossed REAL08:30 candle deadline and correctly
+lost current entry; second old assertion confused known0% objective with unknown
+sell amount. Changed only test preparation to avoid expiry in identity test
+(real wait if candle has<10s, no fake clock; expiry assertions unchanged), then
+3identity variants PASS9.53084s. Updated old assertion to Position0% AND Size—;
+one targeted case PASS5.936132s. Same final product artifact throughout. These
+cover57 unique cases across split cohorts, NOT one whole57 green run or59unique.
+Keep all RED/failed/green logs/traces/source/configs; never replay for docs.
+Two intermediate label builds completed but tests UNRUN. No deployment occurred.
+
+Proof docs/research/strategy-reference-live-integration-proof-2026-10-20.json
+186479B/SHA7c6c1b724015953d20ef7c10f1a23f5d1ef4b8b8ef7938d2b4f26358d64b20ad
+contains retained32fixed remote DATA files/reports/CIDs/sourcepins/controls and
+local artifact/realUI SHA metadata. Collector ONCE saved/fsynced/read back product
+proof then FAILED copying to absent main research/ parent. NO recollection/retest.
+Separate retained-local-proof-only copy to existing main docs/research succeeded;
+failure /tmp/strategy-reference-live-collector-copy-failure-20261020.json and exact
+failed collector preserved.33diagrams/page synchronize; changed flow dashed/
+unreleased. Unrelated renderer byte noise archived/restored from exact original
+unchanged-source SVGs, page rebuilt only; no additional full render/check needed.
+
+KEEP same signed-in previewtab4/Vite33452/tunnel70626/node_modules/tab3handoff.
+IMPORTANT actual read bridge STILL uses exactf0 source+normal metadata at
+scratch/strategy-history-real-install-20261020-v1/store. It does NOT select new40
+reference backend yet; frontend hot reload alone is NOT whole integration proof.
+Do not mutate that running source checkout or call old acquisition “latest code”.
+No samples/auth bypass/key/cookie copying. Source40 real metadata/activation and
+read-bridge migration need concrete reviewed binding first. Original snapshot
+expiresOct20 16:00ET, holding recompute09:30 separate; never extend either clock.
+
+NEXT finish coherent reference progression/real preview, not another tiny guard:
+1. Standing reference currently stays originalOct19 and has no assumed fills.
+   Automatic separately-labelled hypothetical progression and next-day rollover
+   remain OPEN. Only ORIGINAL LATER observed execution-price evidence may settle
+   a hypothetical intent; issuing/polling advice is not a fill. Preserve pending
+   objectives and ORIGINAL DAILY BUY CASH BUDGET separately from sale proceeds.
+   New snapshot cannot silently reseed from older history; preserve wealth through
+   any original basis restatement and retain actual returns. Add scoped new proof.
+2. Review exact40-source candidate activation plus original daily context for an
+   isolated real preview, retaining original source/receipt lineage; no weakened
+   source/config/publication guards. Prepare a NEW exact-source acquisition
+   controller; oldf0 /tmp/run_strategy_regular_preview_acquisition_20261020.py and
+   /tmp/acquire_strategy_regular_preview_20261020.py remain UNRUN and unsuitable.
+3. Actual current regular15m only NATURALLY Oct20>=09:45ET/<16:00. No early call,
+   fake clock, old-day replay, duplicate collector/watcher/cron, restart96763.
+   Unique strategy-current-regular-20261020-v1 must be absent; inspect original
+   attempt, never blindly retry. Original.env only private-process filemount,
+   APCA keys selected inside process; no extraction/copy/headerlogging/argv/env
+   exposure. GET-only configured IEX under unchanged caps/no account/orders/fit.
+   Capture authentic both-side actions/Size%/Position%/original reasons in SAME
+   signed-in preview before original quote30s expiry; no reacquire for screenshots.
+4. Full changed backend/routing gates require actual upgraded DeepSeek config
+   identity inspection, never old-setting restore/model/service swap. Canonical
+   release only scripts/deploy.sh AFTER real preview acceptance, proper new-source
+   approval/backups/rollback/post checks; NEVER historical main wholesale.
+
+All old closed cohorts/producers/audits/getters/collectors/gates stay closed;
+session94881 ENDED, no active full gate/model evaluation.2297historical microbuys
+remain original, no practical floor/tuning/hiding. No confidence/profitability/
+live-readiness claim. MissingOct15/60session intraday limit remain; paper LAST.
+No market_daily/balancer probes, reset/real orders, paiddata/provider/service/model
+change, denied-read bypass, Spark2load/G08 weakening/native-pool adoption/reopen.
+Physical rename/journal/SQLite/fullRAM/twohost/powerloss remain separate blocked/
+unverified. Automation ACTIVE; prior exactbytes archived at
+/tmp/strategy-reference-live-automation-before-20261020.toml9142B/SHA
+08813008b50a4ac341faa4f1e99aa910699d9c305343860a4aaacf90f1e7b2e2.
+Notify meaningful progress/failure/required action only, no ETA/question pending.
+
+## CURRENT 2026-10-20 — reference transition contract VERIFIED; live selection remains OPEN
+
+Human task remains the real latest-strategy All names Buy/Sell/model Size%,
+consistent original history/15m entries/reasons, preview BEFORE deployment;
+existing feed only, paper LAST. This advances the critical ongoing-book gap,
+not another allocation-capacity guard. Production b4 and the real preview are
+unchanged; no current regular market acquisition, account, orders, model/service
+change or deployment occurred. No question pending. Keep heartbeat ACTIVE.
+
+Source checkpoint 7e866b1b (production-based feature) adds ONLY
+strategy_reference_transition.py, its tests and proof. The new adapter is NOT
+selected by the ordinary publisher/collector/API/UI yet. Existing backend paths,
+source35 approvals/config/economic files and frontend bytes remain unchanged.
+Do not call this a whole live fix or rerun old full gates for documentation.
+Exact final new-source files passed 14 unit cases in v5 plus actual94-stock
+original-reference preparation; this is scoped evidence, not full-tree release
+acceptance. Proof research/strategy-reference-transition-proof-2026-10-20.json
+39421B/SHA6de57e99999c18089a02009ffd3eb7c493be25aa5dc7ea1036c551494fd1b33a.
+
+NEW typed immutable ReferenceBook and TransitionPlan own original fractional
+units/cash/adjusted-close marks, exact strategy/session/cost/original history/
+audit/review/native daily-prefix/source/snapshot receipts. The read-only reader
+uses the existing audited history validator and native entry-context reader;
+no holding inference, account load or simulated-market producer is rerun.
+The reference remains explicitly a counterfactual model scenario, NEVER viewer
+holdings, a live account book, actual fills or historically published advice.
+It cannot reseed a later close from an older endpoint. Original unit/cash/equity
+accounting must match. Native history.continuous_targets and probability.decision
+remain unchanged. Desired units precede marked trade amounts; both native Buy
+AND Sell timing are evaluated. A/A+ zero targets and missing grades preserve
+reference ownership. Grade exits sell positive owned amounts. Sales are capped
+at reference units; suggested sale proceeds cannot fund buys; issuing/repeating
+advice never mutates reference units. Unowned unused names do not demand fake
+quotes. Native 1e-12 pending-unit threshold remains, no new practical minimum,
+rounding, model tuning or hidden microtrades.
+
+V5 CIDf4ff08e61645cd89f0067d33b65c473b5978d8f81adc1194f4f32908b29c3356
+image136ebb46 exit0/noOOM11:38:04.320933355Z;14pass/0fail/error/skip,
+0.048s unit assertions/maxRSS206064KiB under unchanged RO/netnone/UID1000/1CPU/
+512MiB=swap/PIDs32/tmp64/dropALL/no-new-privileges/CPU30/FSIZE1MiB.
+Fresh independent inputs execute ACTUAL unchanged replay and native probability
+math; original still-A trim amount/utility exactly match. Original fresh path
+is ALSO asserted to remain Buy17% versus reference Sell13% (same target17%):
+the existing live mismatch is preserved as evidence, not claimed fixed.
+Full original reviewed94-name reader reproduces exact last curve equity
+21.45090692060969. Actual saved Oct19 HPE reference24.301788955% versus original
+target10.596667580% gives positive13.705121375% proposed reduction. State is
+UNAVAILABLE (no current numerical distribution acquired); these are PRIOR-CLOSE
+scenario calculations, NOT current recommendations. Buy funding is constrained
+by the saved reference cash0.0002793287887, not by assumed sale proceeds.
+
+V1 FAILED:8pass/1failure,0errors/skips; expected-utility test had subtracted
+position weights instead of native desired units, differing by one floating
+ULP. Corrected expected native unit formula; original exact utility assertion
+retained, no tolerance relaxation. V2 9pass; v3 native reviewed reader12pass;
+v4 unused-stock mark13pass; v5 pending-threshold edge14pass. These are successive
+source cohorts/regressions, NOT57 distinct cases. All original sources/results/
+CIDs/argv/inspects retained /tmp/strategy-reference-transition-*20261020* and
+matching Spark1 scratch/strategy-reference-transition-20261020-v{1..5}.
+Two DATA-only collectors each ONCE: first v1/v2; final reads ONLY new v3/v4/v5
+39fixed files, source/result readback and digest verification. No native producer,
+old test cohort, gate or getter repeated merely for docs. Final source/AST/
+purpose comments/zero backspaces/diff checks pass. Diagram impact NONE:
+unselected internal numerical adapter; no runtime ownership/store/API/UI flow.
+
+NEXT CONCRETE SOURCE INTEGRATION (do not stop at this calculator):
+1. Inspect/retain the existing native MarketPacket in strategy_entries.acquire.
+   IMPORTANT source fact: forward_market_evidence.capture ALREADY obtains split-
+   attested prior regular IEX anchors in packet.prefixes[name]['prior_close'].
+   Reuse original packet/receipts; no duplicate requests or missing-anchor detour.
+2. Bind the explicit model reference/plan to original snapshot and timing heads,
+   then derive a declared current IEX-relative-return mark bridge using those
+   anchors and the original adjusted reference close. Never relabel raw IEX as
+   historical SIP/adjusted-price equivalence. Verify quote, source, head, window,
+   distribution and first-result receipts. The pure project() caller currently
+   owns market-clock/eligibility/basis authentication; terminal=True is NOT a
+   live-clock authority. Derive terminal state from the actual native window.
+3. Integrate both-side transitions in the normal collector/API/UI with separate
+   model position and positive trade amount semantics. Carry explicit hypothetical
+   reference progression ONLY from original later observed execution-price
+   evidence; advice itself is not a fill. Pending objectives and original daily
+   spending budget must persist separately so sale proceeds cannot be recycled
+   intraday. No historical simulation adopted as actual live state.
+4. Add NEW scoped source/HTTP/UI proofs and reviewed source activation; old f0
+   acquisition and efaf bundle cannot certify this future integration. All current
+   and old full gates retain their original exact source/runtime scope. DeepSeek
+   upgrade remains user-reported; inspect actual config before future model gates,
+   do not restore old services. No model calls made for these numerical cases.
+
+Actual regular15m acceptance still ONLY after natural Oct20>=09:45ET/<16:00;
+deferred original acquisition scripts remain UNRUN. Do not run early, fakeclock,
+replay old sessions, restart96763, add watcher/cron, probe market_daily/balancer,
+or blindly call old f0 control after integration changes. Prepare exact new
+reviewed source/control binding first; reuse original feed and preserve private
+credential isolation/caps. Keep signed-in tab4/Vite33452/tunnel70626/symlink,
+tab3handoff. Show authentic real recommendations in SAME preview BEFORE canonical
+scripts/deploy.sh. Microtrade practicality, confidence ranking, full current
+ongoing-book coherence/readiness remain OPEN. Preserve every failed/completed
+root/proof; no native-pool adoption/reopening COMPLETE, denied-read bypass,
+paid data/provider/model/account/service changes, real orders or paper reset.
+Previous efaf source bundle remains archived/pre-release, NOT authorization to
+skip the new integration's source review. No historical main wholesale deploy.
+
+## 2026-10-20 — whole-dashboard user workflow audit; five preview gaps fixed, material strategy gaps OPEN
+
+Human asked to use the whole dashboard like a trader and find logical gaps.
+Reviewed real signed-in Stocks94 universe, both filters, search/no-match, help,
+HPE current details, AAOI Avoid chart, HPE original15m→D→W→15m details,60-session
+range, incomplete candles, normal refresh, read-only Paper and Archived research.
+This is primary-view/representative-stock coverage, NOT all94 charts manually.
+
+VERIFIED fixes in preview: stale compact prices now visibly say last plus original
+NY time (real HPE56.51 was04:00ET, misleadingly just pre-market after07:00); empty
+directional lists distinguish unavailable recommendations from verified no-sells;
+validated v2 chart headers retain Avoid/Sell/Wait as well as Buy, with no Sell0
+invention; help now describes independent model position size, retrospective trade
+amounts and real ranking/history limits; current details expose exact prior-close
+technical values through the same renderer as original history, without unused
+dash/Strength text. Numerical maths/eligibility/source/expiry guards unchanged.
+
+Five NEW expected browserREDs retained39.330869s. First candidate49PASS/1FAIL
+164.812498s: expanded header affected legacyv1 no-header contract. Restricted the
+new header behavior to validated v2 displayAction; original assertion unchanged.
+Final50 browsercases PASS149.825080s/0skip/flaky/unexpected/diagnostics;5new+45
+regressions, not100distinct tests. TSC/build2.97s pass(existingwarnings).
+New proof11220B/SHA5aac2438540ca735ed7025511c29cb709512b4e17df86644f80d3395c7d25c90,
+research/strategy-dashboard-user-audit-proof-2026-10-20.json; data collectorONCE
+/tmp/collect_strategy_dashboard_user_audit_20261020.py. All red/failed/final source
+builds/results retained /tmp/strategy-dashboard-audit-*-20261020*. Intermediate
+details-only build exists but testconfig NEVER dispatched; final50 covers it.
+Real before/after/UI evidence /tmp/strategy-dashboard-user-audit-20261020-v1.
+Backend/scripts/source35/math/approvals/model services/accounts/orders unchanged.
+
+CRITICAL OPEN: targets_from_model optimizes from zero holdings/unit cash and
+grade_led_policy.signals(report,{}). strategy_entries.project calls probability
+decision for BUY only. Historical replay carries evolving units, applies native
+preservation/rebalancing and evaluates BOTH buy/sell adjustments. signalsFor's
+current Sell is a grade exit, not all still-A model trims. Thus live target sizes
+and historical ongoing trade amounts are NOT a complete interchangeable workflow.
+Do not claim the full strategy finished because a fresh Buy passes. Next inspect
+these exact callsites plus native joint_funded_policy/learned_holding_transition
+and define the independent model reference/transition contract using unchanged
+approved economics. No paper/personal prerequisite or assumed viewer holdings;
+never adopt retrospective/failed/completed pools as actual published/live state.
+Any backend/source change needs fresh scoped tests and reviewed source binding;
+the old f0 acquisition/bundle cannot prove changed numerical code.
+
+OTHER OPEN:2297 historical buys below0.1% remain real micro-rebalances, no practical
+minimum rule introduced; Best buy ordering is readiness then position size/alpha
+ties, not an independently measured expected-return/confidence score;15m history
+bounded60sessions/missingOct15, not all-years tradable fills or profitability;
+original technical inputs are shown, causal sizing-feature attribution not saved.
+Paper normal view still reports missing allocation receipt and4/9 failed briefs;
+no repair/reset/model operation done, paper LAST. New DeepSeek runtime not verified.
+
+Actual current regular15m acceptance remains UNVERIFIED before09:45ET; existing
+ONE bounded scripts remain UNRUN, no watcher/replay/fakeclock/duplicate collector.
+Keep Vite33452/tunnel70626/symlink/tab4/tab3. REAL preview before any deployment;
+only scripts/deploy.sh, no historicalmain wholesale. No new full backend/model
+gate for this frontend-only change. Preserve all previous proof/failure roots.
+
+## 2026-10-20 — directional lists and historical amount explanations verified in preview
+
+Human reported Avoid rows under Best sells, tiny Buy sizes and sells larger than
+recent buys. REAL preview reproduced 5buys/0sells while Best sells listed Avoid
+and Buy rows. Fixed frontend filtering to include only the selected direction;
+that direction also supplies its displayed action. Empty current sell publication
+now says No sell signals. All names retains Avoid/Wait/unavailable rows. Original
+source/quote/expiry/grade/size guards and all backend/economic bytes unchanged.
+
+Historical markers remain exact original trade amounts, not total position sizes.
+Details now state each percentage uses portfolio value at that time and cannot
+be added across dates as share quantities. Original5755 actions include2417
+positive amounts below0.1%,2297buys. MU Sep23 Buy0.1478133% had modeltarget24.4914%;
+Sep24 Sell17.1171% reduced toward6.9741%. The tiny addition did not create the full
+position. No new minimum, removal of tiny actions, simulation, account or order.
+Practical tiny-trade churn was NOT solved by changing model policy. Native replay
+caps sells at owned units; no new whole-history ledger audit was run this turn.
+
+Two NEW expected browser REDs retained. First candidate42PASS/3FAIL176.372s:
+two old tests incorrectly expected unrelated rows in filtered tabs; now assert
+their exclusion then use All names for the unchanged content assertions. One
+desktop15m refresh moved view1400.333bars. Chart now stores observed viewport
+before teardown rather than relying only on its disappearing instance.
+Final45 browser cases PASS179.893853s/0skip/flaky/unexpected/diagnostics, including
+both mobile/desktop zoom-refresh checks. TSC/build pass, existing warnings.
+No full backend/model gate rerun for this frontend-only change. Original e7
+11001+100 evidence remains scoped to its exact revision/runtime.
+
+New proof5000B/SHA112ec5af658df664e60947b3c44e4a7b0e1939c622a6c297810b9ae7775736a8:
+research/strategy-action-clarity-proof-2026-10-20.json. CollectorONCE
+/tmp/collect_strategy_action_clarity_20261020.py; red/failedgreen/finalgreen-v2
+results and immutable builds /tmp/strategy-action-clarity-*-20261020* retained.
+REAL Best sells empty and MU Oct19 tinytrade/model25% screenshots+JSON at
+/tmp/strategy-action-clarity-real-ui-20261020-v1, diagnostics[]. Those images prove
+unchanged filtering/details before the separate viewport correction. User is
+actively browsing COHR; preserve selected tab rather than repeatedly navigate it.
+KEEP Vite33452/tunnel70626/symlink/tab4deliverable/tab3handoff. No deployment.
+
+Human reports DeepSeek upgraded. No model/service changed or new runtime identity
+verified here. Before canonical release inspect current model configuration;
+do not reapply old service settings. Existing sizing/timing heads unchanged.
+Actual current regular feed acceptance still waits for naturalOct20 >=09:45ET;
+both prepared bounded scripts remain UNRUN. Same next step/guards below.
+
+## 2026-10-20 08:30Z — full backend and routing gates passed; real regular entry remains open
+
+Both original e7 gates ended successfully; no evaluation remains active. Exact
+e7c919749ab51bf54593b138015127537c7a8b0f/tree3db89973844f45b4dc3fc82b54cf926b9eb2d2ee:
+UNIT 11001 passed, 93 skipped, 6 xfailed, 439 warnings, 25 subtests in 537.13s;
+ROUTING 100 passed in 444.09s, terminal 08:14:49.008554Z. Original session94881
+ended0. Nine fixed data files were collected once; proof4521B/SHA
+b7cf07c93b9dadf750464d306a0deb64d6bc6e60f752dd41c8eb46031b6cb08a,
+research/strategy-history-current-gates-proof-2026-10-20.json. Earlier f0 failure
+remains FAILED. Never rerun these completed gates or collector for documentation.
+
+Current f7607e72 production-based feature is pushed, not main or deployed. Its
+backend/scripts bytes are identical to green e7; its frontend separately passed
+43 browser cases. This is not a claim that the whole f760 tree ran e7 gates.
+Production b4 remains unchanged. Historical 5755 simulated actions/94 tickers,
+original 15m details and actual model percentages are verified in signed-in
+preview; simulation is not advice historically published or proof of profit.
+
+The remaining unavailable input is a genuinely completed current regular 15m
+candle. Native _window refuses before Oct20 09:45ET. Prepared acquisition scripts
+remain UNRUN: /tmp/run_strategy_regular_preview_acquisition_20261020.py and
+/tmp/acquire_strategy_regular_preview_20261020.py. After the actual window only,
+run ONE bounded original GET-only acquisition as described below, preserve source,
+forecast/quote receipts and caps, show real current action/Size%/technical reasons
+in the same preview before release. Respect Wait/unavailable; no fakeclock/replay,
+new watcher, duplicate collector, holding fit, account operation or paid feed.
+
+Keep Vite33452/tunnel70626/node_modules/tab4 deliverable/tab3 handoff. Paper LAST.
+Current allocation expires Oct20 16:00ET; holding recomputation09:30 is separate.
+Then canonical scripts/deploy.sh only, original approval bundle target-only rebind
+and separate history review6939c2f6. Never deploy historical main wholesale.
+Full live readiness and actual regular entry acceptance remain UNVERIFIED.
+
+## 2026-10-20 08:14Z — current table/chart plan labels aligned;43browser PASS; e7 ROUTING active
+
+Real preview exposed a remaining closed-session label mismatch: table's valid
+next-session Buy versus chart headline Wait. FRONTEND ONLY now reads the same
+authenticated plan state, displays Buy/modelSize% with explicit Next session
+context on allframes; actual marker creation still REQUIRES entry receipt.
+Opening without confirmed numerical signal reverts both table/chart to Wait.
+No fake immediate action/marker/clock. One expectedRED on priorqlbn bytes retained;
+new43browsercases PASS2.3m/0skip/flaky/unexpected/diagnostics at ONE new build,
+one new case+42regressions. Original entry/source/expiry/history refusal checks
+unchanged. TSC/build2.48s/diffPASS(existingwarnings). New index-BhmKHMST.js915919B
+SHA1967de8440d9110d8a0761d9739dbdf7e4a33a75c7606b6dc2cc3595e463098a.
+Proof3786B/SHAbb4f7c3a1386458d9004352f06700eb701b3839555e89303ee6b2ddf025c082a,
+strategy-next-session-chart-proof-2026-10-20.json. No backend/35-source change.
+
+Real native COHR15m60sessions originalOct1 09:30Sell15.3%/GradeB/priorSep30close/
+modelposition0/EMA21−2.22/EMA63−5.32 verified. This sells15.3%, rather than saying
+Sell0; original model position0 is distinct. Current COHRheaderBuy25/Nextsession
+matches table, no current trigger marker invented. Evidence screenshot/JSON
+/tmp/strategy-next-session-real-ui-20261020-v1/cohr-{original-sell-15m.png,evidence.json}.
+Historical output unchanged; market-price incomplete status preserved, no fake
+Oct15 candles. Real current regular entry remains UNVERIFIED.
+
+Originale7 full94881 UNIT phase finished0; ROUTING now running, do not duplicate.
+Await terminal original94881/result. Exact backend/sourcee7 unchanged by these
+frontend edits. Oldf0 fullfailure/targeted correction remain their own records.
+No service/production deployment. Keep same preview/tunnel/symlink and continue
+prepared ONE actual regular acquisition only after naturally completed09:45ET,
+then real preview before canonical release. Earlier sections retain exact paths.
+
+## 2026-10-20 07:58Z — original fullf0 gate ENDED; legacy HTTP contract updated; targeted PASS
+
+Original69728 ENDED1. Exactf0 unit11000PASS/1FAIL/93skip/6xfail/439warnings/
+25subtests562.27s, ended07:52:06.009366Z. Sole old PublicationHTTPTests exact
+projection assertion omitted new recorded_history_version. No numeric snapshot,
+authorization, corruption or funded-fallback defect observed; all new18 cases
+pass in this full run. ROUTING DID NOT START. Failedfull remains FAILED, not a
+greenrun. ProductionHEADb4 unchanged. Image5336a71ff3f81dcc6e0442a3e3794324b0acaa28bd8debd0eee388a5a568898b.
+
+Only test now requires exact original snapshot plus explicit new capability
+strategy-recorded-entries/1; keeps every other original assertion. Targeted real
+HTTP journey1PASS1.011s, source/transport retained /tmp/strategy-recorded-index-
+publication-capability-contract-20261020-*. No production or35-source code changed.
+DATA collectorONCE proof8405B/SHA3cb2048f1fc98b7032c2e811e37622d89fc04ff4e14bb0e0f954e18c5f4171ef,
+research/strategy-history-gate-contract-proof-2026-10-20.json. No old gate rerun
+for docs. New full acceptance still OPEN after this test-contract correction.
+
+Real native preview remains installed94/5755/HPE original2.5 plus25model/technical
+reasons, D/W/15m checks clean. Prepared real current acquisition remains UNRUN
+until naturally completed09:45ET Oct20; see next section. No service/deploy/orders.
+
+## 2026-10-20 07:52Z — real94 install/API and native real-preview history VERIFIED; fullf0 gate running
+
+Actual exactf0f0016d/tree4851c0d2 private install CID5a490c579aba94e4e93e6ad08ba0e1a3a1ae9dad72d59d4af59604702ce751ad,
+image136ebb46 exit0/noOOM07:35:46.537158067Z/327640KiB. All94 original bodies/
+5755actions/raw8953411B match. Actual API allocation94/summary5755/COHR87/HPE42/
+AAOI145 original decisions exact; owner200/foreign403/anon401/no-store. No model/
+simulator/account/broker calls; productionHEADb4+3selector hashes unchanged.
+DATA collectorONCE proof22140B/SHA96f9bfb08f096742ea51b24d03d62c41ddac9c288f8ff2ce501001e4dcfe46fa.
+Private normal metadata store retained for the real preview, no nativepooladoption.
+
+Temporary preview now calls native allocation/history/original/list readers on
+that exact store after normal upstream owner authentication; old one-shot bridge
+archived. No cookie/key copied into native process/argv/evidence, netnone/RO reads.
+Anonymous previewGET401/nonreadPOST405. REAL signed-in tab4 HPE originalOct16
+09:45Buy2.5/GradeA/model25%/EMA21−9.44/EMA63+1.50 unchanged acrossD/W/15m, current
+Wait10.6, diagnostics[]. Screenshot/evidence /tmp/strategy-history-installed-real-
+ui-20261020-v1/{hpe-original-15m.png,evidence.json}. KeepVite33452/tunnel70626/
+node_modules symlink/tab4deliverable/tab3handoff. No real regular-entry claim.
+
+ONE exactf0 FULL UNIT→ROUTING RUNNING original69728, controller
+/tmp/run_strategy_reused_source_gates_20261020.py, scratch/strategy-final-source-
+gates-20261020-f0f0016d. Reuses existing exactf0 private checkout; original env
+symlink only/isolatedgateDB/oneworker, no source/service change. Await ORIGINAL
+result/session, never duplicate. Old6ce10983+100 CLOSED at originalsource.
+
+Current regular acquisition scripts PREPARED/AST-only and NEVER RUN:
+/tmp/run_strategy_regular_preview_acquisition_20261020.py and
+/tmp/acquire_strategy_regular_preview_20261020.py. Actual local/remoteOct20
+09:45ET+ preconditions; one GET-only native collector pass on installed timing
+head/residual+original daily arrays; credentials original process/filemount only.
+No holding inference/account/broker, no fakeclock/replay/newwatcher/paiddata.
+Unique scratch strategy-current-regular-20261020-v1 must not exist; inspect rather
+than duplicate any first execution. Preserve all actual source/quote receipts/
+caps and show real current names/actions/size/reasons in preview BEFORE deploy.
+Do not forceBuy. Original allocation16:00ET expiry/recompute09:30 separate.
+Canonical release needs target-only approval-bundle rebind plus separate history
+review6939c2f6 environment flags. Only scripts/deploy.sh, never main wholesale.
+
+## 2026-10-20 07:42Z — audited history release assets and canonical installation ready for exact-source acceptance
+
+NEXT new committed source must exercise ONE private original94-stock install/API;
+no simulator/audit rerun. Exact original5755/94/Oct19 assets:8953411rawstockB /
+1653606gzipB, allmetadata+assets2123526B. Separate install review12423B/SHA
+6939c2f64cdf7bdeb98d6f89e8ef7cf3fbcdae6e6405344168ba7c4a7a53d92f;
+original manifestcc490399/audit8c47b5e9/bindingeac9489f unchanged. All35 numeric
+sources/config/release/evidence/old initial-publication reviewSHA unchanged.
+
+New strategy_history_installation verifies all finite raw/compressed identities
+and economics before output, only selects complete originals, retains failed
+namespaces without adoption, archives exact selector rollback. Explicit CLI
+requires separate committed review+SHA+revision; original source-approval bundle
+strings need no change. scripts/deploy.sh uses ANIOS_STRATEGY_HISTORY_REVIEW and
+ANIOS_STRATEGY_HISTORY_REVIEW_SHA256: asset preflight before checkout; install
+after source approval/before restart; unknown outcomes block code rollback.
+
+Five installer units pass in v1, original HTTP did not reach handler because
+isolated runner omitted current MAX_PAGE dependency (FAILED retained). Product
+unchanged; v2 targeted HTTP1PASS.922s, owner200/foreign403/anon401/exact original
+decisions. Six distinct named cases across TWOcohorts, not six at one greenrun.
+Canonical shell v1 FAILED2/reported2PASS before intended boundaries because tmpfs
+noexec prevented deterministic fixture stubs. v2 explicitly permits exec only
+inside same64MiB isolated harness tmpfs; no production/native-policy cap change.
+Assertions now require actual preflight error; four shell cases PASS2.51s. Shell
+fixtures write/read history selection, not just called-function assertions.
+Sources/controls/results retained /tmp/strategy-history-installation-v{1,2}-
+20261020-* and strategy-history-deploy-v{1,2}-20261020-* +matchingSpark scratch.
+AST/Bashsyntax/diff/backspaces pass. No full new backend gate/deploy yet.
+
+Recorded-index927b3f26/tree4413aa0c pushed, scoped proof72bc61b1 remains closed.
+Before deployment still actual private94 install/API, readonly preview scalar/
+list bridge, real naturally completed09:45ET IEX15m→API→signedinpreview, then
+full applicable gates/canonical35-source renewal. No artificial market runs,
+fakeclocks, paiddata, duplicatewatcher, nativepool adoption, paperreset or orders.
+
+## 2026-10-20 07:26Z — recorded original recommendation discovery passes scoped acceptance; release OPEN
+
+New finite strategy-recorded-entry-index/1 and coverage/count checkpoint derive
+only from authenticated published numerical views before/after the existing
+collector. Original first recommendation bytes stay immutable; partial/unpublished
+work is not adopted. Source-bound owner GET recommendations pages64 originals
+after quote expiry without accounts/inference/current-pointer dependence. Missing
+counted references or tampered bodies refuse. Original scalar read stays separate.
+All35 reviewed numeric sources/config/economics unchanged. New backend gates NOT
+yet run; previous exact6ce full gates remain closed at their original source.
+
+New eight backend cases PASS.980s; one earlier capability fixture lacked required
+installed configSHA and stopped before intended assertion (7PASS/1ERROR retained).
+Earlier RED404/mount125 and missing persisted-service fixture failure retained;
+corrected stronger fixtures preserve every original assertion. Browser expected
+RED oldXlm blank marker; new FIVE PASS9.6s plus37existing regressionPASS2.2m,
+zero skip/flaky/unexpected/diagnostics. Same final index-qlbnE20d.js915600B SHA
+c1ab8a20ba9fcb215a61a33c6230adfc1aad40ce5b91f115549194715a13f4a4.
+TSC/build2.83s/diff/AST/backspaces PASS(existingwarnings). New diagram native33
+render/page synchronized;31 unrelated geometry renders archived outside Git.
+DATA collector ONCE proof research/strategy-recorded-history-proof-2026-10-20.json
+10943B/SHA72bc61b19672d1ca2bab309b8d5276162a3a8abd4f83ac619c10f3a6a908f057.
+All /tmp/strategy-recorded-index-* controls/transports and matching Spark scratch
+retain failed/completed cohorts; never rerun for docs. Not real feed acceptance.
+
+UI now retains recorded Buy/Size% markers after expiry/reload across D/W/15m,
+original quote/technical reasons checked against index rawSHA/time on selection;
+pagination/foreign-body/ticker-late responses checked. No fabricated Sell0.
+Temporary preview bridge still only simulation route, does not yet advertise
+new list capability; native read-only scalar/list bridge remains needed before
+real current entry. KEEP Vite33452/tunnel70626/symlink/tab4 signed-in/tab3handoff.
+
+NEXT independent release gap: audited5755/94-stock history import exists but NO
+canonical release caller; install exact original output/manifest/audit/binding
+without rerunning producers/audits. Then actual naturally current09:45ET native
+IEX15m→API→realpreview BEFORE scripts/deploy.sh; no fakeclocks, artificialruns,
+market_daily/market_balancer probes, paiddata, accounts/orders or paperreset.
+All old admission blockers separate; no full live-readiness/profitability claim.
+
+## 2026-10-20 06:29Z — exact6ce full gates PASS; final frontend header correction verified
+
+Exact6ce28f8594cda2f56a4d65bff02f17c4e66b0a5d/tree
+59f5735a81ea75f0f75d432350448061e04704ee passed unchanged canonical UNIT then
+ROUTING:10983PASS/93skip/6xfail/439warnings/25subtests528.46s, then100PASS437.50s.
+Original session6959 ENDED exit0; no gate/model evaluation remains running.
+Both original results0, source/argv/full stdout/stderr/productionHEADb4 unchanged,
+image9bbf2844efe2a827176bbe227d66587cd382a29f6f04bd442080a915e68e872d.
+Proof research/strategy-current-source-gates-proof-2026-10-20.json4520B/SHA
+53aa75a5b79906050ead753bfc2ced370d72bbe30b541053cb213acba43dc6d2;
+DATA-only9fixedfiles retained /tmp/strategy-current-source-gates-6ce28f85-20261020-evidence.
+This is exact6ce evidence, not an assertion every later tree ran those gates.
+
+One further FRONTEND-only header correction: valid numerical Buy/Wait still
+showed Awaiting15-minuteentries/previous nightly input date. Expected RED on
+prior t8TZ build preserved; changed existing numerical Buy→Wait→foreign/expired
+journeyPASS2.3s (runner4.3s), no skipped/flaky/unexpected. Header now uses fresh
+original completed-candle session; foreign/expired rows retain Awaiting. All
+backend and35strategy-source hashes unchanged; no math/source/quote guard edits.
+Final frontend index-XlmBO-ch.js911724B/SHA
+dab1d927979d3ef5f979a41d32957dcb7e8e6214e0749b5b723fd5dd85970616,
+TSC/buildPASS(existingwarnings). Proof strategy-current-header-proof-2026-10-20.json
+3474B/SHA dc19b279b7a14a81f34d12534e915706a2133f74fbe637191f1fd534c2cd6a78.
+Not a new distinct browser case: same numerical journey with stronger header
+assertions; prior29case final-body proof retains its exact two-cohort scope.
+
+REAL final preview tab4 still94names/fivemodelsizes COHR/GEV/MU25%,ALAB14.3%,
+HPE10.6%, closed regular session. HPE15m Wait10.6%, originalOct16 09:45Buy2.5%
+GradeA/model25%/technical explanation restored; diagnostics[]. Current screenshot
+/tmp/strategy-current-header-real-ui-20261020-v1/{all-names,hpe-original}.png and
+evidence.json. Vite33452/tunnel70626/symlink/tab4deliverable/tab3handoff KEEP.
+No samples/auth bypass/orders/paper operations, no current regular-entry claim.
+
+NEXT: real naturally available09:45ET current IEX15m→API→signed-in preview remains
+mandatory before deployment. While closed, complete the independent recorded-entry
+history list/preview original-read bridge if possible; scalar getter already
+exists. Preserve exact original first quote/size/reasons, no replay/re-inference/
+funded fallback or claimed Sell0%. Never restart oldwatcher96763 or duplicate
+cron/collector. Existing feed only/paperLAST/no realorders. Rebind final approval
+target ONLY, keep f3review/config/release/evidence strings and initial80476 JSON
+unchanged; original Oct20 16:00expiry/recompute09:30 separate. Canonical release
+onlyscripts/deploy.sh after real preview, never historical main wholesale.
+All closed gates/collectors remain CLOSED; no reruns for docs. State tests for
+check-ins use repository doubles; no live user preference/datastore was mutated.
+
+## 2026-10-20 06:08Z — all-frame chart entry consistency verified; generated catalogue corrected
+
+HEAD1cf backend full gate ENDED/FAILED only generated TOOL_CATALOG drift:
+10982PASS/1FAIL/93skip/6xfail/439warnings/25subtests535.33s; routing DID NOT start.
+Native generator now refreshes exact tool row,5original catalogue testsPASS.24s.
+First isolated generation failed missing SECRET_KEY before generator write;
+v2uses fresh process-only random key/no production credentials. Mac generator
+also refused missinghttpx before mutation; no dependency install. Preserve roots
+/tmp and Spark strategy-tool-catalog-20261020-v1/v2. Do not repeat for docs.
+
+NEW frontend fix: D/W no longer claim Buy when current15m numerical entry Wait.
+All frames share entry confirmation and actual entry session/time; no current
+marker on old candles. Tiny positive Wait size<0.1% remains nonzero. No change to
+historical5755actions/simulation/economic35sources/initial171058B80476 snapshot.
+Expected REDBC54 preserved. First changed runtime Ckch2axL:26PASS/3FAIL retained;
+final productt8TZbpxh:27PASS/2FAIL (two wrong legacy fixture header assertions).
+Those fixtures actually CONFIRM current entries but have old candles: corrected
+tests keep Buy header/refuse backdated marker. Targeted2PASS6.2s at IDENTICAL
+final JS bytes, so29distinct accepted cases across TWOcohorts, NOT29onegreenrun.
+All original historical labels/grades/details checked; new Wait→Buy all-frame
+case checks exact original session/time. No guard/cap/source-fidelity weakening.
+
+Final index-t8TZbpxh.js911529B/SHA
+be1e76f2bb683a5f8a51aafda98dde79370776b335115020eefd323679d02e46;
+TSC/build2.42s/diffPASS(existingwarnings). Real signed-in HPE D/W/15m all
+Wait10.6%, originalOct16 09:45Buy2.5%/GradeA/model25%/EMA21−9.44/EMA63+1.50
+details remain accessible, diagnostics[]. Screens/DOM
+/tmp/strategy-timeframe-real-ui-20261020-v2; tab4 deliverable/tab3handoff preserved.
+Proof research/strategy-timeframe-alignment-proof-2026-10-20.json14651B/SHA
+cd2f9287ce2ea295be9a64b59dc184946e350ff090b84d7ea8cfc65986dd79af.
+First local collector refused empty stderr before output; failed source retained,
+only zero-byte diagnostic admission corrected; no runtime/test replay.
+Earlier uncommitted failed test source wasn't separately frozen; exact failed
+built bytes/results/screens/traces remain, current final source fully pinned.
+
+NEXT commit/push this frontend+catalogue correction; run ONE new exact-source
+unit→routing sequence. Old1cf gate is CLOSED, not running. Rebind approval bundle
+target ONLY; config/release/evidence strings/reviewSHA stay byte-identical. Then
+real naturally current09:45ET GET-only independent timing→API→preview. No fake
+clock/replay/provider/key/subscription change/newwatcher/marketCLIprobe. Existing
+Vite33452/tunnel70626/symlink KEEP; paperLAST/no reset/realorders. Not deployed or
+whole live-ready. Scalar original getter/preview bridge/current history listing
+still open. All failed evidence retained. Onlyscripts/deploy.sh, never main wholesale.
+
+## 2026-10-20 05:51Z — Two release failures repaired; final source gates next
+
+Basef3e43234 initial installation/API/rollback is privately verified; candidate
+remains NOT DEPLOYED. All35 approved strategy source hashes and original171058B
+80476bbb snapshot remain unchanged. Original224 unitPASS10971 and routingFAIL98/100
+remain their original evidence, never relabelled.
+
+Changed-description matrix FINISHED05:48:48.543692Z exit0:352/372=.9462 vs
+baseline345/372=.9274. Exact check-in sourceSHA20be1bcadd4048b83da7a0fc81a114242c1c7c527ef0a5830d6a0f28b30b11d8.
+Check-ins9/12→12/12, arguments15/15 both, all original floors PASS. Full category
+comparison retained, including shared_document4/6→3/6 regression. No floor/schema/
+parser/case/model/service change. Description uses general explicit-preference
+principle, removes case examples. No perfect-router claim.
+
+Diagram unit proof33PASS2.64s, expected3RED/5securityPASS and actual installed
+Mermaid rendered PNG retained. Original unchanged real class journey plus existing
+check-in route/mode/reply and stored-preference tests now14PASS17.75s,0skip.
+Evidence research/strategy-release-repairs-proof-2026-10-20.json22345B/SHA
+ef05f29f51afab00698b07c02f7f5cb764984d0c404891a31756d5b5a51651f0;
+local/tmp/strategy-release-repairs-20261020-evidence contains all original logs,
+sources/argv/terminal bindings. All model jobs FINISHED; no job to duplicate.
+
+NEXT run full canonical unit/routing gates on the new committed source. Do not
+cherry-pick model/compose changes merely for a passing alias; no service/selector
+change needed by these repairs. Main's model-cutover compatibility commits remain
+separately reviewed, not applied here. Actual naturally available09:45ET regular
+IEX→independent API→real signed-in preview still required BEFORE deployment.
+Vite33452/tunnel70626/tab4/symlink KEEP, paperLAST/existingfeed/no realorders.
+Original-record preview bridge and ongoing recorded marker history remain open;
+do not claim whole readiness. Deployment ONLYscripts/deploy.sh, never historical
+main wholesale; no fakeclock/sessionreplay/duplicatewatcher or market CLI probes.
+
+## 2026-10-20 — Initial independent publication installation candidate
+
+Exact224f9a53 full unit gate PASSED10971/93skip/6xfail/439warnings/25subtests,
+535.28s. Its real-model routing gate FAILED98pass/2fail444.69s, same two failures
+recorded by the separate model cutover: class-diagram generics rejected by active
+content validator, manage_check_ins3/4 below unchanged.80floor. Preserve raw logs,
+do not lower floors or relabel ready. No model/service changes were made here.
+
+A PRIVATE actual35-source/config/native-type component produced the unchanged
+94real allocations and actual ASGI owner200/foreign403/anon401/no-store with
+forbidden account/funded fallback. Original authenticated close/risk artifacts,
+no ordinary prepare/nightly/provider or account operation. Seed171058B/SHA
+80476bbb92dda4c3591e63f3718aed9d724c9164901e618b2c26377c2527d329 preserves actual
+clocks/Oct20 16:00ETexpiry and exact candidate config. Whole regular15m acceptance
+is still unavailable overnight. This is an initial independent recommendation
+publication, never adoption of paper/native pools or fabricated history.
+
+NEW code after224 lets the committed source review optionally bind this exact
+initial snapshot. Preflight checks original Git bytes/digest/size/clocks/current
+sources/config/model receipts/cost; canonical activate uses original publisher
+after installing admitted selectors and restores original selectors on failure.
+No extra deploy bypass or model inference. This prevents an empty independent
+dashboard after the source/config renewal. Original missing-pointer RED retained;
+43GREEN1.24s =4new+39existing tests, including activation/readback/rollback,
+committed-artifact tamper, expiry and injected publication failure. Exact new-tree
+full gate/private real-artifact install/deployment remain pending.
+Diagram impact: NONE — existing reviewed approval→independent snapshot boundaries.
+
+## 2026-10-20 — Full-gate finding repaired; strict source renewal candidate
+
+71efb234/tree5da9e00f full unit gate FAILED:10961passed/1failed/93skipped/
+6xfailed/439warnings/25subtests545.32s. Only failure was unsupported-fcntl
+application startup. Preserved original result/logs in
+/tmp/strategy-frozen-unit-gate-20261020-evidence and matching Spark scratch.
+Moving the required Unix lock import into publish (before validation or writes)
+fixes startup without weakening publication locking.13 targeted cases PASS4.36s,
+including the unchanged original failure and new no-files unsupported refusal.
+
+The release helper previously refused the new31→35 source transition. NEW exact
+review type admits ONLY four added publication/entry modules and exact pre-account
+hook, requiring the full original deployed holding module AST after removing that
+hook/guard additions. Other30source hashes, original economics/model/cost/evidence
+stay unchanged. Expected one-case RED retained;31GREEN0.93s =8new+23existing
+admission cases, including selector activation/readback/original rollback in temp
+fixtures. First RED harness failed before tests (new mountpoint under readonly
+backend), retained separately; corrected distinct root reached intended refusal.
+No production approval activated. Committed source review is a candidate, not
+live entry/performance acceptance. A NEW full exact-tree gate is still required.
+Proofs strategy-frozen-unit-gate-proof-2026-10-20.json and
+strategy-release-components-proof-2026-10-20.json retain terminal raw evidence.
+
+Publisher source changed, so original v8 snapshot remains historical component
+evidence; use a NEW exact-source publication/context binding for actual current
+entry acquisition rather than relaxing original source guards. Stable economic
+identity/history bytes unchanged. Real first regular15m preview remains mandatory
+before canonical deploy. No questions, paper LAST, feed unchanged.
+
+## 2026-10-20 — Independent recommendations candidate, release gates and real current entries pending
+
+This production-based candidate remains independent of paper/personal accounts.
+Model percentages and original technical evidence publish before paper access;
+numerical current15m entries use installed timing models and existing IEX data.
+Original audited5755 historical actions/94stocks throughOct19 retain their exact
+values and original clocks, with matching economic-source/cost identity. Charts
+show action Size%, grade changes and clickable original reasons; dense labels
+remain readable and selectable across D/W/15m and desktop/mobile.
+
+Candidate component proofs in research/strategy-numerical-preview-proof-2026-10-20.json,
+strategy-chart-label-layout-proof-2026-10-20.json,
+strategy-original-entry-read-proof-2026-10-20.json,
+strategy-original-entry-ui-proof-2026-10-20.json and
+strategy-original-entry-race-proof-2026-10-20.json record exact source/artifact
+identities and failures retained. Latest backend4new+1existingHTTP journey pass;
+frontend35cases pass126.333s plus one separate real-timer selection race on the
+same index-BC54DTAT.js/556a63a4 bytes. These are36 distinct named cases across
+35+1 runs, NOTone36-case cohort. Earlier26 component/actual native context and
+all failed intermediate evidence remain separately identified. No live-ready,
+profitability or historically published-advice claim follows from simulation.
+
+Current numerical marker details restore the first saved quote/size/technical
+record by original ticker+candle+snapshot, with expiry and current_instruction
+false retained. Foreign snapshot/size and late responses cannot substitute a
+refreshed record. The owner-only read does not infer or access accounts. The
+real preview bridge still needs access to this candidate GET when an actual
+current entry becomes available; live backend does not expose it yet.
+
+Keep existing feed, Vite33452/tunnel70626/node_modules/tab4 normal sign-in. Show
+REAL current regular15m action/size/detail in preview BEFORE deployment. First
+naturally completed candle09:45ET; no fake clock/replay/new watcher/duplicate
+cron/job or market_daily/market_balancer probe. Original Oct20 snapshot deadline
+16:00ET unchanged; holding recomputation cutoff09:30 remains separate. Candidate
+source35 approval and full backend/routing gates remain pending. Source commit
+is an implementation checkpoint, NOT whole release verification. Only canonical
+scripts/deploy.sh may ship; NEVER historical main wholesale. Paper LAST/no reset
+or real orders. No model/provider/account/service change or paid data.
+
+Origin main advanced to e1acaf89 with a separate model cutover, observed via Git
+fetch. Its handoff describes DeepSeek-V4.1 and temporary compatibility aliases.
+This trading session has not changed those services. Before a canonical release,
+review the exact compatibility commits bf5f67b3/47915387 and running bindings;
+do not import historical main wholesale or claim previous routing numbers prove
+the changed model runtime. Current production-based branch keeps economic code
+separate; new35-source approval remains mandatory before ordinary admission.
+
+The detailed current continuation remains the TOP of the attached
+learned-live-release-20261006 worktree's NEXT_SESSION.md. Keep existing heartbeat
+ACTIVE and quiet unchanged. No question pending; no agents without delegation,
+usage-limited retries/replacements, denied-read bypass or native-pool adoption.
 ## 2026-10-20 09:50 ET — Harness bake-off round 2 done; reply-only effort is in main (VERIFIED, not deployed)
 
 Three real tasks to opencode and dsh (same commit, same effort, details in

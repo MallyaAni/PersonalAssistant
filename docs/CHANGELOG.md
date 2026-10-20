@@ -1,5 +1,262 @@
 # Changelog
 
+## 2026-10-20 — Integrate deployed dashboard code for main review and retire merged branches
+
+Merge the production-based trading feature into current main while preserving
+main's independent model/runtime work and legacy historical API. The 45-source
+numerical/publication closure matches live exactly; the merged frontend build is
+byte-identical to the verified live-source build. TSC/build and33diagram/page
+checks pass. Focused merged-source validation passes49cases after adding two
+omitted original protocol files to the isolated mount; the first55pass/47failure
+setup result remains retained. No whole-app merged gate or deployment is claimed.
+Main's diagram retry/refactor/security guard and the feature's passive class
+rendering normalization are reconciled without admitting active content.
+
+Remove only branches whose exact tips are reachable from main, preserving active
+worktrees and unique commits. Initial cleanup:12local and29remote deleted;
+45remote-tracking candidates already absent. Original cleanup mismatch and all
+source/test/ancestry receipts are retained in
+`docs/research/dashboard-main-integration-review-2026-10-20.json`. Public sign-in
+acceptance and the previously failed deployed check-ins sweep remain separately
+unverified/failed. This integration does not deploy main or alter accounts.
+
+## 2026-10-20 — Audit trader workflows and make recommendation context consistent
+
+The real workflow review found stale prices appearing current, missing Avoid/Sell
+chart context, unavailable recommendations described as no signals, outdated help,
+and hidden current technical inputs. The preview now visibly dates old prices,
+keeps current v2 chart/list actions aligned, distinguishes unknown from none,
+explains the actual model-size/history basis, and shares original numerical
+technical values between current and historical details. Legacy history refusal
+and header behavior remain unchanged after its regression caught an overreach.
+
+Five expected REDs and the49-pass/1-fail intermediate run remain preserved. The
+final50 browser cases pass149.825080s with zero skips/flaky/unexpected diagnostics;
+TypeScript/build pass. No backend, math, model service, account or order change.
+Material audit findings remain OPEN: fresh-capital Buy timing is not the full
+historical evolving-book rebalance/Sell path; micro-trade churn, allocation-size
+ranking limits, intraday coverage and genuine regular-session acceptance remain.
+Proof: strategy-dashboard-user-audit-proof-2026-10-20.json11220B/5aac2438540ca735ed7025511c29cb709512b4e17df86644f80d3395c7d25c90.
+
+## 2026-10-20 — Filter directional actions and explain historical trade percentages
+
+Best buys and Best sells now contain matching actions only. A publication with
+zero sell signals shows an empty result instead of Avoid or Buy rows. Historical
+details distinguish each original trade amount from the model position size;
+original tiny adjustments remain unchanged. The regression check also found a
+15-minute view reset on refresh; caching the observed viewport preserves it.
+
+Two expected REDs and the first candidate's three failures remain preserved.
+The corrected candidate passes all45 browser cases in179.893853s with no skips,
+flaky cases or unexpected diagnostics; TypeScript/build pass. Backend, sizing
+math, trade minimums, accounts and model services are unchanged. Real preview
+verified the empty sell list and original MU size explanation. No deployment or
+current regular-entry acceptance claim. Proof: strategy-action-clarity-proof-
+2026-10-20.json5000B/112ec5af658df664e60947b3c44e4a7b0e1939c622a6c297810b9ae7775736a8.
+
+## 2026-10-20 — Complete the current backend and routing acceptance gates
+
+Exact e7c91974 passed 11,001 unit tests (93 skipped, 6 expected failures,
+25 subtests) in 537.13s and all 100 routing/model checks in 444.09s. The later
+frontend checkpoint has identical backend/scripts bytes and separately passed
+43 browser cases. Original failed runs remain preserved. Production is unchanged;
+actual regular-session feed-to-preview entry acceptance is still unverified and
+requires a naturally completed current 15-minute candle. Evidence:
+strategy-history-current-gates-proof-2026-10-20.json, 4521B,
+b7cf07c93b9dadf750464d306a0deb64d6bc6e60f752dd41c8eb46031b6cb08a.
+
+## 2026-10-20 — Match next-session labels in the table and every chart
+
+A valid closed-session Buy in All names no longer appears as Wait in the chart
+headline. Both read the same authenticated plan; charts show Buy and model Size%
+with Next session context. Entry markers still require an actual confirmed
+15-minute recommendation. Once regular trading opens without that evidence,
+both table and chart show Wait. No sizing, timing, quote or source guards changed.
+
+The original expected browser failure is retained. All43 browser cases pass on
+the new immutable build, including the new all-frame closed→open journey and42
+regressions; TSC/build pass. Real installed COHR history shows Sell15.3% and its
+original below-A exit evidence, distinct from resulting model position0%. This
+does not prove a current regular-session entry or historical published advice.
+
+## 2026-10-20 — Require the explicit history capability in the snapshot HTTP contract
+
+The full exactf0 unit run passed11,000 tests and failed one older exact-response
+assertion because it omitted the new recorded-history capability. That assertion
+now requires the original snapshot plus recorded_history_version strategy-
+recorded-entries/1; all ownership, corruption, missing-pointer and no-funded-
+fallback assertions remain. The targeted real HTTP journey passes1.011s. The
+original full run remains failed and routing did not start. No production or35
+numeric-source code changed. Evidence: strategy-history-gate-contract-proof-
+2026-10-20.json8405B/3cb2048f1fc98b7032c2e811e37622d89fc04ff4e14bb0e0f954e18c5f4171ef.
+
+## 2026-10-20 — Verify installed real history and its signed-in preview
+
+Exactf0f0016d privately installed all94 original histories and5755 simulated
+recommendations without running a simulator or model. All stock hashes match the
+original audited manifest. Actual owner HTTP returned94 model sizes and5755
+historical actions; COHR, HPE and AAOI decisions/trades matched original files,
+while anonymous401 and foreign403 remained enforced. The signed-in preview now
+uses these native readers and preserves HPE's original Oct16 15-minute size and
+technical explanation across D/W/15m, with no warning/error diagnostics. Production
+remains unchanged. Full new gates are running; actual current regular-session
+entry acceptance remains unverified. Evidence: strategy-history-installation-
+proof-2026-10-20.json22140B/96f9bfb08f096742ea51b24d03d62c41ddac9c288f8ff2ce501001e4dcfe46fa.
+
+## 2026-10-20 — Install exact audited chart history through the canonical release
+
+Release assets now retain the original 5,755 simulated recommendations for94
+tickers through Oct19. A separate explicit committed review binds compressed and
+raw bytes, accounting and economic identity. The canonical deploy can validate
+these assets before checkout movement and install them after source approval,
+before restart. It preserves original actions and technical reasons, never runs
+a simulation, and restores only the original selected pointer on rollback.
+Incomplete namespaces remain unselected and are never adopted.
+
+Five installation units and the previously unreached owner/foreign/anonymous
+HTTP journey passed across two isolated cohorts; the original missing-dependency
+runner error remains failed. Four canonical deployment-order cases passed2.51s
+after making the deterministic shell-fixture tmpfs executable; the first harness
+failure is retained. Actual94-file installation, new full backend gates and
+current regular-session preview acceptance remain unverified at this checkpoint.
+The35-source sizing/timing approval and its original config/evidence are unchanged.
+
+## 2026-10-20 — Keep original recorded recommendations discoverable after quote expiry
+
+Charts can now restore a saved numerical Buy and its model Size% after the live
+quote expires or the page reloads. Selecting it reads the original price and
+technical reasons rather than refreshed evidence. A finite source-bound index
+and completed coverage/count checkpoint retain original identities; missing,
+partial or altered history refuses without falling back to a funded account.
+The owner-only paginated history API performs no inference or account operation.
+
+Eight backend cases passed in .980s, including actual owner200/foreign403/
+anonymous401 HTTP, pagination and interrupted/tampered metadata. Five new browser
+journeys passed in9.6s and37 existing journeys in2.2m, with no skips, flaky cases
+or unexpected diagnostics. The original blank-marker RED and two fixture failures
+remain recorded in strategy-recorded-history-proof-2026-10-20.json. TSC/build and
+diagram/page synchronization pass. These are scoped component/fixture checks;
+new full backend gates and actual current regular-session entry acceptance remain
+unverified. No sizing math,35-source approval set, paper account or broker changed.
+
+## 2026-10-20 — Date fresh numerical signals to their actual session
+
+The independent board kept saying Awaiting15-minuteentries even when it already
+displayed a valid numerical Buy. It now uses15-minute signals and the original
+completed candle's session while a matching fresh numerical Buy or Wait exists.
+Expired/foreign evidence retains Awaiting; no allocation, timing, source or quote
+guard changes. One expected browser RED and the unchanged numerical
+Buy→Wait→foreign/expired journey pass after the change; TSC/build pass.
+This fixture check is not actual regular-session feed acceptance.
+
+Exact prior6ce28f85/tree59f5735a source passed both full canonical gates:
+10983unitPASS/93skip/6xfail/439warnings/25subtests528.46s and100routing/modelPASS
+437.50s. The later header correction changes only frontend rendering/tests;
+all backend and35reviewed strategy sources remain byte-identical to6ce.
+Production remains unchanged; canonical deployment and real current-feed preview
+are still pending. Diagram impact:NONE — no new path or component.
+
+## 2026-10-20 — Align current chart actions across timeframes
+
+Daily and weekly charts previously displayed Buy while the same numerical entry
+said Wait on15m. Every frame now requires the same confirmed entry. Current
+markers use its actual session/time rather than the earlier model-input close;
+without a matching current candle they are not backdated. Historical simulation
+actions and original technical explanations are unchanged. Tiny positive model
+sizes display<0.1% consistently, including when waiting.
+
+The original daily Buy14.3/Wait14.3 failure is preserved. At identical final
+built product bytes,27 browser cases passed plus2 corrected legacy-fixture cases
+passed separately (29 distinct, not one all-green cohort). Those fixtures confirm
+a current entry but supply only old candles: Buy header stays, backdated marker
+is refused. Original historical labels, grades and explanations remain asserted.
+The new numerical Wait→Buy case checks exact daily/weekly/15m marker sessions.
+TSC/build pass. Actual signed-in HPE preview now reads Wait10.6% on allthree
+frames, retaining its original Oct16 09:45Buy2.5% explanation; diagnostics empty.
+This overnight check does not verify an actual current regular-session entry.
+
+The prior full unit gate found only generated tool-catalogue drift after the
+description change:10982pass/1fail. Native regeneration and all5catalogue tests
+pass; initial isolated generation lacked SECRET_KEY and is retained as failed.
+Production was not changed. Diagram impact:NONE — existing chart entry/evidence
+paths and renderer unchanged. Full new-tree gates and real current-feed preview
+remain required before canonical deployment.
+
+## 2026-10-20 — Repair two observed release-gate failures
+
+Passive class generic types are normalized to the installed Mermaid renderer's
+tilde syntax before the unchanged active-content refusal. Three expected syntax
+failures are preserved;33 parser/security checks and an actual Mermaid render
+pass. The unchanged real-model class journey passes after the repair.
+
+The check-in tool description now states that explicit enabling and disabling
+both persist a preference; the default setting cannot replace the requested
+write. No schema, parser, handler, selector case or accuracy floor changed.
+Official full-matrix measurements at three repetitions:345/372 before and352/372
+after; check-in selection9/12→12/12, argument fidelity15/15 both. Every category
+was compared:check_ins18/21→21/21,live_data29/33→30/33,personal_memory9/12→12/12,
+regenerate0/6→1/6,shared_document4/6→3/6; all other categories unchanged.
+The negative category change and remaining errors remain in the evidence. All
+original floors pass; no perfect-router claim. Existing route/mode/reply tests,
+stored-preference tests and the original class journey pass14/14 in17.75s.
+
+These are release repairs, not strategy or market-data changes. All35 reviewed
+strategy sources and the original initial-publication snapshot remain byte
+identical. New-tree full gates, actual regular-session preview and deployment
+are pending. Diagram impact:NONE — internal parser normalization only.
+
+## 2026-10-20 — Candidate initial recommendation publication on canonical install
+
+An explicit committed approval review can include a finite initial model snapshot.
+Preflight verifies its exact Git bytes, original clocks and installed numerical
+sources/configuration. Activation uses the existing publisher after the approval
+change; a failure restores the original selectors and retains evidence. No account
+input, orders, new inference, clock extension or direct deployment path is added.
+This keeps independent model sizes available across the source/config renewal.
+Four new installation tests plus39existing checks pass43/43 after an expected
+missing-publication RED. Private real-input source35/API acceptance returned94
+unchanged allocations; current regular15m entries and deployed readiness remain
+unverified. Diagram impact: NONE — existing publication/approval paths unchanged.
+
+## 2026-10-20 — Candidate portable startup and exact publication approval
+
+The independent publisher loads Unix locking only when publishing, so hosts
+without fcntl can still start the application and read APIs. Unsupported writes
+refuse before validation/filesystem mutation. The full gate found this startup
+regression (10961pass/1fail);13 targeted checks pass after repair.
+
+An explicit source-renewal review supports only the four independent publication
+components and their exact pre-account hook. It reconstructs the entire original
+holding module, preserves30other source hashes and all economic selectors, and
+cannot approve arbitrary strategy changes.31 checks pass (8new,23existing),
+including temporary selector readback/rollback and source/hook tamper refusal.
+Production approval and deployment remain unchanged; full new-tree gate and real
+regular-session preview are pending. Diagram impact: NONE — existing reviewed
+approval and publisher boundaries remain the same.
+
+## 2026-10-20 — Candidate original numerical recommendation details
+
+The owner-only `GET /desk/strategy-simulation/{ticker}/recommendation` restores
+the first saved numerical recommendation by its original completed candle and
+snapshot. It verifies saved model size, technical inputs, forecast parts and raw
+quote evidence without inference, accounts or current-pointer fallback. Expired
+advice stays historical evidence with `current_instruction=false`. Current chart
+markers request that original record; simulated markers keep their original
+simulation details. A changed snapshot or size cannot replace the selected
+decision's explanation. No published history, orders or paper state are rewritten.
+
+Candidate validation: four new backend cases, one existing simulation HTTP
+journey, and 35 browser cases passed with zero skipped/flaky/unexpected browser
+cases. A separate real-timer late-response case passed on the same built bytes:
+closing a selection prevents its delayed response from reopening details; an
+explicit later selection restores the original record. HTTP asserts owner 200,
+foreign 403, anonymous 401, corrupt original 503,
+no-store and unchanged saved bytes. This REST read is not an LLM-selected tool;
+tool-routing prompts, selector cases and accuracy floors are unchanged. TSC and
+build pass. Actual regular-session feed acceptance, real-preview access to the
+new route, source-release gates and canonical deployment remain unverified.
+Diagram impact: NONE — the existing candidate EntryEvidence→View path covers
+the original-record read.
 ## 2026-10-19 — Disclose broker and account history coverage in tickers
 
 LIVE productionc25c8cbe exposes broker activity errors, uncertain100-row coverage
@@ -71,6 +328,18 @@ reload in both ticker views. Canonical release and authenticated live acceptance
 are recorded separately in NEXT_SESSION.md. Diagram impact: NONE — corrections
 stay within existing reconciliation, projection and chart data flows.
 
+## 2026-10-17 — Retain observed submission quantities after settlement
+
+Future paper settlement journals retain the broker's observed order quantity and
+the native sender's recorded quantity independently of the original desired and
+actual filled shares. Missing observations remain unknown; old terminal journals
+are not backfilled. Disagreement, adjusted quantities and malformed metadata are
+retained as non-diagnostic evidence without new quantity clamps or changes to
+settlement status, pending removal or rebalance controls. Nineteen native synthetic
+checks passed, zero skipped, including the narrow source-renewal guard. Exact source,
+runtime and limits: research/settlement-quantity-retention-2026-10-17.md.
+Actual selector admission and deployment remain pending. Diagram impact: NONE (metadata
+on the existing settlement boundary).
 ## 2026-10-18 — Reserve private synthetic Cycle stages and reject changed effect inputs
 
 New private stage producer owns the real Store prior/demand/wait/packet/decision/

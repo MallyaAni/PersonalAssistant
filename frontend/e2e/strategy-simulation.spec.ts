@@ -1,5 +1,5 @@
-import {expect, test, type Page, type Locator} from '@playwright/test'
-import {readFileSync, writeFileSync} from 'node:fs'
+import {expect, test, type Page} from '@playwright/test'
+import {readFileSync} from 'node:fs'
 import {gunzipSync} from 'node:zlib'
 import {createHash} from 'node:crypto'
 
@@ -24,17 +24,6 @@ const basic = {schema: 'latest-strategy-simulation/1', policy: 'joint-stock-risk
 const stocks: Stock[] = captured ? Object.keys(captured.stocks).sort().map(name => projected(name)) : ['ORCL', 'AAOI'].map(ticker => ({...basic, ticker}))
 const summary = root ? projected('summary') : {...basic, starting_equity: 100000, ending_equity: 101000, ending_cash: 80000, ending_holdings: {ORCL: 60, AAOI: 60}, latest_decisions: [], curve: [], stock_overview: Object.fromEntries(stocks.map(stock => [stock.ticker, {target: .2, holding: 60, last_trade: stock.trades.at(-1), trades: 3}]))}
 
-// Supply explicit current-model decisions independently of the old research quantities.
-const liveSizingFixture = (ticker: string) => ({schema: 'live-model-historical-sizing/1', policy: 'grade-led-learned-sizing/1', ticker,
-  start: '2019-03-01', through: '2026-10-09', starting_cash: 100000, starting_holdings: {}, counterfactual: true, real_orders: false,
-  provenance: {cost_bps: 10, original_holding_publication: '2026-10-04T18:35:30.875637-04:00', original_holding_fit_date: '2026-10-01'},
-  decisions: [
-    {id: 'sized-buy', ticker, date: '2026-10-06', at: '2026-10-06T16:01:00-04:00', action: 'BUY', qty: 13, grade: 'A+', previous_grade: 'B', grade_signal: 'buy', holding: 0, target_weight: .013, model_target_weight: .02, reason: 'Learned funded size', status: 'planned', executed_qty: 13, state: 'executed'},
-    {id: 'sized-add', ticker, date: '2026-10-07', at: '2026-10-07T16:01:00-04:00', action: 'ADD', qty: 2, grade: 'A', previous_grade: 'A+', grade_signal: 'hold', holding: 13, target_weight: .015, model_target_weight: .025, reason: 'Learned funded add', status: 'planned', executed_qty: 0, state: 'not_executed'},
-    {id: 'sized-sell', ticker, date: '2026-10-08', at: '2026-10-08T16:01:00-04:00', action: 'SELL', qty: 13, grade: 'B', previous_grade: 'A', grade_signal: 'sell', holding: 13, target_weight: 0, model_target_weight: .03, reason: 'Grade below A', status: 'planned', executed_qty: 0, state: 'not_executed'},
-    {id: 'sized-zero', ticker, date: '2026-10-09', at: '2026-10-09T16:01:00-04:00', action: 'BUY', qty: 0, grade: 'A+', previous_grade: 'B', grade_signal: 'buy', holding: 0, target_weight: 0, model_target_weight: 0, reason: 'Learned size is zero', status: 'blocked', executed_qty: 0, state: 'no_order'},
-  ], trades: [{id: 'sized-buy', date: '2026-10-07', at: '2026-10-07T14:00:00Z', action: 'BUY', qty: 13, price: 101, fee: 1.313, decision_date: '2026-10-06', decision_at: '2026-10-06T16:01:00-04:00'}], targets: [{date: '2026-10-09', weight: 0, status: 'no_new_order', reason: ''}]})
-
 // Supply small ordinary candles when the full authenticated cohort is not requested.
 const controlChart = (ticker: string, frame: string) => {
   const dates = ['2026-10-06', '2026-10-07', '2026-10-08', '2026-10-09']
@@ -43,9 +32,7 @@ const controlChart = (ticker: string, frame: string) => {
 }
 
 // Freeze the browser's data transport while rendering the real compiled dashboard.
-async function install(page: Page, stock: Stock, failure = false, current = {done: false}, sizing: any = null, sizingFailure = false) {
-  const controlledNow = '2026-10-12T14:00:00Z'
-  await page.clock.install({time: new Date(controlledNow)})
+async function install(page: Page, stock: Stock, failure = false, current = {done: false}) {
   const errors: string[] = []
   page.on('pageerror', error => errors.push(error.message))
   page.on('console', message => {if (message.type() === 'error') errors.push(message.text())})
@@ -57,35 +44,16 @@ async function install(page: Page, stock: Stock, failure = false, current = {don
     localStorage.setItem('anios.theme', 'light')
     ;(window as any).__strategyPaint = []
     ;(window as any).__gradePaint = []
-    ;(window as any).__sizedPaint = []
-    ;(window as any).__fillCircleBounds = []
-    ;(window as any).__sizedLabelBounds = []
-    const arc = CanvasRenderingContext2D.prototype.arc
-    // Measure real account-fill circles against their plot canvas, including the marker radius.
-    CanvasRenderingContext2D.prototype.arc = function (...args: Parameters<CanvasRenderingContext2D['arc']>) {
-      if (this.canvas.closest('[data-testid="ticker-chart-canvas"]') && ['#248a3d', '#b42318'].includes(String(this.fillStyle))) {
-        const point = new DOMPoint(args[0], args[1]).matrixTransform(this.getTransform())
-        ;(window as any).__fillCircleBounds.push({x: point.x, y: point.y, radius: args[2] * this.getTransform().a, canvasWidth: this.canvas.width, canvasHeight: this.canvas.height})
-      }
-      return arc.apply(this, args)
-    }
     const original = CanvasRenderingContext2D.prototype.fillText
     // Retain the real marker text and canvas bounds, without replacing chart layout.
     CanvasRenderingContext2D.prototype.fillText = function (...args: Parameters<CanvasRenderingContext2D['fillText']>) {
       if (this.canvas.closest('[data-testid="ticker-chart-canvas"]') && /^(BUY|SELL|TRIM) .+ sh$/.test(args[0])) {
         const point = new DOMPoint(args[1], args[2]).matrixTransform(this.getTransform())
-        const metrics = this.measureText(args[0]), scale = this.getTransform().a
-        const width = metrics.width * scale
-        ;(window as any).__strategyPaint.push({text: args[0], x: point.x, y: point.y, width, ascent: metrics.actualBoundingBoxAscent * scale, descent: metrics.actualBoundingBoxDescent * scale, canvasWidth: this.canvas.width, canvasHeight: this.canvas.height})
+        const width = this.measureText(args[0]).width * this.getTransform().a
+        ;(window as any).__strategyPaint.push({text: args[0], x: point.x, y: point.y, width, canvasWidth: this.canvas.width, canvasHeight: this.canvas.height})
       }
-      if (this.canvas.closest('[data-testid="ticker-chart-canvas"]') && /^Grade (BUY|SELL) · (A\+?|B|C)$/.test(args[0])) {
+      if (this.canvas.closest('[data-testid="ticker-chart-canvas"]') && /^(BUY|SELL) · (A\+?|B|C)$/.test(args[0])) {
         ;(window as any).__gradePaint.push(args[0])
-      }
-      if (this.canvas.closest('[data-testid="ticker-chart-canvas"]') && /^(BUY|ADD|SELL|TRIM) .+ sh · (A\+?|B|C)$/.test(args[0])) {
-        ;(window as any).__sizedPaint.push(args[0])
-        const point = new DOMPoint(args[1], args[2]).matrixTransform(this.getTransform())
-        const metrics = this.measureText(args[0]), scale = this.getTransform().a
-        ;(window as any).__sizedLabelBounds.push({text: args[0], y: point.y, ascent: metrics.actualBoundingBoxAscent * scale, descent: metrics.actualBoundingBoxDescent * scale, canvasHeight: this.canvas.height})
       }
       return original.apply(this, args)
     }
@@ -96,9 +64,9 @@ async function install(page: Page, stock: Stock, failure = false, current = {don
     let json: any = {}
     if (path.endsWith('/auth/session')) json = {authentication_required: true, user_id: 'cohort-reader', is_admin: false, desk_access: true, desk_write: false}
     else if (path.includes('/conversations/')) json = {conversations: [], messages: []}
-    else if (path.endsWith('/desk')) json = {latest: {session: '2026-10-09', written: '2026-10-09T20:30:00Z', targets: {policy: 'grade-led-learned-sizing/1', weights: {}}, grades: Object.fromEntries(stocks.map(row => [row.ticker, {grade: 'A', votes: 3, score: .8, stances: {}, ranks: {}}])), book: [], actions: [], briefs: {}, regime: {exposure: 1, flags: []}}, sessions: ['2026-10-09']}
+    else if (path.endsWith('/desk')) json = {latest: {session: '2026-10-09', written: '2026-10-09T20:30:00Z', grades: Object.fromEntries(stocks.map(row => [row.ticker, {grade: 'A', votes: 3, score: .8, stances: {}, ranks: {}}])), book: [], actions: [], briefs: {}, regime: {exposure: 1, flags: []}}, sessions: ['2026-10-09']}
     else if (path.endsWith('/live')) {
-      const now = new Date(controlledNow), at = now.toISOString(), bar = new Date(+now - 16 * 60000).toISOString(), until = new Date(+now + 10 * 60000).toISOString()
+      const now = new Date(), at = now.toISOString(), bar = new Date(+now - 16 * 60000).toISOString(), until = new Date(+now + 10 * 60000).toISOString()
       json = {as_of: at, decision_session: '2026-10-09',
         quotes: Object.fromEntries(stocks.map(row => [row.ticker, {last: 100, bar, as_of: at}])),
         grades_live: Object.fromEntries(stocks.map(row => [row.ticker, {grade_live: 'A', score_live: .8}])),
@@ -106,7 +74,7 @@ async function install(page: Page, stock: Stock, failure = false, current = {don
         opportunities: {status: 'complete', rows: Object.fromEntries(stocks.map(row => [row.ticker, {ticker: row.ticker, status: 'model_assessment', entry: 'ready', exit: 'hold', entry_priority: 'high', exit_priority: 'low', reason: 'The supported pullback held its reference.', confirmation: 'none', confirmation_ref: 'none', invalidation_ref: 'none', levels: {}, price: 100, bar, generated_at: at, valid_until: until}]))}, technical: {}, technical_detail: {}}
     }
     else if (path.endsWith('/holdings')) json = {holdings: []}
-    else if (path.endsWith('/paper')) json = {model_decisions: {version: 'live-model-decisions/1', status: 'available', session: '2026-10-09', observed_at: '2026-10-09T20:30:00Z', valid_until: '2026-10-12T20:00:00Z', policy: 'grade-led-learned-sizing/1', record_sha256: 'a'.repeat(64), receipt_sha256: 'b'.repeat(64), rows: Object.fromEntries(stocks.map((row, index) => [row.ticker, index === 0 ? {grade: 'A', action: current.done ? null : 'buy', qty: current.done ? null : 3, status: current.done ? 'complete' : 'planned', reason: current.done ? 'Original accepted entry is complete' : 'Accepted funded model entry', when: current.done ? null : 'Next completed bar'} : {grade: 'A', action: null, qty: null, status: 'no_position', reason: 'No current admitted entry', when: null}]))}, equity: 100000, cash: 99000, positions: [{symbol: stocks[0].ticker, qty: 4, market_value: 400, avg_entry_price: 100, current_price: 100, unrealized_pl: 0, unrealized_plpc: 0}], plan: {orders: [
+    else if (path.endsWith('/paper')) json = {equity: 100000, cash: 99000, positions: [{symbol: stocks[0].ticker, qty: 4, market_value: 400, avg_entry_price: 100, current_price: 100, unrealized_pl: 0, unrealized_plpc: 0}], plan: {orders: [
       {symbol: stocks[0].ticker, client_order_id: 'current-buy', action: 'BUY', side: 'buy', state: current.done ? 'filled' : 'waiting', terminal: current.done, status: current.done ? 'Bought 3 today' : 'Waiting for the model timing', qty: 3, quantity_basis: current.done ? 'filled' : 'planned', notional: 300, weight: .003, price: 100, why: 'Recorded current plan', when: 'Next completed bar'},
       {symbol: stocks.at(-1)!.ticker, client_order_id: 'old-sell', action: 'SELL', side: 'sell', state: 'filled', terminal: true, status: 'Sold 5 yesterday', qty: 5, filled_qty: 5, quantity_basis: 'filled', notional: 500, weight: .005, price: 100, why: 'Completed old order', when: 'Yesterday'},
     ]}}
@@ -115,9 +83,6 @@ async function install(page: Page, stock: Stock, failure = false, current = {don
     else if (path.includes('/strategy-simulation/')) {
       if (failure) return route.fulfill({status: 503, json: {detail: 'Unavailable'}})
       json = stock
-    } else if (path.includes('/live-model-history/')) {
-      if (sizingFailure) return route.fulfill({status: 503, json: {detail: 'Unavailable'}})
-      json = sizing ?? liveSizingFixture(stock.ticker)
     } else if (path.includes('/history/')) json = captured?.stocks[stock.ticker].history ?? {ticker: stock.ticker, asof: '2026-10-09', rows: [
       {date: '2026-10-05', grade: 'B', said: true},
       {date: '2026-10-06', grade: 'A+', said: true},
@@ -133,7 +98,7 @@ async function install(page: Page, stock: Stock, failure = false, current = {don
     else if (path.endsWith('/personal-history')) json = {items: [], next_cursor: null}
     else if (path.endsWith('/mine')) json = {rows: [], decisions: {rows: {}}, grades_live: {}}
     else if (path.endsWith('/session-prices')) {
-      const now = new Date(controlledNow), at = now.toISOString(), until = new Date(+now + 60000).toISOString()
+      const now = new Date(), at = now.toISOString(), until = new Date(+now + 60000).toISOString()
       json = {session: 'regular', signal_scope: 'regular-session', as_of: at, quotes: Object.fromEntries(stocks.map(row => [row.ticker, {price: 100, status: 'fresh', session: 'regular', feed: 'iex', at, valid_until: until}]))}
     }
     else if (path.endsWith('/entries')) json = {rows: []}
@@ -145,18 +110,6 @@ async function install(page: Page, stock: Stock, failure = false, current = {don
   await page.getByRole('searchbox', {name: 'Search the stock list'}).fill(stock.ticker)
   await page.getByRole('table', {name: 'Ranked stocks and cash'}).getByRole('button', {name: stock.ticker, exact: true}).click()
   return errors
-}
-
-// Open the existing technical disclosure before requesting optional dated grade context.
-async function openIndicators(chart: Locator) {
-  const details = chart.getByLabel('Chart indicators', {exact: true})
-  if (await details.getAttribute('open') === null) await details.locator(':scope > summary').click()
-}
-
-// Inspect amounts and fill receipts only after explicitly opening the existing historical details.
-async function openHistoricalDetails(chart: Locator, ticker: string) {
-  const details = chart.getByLabel(`${ticker} historical details`, {exact: true})
-  if (await details.getAttribute('open') === null) await details.locator(':scope > summary').click()
 }
 
 // Independently bucket original simulated executions by calendar or quarter-hour interval.
@@ -188,7 +141,7 @@ for (const stock of stocks) {
     await chart.getByRole('checkbox', {name: 'Model-only research fills'}).check()
     await chart.getByText('Model-only strategy research', {exact: true}).click()
     await expect(chart.getByRole('checkbox', {name: 'Policy replay'})).toHaveCount(0)
-    await expect(chart.getByRole('checkbox', {name: 'Grade signals', includeHidden: true})).not.toBeChecked()
+    await expect(chart.getByRole('checkbox', {name: 'Grade signals'})).not.toBeChecked()
     await expect(chart.getByRole('checkbox', {name: 'Saved recommendations'})).toHaveCount(0)
     await expect(chart.getByLabel('Recorded setup history')).toHaveCount(0)
     await expect(chart).toContainText(stock.through)
@@ -228,25 +181,24 @@ for (const stock of stocks) {
   })
 }
 
-// Missing earlier research never hides the current-model account or fabricates predecessor fills.
+// Missing research never hides the primary grade layer or fabricates model-only fills.
 test('unavailable strategy history stays explicit without predecessor trades', async ({page}) => {
   await install(page, stocks[0], true)
   await page.getByText('Model-only strategy research', {exact: true}).click()
   await expect(page.getByRole('alert')).toContainText('Latest-strategy simulation unavailable for this stock')
   await expect(page.getByRole('checkbox', {name: 'Policy replay'})).toHaveCount(0)
-  await expect(page.getByRole('checkbox', {name: 'Current-model history'})).toBeChecked()
-  await expect.poll(() => page.evaluate(() => (window as any).__strategyPaint)).toEqual(expect.arrayContaining([expect.objectContaining({text: 'BUY 13 sh'})]))
+  expect(await page.evaluate(() => (window as any).__strategyPaint)).toEqual([])
 })
 
-// Completed decisions stop being current actions while recorded fills remain in the paper account.
+// Paper submissions and completed fills cannot supply a missing current numeric decision.
 test('current overview refresh removes completed actions without inventing sizes', async ({page}) => {
   const current = {done: false}
   const errors = await install(page, stocks[0], false, current)
   await page.getByRole('button', {name: 'Close', exact: true}).click()
   const table = page.getByRole('table', {name: 'Ranked stocks and cash'})
   const row = table.getByRole('row').filter({has: page.getByRole('button', {name: stocks[0].ticker, exact: true})})
-  await expect(row).toContainText('3 sh funded')
-  await expect(row.getByLabel(`${stocks[0].ticker} strategy intent`, {exact: true})).toHaveText('BUY')
+  await expect(row.getByLabel(`${stocks[0].ticker} strategy intent`, {exact: true})).toHaveText('—')
+  await expect(row.getByLabel(`${stocks[0].ticker} size`, {exact: true})).toHaveText('—')
   await page.getByRole('button', {name: `details for ${stocks[0].ticker}`, exact: true}).click()
   await expect(page.getByLabel(`${stocks[0].ticker} orders`, {exact: true})).toContainText('3 sh planned')
   await page.getByRole('button', {name: `details for ${stocks[0].ticker}`, exact: true}).click()
@@ -255,7 +207,7 @@ test('current overview refresh removes completed actions without inventing sizes
   await expect(row.getByLabel(`${stocks[0].ticker} strategy intent`, {exact: true})).toHaveText('—')
   await expect(row.getByLabel(`${stocks[0].ticker} size`)).toHaveText('—')
   await expect(table).not.toContainText('Bought 3 today')
-  await expect(page.getByLabel('Strategy plan status', {exact: true})).toHaveCount(0)
+  await expect(page.getByLabel('Strategy plan status', {exact: true})).toHaveCount(1)
   await page.getByRole('button', {name: 'Paper account', exact: true}).click()
   await expect(table).toContainText('Bought 3 today')
   await page.getByRole('button', {name: 'Stocks', exact: true}).click()
@@ -263,7 +215,7 @@ test('current overview refresh removes completed actions without inventing sizes
   expect(errors).toEqual([])
 })
 
-// Filters preserve admitted funded quantities and hide rows without a matching current action.
+// Filtering and phone recovery never fill a missing model plan with paper or research quantities.
 test('current overview filters sorting and phone recovery preserve current sizes', async ({page}) => {
   const errors = await install(page, stocks[0])
   await page.getByRole('button', {name: 'Close', exact: true}).click()
@@ -276,8 +228,7 @@ test('current overview filters sorting and phone recovery preserve current sizes
   await table.getByRole('button', {name: 'Action', exact: true}).click()
   await expect(section.getByRole('checkbox')).toHaveCount(4)
   for (const action of ['SELL', 'TRIM', 'HOLD']) await section.getByRole('checkbox', {name: `Show ${action} rows`, exact: true}).uncheck()
-  await expect(table.locator('tbody tr')).toHaveCount(1)
-  await expect(table).toContainText('3 sh funded')
+  await expect(table.locator('tbody tr')).toHaveCount(0)
   await section.getByRole('group', {name: 'Show actions'}).getByRole('button', {name: 'Show all', exact: true}).click()
   await page.keyboard.press('Escape')
   await expect(table.locator('tbody tr')).toHaveCount(Math.min(stocks.length, 25))
@@ -336,28 +287,21 @@ test('current stocks and separate paper view survive reload without mixed histor
 test('grade direction survives a zero research target with dated provenance', async ({page}) => {
   const errors = await install(page, {...stocks[0], latest_target: 0})
   const chart = page.getByRole('region', {name: `${stocks[0].ticker} price chart`})
-  await expect(chart.getByRole('checkbox', {name: 'Current-model history'})).toBeChecked()
-  await openIndicators(chart)
-  await chart.getByRole('checkbox', {name: 'Grade signals'}).check()
+  await expect(chart.getByRole('checkbox', {name: 'Grade signals'})).toBeChecked()
   await expect(chart.getByRole('checkbox', {name: 'Model-only research fills'})).not.toBeChecked()
   for (const button of ['D', 'W']) {
     await chart.getByRole('button', {name: button, exact: true}).click()
-    await expect(chart.getByLabel(`${stocks[0].ticker} grade signals`, {exact: true})).toHaveText('3 dated grade changes marked; funded amounts remain unchanged.')
+    await expect(chart.getByLabel(`${stocks[0].ticker} grade signals`, {exact: true})).toHaveText('3 grade changes marked.')
+    await chart.getByText('Grade signal history', {exact: true}).click()
     await expect(chart.getByLabel(`${stocks[0].ticker} historical grade signals`, {exact: true})).toContainText('2026-10-06 · BUY signal · Saved grade B→A+')
     await expect(chart.getByLabel(`${stocks[0].ticker} historical grade signals`, {exact: true})).toContainText('2026-10-08 · SELL signal · Recalculated grade A→B')
-    await expect.poll(() => page.evaluate(() => (window as any).__gradePaint)).toEqual(expect.arrayContaining(['Grade BUY · A+', 'Grade SELL · B']))
-    await expect.poll(() => page.evaluate(() => (window as any).__sizedPaint)).toEqual(expect.arrayContaining(['BUY 13 sh · A+']))
-    await expect(chart.getByRole('checkbox', {name: 'Current-model history'})).toBeChecked()
+    await chart.getByText('Grade signal history', {exact: true}).click()
+    await expect.poll(() => page.evaluate(() => (window as any).__gradePaint)).toEqual(expect.arrayContaining(['BUY · A+', 'SELL · B']))
   }
-  await chart.getByRole('button', {name: '15m', exact: true}).click()
-  // A poll can repaint the previous frame during the request; qualify the new
-  // candle payload before measuring that fifteen-minute canvas's markers.
-  await expect(chart.getByTestId('ticker-chart-canvas')).toHaveAttribute('data-chart-timeframe', '15m')
   await page.evaluate(() => {(window as any).__gradePaint = []})
-  await chart.getByRole('checkbox', {name: 'Grade signals'}).uncheck()
-  await chart.getByRole('checkbox', {name: 'Grade signals'}).check()
+  await chart.getByRole('button', {name: '15m', exact: true}).click()
   await expect(chart.getByLabel(`${stocks[0].ticker} grade signals`, {exact: true})).toContainText('not marked on fifteen-minute bars')
-  await expect.poll(() => page.evaluate(() => (window as any).__strategyPaint)).toEqual(expect.arrayContaining([expect.objectContaining({text: 'BUY 13 sh'})]))
+  expect(await page.evaluate(() => (window as any).__strategyPaint)).toEqual([])
   expect(await page.evaluate(() => (window as any).__gradePaint)).toEqual([])
   await page.getByRole('button', {name: 'Close', exact: true}).click()
   await page.getByRole('searchbox', {name: 'Search the stock list'}).fill(stocks.at(-1)!.ticker)
@@ -365,11 +309,11 @@ test('grade direction survives a zero research target with dated provenance', as
   await expect(row.getByLabel(`${stocks.at(-1)!.ticker} strategy intent`)).toHaveText('—')
   await expect(row.getByLabel(`${stocks.at(-1)!.ticker} size`)).toHaveText('—')
   await expect(row.getByLabel(`${stocks.at(-1)!.ticker} strategy timing`)).toHaveText('—')
-  await expect(page.getByLabel('Strategy plan status', {exact: true})).toHaveCount(0)
+  await expect(page.getByLabel('Strategy plan status', {exact: true})).toHaveCount(1)
   await expect(row).not.toContainText('The supported pullback held its reference.')
   await row.getByRole('button', {name: stocks.at(-1)!.ticker, exact: true}).click()
   await expect(page.getByRole('region', {name: 'Current chart judgment', exact: true})).not.toBeVisible()
-  await expect(page.getByLabel(`${stocks.at(-1)!.ticker} paper order`, {exact: true})).toContainText('No current admitted entry')
+  await expect(page.getByLabel(`${stocks.at(-1)!.ticker} paper order`, {exact: true})).toContainText('A current numeric decision, funded quantity and execution time are not provided.')
   await page.getByRole('dialog').getByLabel('All the evidence', {exact: true}).locator(':scope > summary').click()
   await expect(page.getByRole('region', {name: 'Current chart judgment', exact: true})).toContainText('The supported pullback held its reference.')
   await expect(page.getByLabel(`${stocks.at(-1)!.ticker} paper order`, {exact: true}).getByRole('heading')).toHaveText('Model plan')
@@ -381,153 +325,13 @@ test('actual paper execution chart mode stays separate from grade and model rese
   const errors = await install(page, stocks[0])
   const chart = page.getByRole('region', {name: `${stocks[0].ticker} price chart`})
   await chart.getByRole('checkbox', {name: 'Actual paper executions', exact: true}).check()
-  await expect(chart.getByRole('checkbox', {name: 'Grade signals', includeHidden: true})).not.toBeChecked()
+  await expect(chart.getByRole('checkbox', {name: 'Grade signals'})).not.toBeChecked()
   await expect(chart.getByRole('checkbox', {name: 'Model-only research fills'})).not.toBeChecked()
   await expect(chart.getByLabel(`${stocks[0].ticker} actual paper executions`, {exact: true})).toContainText('2026-10-07 · 11:00 AM ET · BUY 3 @ $101.00')
   await chart.getByRole('button', {name: '15m', exact: true}).click()
   await expect(chart.getByTestId('ticker-chart-canvas')).toHaveAttribute('data-chart-timeframe', '15m')
   await expect.poll(() => page.evaluate(() => (window as any).__strategyPaint)).toEqual(expect.arrayContaining([expect.objectContaining({text: 'BUY 3 sh'})]))
-  await openIndicators(chart)
   await chart.getByRole('checkbox', {name: 'Grade signals'}).check()
-  await expect(chart.getByRole('checkbox', {name: 'Actual paper executions'})).toBeChecked()
-  expect(errors).toEqual([])
-})
-
-// Original dated grade context stays accessible without replacing current-model quantities or inventing bar clocks.
-test('ORCL saved September grades remain dated supporting context on daily and fifteen-minute charts', async ({page}) => {
-  const stock = stocks.find(row => row.ticker === 'ORCL') ?? {...basic, ticker: 'ORCL'}
-  const errors = await install(page, stock)
-  const dates = ['2026-09-14', '2026-09-15', '2026-09-18']
-  await page.route('**/desk/history/ORCL', route => route.fulfill({json: {ticker: 'ORCL', rows: dates.map((date, index) => ({date, grade: index === 1 ? 'A+' : 'B', said: true})), fills: [], backtest: null}}))
-  await page.route('**/desk/chart/ORCL?**', route => {
-    const frame = new URL(route.request().url()).searchParams.get('timeframe') ?? 'daily'
-    return route.fulfill({json: {ticker: 'ORCL', timeframe: frame, sessions: dates.length, basis: 'controlled dated prices', bars: dates.map(date => ({date, ...(frame === '15m' ? {time: `${date}T13:30:00Z`} : {}), open: 100, high: 103, low: 99, close: 102, volume: 100})), overlays: {}, levels: {}, entries: []}})
-  })
-  await page.reload()
-  await page.getByRole('searchbox', {name: 'Search the stock list'}).fill('ORCL')
-  await page.getByRole('table', {name: 'Ranked stocks and cash'}).getByRole('button', {name: 'ORCL', exact: true}).click()
-  const chart = page.getByRole('region', {name: 'ORCL price chart'})
-  await expect(chart.getByRole('checkbox')).toHaveCount(3)
-  await openIndicators(chart)
-  await expect(chart.getByLabel('ORCL dated grade readings', {exact: true})).toContainText('2026-09-15 · Saved grade A+')
-  await expect(chart.getByLabel('ORCL dated grade readings', {exact: true})).toContainText('2026-09-18 · Saved grade B')
-  await chart.getByRole('checkbox', {name: 'Grade signals', exact: true}).check()
-  await expect(chart.getByLabel('ORCL historical grade signals', {exact: true})).toContainText('2026-09-15 · BUY signal · Saved grade B→A+')
-  await expect(chart.getByLabel('ORCL historical grade signals', {exact: true})).toContainText('2026-09-18 · SELL signal · Saved grade A+→B')
-  await expect.poll(() => page.evaluate(() => (window as any).__gradePaint)).toEqual(expect.arrayContaining(['Grade BUY · A+', 'Grade SELL · B']))
-  await expect(chart.getByRole('checkbox', {name: 'Current-model history'})).toBeChecked()
-  await chart.getByRole('button', {name: '15m', exact: true}).click()
-  await expect(chart.getByTestId('ticker-chart-canvas')).toHaveAttribute('data-chart-timeframe', '15m')
-  await page.evaluate(() => {(window as any).__gradePaint = []})
-  await chart.getByRole('checkbox', {name: 'Grade signals', exact: true}).uncheck()
-  await chart.getByRole('checkbox', {name: 'Grade signals', exact: true}).check()
-  await expect(chart.getByLabel('ORCL grade signals', {exact: true})).toContainText('not marked on fifteen-minute bars')
-  await expect(chart.getByLabel('ORCL dated grade readings', {exact: true})).toContainText('2026-09-15 · Saved grade A+')
-  expect(await page.evaluate(() => (window as any).__gradePaint)).toEqual([])
-  expect(errors).toEqual([])
-})
-
-// Default historical arrows carry current-model quantities, including adds and blocked zeros.
-for (const viewport of [{width: 1280, height: 720}, {width: 390, height: 844}]) test(`historical live-model amounts stay primary across dates ranges and reload at ${viewport.width}px`, async ({page}) => {
-  await page.setViewportSize(viewport)
-  const errors = await install(page, stocks[0])
-  let chart = page.getByRole('region', {name: `${stocks[0].ticker} price chart`})
-  await expect(chart.getByRole('checkbox', {name: 'Current-model history'})).toBeChecked()
-  await expect(chart.getByRole('checkbox')).toHaveCount(3)
-  await expect(chart.getByRole('checkbox', {name: 'Simulated fills', exact: true})).toHaveCount(0)
-  await expect(chart.getByRole('checkbox', {name: 'Grade signals', includeHidden: true})).not.toBeChecked()
-  await expect(chart.getByLabel(`${stocks[0].ticker} historical details`, {exact: true})).not.toHaveAttribute('open')
-  await expect(chart.getByRole('table', {name: `${stocks[0].ticker} sized decision history`, includeHidden: true})).not.toBeVisible()
-  await chart.screenshot({path: test.info().outputPath('current-model-default-three-sources.png')})
-  const bounds = await page.evaluate(() => ({circles: (window as any).__fillCircleBounds, labels: (window as any).__strategyPaint, arrows: (window as any).__sizedLabelBounds}))
-  writeFileSync(test.info().outputPath('default-current-model-marker-bounds.json'), JSON.stringify(bounds, null, 2))
-  await test.info().attach('default-current-model-marker-bounds', {body: JSON.stringify(bounds, null, 2), contentType: 'application/json'})
-  expect(bounds.circles.length).toBeGreaterThan(0)
-  const circle = bounds.circles.at(-1)
-  expect(circle.y - circle.radius).toBeGreaterThanOrEqual(0)
-  expect(circle.y + circle.radius).toBeLessThanOrEqual(circle.canvasHeight)
-  await expect.poll(() => page.evaluate(() => (window as any).__strategyPaint.map((row: any) => row.text))).toContain('BUY 13 sh')
-  const label = await page.evaluate(() => (window as any).__strategyPaint.findLast((row: any) => row.text === 'BUY 13 sh'))
-  expect(label.y - label.ascent).toBeGreaterThanOrEqual(0)
-  expect(label.y + label.descent).toBeLessThanOrEqual(label.canvasHeight)
-  for (const text of ['BUY 13 sh · A+', 'BUY 2 sh · A', 'SELL 13 sh · B', 'BUY 0 sh · A+']) {
-    const arrow = bounds.arrows.findLast((row: any) => row.text === text)
-    expect(arrow, text).toBeDefined()
-    expect(arrow.y - arrow.ascent, text).toBeGreaterThanOrEqual(0)
-    expect(arrow.y + arrow.descent, text).toBeLessThanOrEqual(arrow.canvasHeight)
-  }
-  await openHistoricalDetails(chart, stocks[0].ticker)
-  await expect(chart.getByRole('table', {name: `${stocks[0].ticker} sized decision history`})).toContainText('BUY 13 sh')
-  await expect(chart.getByRole('table', {name: `${stocks[0].ticker} sized decision history`})).toContainText('BUY 2 sh')
-  await expect(chart.getByRole('table', {name: `${stocks[0].ticker} sized decision history`})).not.toContainText('ADD')
-  await expect(chart.getByRole('table', {name: `${stocks[0].ticker} sized decision history`})).toContainText('BUY 0 sh')
-  await expect(chart).toContainText('Learned size is zero')
-  for (const frame of ['D', 'W']) {
-    await chart.getByRole('button', {name: frame, exact: true}).click()
-    await chart.getByRole('button', {name: 'Full history', exact: true}).click()
-    await expect.poll(() => page.evaluate(() => (window as any).__sizedPaint)).toEqual(expect.arrayContaining(['BUY 13 sh · A+', 'BUY 2 sh · A', 'SELL 13 sh · B', 'BUY 0 sh · A+']))
-    await chart.getByRole('button', {name: 'Recent', exact: true}).click()
-  }
-  await page.evaluate(() => {(window as any).__sizedPaint = []; (window as any).__strategyPaint = []})
-  await chart.getByRole('button', {name: '15m', exact: true}).click()
-  await expect(chart.getByTestId('ticker-chart-canvas')).toHaveAttribute('data-chart-timeframe', '15m')
-  await page.evaluate(() => {(window as any).__sizedPaint = []})
-  await chart.getByRole('checkbox', {name: 'Current-model history'}).uncheck()
-  await chart.getByRole('checkbox', {name: 'Current-model history'}).check()
-  await openHistoricalDetails(chart, stocks[0].ticker)
-  await expect(chart.getByLabel(`${stocks[0].ticker} sized markers`)).toContainText('without an invented fifteen-minute marker')
-  expect(await page.evaluate(() => (window as any).__sizedPaint)).toEqual([])
-  await chart.getByRole('button', {name: 'Full history', exact: true}).click()
-  await expect(chart.getByRole('checkbox', {name: 'Current-model history'})).toBeChecked()
   await expect(chart.getByRole('checkbox', {name: 'Actual paper executions'})).not.toBeChecked()
-  await expect.poll(() => page.evaluate(() => (window as any).__strategyPaint)).toEqual(expect.arrayContaining([expect.objectContaining({text: 'BUY 13 sh'})]))
-  await expect(chart.getByLabel(`${stocks[0].ticker} live-model simulated fills`)).toContainText('BUY 13 sh @ $101.00')
-  await page.reload()
-  await page.getByRole('searchbox', {name: 'Search the stock list'}).fill(stocks[0].ticker)
-  await page.getByRole('table', {name: 'Ranked stocks and cash'}).getByRole('button', {name: stocks[0].ticker, exact: true}).click()
-  chart = page.getByRole('region', {name: `${stocks[0].ticker} price chart`})
-  await expect(chart.getByRole('checkbox', {name: 'Current-model history'})).toBeChecked()
-  await expect(chart.getByLabel(`${stocks[0].ticker} historical details`, {exact: true})).not.toHaveAttribute('open')
-  await openHistoricalDetails(chart, stocks[0].ticker)
-  await expect(chart.getByRole('table', {name: `${stocks[0].ticker} sized decision history`})).toContainText('BUY 13 sh')
-  expect(errors).toEqual([])
-})
-
-// A strong grade can carry a partial sizing trim, and missing new history never borrows old amounts.
-test('strong-grade sizing trim and unavailable current-model history remain explicit', async ({page}) => {
-  const value = liveSizingFixture(stocks[0].ticker)
-  value.decisions[1] = {...value.decisions[1], action: 'TRIM', qty: 3, grade: 'A+', previous_grade: 'A+', target_weight: .01, reason: 'Learned size reduced; retain ten shares'}
-  const errors = await install(page, stocks[0], false, {done: false}, value)
-  const chart = page.getByRole('region', {name: `${stocks[0].ticker} price chart`})
-  await openHistoricalDetails(chart, stocks[0].ticker)
-  await expect(chart.getByRole('table', {name: `${stocks[0].ticker} sized decision history`})).toContainText('TRIM 3 sh')
-  await expect.poll(() => page.evaluate(() => (window as any).__sizedPaint)).toEqual(expect.arrayContaining(['TRIM 3 sh · A+']))
-  await page.setViewportSize({width: 390, height: 844})
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
-  expect(errors).toEqual([])
-})
-
-// Missing sized history fails visibly instead of substituting legacy equal-weight or research quantities.
-test('missing live-model historical sizing does not substitute old research shares', async ({page}) => {
-  const errors = await install(page, stocks[0], false, {done: false}, null, true)
-  const chart = page.getByRole('region', {name: `${stocks[0].ticker} price chart`})
-  await expect(chart.getByRole('alert')).toContainText('Live-model historical sizing unavailable for this stock')
-  await expect(chart.getByRole('table', {name: `${stocks[0].ticker} sized decision history`})).toHaveCount(0)
-  expect(await page.evaluate(() => (window as any).__sizedPaint)).toEqual([])
-  expect(await page.evaluate(() => (window as any).__strategyPaint)).toEqual([])
-  expect(errors).toHaveLength(1)
-  expect(errors[0]).toContain('503')
-})
-
-// A historical account valuation gap stays visible without inventing a funded amount.
-test('historical sizing marks incomplete account evidence as unavailable', async ({page}) => {
-  const value = liveSizingFixture(stocks[0].ticker)
-  const incomplete = {...value, decisions: [], trades: [], targets: [{date: '2026-10-09', weight: null, status: 'nightly_broker_unavailable', reason: 'Unknown distribution cash in lieu'}]}
-  const errors = await install(page, stocks[0], false, {done: false}, incomplete)
-  const chart = page.getByRole('region', {name: `${stocks[0].ticker} price chart`})
-  await expect(chart.getByRole('status').filter({hasText: 'Sizing unavailable'})).toContainText('2026-10-09: Unknown distribution cash in lieu')
-  await openHistoricalDetails(chart, stocks[0].ticker)
-  await expect(chart.getByRole('table', {name: `${stocks[0].ticker} sized decision history`})).toHaveCount(0)
-  expect(await page.evaluate(() => (window as any).__sizedPaint)).toEqual([])
   expect(errors).toEqual([])
 })

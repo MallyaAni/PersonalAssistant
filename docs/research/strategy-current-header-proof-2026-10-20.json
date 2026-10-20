@@ -1,0 +1,80 @@
+{
+  "actual_regular_entry": "UNVERIFIED",
+  "all35_sources_unchanged": true,
+  "at": "2026-10-20T06:23:48.053754+00:00",
+  "base_revision": "6ce28f8594cda2f56a4d65bff02f17c4e66b0a5d",
+  "change": "Header uses the original validated numerical candle session only while a matching fresh Buy or Wait row exists; foreign or expired evidence stays Awaiting",
+  "deployed": false,
+  "failure": "Fresh numerical Buy was rendered below Awaiting15-minuteentries and the previous nightly input date",
+  "files": {
+    "built_runtime": {
+      "bytes": 911724,
+      "path": "/tmp/strategy-current-header-green-20261020-dist/assets/index-XlmBO-ch.js",
+      "sha256": "dab1d927979d3ef5f979a41d32957dcb7e8e6214e0749b5b723fd5dd85970616"
+    },
+    "frontend/e2e/all-names-signals.spec.ts": {
+      "bytes": 66421,
+      "path": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/all-names-signals.spec.ts",
+      "sha256": "9e99d860df1c793a998ca37b11e1f148c336c7838d42a2e5b37c70093cb36b8b"
+    },
+    "frontend/src/components/DeskPanel/SignalBoard.tsx": {
+      "bytes": 27877,
+      "path": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/src/components/DeskPanel/SignalBoard.tsx",
+      "sha256": "2e890f88ef6c98b142488a122de40f3bd3169344641fbd6d246a7dd0cfa07ee5"
+    },
+    "strategy-current-header-build-20261020.log": {
+      "bytes": 15387,
+      "path": "/tmp/strategy-current-header-build-20261020.log",
+      "sha256": "085fdd0fdda40606bd96d7f19c1f1a60b50dd5167d49e2b5eb142876034599d0"
+    },
+    "strategy-current-header-green-20261020-results.json": {
+      "bytes": 4026,
+      "path": "/tmp/strategy-current-header-green-20261020-results.json",
+      "sha256": "d95c5a4800abaaf5bf4017a84364ce771e50956c8bebed2753de7d19379d50e6"
+    },
+    "strategy-current-header-green-20261020.config.mjs": {
+      "bytes": 552,
+      "path": "/tmp/strategy-current-header-green-20261020.config.mjs",
+      "sha256": "cb8bf7650f89ebe5fb7f8367463058d1d675c609be29e9cfcc91108268f7b4e0"
+    },
+    "strategy-current-header-green-20261020.log": {
+      "bytes": 709,
+      "path": "/tmp/strategy-current-header-green-20261020.log",
+      "sha256": "03d5c3a0b129dd6218022118fabb651b5609515055e689b858f3c2cda09b7d38"
+    },
+    "strategy-current-header-red-20261020-results.json": {
+      "bytes": 12531,
+      "path": "/tmp/strategy-current-header-red-20261020-results.json",
+      "sha256": "67cb5dab23212250cdc90ef558632414b7065cc747f108f7991f101d2c734cc5"
+    },
+    "strategy-current-header-red-20261020.config.mjs": {
+      "bytes": 546,
+      "path": "/tmp/strategy-current-header-red-20261020.config.mjs",
+      "sha256": "75f5cead5f36f799ba339b724886636661423e591d3fa63f8d7f2be7a75a5282"
+    },
+    "strategy-current-header-red-20261020.log": {
+      "bytes": 4970,
+      "path": "/tmp/strategy-current-header-red-20261020.log",
+      "sha256": "88f283153e5a5ae843e25225a506016ca4f24329ed46a253c74d38ee6b97a2e3"
+    }
+  },
+  "fixture_not_real_feed_acceptance": true,
+  "green": {
+    "duration": 4289.279,
+    "expected": 1,
+    "flaky": 0,
+    "skipped": 0,
+    "startTime": "2026-10-20T06:21:44.306Z",
+    "unexpected": 0
+  },
+  "model_or_sizing_or_entry_guard_change": false,
+  "red": {
+    "duration": 9752.288999999999,
+    "expected": 0,
+    "flaky": 0,
+    "skipped": 0,
+    "startTime": "2026-10-20T06:20:27.539Z",
+    "unexpected": 1
+  },
+  "schema": "strategy-current-header-proof/1"
+}

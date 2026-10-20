@@ -1,0 +1,1224 @@
+{
+  "actual_snapshot": {
+    "id": "c6ecf126a0aa21365f9bc09523a502fe7a96591c4e33eca2e726fda25f6066dc",
+    "positive_sizes": {
+      "ALAB": 0.1430343232043775,
+      "COHR": 0.25,
+      "GEV": 0.25,
+      "HPE": 0.10596667579662186,
+      "MU": 0.25
+    },
+    "receipt": "098590711dbe8056e9c0f49f074d44e91e0378e2e4a5a5e3733261a0a0f1d582",
+    "strategy_identity": "cf87c42bd85d3c08366487e75ea5e116ceea6a2e30f9c1cd5e2a3ac8487f81ba",
+    "valid_until": "2026-10-20T16:00:00-04:00"
+  },
+  "browser_stats": {
+    "duration": 143756.303,
+    "expected": 30,
+    "flaky": 0,
+    "skipped": 0,
+    "startTime": "2026-10-20T03:42:22.929Z",
+    "unexpected": 0
+  },
+  "corrections": [
+    "Previous UI proof described unselected60-session button as selected: real prior view was Recent10/270bars. Actual60 selection is1620bars/onegradechange.",
+    "Original model expiry16:00 unchanged; last grade marker next-open corrected09:30."
+  ],
+  "failed_preserved": [
+    "v1 descriptor rejected original container path prefix",
+    "v5 remote staging Argument list too long before container",
+    "history v1 integer/float economic identity cross-join mismatch",
+    "local preview preparation v1 SSH1 reason unavailable and v2 identity assertion",
+    "first diagram check used wrong cwd, no module executed"
+  ],
+  "local_inputs": {
+    "/tmp/live-recommendations-preview-20261019.mjs": {
+      "bytes": 4338,
+      "sha256": "73eec133ffd74ef39029ff871769823719810f10193f68380c2d44fcd99b7227"
+    },
+    "/tmp/strategy-entries-v5-20261020-transport.txt": {
+      "bytes": 34,
+      "sha256": "6412ca370a1c594b3f8919b46e2ffc012ee979a9deed38d6db2f994e2ac9b4fe"
+    },
+    "/tmp/strategy-entries-v7-20261020-control.json": {
+      "bytes": 2734,
+      "sha256": "5623b3ae327859a0d21ddc32ca46d3b79fb6082ac51fd51dbf738495c407f1dd"
+    },
+    "/tmp/strategy-entries-v8-20261020-control.json": {
+      "bytes": 1434,
+      "sha256": "f1950ebf73b0f571298cd10ead6b7e954cac738bc62c7403119f8086fbbab25d"
+    },
+    "/tmp/strategy-history-preview-20261019.mjs": {
+      "bytes": 6551,
+      "sha256": "a7a2727388f2e96993d4af9dcf9b6a4fc357cd49a6a2417e6792ec3f9fe53300"
+    },
+    "/tmp/strategy-numerical-preview-binding-20261020.json": {
+      "bytes": 2297,
+      "sha256": "eac9489f52199e9045c16bfec86cd0e37e5d2619349c51f4147d8dd72813c2da"
+    },
+    "/tmp/strategy-numerical-preview-grade-clocks-20261020.json": {
+      "bytes": 127880,
+      "sha256": "584e69df7791ab9fcee391a0a5187d0025a7721d4aa58ca314d8e3094e8a8d32"
+    },
+    "/tmp/strategy-numerical-preview-v8-snapshot-20261020.json": {
+      "bytes": 171058,
+      "sha256": "3e8f2548bfdd485c05c8acb2d564d84dc661c5ff9041a057ff76c3ce067b2154"
+    },
+    "/tmp/strategy-numerical-ui-final-20261020-results.json": {
+      "bytes": 302075,
+      "sha256": "105c1aaf8f1434b3874ba8b16f9b89a0f3cb17d659bef82f3cfd4833da8a9d5d"
+    },
+    "/tmp/strategy-numerical-ui-final-build-20261020.log": {
+      "bytes": 15191,
+      "sha256": "9f3bf4014a0dfa182c9799aafd1cd0a5178a7105f8c8a0a6939cf5c7bacbe199"
+    }
+  },
+  "not_claimed": [
+    "Actual fills or historically published advice from counterfactual simulation",
+    "SIP and IEX feed equivalence",
+    "Account-dependent trade amount from unit-capital model position",
+    "Full filesystem/SQLiteFILE/RAM/twohost/powerloss admission"
+  ],
+  "remote_data_read_bytes": 730952,
+  "reports": [
+    {
+      "cid": "f053fd2662bae3582041b07ec21b5773a76447e42fd0cba76dbc6f1684ad332f",
+      "cpu": 1000000000,
+      "fixed_files": {
+        "cid": {
+          "bytes": 64,
+          "sha256": "bfc172edaff18047604072a34adb4713320df23d9131ab3270d714a2d3a65145"
+        },
+        "create-argv.json": {
+          "bytes": 1189,
+          "sha256": "8060a9a6ffac577ae71bd9476ad1a8729710f4c13ada0e5cc093e4b2be11e3a8"
+        },
+        "inspect-after.json": {
+          "bytes": 7039,
+          "sha256": "ffe7f9aad9605a3e00149e3dcd027de0b7d687ba8737e9810eeeca2b9d9dbff0"
+        },
+        "inspect-before.json": {
+          "bytes": 10618,
+          "sha256": "16d426b035b5cffa647b1732a3d163d11aad708333283c85c14c38905cc11cb6"
+        },
+        "out/result.json": {
+          "absent": true
+        },
+        "stderr": {
+          "bytes": 612,
+          "sha256": "3d56904f9e3b1f2f8f01cfc5ca3c294ba2395dbaf2cd2ab8fee1e252006c043d"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "image": "sha256:136ebb46b7912f20472a375a6b29f6efec4cf2fdca13d56cbffb86a1be697db2",
+      "memory": 536870912,
+      "mounts": [
+        {
+          "Destination": "/app/backend",
+          "Mode": "",
+          "Propagation": "rprivate",
+          "RW": false,
+          "Source": "/home/animallya96/deploy/anios/backend",
+          "Type": "bind"
+        },
+        {
+          "Destination": "/app/docs",
+          "Mode": "",
+          "Propagation": "rprivate",
+          "RW": false,
+          "Source": "/home/animallya96/deploy/anios/docs",
+          "Type": "bind"
+        },
+        {
+          "Destination": "/home/animallya96/deploy/anios/data/market",
+          "Mode": "",
+          "Propagation": "rprivate",
+          "RW": false,
+          "Source": "/home/animallya96/deploy/anios/data/market",
+          "Type": "bind"
+        },
+        {
+          "Destination": "/calc",
+          "Mode": "",
+          "Propagation": "rprivate",
+          "RW": false,
+          "Source": "/home/animallya96/scratch/strategy-entries-20261020-v1",
+          "Type": "bind"
+        },
+        {
+          "Destination": "/out",
+          "Mode": "",
+          "Propagation": "rprivate",
+          "RW": true,
+          "Source": "/home/animallya96/scratch/strategy-entries-20261020-v1/out",
+          "Type": "bind"
+        }
+      ],
+      "network": "none",
+      "pids": 32,
+      "root": "strategy-entries-20261020-v1",
+      "state": {
+        "Dead": false,
+        "Error": "",
+        "ExitCode": 1,
+        "FinishedAt": "2026-10-20T03:08:48.456299628Z",
+        "OOMKilled": false,
+        "Paused": false,
+        "Pid": 0,
+        "Restarting": false,
+        "Running": false,
+        "StartedAt": "2026-10-20T03:08:43.174687863Z",
+        "Status": "exited"
+      },
+      "stderr": "......\n----------------------------------------------------------------------\nRan 6 tests in 0.058s\n\nOK\nTraceback (most recent call last):\n  File \"/calc/run.py\", line 40, in <module>\n    value=publisher.build(selected,report,set(record['paper']['joint_funded']['receipt']['buy_blocked']),observed_at=now)\n          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"/calc/strategy_publication.py\", line 100, in build\n    raise ValueError('Original prepared context directory required')\nValueError: Original prepared context directory required\n",
+      "stdout": "",
+      "user": "1000:1000"
+    },
+    {
+      "cid": "30baed312fedc89a67fdf8ce233e3f2058df23f792f5d39930334da362baa5e7",
+      "cpu": 1000000000,
+      "fixed_files": {
+        "cid": {
+          "bytes": 64,
+          "sha256": "867d0d60ead639eccd6f80af4aeefa848001c57968c5b6cab0f64fcc7728d964"
+        },
+        "create-argv.json": {
+          "bytes": 1189,
+          "sha256": "0716402e3cdd29847e0b3992caaf47f85166340f444adf43d9cfec12717cda51"
+        },
+        "inspect-after.json": {
+          "bytes": 7039,
+          "sha256": "37b543ac5bd1c91de972062f5925cf8cfc58007b601b7ee9cab79871d0e85879"
+        },
+        "inspect-before.json": {
+          "bytes": 10618,
+          "sha256": "ffd32329bf5cab936c1b830956322f7def8a7e66ab712b31b678e597336d6cc9"
+        },
+        "out/result.json": {
+          "bytes": 172071,
+          "sha256": "c1842bff843ecea117280c2515ca4421936c837850ced6c47ffe87376d32ed3d"
+        },
+        "stderr": {
+          "bytes": 98,
+          "sha256": "24cefc2bc38a1c71e18591075993695fc72546b32ff6b5baab3d98032ce96fb5"
+        },
+        "stdout": {
+          "bytes": 1043,
+          "sha256": "d44cb430f444abd3434fc9f854994022228815320b7efb9e1da2fa555e0b8f09"
+        }
+      },
+      "image": "sha256:136ebb46b7912f20472a375a6b29f6efec4cf2fdca13d56cbffb86a1be697db2",
+      "memory": 536870912,
+      "mounts": [
+        {
+          "Destination": "/app/backend",
+          "Mode": "",
+          "Propagation": "rprivate",
+          "RW": false,
+          "Source": "/home/animallya96/deploy/anios/backend",
+          "Type": "bind"
+        },
+        {
+          "Destination": "/app/docs",
+          "Mode": "",
+          "Propagation": "rprivate",
+          "RW": false,
+          "Source": "/home/animallya96/deploy/anios/docs",
+          "Type": "bind"
+        },
+        {
+          "Destination": "/home/animallya96/deploy/anios/data/market",
+          "Mode": "",
+          "Propagation": "rprivate",
+          "RW": false,
+          "Source": "/home/animallya96/deploy/anios/data/market",
+          "Type": "bind"
+        },
+        {
+          "Destination": "/calc",
+          "Mode": "",
+          "Propagation": "rprivate",
+          "RW": false,
+          "Source": "/home/animallya96/scratch/strategy-entries-20261020-v2",
+          "Type": "bind"
+        },
+        {
+          "Destination": "/out",
+          "Mode": "",
+          "Propagation": "rprivate",
+          "RW": true,
+          "Source": "/home/animallya96/scratch/strategy-entries-20261020-v2/out",
+          "Type": "bind"
+        }
+      ],
+      "network": "none",
+      "pids": 32,
+      "root": "strategy-entries-20261020-v2",
+      "state": {
+        "Dead": false,
+        "Error": "",
+        "ExitCode": 0,
+        "FinishedAt": "2026-10-20T03:10:00.291690363Z",
+        "OOMKilled": false,
+        "Paused": false,
+        "Pid": 0,
+        "Restarting": false,
+        "Running": false,
+        "StartedAt": "2026-10-20T03:09:57.462961254Z",
+        "Status": "exited"
+      },
+      "stderr": ".\n----------------------------------------------------------------------\nRan 1 test in 0.003s\n\nOK\n",
+      "stdout": "{\"status\": \"VERIFIED_NEW_ENTRY_COMPONENTS_AND_ORIGINAL_REAL_CONTEXT\", \"context\": {\"contract\": \"strategy-entry-context/1\", \"snapshot_id\": \"aed17b31104fd7c378f43029ef008b104fe7fa7b378637463729ced9c6988e0f\", \"publication_receipt_sha256\": \"5578b643ba800c84938ba0f4c95b107af5f067e57bb82afe6ccf9c1ece854755\", \"close_receipt_sha256\": \"196fde8c2c3deda0f5d7bf4836d47403f240e392edf10aeb71ccd6345db2c976\", \"arrays_sha256\": \"f346b1d379b9935f5d618ea7ac1fc32ca9ec8dee1c4877ee4081b6a9f1781762\", \"prior_session\": \"2026-10-19\", \"trade_session\": \"2026-10-20\", \"source_sha256\": \"3aade712c9bcdbf5b09759cdb700c25c9f6e8e731cd6a27d4364c4f93ea2176f\", \"holding_forecast_recomputed\": false, \"account_inputs\": false}, \"real_current_entry_status\": {\"status\": \"closed\"}, \"actual_clock\": \"2026-10-20T03:10:00.166483+00:00\", \"new_unit_cases\": 1, \"rows\": 94, \"daily_dates\": 2966, \"symbols\": 96, \"max_rss_kib\": 337356, \"actual_current_regular_entry\": \"NOT_OBSERVED_overnight\", \"ordinary_new_source_release\": \"NOT_RUN_no_production_approval_change\", \"account_broker_calls\": 0}\n",
+      "user": "1000:1000"
+    },
+    {
+      "cid": "6d61831ec4d78a9d660576ab35adf39ddeceb312ba90929b8f15298018243b7e",
+      "cpu": 1000000000,
+      "fixed_files": {
+        "cid": {
+          "bytes": 64,
+          "sha256": "5452201ba288fa960f659fdc244af7888242fdb5fc2afc681811b3c7cb9cf4f8"
+        },
+        "create-argv.json": {
+          "bytes": 1189,
+          "sha256": "67a0aa6d65dc84a6d92bde805322e6a8c7f65125952224fe637bc4f5f3837ef6"
+        },
+        "inspect-after.json": {
+          "bytes": 7038,
+          "sha256": "73bec72ede1605db586d16d93ff94bfabfcb40e410b51cc78880536df68a3a81"
+        },
+        "inspect-before.json": {
+          "bytes": 10618,
+          "sha256": "43e8b918aa9b1507aeb0b82ec8ca5befa0d52de4f330a86294a3497b1d45ae56"
+        },
+        "out/result.json": {
+          "absent": true
+        },
+        "stderr": {
+          "bytes": 767,
+          "sha256": "0cc0ca7c644aeb03a332728ece0f0bcfac4386db2486a326e6c5161d6826feff"
+        },
+        "stdout": {
+          "bytes": 64,
+          "sha256": "08cbbb6bedaf9097758822b2f61729294053b2796c2b640e07dc7e343c00baa9"
+        }
+      },
+      "image": "sha256:136ebb46b7912f20472a375a6b29f6efec4cf2fdca13d56cbffb86a1be697db2",
+      "memory": 536870912,
+      "mounts": [
+        {
+          "Destination": "/app/docs",
+          "Mode": "",
+          "Propagation": "rprivate",
+          "RW": false,
+          "Source": "/home/animallya96/deploy/anios/docs",
+          "Type": "bind"
+        },
+        {
+          "Destination": "/home/animallya96/deploy/anios/data/market",
+          "Mode": "",
+          "Propagation": "rprivate",
+          "RW": false,
+          "Source": "/home/animallya96/deploy/anios/data/market",
+          "Type": "bind"
+        },
+        {
+          "Destination": "/calc",
+          "Mode": "",
+          "Propagation": "rprivate",
+          "RW": false,
+          "Source": "/home/animallya96/scratch/strategy-entries-20261020-v3",
+          "Type": "bind"
+        },
+        {
+          "Destination": "/out",
+          "Mode": "",
+          "Propagation": "rprivate",
+          "RW": true,
+          "Source": "/home/animallya96/scratch/strategy-entries-20261020-v3/out",
+          "Type": "bind"
+        },
+        {
+          "Destination": "/app/backend",
+          "Mode": "",
+          "Propagation": "rprivate",
+          "RW": false,
+          "Source": "/home/animallya96/deploy/anios/backend",
+          "Type": "bind"
+        }
+      ],
+      "network": "none",
+      "pids": 32,
+      "root": "strategy-entries-20261020-v3",
+      "state": {
+        "Dead": false,
+        "Error": "",
+        "ExitCode": 0,
+        "FinishedAt": "2026-10-20T03:13:02.870256003Z",
+        "OOMKilled": false,
+        "Paused": false,
+        "Pid": 0,
+        "Restarting": false,
+        "Running": false,
+        "StartedAt": "2026-10-20T03:12:58.50262455Z",
+        "Status": "exited"
+      },
+      "stderr": "........\n----------------------------------------------------------------------\nRan 8 tests in 0.029s\n\nOK\nExecuting <Task pending name='Task-2' coro=<PublicationHTTPTests.test_owner_reads_snapshot_and_corruption_never_uses_funded_data() running at /calc/test_strategy_publication_http.py:43> wait_for=<Future pending cb=[_chain_future.<locals>._call_check_cancel() at /usr/local/lib/python3.12/asyncio/futures.py:389, Task.task_wakeup()] created at /usr/local/lib/python3.12/asyncio/base_events.py:448> cb=[_run_until_complete_cb() at /usr/local/lib/python3.12/asyncio/base_events.py:181] created at /usr/local/lib/python3.12/asyncio/runners.py:100> took 1.625 seconds\n.\n----------------------------------------------------------------------\nRan 1 test in 1.654s\n\nOK\n",
+      "stdout": "VERIFIED_NEW_NUMERICAL_ENTRY_REGRESSIONS_AND_AUTHENTICATED_HTTP\n",
+      "user": "1000:1000"
+    },
+    {
+      "cid": "1d7f8a5ffb8223cffa15321c144458126d6cbd456acaba7e662c454252423903",
+      "cpu": 1000000000,
+      "fixed_files": {
+        "cid": {
+          "bytes": 64,
+          "sha256": "9b70108c8df1cb4057fd11836e19b1d29784588133f5f758c098edc12a28898c"
+        },
+        "create-argv.json": {
+          "bytes": 1189,
+          "sha256": "126128a27574d9a36522a1324751739bc0a8b3228ccbf462fc67583261f6bdc4"
+        },
+        "inspect-after.json": {
+          "bytes": 7039,
+          "sha256": "4d069468a19437a1385d66ba1f1a650ff4c25ac58c92e6bb2285cb775401daad"
+        },
+        "inspect-before.json": {
+          "bytes": 10618,
+          "sha256": "b5430e1a83b5a93fc84ff5780f192612ae97ee87fe82fc0d753eab0d7c04ba2c"
+        },
+        "out/result.json": {
+          "bytes": 172110,
+          "sha256": "4263fc562ff135548244ae55708365e7fb21126d3e681d3d712d3b523af94eb1"
+        },
+        "stderr": {
+          "bytes": 107,
+          "sha256": "c18cb6a6ac6389c261ffcbe0bfe05b7f801044514bb633492e1a855538f7df65"
+        },
+        "stdout": {
+          "bytes": 1039,
+          "sha256": "92c80951f67904bf31aca5ef94e7c448a7a05ad30d26400d1d9d6352f705688d"
+        }
+      },
+      "image": "sha256:136ebb46b7912f20472a375a6b29f6efec4cf2fdca13d56cbffb86a1be697db2",
+      "memory": 536870912,
+      "mounts": [
+        {
+          "Destination": "/app/backend",
+          "Mode": "",
+          "Propagation": "rprivate",
+          "RW": false,
+          "Source": "/home/animallya96/deploy/anios/backend",
+          "Type": "bind"
+        },
+        {
+          "Destination": "/app/docs",
+          "Mode": "",
+          "Propagation": "rprivate",
+          "RW": false,
+          "Source": "/home/animallya96/deploy/anios/docs",
+          "Type": "bind"
+        },
+        {
+          "Destination": "/home/animallya96/deploy/anios/data/market",
+          "Mode": "",
+          "Propagation": "rprivate",
+          "RW": false,
+          "Source": "/home/animallya96/deploy/anios/data/market",
+          "Type": "bind"
+        },
+        {
+          "Destination": "/calc",
+          "Mode": "",
+          "Propagation": "rprivate",
+          "RW": false,
+          "Source": "/home/animallya96/scratch/strategy-entries-20261020-v4",
+          "Type": "bind"
+        },
+        {
+          "Destination": "/out",
+          "Mode": "",
+          "Propagation": "rprivate",
+          "RW": true,
+          "Source": "/home/animallya96/scratch/strategy-entries-20261020-v4/out",
+          "Type": "bind"
+        }
+      ],
+      "network": "none",
+      "pids": 32,
+      "root": "strategy-entries-20261020-v4",
+      "state": {
+        "Dead": false,
+        "Error": "",
+        "ExitCode": 0,
+        "FinishedAt": "2026-10-20T03:18:19.131818993Z",
+        "OOMKilled": false,
+        "Paused": false,
+        "Pid": 0,
+        "Restarting": false,
+        "Running": false,
+        "StartedAt": "2026-10-20T03:18:16.170922201Z",
+        "Status": "exited"
+      },
+      "stderr": ".........\n----------------------------------------------------------------------\nRan 9 tests in 0.031s\n\nOK\n",
+      "stdout": "{\"status\": \"VERIFIED_NEW_ENTRY_COMPONENTS_AND_ORIGINAL_REAL_CONTEXT\", \"context\": {\"contract\": \"strategy-entry-context/1\", \"snapshot_id\": \"ca66150a2883cea14c8ae3aee5d23ce908edbcd441362db1392d97706491d525\", \"publication_receipt_sha256\": \"25393f4b4df1be0349e109374147c6db3045d32893c254f026908ab0be547fd3\", \"close_receipt_sha256\": \"196fde8c2c3deda0f5d7bf4836d47403f240e392edf10aeb71ccd6345db2c976\", \"arrays_sha256\": \"f346b1d379b9935f5d618ea7ac1fc32ca9ec8dee1c4877ee4081b6a9f1781762\", \"prior_session\": \"2026-10-19\", \"trade_session\": \"2026-10-20\", \"source_sha256\": \"3aade712c9bcdbf5b09759cdb700c25c9f6e8e731cd6a27d4364c4f93ea2176f\", \"holding_forecast_recomputed\": false, \"account_inputs\": false}, \"real_current_entry_status\": {\"status\": \"closed\"}, \"actual_clock\": \"2026-10-20T03:18:18.982101+00:00\", \"unit_cases\": 9, \"rows\": 94, \"daily_dates\": 2966, \"symbols\": 96, \"max_rss_kib\": 337588, \"actual_current_regular_entry\": \"NOT_OBSERVED_overnight\", \"ordinary_new_source_release\": \"NOT_RUN_no_production_approval_change\", \"account_broker_calls\": 0}\n",
+      "user": "1000:1000"
+    },
+    {
+      "cid": "e3ed07d3a2a3b84a70b8f3b7d6e3f66c8efb29011a0102d5b633996969f95847",
+      "cpu": 1000000000,
+      "fixed_files": {
+        "cid": {
+          "bytes": 64,
+          "sha256": "713aab56ff16855d6291da6c046403fff3da94e8836c929d5c50f16c48d828c3"
+        },
+        "create-argv.json": {
+          "bytes": 1189,
+          "sha256": "eade29ac4c454abe7501fb878012d8a02e7e6bee13dbc25954c4ee8a0b71649c"
+        },
+        "inspect-after.json": {
+          "bytes": 7039,
+          "sha256": "83d7ae5f0321e56cbd5b8065b20cada48954250e68b8053bdfc94b5baf881bbc"
+        },
+        "inspect-before.json": {
+          "bytes": 10618,
+          "sha256": "449b9211b1e1074bacf3bd69b3ae82f7414097cd9783c1f2abf10de1a642e3ce"
+        },
+        "out/result.json": {
+          "absent": true
+        },
+        "stderr": {
+          "bytes": 1628,
+          "sha256": "be3bee1b9e2c228a6cdfdb82f42ad2a02b421a177dc806a80b1809eb245ecce5"
+        },
+        "stdout": {
+          "bytes": 59,
+          "sha256": "a9b7a9ce8c34dc5cc7abdf2fbaedad3a866b0da1356a37773736557d0f6dd135"
+        }
+      },
+      "image": "sha256:136ebb46b7912f20472a375a6b29f6efec4cf2fdca13d56cbffb86a1be697db2",
+      "memory": 536870912,
+      "mounts": [
+        {
+          "Destination": "/out",
+          "Mode": "",
+          "Propagation": "rprivate",
+          "RW": true,
+          "Source": "/home/animallya96/scratch/strategy-entries-20261020-v6/out",
+          "Type": "bind"
+        },
+        {
+          "Destination": "/app/backend",
+          "Mode": "",
+          "Propagation": "rprivate",
+          "RW": false,
+          "Source": "/home/animallya96/deploy/anios/backend",
+          "Type": "bind"
+        },
+        {
+          "Destination": "/app/docs",
+          "Mode": "",
+          "Propagation": "rprivate",
+          "RW": false,
+          "Source": "/home/animallya96/deploy/anios/docs",
+          "Type": "bind"
+        },
+        {
+          "Destination": "/home/animallya96/deploy/anios/data/market",
+          "Mode": "",
+          "Propagation": "rprivate",
+          "RW": false,
+          "Source": "/home/animallya96/deploy/anios/data/market",
+          "Type": "bind"
+        },
+        {
+          "Destination": "/calc",
+          "Mode": "",
+          "Propagation": "rprivate",
+          "RW": false,
+          "Source": "/home/animallya96/scratch/strategy-entries-20261020-v6",
+          "Type": "bind"
+        }
+      ],
+      "network": "none",
+      "pids": 32,
+      "root": "strategy-entries-20261020-v6",
+      "state": {
+        "Dead": false,
+        "Error": "",
+        "ExitCode": 0,
+        "FinishedAt": "2026-10-20T03:37:01.052277649Z",
+        "OOMKilled": false,
+        "Paused": false,
+        "Pid": 0,
+        "Restarting": false,
+        "Running": false,
+        "StartedAt": "2026-10-20T03:36:52.154655288Z",
+        "Status": "exited"
+      },
+      "stderr": ".........\n----------------------------------------------------------------------\nRan 9 tests in 0.040s\n\nOK\n.......\n----------------------------------------------------------------------\nRan 7 tests in 0.020s\n\nOK\nExecuting <Task pending name='Task-2' coro=<PublicationHTTPTests.test_owner_reads_snapshot_and_corruption_never_uses_funded_data() running at /calc/test_strategy_publication_http.py:43> wait_for=<Future pending cb=[_chain_future.<locals>._call_check_cancel() at /usr/local/lib/python3.12/asyncio/futures.py:389, Task.task_wakeup()] created at /usr/local/lib/python3.12/asyncio/base_events.py:448> cb=[_run_until_complete_cb() at /usr/local/lib/python3.12/asyncio/base_events.py:181] created at /usr/local/lib/python3.12/asyncio/runners.py:100> took 1.565 seconds\n.\n----------------------------------------------------------------------\nRan 1 test in 1.590s\n\nOK\n....\n----------------------------------------------------------------------\nRan 4 tests in 0.012s\n\nOK\nExecuting <Task pending name='Task-2' coro=<IndependentHistoryHTTPTests.test_original_owner_content_and_corrupt_refusal() running at /calc/test_strategy_entry_services.py:62> wait_for=<Future pending cb=[_chain_future.<locals>._call_check_cancel() at /usr/local/lib/python3.12/asyncio/futures.py:389, Task.task_wakeup()] created at /usr/local/lib/python3.12/asyncio/base_events.py:448> cb=[_run_until_complete_cb() at /usr/local/lib/python3.12/asyncio/base_events.py:181] created at /usr/local/lib/python3.12/asyncio/runners.py:100> took 0.903 seconds\n...\n----------------------------------------------------------------------\nRan 3 tests in 0.928s\n\nOK\n",
+      "stdout": "VERIFIED_24_CHANGED_COMPONENT_REGRESSIONS_NO_MARKET_REPLAY\n",
+      "user": "1000:1000"
+    },
+    {
+      "cid": "184c3bb4755fd51e9b3e245357a77c82ffeadca6d4a52c778ac844983561f1af",
+      "cpu": 1000000000,
+      "fixed_files": {
+        "cid": {
+          "bytes": 64,
+          "sha256": "91f6f6e40a36592e6ed9dc8c2d78ff7dee185702b3ab03b438d02362658c891b"
+        },
+        "create-argv.json": {
+          "bytes": 1189,
+          "sha256": "ae42b6d845044da73b4c8aef8abac0add8b9ee942fc86e7d4e4ac64b49e0cbe8"
+        },
+        "inspect-after.json": {
+          "bytes": 7039,
+          "sha256": "ee6608c2908cfb902a27e0996ff83a93eeff297131c87143ffd8c72b45a4894d"
+        },
+        "inspect-before.json": {
+          "bytes": 10618,
+          "sha256": "d8d5dc3dcd8cc4eed11e60859fb674bb6d828e6d1012e6dd64f8f1b81fabc3a2"
+        },
+        "out/result.json": {
+          "absent": true
+        },
+        "stderr": {
+          "bytes": 1631,
+          "sha256": "606405664e240e181e146b13698a726c48ee6686779b22e683065da7e3a0166e"
+        },
+        "stdout": {
+          "bytes": 59,
+          "sha256": "d894f6272d4adbd42f33671fe10adc0e91b70d337dee25f6858e99f50c88d6f6"
+        }
+      },
+      "image": "sha256:136ebb46b7912f20472a375a6b29f6efec4cf2fdca13d56cbffb86a1be697db2",
+      "memory": 536870912,
+      "mounts": [
+        {
+          "Destination": "/app/backend",
+          "Mode": "",
+          "Propagation": "rprivate",
+          "RW": false,
+          "Source": "/home/animallya96/deploy/anios/backend",
+          "Type": "bind"
+        },
+        {
+          "Destination": "/app/docs",
+          "Mode": "",
+          "Propagation": "rprivate",
+          "RW": false,
+          "Source": "/home/animallya96/deploy/anios/docs",
+          "Type": "bind"
+        },
+        {
+          "Destination": "/home/animallya96/deploy/anios/data/market",
+          "Mode": "",
+          "Propagation": "rprivate",
+          "RW": false,
+          "Source": "/home/animallya96/deploy/anios/data/market",
+          "Type": "bind"
+        },
+        {
+          "Destination": "/calc",
+          "Mode": "",
+          "Propagation": "rprivate",
+          "RW": false,
+          "Source": "/home/animallya96/scratch/strategy-entries-20261020-v7",
+          "Type": "bind"
+        },
+        {
+          "Destination": "/out",
+          "Mode": "",
+          "Propagation": "rprivate",
+          "RW": true,
+          "Source": "/home/animallya96/scratch/strategy-entries-20261020-v7/out",
+          "Type": "bind"
+        }
+      ],
+      "network": "none",
+      "pids": 32,
+      "root": "strategy-entries-20261020-v7",
+      "state": {
+        "Dead": false,
+        "Error": "",
+        "ExitCode": 0,
+        "FinishedAt": "2026-10-20T03:42:41.092632049Z",
+        "OOMKilled": false,
+        "Paused": false,
+        "Pid": 0,
+        "Restarting": false,
+        "Running": false,
+        "StartedAt": "2026-10-20T03:42:32.243615557Z",
+        "Status": "exited"
+      },
+      "stderr": "...........\n----------------------------------------------------------------------\nRan 11 tests in 0.064s\n\nOK\n.......\n----------------------------------------------------------------------\nRan 7 tests in 0.021s\n\nOK\nExecuting <Task pending name='Task-2' coro=<PublicationHTTPTests.test_owner_reads_snapshot_and_corruption_never_uses_funded_data() running at /calc/test_strategy_publication_http.py:43> wait_for=<Future pending cb=[_chain_future.<locals>._call_check_cancel() at /usr/local/lib/python3.12/asyncio/futures.py:389, Task.task_wakeup()] created at /usr/local/lib/python3.12/asyncio/base_events.py:448> cb=[_run_until_complete_cb() at /usr/local/lib/python3.12/asyncio/base_events.py:181] created at /usr/local/lib/python3.12/asyncio/runners.py:100> took 1.450 seconds\n.\n----------------------------------------------------------------------\nRan 1 test in 1.475s\n\nOK\n....\n----------------------------------------------------------------------\nRan 4 tests in 0.011s\n\nOK\nExecuting <Task pending name='Task-2' coro=<IndependentHistoryHTTPTests.test_original_owner_content_and_corrupt_refusal() running at /calc/test_strategy_entry_services.py:62> wait_for=<Future pending cb=[_chain_future.<locals>._call_check_cancel() at /usr/local/lib/python3.12/asyncio/futures.py:389, Task.task_wakeup()] created at /usr/local/lib/python3.12/asyncio/base_events.py:448> cb=[_run_until_complete_cb() at /usr/local/lib/python3.12/asyncio/base_events.py:181] created at /usr/local/lib/python3.12/asyncio/runners.py:100> took 0.844 seconds\n...\n----------------------------------------------------------------------\nRan 3 tests in 0.865s\n\nOK\n",
+      "stdout": "VERIFIED_26_CHANGED_COMPONENT_REGRESSIONS_NO_MARKET_REPLAY\n",
+      "user": "1000:1000"
+    },
+    {
+      "cid": "86d32e277ee7ca89c0bc8171dbb4c7896c32d7f28ee8a72062de5336790eae9d",
+      "cpu": 1000000000,
+      "fixed_files": {
+        "cid": {
+          "bytes": 64,
+          "sha256": "13120d9e273e8725ca0fa53542fd537ab410f6add4366418aaf5b0730fb23f7f"
+        },
+        "create-argv.json": {
+          "bytes": 1189,
+          "sha256": "4730f097066e44c5ef038a11b1b9fb7b2899bd5898259c0b0b8bb0ded52100a9"
+        },
+        "inspect-after.json": {
+          "bytes": 7039,
+          "sha256": "a8f13c64abe8e313d00adf7d263ffcc7b5630b6d08bcaded3083c0947777900b"
+        },
+        "inspect-before.json": {
+          "bytes": 10618,
+          "sha256": "9bae711b8a3dcd25a079d0f8e2c67b8d19b36ebf0b64f3dd1c2ce54480ccc2db"
+        },
+        "out/result.json": {
+          "bytes": 172110,
+          "sha256": "86c9db50ba90088924331fa47a878c93a95dd776c0d0df0ebef717d3454c5ac1"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 1039,
+          "sha256": "1a809a838debae5ed5770c6771c93f8f6f3130463f258bff8f6e4cdd4722caca"
+        }
+      },
+      "image": "sha256:136ebb46b7912f20472a375a6b29f6efec4cf2fdca13d56cbffb86a1be697db2",
+      "memory": 536870912,
+      "mounts": [
+        {
+          "Destination": "/app/backend",
+          "Mode": "",
+          "Propagation": "rprivate",
+          "RW": false,
+          "Source": "/home/animallya96/deploy/anios/backend",
+          "Type": "bind"
+        },
+        {
+          "Destination": "/app/docs",
+          "Mode": "",
+          "Propagation": "rprivate",
+          "RW": false,
+          "Source": "/home/animallya96/deploy/anios/docs",
+          "Type": "bind"
+        },
+        {
+          "Destination": "/home/animallya96/deploy/anios/data/market",
+          "Mode": "",
+          "Propagation": "rprivate",
+          "RW": false,
+          "Source": "/home/animallya96/deploy/anios/data/market",
+          "Type": "bind"
+        },
+        {
+          "Destination": "/calc",
+          "Mode": "",
+          "Propagation": "rprivate",
+          "RW": false,
+          "Source": "/home/animallya96/scratch/strategy-entries-20261020-v8",
+          "Type": "bind"
+        },
+        {
+          "Destination": "/out",
+          "Mode": "",
+          "Propagation": "rprivate",
+          "RW": true,
+          "Source": "/home/animallya96/scratch/strategy-entries-20261020-v8/out",
+          "Type": "bind"
+        }
+      ],
+      "network": "none",
+      "pids": 32,
+      "root": "strategy-entries-20261020-v8",
+      "state": {
+        "Dead": false,
+        "Error": "",
+        "ExitCode": 0,
+        "FinishedAt": "2026-10-20T03:45:19.168446317Z",
+        "OOMKilled": false,
+        "Paused": false,
+        "Pid": 0,
+        "Restarting": false,
+        "Running": false,
+        "StartedAt": "2026-10-20T03:45:17.383896119Z",
+        "Status": "exited"
+      },
+      "stderr": "",
+      "stdout": "{\"status\": \"VERIFIED_NEW_ENTRY_COMPONENTS_AND_ORIGINAL_REAL_CONTEXT\", \"context\": {\"contract\": \"strategy-entry-context/1\", \"snapshot_id\": \"c6ecf126a0aa21365f9bc09523a502fe7a96591c4e33eca2e726fda25f6066dc\", \"publication_receipt_sha256\": \"098590711dbe8056e9c0f49f074d44e91e0378e2e4a5a5e3733261a0a0f1d582\", \"close_receipt_sha256\": \"196fde8c2c3deda0f5d7bf4836d47403f240e392edf10aeb71ccd6345db2c976\", \"arrays_sha256\": \"f346b1d379b9935f5d618ea7ac1fc32ca9ec8dee1c4877ee4081b6a9f1781762\", \"prior_session\": \"2026-10-19\", \"trade_session\": \"2026-10-20\", \"source_sha256\": \"3aade712c9bcdbf5b09759cdb700c25c9f6e8e731cd6a27d4364c4f93ea2176f\", \"holding_forecast_recomputed\": false, \"account_inputs\": false}, \"real_current_entry_status\": {\"status\": \"closed\"}, \"actual_clock\": \"2026-10-20T03:45:19.020704+00:00\", \"unit_cases\": 0, \"rows\": 94, \"daily_dates\": 2966, \"symbols\": 96, \"max_rss_kib\": 337668, \"actual_current_regular_entry\": \"NOT_OBSERVED_overnight\", \"ordinary_new_source_release\": \"NOT_RUN_no_production_approval_change\", \"account_broker_calls\": 0}\n",
+      "user": "1000:1000"
+    },
+    {
+      "cid": "e8a341d00bba16152a5b245f0085ce7a252e89d71bc5337bd25e40c12aed472f",
+      "cpu": 1000000000,
+      "fixed_files": {
+        "cid": {
+          "bytes": 64,
+          "sha256": "298865082c737edfdf840765d5d6a05f97f8b02ffda52730c36629415c222ee3"
+        },
+        "create-argv.json": {
+          "bytes": 1345,
+          "sha256": "47efcb8eaf06f54051844735aa0fa624e6c08a3f68ab90fec65d39f78f3026a5"
+        },
+        "inspect-after.json": {
+          "bytes": 7420,
+          "sha256": "bfb6ee054c71db1474c0756f851258951db5bf97b63cd1bb357d3cff33bb126c"
+        },
+        "inspect-before.json": {
+          "bytes": 11235,
+          "sha256": "8381edcf48003398e749067396305bb1f46511b77acce134cecaf25e533db822"
+        },
+        "out/result.json": {
+          "bytes": 3505,
+          "sha256": "be9f72e16d3c00997d731b59822bd305c7c3edfbc57db0719e5b17cab530073f"
+        },
+        "stderr": {
+          "bytes": 102,
+          "sha256": "3b0dbb90387b342ccecc50446a0fb5e4385d86a3f467e5b97d63f8924fc08aff"
+        },
+        "stdout": {
+          "bytes": 3506,
+          "sha256": "1a2e7aacff37a1f545184af3534a3c5e0996fae8c762f6c27c74297f73ea0329"
+        }
+      },
+      "image": "sha256:136ebb46b7912f20472a375a6b29f6efec4cf2fdca13d56cbffb86a1be697db2",
+      "memory": 536870912,
+      "mounts": [
+        {
+          "Destination": "/app/backend",
+          "Mode": "",
+          "Propagation": "rprivate",
+          "RW": false,
+          "Source": "/home/animallya96/deploy/anios/backend",
+          "Type": "bind"
+        },
+        {
+          "Destination": "/app/docs",
+          "Mode": "",
+          "Propagation": "rprivate",
+          "RW": false,
+          "Source": "/home/animallya96/deploy/anios/docs",
+          "Type": "bind"
+        },
+        {
+          "Destination": "/home/animallya96/deploy/anios/data/market",
+          "Mode": "",
+          "Propagation": "rprivate",
+          "RW": false,
+          "Source": "/home/animallya96/deploy/anios/data/market",
+          "Type": "bind"
+        },
+        {
+          "Destination": "/calc",
+          "Mode": "",
+          "Propagation": "rprivate",
+          "RW": false,
+          "Source": "/home/animallya96/scratch/strategy-history-publication-20261020-v1",
+          "Type": "bind"
+        },
+        {
+          "Destination": "/out",
+          "Mode": "",
+          "Propagation": "rprivate",
+          "RW": true,
+          "Source": "/home/animallya96/scratch/strategy-history-publication-20261020-v1/out",
+          "Type": "bind"
+        },
+        {
+          "Destination": "/original",
+          "Mode": "",
+          "Propagation": "rprivate",
+          "RW": false,
+          "Source": "/home/animallya96/scratch/strategy-october-20261020-extension-v1/out",
+          "Type": "bind"
+        }
+      ],
+      "network": "none",
+      "pids": 32,
+      "root": "strategy-history-publication-20261020-v1",
+      "state": {
+        "Dead": false,
+        "Error": "",
+        "ExitCode": 0,
+        "FinishedAt": "2026-10-20T03:24:24.962719781Z",
+        "OOMKilled": false,
+        "Paused": false,
+        "Pid": 0,
+        "Restarting": false,
+        "Running": false,
+        "StartedAt": "2026-10-20T03:24:21.898009976Z",
+        "Status": "exited"
+      },
+      "stderr": "....\n----------------------------------------------------------------------\nRan 4 tests in 0.012s\n\nOK\n",
+      "stdout": "{\"status\": \"VERIFIED_ORIGINAL_AUDITED_HISTORY_PUBLICATION\", \"unit_tests\": 4, \"stocks\": 94, \"decisions\": 5755, \"checks\": {\"HPE\": {\"decisions\": 42, \"grade_rows\": 85, \"original_stock_sha256\": \"5b6b75b8d3d204ccd37c0705c0f4dcee67a6f51aad0c0903ced7d15db35db2ad\", \"installed_economics_verified\": true, \"last_grade_clock\": \"2026-10-01T09:30:00-04:00\"}, \"COHR\": {\"decisions\": 87, \"grade_rows\": 89, \"original_stock_sha256\": \"1d99bbe55d2e36e21e66d611e08cc887d8f1d3715b667a3c0d4da685dd89e865\", \"installed_economics_verified\": true, \"last_grade_clock\": \"2026-10-09T09:30:00-04:00\"}}, \"pointer\": {\"history_sha256\": \"cc49039984d89b854505a0afdb2071570e3494b6d75c4d4bf3c6dfe973c471f9\", \"audit_sha256\": \"8c47b5e95a149b83c9e1b83a27d4b35831000ea99419cf26b28aff81506bd107\", \"binding_sha256\": \"35b6977a82ec2a67b103ed197d52ddc000d529799f7067b61ca0698d3e44d95a\"}, \"binding\": {\"audit_sha256\": \"8c47b5e95a149b83c9e1b83a27d4b35831000ea99419cf26b28aff81506bd107\", \"basis\": \"explicit_validated_projection_original_history_bytes_unchanged\", \"config_sha256\": \"a237bfe4e21db38a0fabf8d31a2c78542b8bff58a5d26895ac98f2387c144f7c\", \"counterfactual\": true, \"economic_sources\": {\"adaptive_growth_policy.py\": \"35a2d6a07276096acee78078886c9aefe02051f2b746a8739442814920114e34\", \"direct_daily_arithmetic.py\": \"03cb9e837c291b190c89bb8cce3fb960f16c5b118d41bd67c5f294b4664076b9\", \"entry_timing.py\": \"f23d286c0d613d99620ce4a4ea8aa889be88ca224c5fbfc945b4360eae944a88\", \"forward_arithmetic.py\": \"9617f9dc3252d3ce48891eb800de1dfc135383a88cb3f15b377c480d60d8d882\", \"forward_execution.py\": \"62fa03e76d6f186a5084afe7ed1087891ce06f1d4b74040c6491f9c0b32ff295\", \"grade_led_policy.py\": \"4dec4ba263efa21b3a534b826b594d57e1a8cb99097e73ea53e8fbb0e96dfd66\", \"joint_funded_policy.py\": \"5b5b96c685f78f867bb590f00f83cdbaca88c1de45681ca178f0c5b84d6bb339\", \"learned_entry_data.py\": \"4b0555a6fd929c8a73a9063ef933fde22ce581fa85f37badb37fe611a9123365\", \"live_probability_timing.py\": \"3fc9da7ae628e3fdd98388bbaa0e08bbaf5b8c36da78fb7c0e0efdcab63c1721\", \"market_conditioned_calibration.py\": \"00c176719372f5b1bc373be32c0c3007c0e6c8aa7808969e177710056c819145\", \"market_conditioned_holding.py\": \"e2de45ca5b79ad1547299b131deb23e898aa7a9c33c13e7ec28bc4210d4950e4\", \"probabilistic_execution.py\": \"cfd586859920f06d385447b1aa171f17e515d8e34bc07a8752164ef2b3705af2\"}, \"historical_publication_claim\": false, \"history_sha256\": \"cc49039984d89b854505a0afdb2071570e3494b6d75c4d4bf3c6dfe973c471f9\", \"holding_model_receipt_sha256\": \"858163d5e414ee658f28a10532a934528c72fe98fd1cb685e655d6d3a2c75825\", \"original_producer_source_revision\": \"b4b2eeb9ac3d1b0bb1f344b280ecd5f1b00be1b8\", \"risk_receipt_sha256\": \"79b33d54253001ba0f907ae0b41f49c81ae436800e43e05b75cd5f58bb653cfe\", \"schema\": \"strategy-history-economics-binding/1\", \"source_record_sha256\": \"4119936b0a00c6bb905ec85982e3d046946459ba375ee7b1e090d1ba52acfe4c\", \"strategy_identity\": \"ceabfeb9873a2496930ee75e10f9f2f7fb4f5d0cc7e5561c6ce72e458e59351e\", \"timing_config_sha256\": \"d03339a3ad4b590ef8ed4205375d39d634df12a6fb49e290ab5b0f3642ea679a\", \"original_code_only_identity\": \"b36bf3c18d6a329a7837efb09f482a0b00387131daea805982c0ccf325b53944\", \"economic_parameters\": {\"cost_bps\": 10}}, \"source_sha256\": \"bd3d1cab411863fa0d098df0269e8a10a139fe16e92c42674cfff58a8591d17b\", \"max_rss_kib\": 200712, \"producer_rerun\": false, \"audit_rerun\": false, \"account_broker_calls\": 0, \"original_outputs_rewritten\": false, \"grade_last_close_next_open\": \"2026-10-20T09:30:00-04:00\", \"production_source_release\": \"NOT_RUN_new35_source_admission_still_required\"}\n",
+      "user": "1000:1000"
+    },
+    {
+      "cid": "96499510600f86109bb9345518605b4aea6d16abd1a568416bdeb081cb50675a",
+      "cpu": 1000000000,
+      "fixed_files": {
+        "cid": {
+          "bytes": 64,
+          "sha256": "323314ce9b9fde38de25b6582f95aebf28f6a8ccb2c0e8a3e5629c82ff00fa34"
+        },
+        "create-argv.json": {
+          "bytes": 1345,
+          "sha256": "7900125b6bb69be3f07e3e73813fddb3f3993f5e9ac27d8858773ca737cd0025"
+        },
+        "inspect-after.json": {
+          "bytes": 7419,
+          "sha256": "58e8c4c9e824569be8552fbfc1b4757ebde3f7ecf4cde60f92ef7ee1f97cf10c"
+        },
+        "inspect-before.json": {
+          "bytes": 11234,
+          "sha256": "973a146d4a426014ede752a567f93dba2549fe11977d7f7a1769ad0de807e083"
+        },
+        "out/result.json": {
+          "bytes": 3505,
+          "sha256": "3c2945d4d0f632f58ec04b21d8e9d7a39e531012bf787f299ed96e74c3ffe253"
+        },
+        "stderr": {
+          "bytes": 102,
+          "sha256": "3b0dbb90387b342ccecc50446a0fb5e4385d86a3f467e5b97d63f8924fc08aff"
+        },
+        "stdout": {
+          "bytes": 3506,
+          "sha256": "373488efb4867b4b28e6902677f69b9edb61615874da36f5eeb12f83a8af207f"
+        }
+      },
+      "image": "sha256:136ebb46b7912f20472a375a6b29f6efec4cf2fdca13d56cbffb86a1be697db2",
+      "memory": 536870912,
+      "mounts": [
+        {
+          "Destination": "/calc",
+          "Mode": "",
+          "Propagation": "rprivate",
+          "RW": false,
+          "Source": "/home/animallya96/scratch/strategy-history-publication-20261020-v2",
+          "Type": "bind"
+        },
+        {
+          "Destination": "/out",
+          "Mode": "",
+          "Propagation": "rprivate",
+          "RW": true,
+          "Source": "/home/animallya96/scratch/strategy-history-publication-20261020-v2/out",
+          "Type": "bind"
+        },
+        {
+          "Destination": "/original",
+          "Mode": "",
+          "Propagation": "rprivate",
+          "RW": false,
+          "Source": "/home/animallya96/scratch/strategy-october-20261020-extension-v1/out",
+          "Type": "bind"
+        },
+        {
+          "Destination": "/app/backend",
+          "Mode": "",
+          "Propagation": "rprivate",
+          "RW": false,
+          "Source": "/home/animallya96/deploy/anios/backend",
+          "Type": "bind"
+        },
+        {
+          "Destination": "/app/docs",
+          "Mode": "",
+          "Propagation": "rprivate",
+          "RW": false,
+          "Source": "/home/animallya96/deploy/anios/docs",
+          "Type": "bind"
+        },
+        {
+          "Destination": "/home/animallya96/deploy/anios/data/market",
+          "Mode": "",
+          "Propagation": "rprivate",
+          "RW": false,
+          "Source": "/home/animallya96/deploy/anios/data/market",
+          "Type": "bind"
+        }
+      ],
+      "network": "none",
+      "pids": 32,
+      "root": "strategy-history-publication-20261020-v2",
+      "state": {
+        "Dead": false,
+        "Error": "",
+        "ExitCode": 0,
+        "FinishedAt": "2026-10-20T03:28:08.399056982Z",
+        "OOMKilled": false,
+        "Paused": false,
+        "Pid": 0,
+        "Restarting": false,
+        "Running": false,
+        "StartedAt": "2026-10-20T03:28:05.791656707Z",
+        "Status": "exited"
+      },
+      "stderr": "....\n----------------------------------------------------------------------\nRan 4 tests in 0.012s\n\nOK\n",
+      "stdout": "{\"status\": \"VERIFIED_ORIGINAL_AUDITED_HISTORY_PUBLICATION\", \"unit_tests\": 4, \"stocks\": 94, \"decisions\": 5755, \"checks\": {\"HPE\": {\"decisions\": 42, \"grade_rows\": 85, \"original_stock_sha256\": \"5b6b75b8d3d204ccd37c0705c0f4dcee67a6f51aad0c0903ced7d15db35db2ad\", \"installed_economics_verified\": true, \"last_grade_clock\": \"2026-10-01T09:30:00-04:00\"}, \"COHR\": {\"decisions\": 87, \"grade_rows\": 89, \"original_stock_sha256\": \"1d99bbe55d2e36e21e66d611e08cc887d8f1d3715b667a3c0d4da685dd89e865\", \"installed_economics_verified\": true, \"last_grade_clock\": \"2026-10-09T09:30:00-04:00\"}}, \"pointer\": {\"history_sha256\": \"cc49039984d89b854505a0afdb2071570e3494b6d75c4d4bf3c6dfe973c471f9\", \"audit_sha256\": \"8c47b5e95a149b83c9e1b83a27d4b35831000ea99419cf26b28aff81506bd107\", \"binding_sha256\": \"eac9489f52199e9045c16bfec86cd0e37e5d2619349c51f4147d8dd72813c2da\"}, \"binding\": {\"audit_sha256\": \"8c47b5e95a149b83c9e1b83a27d4b35831000ea99419cf26b28aff81506bd107\", \"basis\": \"explicit_validated_projection_original_history_bytes_unchanged\", \"config_sha256\": \"a237bfe4e21db38a0fabf8d31a2c78542b8bff58a5d26895ac98f2387c144f7c\", \"counterfactual\": true, \"economic_sources\": {\"adaptive_growth_policy.py\": \"35a2d6a07276096acee78078886c9aefe02051f2b746a8739442814920114e34\", \"direct_daily_arithmetic.py\": \"03cb9e837c291b190c89bb8cce3fb960f16c5b118d41bd67c5f294b4664076b9\", \"entry_timing.py\": \"f23d286c0d613d99620ce4a4ea8aa889be88ca224c5fbfc945b4360eae944a88\", \"forward_arithmetic.py\": \"9617f9dc3252d3ce48891eb800de1dfc135383a88cb3f15b377c480d60d8d882\", \"forward_execution.py\": \"62fa03e76d6f186a5084afe7ed1087891ce06f1d4b74040c6491f9c0b32ff295\", \"grade_led_policy.py\": \"4dec4ba263efa21b3a534b826b594d57e1a8cb99097e73ea53e8fbb0e96dfd66\", \"joint_funded_policy.py\": \"5b5b96c685f78f867bb590f00f83cdbaca88c1de45681ca178f0c5b84d6bb339\", \"learned_entry_data.py\": \"4b0555a6fd929c8a73a9063ef933fde22ce581fa85f37badb37fe611a9123365\", \"live_probability_timing.py\": \"3fc9da7ae628e3fdd98388bbaa0e08bbaf5b8c36da78fb7c0e0efdcab63c1721\", \"market_conditioned_calibration.py\": \"00c176719372f5b1bc373be32c0c3007c0e6c8aa7808969e177710056c819145\", \"market_conditioned_holding.py\": \"e2de45ca5b79ad1547299b131deb23e898aa7a9c33c13e7ec28bc4210d4950e4\", \"probabilistic_execution.py\": \"cfd586859920f06d385447b1aa171f17e515d8e34bc07a8752164ef2b3705af2\"}, \"historical_publication_claim\": false, \"history_sha256\": \"cc49039984d89b854505a0afdb2071570e3494b6d75c4d4bf3c6dfe973c471f9\", \"holding_model_receipt_sha256\": \"858163d5e414ee658f28a10532a934528c72fe98fd1cb685e655d6d3a2c75825\", \"original_producer_source_revision\": \"b4b2eeb9ac3d1b0bb1f344b280ecd5f1b00be1b8\", \"risk_receipt_sha256\": \"79b33d54253001ba0f907ae0b41f49c81ae436800e43e05b75cd5f58bb653cfe\", \"schema\": \"strategy-history-economics-binding/1\", \"source_record_sha256\": \"4119936b0a00c6bb905ec85982e3d046946459ba375ee7b1e090d1ba52acfe4c\", \"strategy_identity\": \"cf87c42bd85d3c08366487e75ea5e116ceea6a2e30f9c1cd5e2a3ac8487f81ba\", \"timing_config_sha256\": \"d03339a3ad4b590ef8ed4205375d39d634df12a6fb49e290ab5b0f3642ea679a\", \"original_code_only_identity\": \"b36bf3c18d6a329a7837efb09f482a0b00387131daea805982c0ccf325b53944\", \"economic_parameters\": {\"cost_bps\": 10}}, \"source_sha256\": \"bd3d1cab411863fa0d098df0269e8a10a139fe16e92c42674cfff58a8591d17b\", \"max_rss_kib\": 200640, \"producer_rerun\": false, \"audit_rerun\": false, \"account_broker_calls\": 0, \"original_outputs_rewritten\": false, \"grade_last_close_next_open\": \"2026-10-20T09:30:00-04:00\", \"production_source_release\": \"NOT_RUN_new35_source_admission_still_required\"}\n",
+      "user": "1000:1000"
+    },
+    {
+      "cid": "9795ae09f17cbb572507cc992fffcf423280b9abe58787c9e17d6ebae62795cb",
+      "cpu": 1000000000,
+      "fixed_files": {
+        "cid": {
+          "bytes": 64,
+          "sha256": "743fa237b0a873c605faad99a7d6b4feada140e399bc991c286665e577277110"
+        },
+        "create-argv.json": {
+          "bytes": 1210,
+          "sha256": "61bb7eabcaf15418be9d6f5da92c0ed6889cb6294c396a73f83b8e00a930668a"
+        },
+        "inspect-after.json": {
+          "bytes": 7074,
+          "sha256": "85a74ab5223ed596eb1b2673f3705eb21d5d36ef54528cf8c5bb656792c538fa"
+        },
+        "inspect-before.json": {
+          "bytes": 10653,
+          "sha256": "c31cb3a5cc3976c93c0fa13a2629e64a93cd9f3fc2a3eb6cbd7d02273ad617c5"
+        },
+        "out/result.json": {
+          "bytes": 396,
+          "sha256": "6e271092eb5833619ea3666d679a178d644f4f91ce6f707ac1fba8960c6b208e"
+        },
+        "stderr": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        },
+        "stdout": {
+          "bytes": 397,
+          "sha256": "e8692108190d484ac19e21182b93aa183de4c721d334d1c5629f692588883e91"
+        }
+      },
+      "image": "sha256:136ebb46b7912f20472a375a6b29f6efec4cf2fdca13d56cbffb86a1be697db2",
+      "memory": 536870912,
+      "mounts": [
+        {
+          "Destination": "/app/backend",
+          "Mode": "",
+          "Propagation": "rprivate",
+          "RW": false,
+          "Source": "/home/animallya96/deploy/anios/backend",
+          "Type": "bind"
+        },
+        {
+          "Destination": "/app/docs",
+          "Mode": "",
+          "Propagation": "rprivate",
+          "RW": false,
+          "Source": "/home/animallya96/deploy/anios/docs",
+          "Type": "bind"
+        },
+        {
+          "Destination": "/home/animallya96/deploy/anios/data/market",
+          "Mode": "",
+          "Propagation": "rprivate",
+          "RW": false,
+          "Source": "/home/animallya96/deploy/anios/data/market",
+          "Type": "bind"
+        },
+        {
+          "Destination": "/calc",
+          "Mode": "",
+          "Propagation": "rprivate",
+          "RW": false,
+          "Source": "/home/animallya96/scratch/strategy-chart-coverage-20261020-v1",
+          "Type": "bind"
+        },
+        {
+          "Destination": "/out",
+          "Mode": "",
+          "Propagation": "rprivate",
+          "RW": true,
+          "Source": "/home/animallya96/scratch/strategy-chart-coverage-20261020-v1/out",
+          "Type": "bind"
+        }
+      ],
+      "network": "none",
+      "pids": 32,
+      "root": "strategy-chart-coverage-20261020-v1",
+      "state": {
+        "Dead": false,
+        "Error": "",
+        "ExitCode": 0,
+        "FinishedAt": "2026-10-20T03:20:35.754031272Z",
+        "OOMKilled": false,
+        "Paused": false,
+        "Pid": 0,
+        "Restarting": false,
+        "Running": false,
+        "StartedAt": "2026-10-20T03:20:34.499011425Z",
+        "Status": "exited"
+      },
+      "stderr": "",
+      "stdout": "{\"ticker\": \"HPE\", \"sessions_requested\": 60, \"sessions\": 60, \"bars\": 1620, \"first\": \"2026-07-24\", \"last\": \"2026-10-19\", \"data_status\": \"incomplete\", \"missing_sessions\": [\"2026-10-15\"], \"grade_open_bars\": {\"2026-06-08\": [], \"2026-09-09\": [\"2026-09-09T09:30:00-04:00\"]}, \"account_history\": false, \"network\": false, \"source_sha256\": \"c61169da7fdf8f58e05353e6bd37ad6950f5aa49e3862c9ed712b9216214d457\"}\n",
+      "user": "1000:1000"
+    }
+  ],
+  "schema": "strategy-numerical-preview-proof/1",
+  "source_files": {
+    "backend/api/v1/market_allocation.py": {
+      "bytes": 1927,
+      "sha256": "ebea93e709960dc10a99a4d6088333a0e2248cf7883d8b74d9de11003ae7395c"
+    },
+    "backend/api/v1/market_simulation.py": {
+      "bytes": 1952,
+      "sha256": "00f0898cfdd301c2d16c52ca979c3f97afe45f9ab2d4689332248e16a777a6e1"
+    },
+    "backend/market/learned_live_holding.py": {
+      "bytes": 17302,
+      "sha256": "3f3391fcf6a7f04eaf340c25965f78e66ae406d69d1f8d663cbe470860eb1097"
+    },
+    "backend/market/strategy_bench.py": {
+      "bytes": 9811,
+      "sha256": "4c0f2859b79a43fb8875449c2d47b38bd8148ee01497dbcaf58bc4ef1159bde4"
+    },
+    "backend/market/strategy_entries.py": {
+      "bytes": 19389,
+      "sha256": "e363dc2902b8d96040a88ec35cd9cb31335a3e00e131957375f920c877fb922a"
+    },
+    "backend/market/strategy_entry_context.py": {
+      "bytes": 7099,
+      "sha256": "3aade712c9bcdbf5b09759cdb700c25c9f6e8e731cd6a27d4364c4f93ea2176f"
+    },
+    "backend/market/strategy_history_publication.py": {
+      "bytes": 9930,
+      "sha256": "bd3d1cab411863fa0d098df0269e8a10a139fe16e92c42674cfff58a8591d17b"
+    },
+    "backend/market/strategy_model_allocation.py": {
+      "bytes": 5640,
+      "sha256": "4b7521147199b3c115f5b78c448795a0233ef4cd2aef5401ad3f418bfee994bf"
+    },
+    "backend/market/strategy_model_extension.py": {
+      "bytes": 9977,
+      "sha256": "930a0bfbba2f189a3e00f7bad8fd04e90ebb5785e2e413d46c70ad0b64617fb7"
+    },
+    "backend/market/strategy_model_history.py": {
+      "bytes": 12239,
+      "sha256": "7a7bfb2e200a02cdcba61ed2c92d7c14cf6fc8fd7c0de6a3c6c394c0ff0f03a2"
+    },
+    "backend/market/strategy_publication.py": {
+      "bytes": 15695,
+      "sha256": "24d392b0938a1033208f3a3f7c5508ece49ab3a53c563c00e682077e67931064"
+    },
+    "backend/market/strategy_research.py": {
+      "bytes": 3207,
+      "sha256": "9e90b9f2deeccefb747a15f1347d35515241f19b5746ca1dff0c1df41f7ed20b"
+    },
+    "backend/market/strategy_simulation.py": {
+      "bytes": 12264,
+      "sha256": "1bcfdb88e327e2fb8e3063128ccf63813afa9d746fa82579fa8c7a85b5d1290e"
+    },
+    "backend/services/current_opportunity_collector.py": {
+      "bytes": 1168,
+      "sha256": "28af1873a3d47a1cc3e19177b39d3b7ea0c6631e77bb1bddb8a46291fc07cba9"
+    },
+    "backend/services/session_price_collector.py": {
+      "bytes": 4184,
+      "sha256": "c06c3c369fd6d51de6fc7fb9073314a5e5eb59dda70962eb3f57647961dd0882"
+    },
+    "backend/tests/test_strategy_entries.py": {
+      "bytes": 17499,
+      "sha256": "7beae5904ad7a6bb43affdb854b0b23cc334fc75127c5f21b383e746030400fb"
+    },
+    "backend/tests/test_strategy_entry_services.py": {
+      "bytes": 5486,
+      "sha256": "f21cb19db0f971da8d30ad7e3b380bc374e0ed0b382427623a5735a1cd1e5e61"
+    },
+    "backend/tests/test_strategy_history_publication.py": {
+      "bytes": 5766,
+      "sha256": "024e9239824d7b4ad0edebe37fcb104b515f9e3d3b1f510b35bcff2ccaecc3c1"
+    },
+    "backend/tests/test_strategy_model_extension.py": {
+      "bytes": 3629,
+      "sha256": "ceb92e86c11b8aa9c80a61cd267cfde1898397e9bd779fbde565f74ba6934f38"
+    },
+    "backend/tests/test_strategy_model_history.py": {
+      "bytes": 3090,
+      "sha256": "b7052f09f5768decd4817245b47958a25d053decda92ef2a51c7a5ca758a2494"
+    },
+    "backend/tests/test_strategy_parity.py": {
+      "bytes": 6383,
+      "sha256": "fec6ccbdf9b4f5187caa6c7ebbfe8e679eed7cf5c9a3b58089bef107a3d1e0d0"
+    },
+    "backend/tests/test_strategy_publication.py": {
+      "bytes": 9691,
+      "sha256": "aa8dfa8a96ba528b0d4fc3c6a8eb566da2ebc5544ede1cb3e5fbee9daa86b989"
+    },
+    "backend/tests/test_strategy_publication_http.py": {
+      "bytes": 4575,
+      "sha256": "bba4f898aa8a1d8846f216ac7722f89ffaf981ede546491eea50742498180738"
+    },
+    "backend/tests/test_strategy_research.py": {
+      "bytes": 2050,
+      "sha256": "e8eb5c18f61e82bdcd9b2c9efd26d2878031f3d71c36e33592ba1403ea4f987d"
+    },
+    "backend/tests/test_strategy_simulation.py": {
+      "bytes": 12581,
+      "sha256": "62382abc325e57a6bac6bdfa047a7ae29e9e48a1491d2bcb70ac633654503996"
+    },
+    "backend/tests/test_strategy_simulation_api.py": {
+      "bytes": 2732,
+      "sha256": "71146a2aaf503e6a7add61f5a565c1860296c1df627e71238989f4e5f8f3cb30"
+    },
+    "docs/ARCHITECTURE.md": {
+      "bytes": 194189,
+      "sha256": "775131b71bdff429ed1ae0101aa26e3b326b14de619c0bd63a71bd15f64e5d2c"
+    },
+    "docs/diagrams/agent-trading-desk.mmd": {
+      "bytes": 5773,
+      "sha256": "1a660f55a846007e02dbd433c2d4dd0b14c2e4fef7450a18fcfbdffc034363c7"
+    },
+    "docs/diagrams/agent-trading-desk.svg": {
+      "bytes": 120005,
+      "sha256": "bbc556c147eac27f5a18a977da95f85b0ef737216d0c2c97b0a53d8258b7dc47"
+    },
+    "frontend/e2e/all-names-signals.spec.ts": {
+      "bytes": 55234,
+      "sha256": "bddf32e035686bcdb62f118317200c453c443eaa07356c73f2c95d18c6a1b0d2"
+    },
+    "frontend/src/components/DeskPanel/DeskPanel.tsx": {
+      "bytes": 196115,
+      "sha256": "d87177709809927d92150cbea73b6530f808d2db294e3fdea1459bd3d02e24cd"
+    },
+    "frontend/src/components/DeskPanel/SignalBoard.tsx": {
+      "bytes": 27437,
+      "sha256": "e45f1f7526a42a7926c078c84d702e35b80e4a9d88c3d28baedd7cd7773f7713"
+    },
+    "frontend/src/components/DeskPanel/TickerChart.tsx": {
+      "bytes": 93583,
+      "sha256": "d6fd44ca35fc73826c6dc9f34a8bde0e5f34cd1e5e2264a1744271ddf5667c20"
+    },
+    "frontend/src/services/api.ts": {
+      "bytes": 154139,
+      "sha256": "61c4a85dfe7851d61007e4e794d0a2f4ceca3ca4472fe41adc3d9b0dd64e93df"
+    }
+  },
+  "source_state": "UNCOMMITTED_PRODUCTION_BASED_CANDIDATE",
+  "starting_head": "b4b2eeb9ac3d1b0bb1f344b280ecd5f1b00be1b8",
+  "status": "COMPONENTS_AND_PREVIEW_VERIFIED_NOT_DEPLOYED",
+  "unverified": [
+    "Naturally current regular-session numerical IEX acquisition and real entry preview",
+    "Full backend/routing release gates",
+    "Whole new35-source approval and ordinary production admission",
+    "Deployment and deployed user acceptance",
+    "Whole live trading readiness"
+  ],
+  "verified": [
+    "26 changed component cases at v7 exact source",
+    "30 browser cases at final built frontend",
+    "TSC and build",
+    "Original94 model sizes and2966-date96-symbol daily context at v8",
+    "Permanent original5755/94 historical import at v2",
+    "Actual60-session HPE1620-bar coverage and one grade change"
+  ]
+}

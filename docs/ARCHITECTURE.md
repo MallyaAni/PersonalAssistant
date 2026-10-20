@@ -603,8 +603,8 @@ from completed intraday bars. These numerical models do not run new base fits
 during account inference. A price decline can change an eligible holding's size
 at the nightly decision; it is not an automatic intraday averaging-down trigger.
 
-The current Stocks overview contains live quotes and actual current paper sizes.
-The new historical sizing pipeline applies the exact installed model versions
+The separate paper view contains live quotes and actual current paper sizes.
+The earlier private historical sizing pipeline applies the exact installed model versions
 retrospectively to authenticated dated chart grades and historical price prefixes
 in a separate cash-only account. Its private full account is running; publication
 and actual browser delivery remain unverified. Historical sized decisions,
@@ -612,6 +612,57 @@ simulated executions, preserved earlier model-only research and confirmed paper
 executions have separate identities. Current-model retrospective use does not
 establish historical model availability or investment quality. See the
 [historical sizing contract](research/live-model-historical-sizing-contract-2026-10-13.md).
+
+The deployed independent strategy path separates model publication from funded
+planning. `strategy_publication` calculates unit-capital percentages from the
+already admitted nightly close, saves the original grade and technical evidence
+under `desk/strategy-recommendations/`, and selects an immutable snapshot before
+the paper caller can access an account. Its API reader restores finite JSON,
+validates installed sources and original expiry, and never loads a head, account
+or funded record. A damaged or incomplete independent namespace cannot fall back
+to funded percentages. The prepare hook and numerical reference components are
+part of the exact reviewed 41-source release; publication validates 45 sources.
+Real-input snapshot persistence and owner-scoped HTTP reading have separate
+acceptance evidence. The real signed-in preview now consumes version-2's own
+universe, grades, sizes and clocks. Its historical projection binds unchanged
+audited stock results to matching economic source hashes, retaining original
+record/configuration/model provenance rather than requiring today's funded
+record. The permanent `strategy_history_publication` imports only exact
+audited original stock bytes and binds their economic source hashes and trading
+costs. Original grade clocks use the next regular open, independently of a current
+allocation's expiry. `strategy_entry_context` restores original daily inputs;
+`strategy_entries` uses native timing heads, calibration and current-price
+transport on completed regular-session IEX prefixes, without loading an account.
+When audited history is installed, `strategy_reference_entries`
+selects an explicitly counterfactual reference book and evaluates positive buy
+and sell changes, including still-A trims. It retains the original native market
+packet and uses its attested prior IEX close for a declared relative-return mark
+bridge; it does not equate IEX with historical SIP or raw with adjusted prices.
+Current trade amount and resulting model position are separate fields. A
+standing intent has one original saved recommendation across quote refreshes
+and later candles. Polling does not fill it, mutate reference holdings, finance
+purchases with proposed sales, or create repeated chart actions. Original history
+accepts the separately versioned reference Sell contract while retaining the
+strict old Buy-only contract. `strategy_reference_book` can progress hypothetical
+intent only from later eligible observed quote evidence, retaining the daily buy
+budget separately from sale proceeds. It never treats advice as a fill or
+silently reseeds a later close from an older history endpoint. Next-day ordinary
+runtime rollover remains unverified. The read-only `strategy_position_view`
+keeps original daily model objectives stable across short-lived entry expiry;
+positive trade Size % and desired Position % have separate meanings.
+The existing collector shares one forecast per candle and refreshes quotes; its
+finite original forecast parts and first recommendation retain technical reasons
+for later inspection. The owner-only original-recommendation GET uses
+ticker, original completed candle and snapshot identity to restore that saved
+record. It verifies the original snapshot, model features, full forecast receipt
+and actual quote response without inference or account access. Expired records
+remain historical evidence with `current_instruction=false`; newer pointers
+cannot replace them. Historical SIP simulation and current IEX observations
+remain explicitly different feeds. Component tests, the signed-in preview using
+the normal deployed owner API, and exact deployed-artifact browser tests cover
+this path. The public authenticated-origin walkthrough is still pending normal
+sign-in. Version-2 does not substitute display judgments
+for numerical entries. A position size does not assert an immediate entry.
 
 Current opportunities use fresh grades and bounded structured chart judgments,
 collected independently of open browsers. The collector reads the exact live

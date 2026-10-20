@@ -1,0 +1,79 @@
+{
+  "actual_current_entry": "UNVERIFIED_before_natural_regular_session",
+  "all35_numeric_sources_unchanged": true,
+  "at": "2026-10-20T08:11:18.631519+00:00",
+  "backend_or_model_or_size_math_change": false,
+  "base_revision": "e7c919749ab51bf54593b138015127537c7a8b0f",
+  "change": "Read the same authenticated plan state as the table; show Buy and model Size% plus Next session context in every chart. Never create a price marker without actual entry evidence. Open-session absence of a numerical entry remains Wait.",
+  "deployed": false,
+  "failure": "Authenticated closed-session next-session table Buy disagreed with chart Wait headline",
+  "files": {
+    "frontend/e2e/all-names-signals.spec.ts": {
+      "bytes": 75350,
+      "path": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/all-names-signals.spec.ts",
+      "sha256": "14a03244708760f7fae55c8e46aa879ffcc58c8babc6ef76428ae61c275fe3bd"
+    },
+    "frontend/src/components/DeskPanel/SignalBoard.tsx": {
+      "bytes": 28197,
+      "path": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/src/components/DeskPanel/SignalBoard.tsx",
+      "sha256": "c5b612d90828f34bae7a4508bc540cdd49b86179c84c24fa169405653a1350d2"
+    },
+    "frontend/src/components/DeskPanel/TickerChart.tsx": {
+      "bytes": 105066,
+      "path": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/src/components/DeskPanel/TickerChart.tsx",
+      "sha256": "b0f6488cd28c9856d5fba8c2f8a6385046b21bd941f6b4d9af20fbb15c0ffaef"
+    },
+    "runtime": {
+      "bytes": 915919,
+      "path": "/tmp/strategy-next-session-chart-green-20261020-dist/assets/index-BhmKHMST.js",
+      "sha256": "1967de8440d9110d8a0761d9739dbdf7e4a33a75c7606b6dc2cc3595e463098a"
+    },
+    "strategy-next-session-chart-green-20261020-build.log": {
+      "bytes": 15779,
+      "path": "/tmp/strategy-next-session-chart-green-20261020-build.log",
+      "sha256": "65574b42ce98d7fe059d47d3430e01d74a75ebd2a2d1d478b1681d2d7b4fda37"
+    },
+    "strategy-next-session-chart-green-20261020-results.json": {
+      "bytes": 556057,
+      "path": "/tmp/strategy-next-session-chart-green-20261020-results.json",
+      "sha256": "8265deaeb94a9b03ce7120dbd160aeff9201fdbac99d763525365d07ef9f655e"
+    },
+    "strategy-next-session-chart-green-20261020.config.mjs": {
+      "bytes": 568,
+      "path": "/tmp/strategy-next-session-chart-green-20261020.config.mjs",
+      "sha256": "151f4460fb4af36e949ec6d1c8bd961ba1897793417577449fcf0b275bc4d96e"
+    },
+    "strategy-next-session-chart-red-20261020-results.json": {
+      "bytes": 10069,
+      "path": "/tmp/strategy-next-session-chart-red-20261020-results.json",
+      "sha256": "68c3ddcee48cbe013b1b19ab372dee2c7af6425f369191d9ca2cb636707a6f89"
+    },
+    "strategy-next-session-chart-red-20261020.config.mjs": {
+      "bytes": 562,
+      "path": "/tmp/strategy-next-session-chart-red-20261020.config.mjs",
+      "sha256": "52a1a00c5dd4a37f90f4ff76f11996f6500e53aeafc7af64ca02014a28934a6f"
+    }
+  },
+  "fixture_not_real_regular_entry_acceptance": true,
+  "green": {
+    "duration": 135807.455,
+    "expected": 43,
+    "flaky": 0,
+    "skipped": 0,
+    "startTime": "2026-10-20T08:07:19.848Z",
+    "unexpected": 0
+  },
+  "new_cases": 1,
+  "red": {
+    "duration": 10827.987000000001,
+    "expected": 0,
+    "flaky": 0,
+    "skipped": 0,
+    "startTime": "2026-10-20T08:06:26.756Z",
+    "unexpected": 1
+  },
+  "red_scope": "Original expected mismatch fails at first headline assertion; later open-session assertions added for green scope, no failed assertion weakened",
+  "regression_cases": 42,
+  "schema": "strategy-next-session-chart-proof/1",
+  "tsc_build": "PASS2.48s; existing CSS and chunk warnings"
+}

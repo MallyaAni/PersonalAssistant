@@ -1,0 +1,74 @@
+{
+  "deployed": false,
+  "files": {
+    "image.json": {
+      "bytes": 235,
+      "sha256": "cf7dff8a0822a8b54b7f139ea5451f234193757f6468c235a2a8d0018d8aaaf9"
+    },
+    "unit/result.json": {
+      "bytes": 1034,
+      "sha256": "09efdb5fccec197e55bd90f7e244eb7fa3c2d7c1385365abf0e0b96487bdf985"
+    },
+    "unit/start.json": {
+      "bytes": 891,
+      "sha256": "8705b7b787081be37955ddeafbc3345ee7aa6c20e680c12ff93b0ad79158d919"
+    },
+    "unit/stderr": {
+      "bytes": 637,
+      "sha256": "9a43d0ff3fc8216f823b0e1384f044896ed1f58ec3e4c1aa534fb739d5d55ad5"
+    },
+    "unit/stdout": {
+      "bytes": 53994,
+      "sha256": "c9d69c010a47d45cd5b9ee47115b426827a3913d41f5a4f8121b93e048b8e70e"
+    }
+  },
+  "image": {
+    "Architecture": "arm64",
+    "Created": "2026-10-20T01:51:12.814237902-04:00",
+    "Id": "sha256:649e5fd3ad67964f3ee7b95a618cb68d5e6952eac13420d86e83f29cb3abfb4a",
+    "Os": "linux",
+    "RepoTags": [
+      "anios-functional-tests:strategy-final-1cf0fe28"
+    ]
+  },
+  "local_root": "/tmp/strategy-final-source-gates-1cf0fe28-20261020-evidence",
+  "observed_at": "2026-10-20T06:00:54.512656+00:00",
+  "regular_session_feed_to_preview_acceptance": "UNVERIFIED",
+  "remote_root": "/home/animallya96/scratch/strategy-final-source-gates-20261020-1cf0fe28",
+  "results": {
+    "unit": {
+      "argv": [
+        "bash",
+        "/home/animallya96/scratch/strategy-final-source-gates-20261020-1cf0fe28/checkout/scripts/gate.sh",
+        "--unit"
+      ],
+      "environment_overrides": {
+        "ANIOS_FUNCTIONAL_TESTS_IMAGE": "anios-functional-tests:strategy-final-1cf0fe28",
+        "ANIOS_GATE_DB": "anios_gate_trading_224f9a53",
+        "ANIOS_GATE_SKIP_INFRA": "1",
+        "ANIOS_GATE_WORKERS": "1",
+        "COMPOSE_PROJECT_NAME": "anios",
+        "POSTGRES_DB": "anios_gate_trading_224f9a53"
+      },
+      "finished_at": "2026-10-20T06:00:14.391232+00:00",
+      "no_model_or_service_change": true,
+      "not_deployment": true,
+      "phase": "unit",
+      "pid": 1652028,
+      "private_environment": "original file symlink; never read/logged by controller",
+      "production_head_after": "b4b2eeb9ac3d1b0bb1f344b280ecd5f1b00be1b8",
+      "production_head_before": "b4b2eeb9ac3d1b0bb1f344b280ecd5f1b00be1b8",
+      "returncode": 1,
+      "revision": "1cf0fe283e1a0c87bda551cc088f249f8fa40f12",
+      "started_at": "2026-10-20T05:51:05.878716+00:00",
+      "tree": "e3e139cd0e9f59dee48c6ce94977748c7454d338"
+    }
+  },
+  "revision": "1cf0fe283e1a0c87bda551cc088f249f8fa40f12",
+  "schema": "strategy-final-source-gates/1",
+  "summaries": {
+    "unit": "1 failed, 10982 passed, 93 skipped, 6 xfailed, 439 warnings, 25 subtests passed in 535.33s (0:08:55)"
+  },
+  "tree": "e3e139cd0e9f59dee48c6ce94977748c7454d338",
+  "whole_live_trading_readiness": "UNVERIFIED"
+}

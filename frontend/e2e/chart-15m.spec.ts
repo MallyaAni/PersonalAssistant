@@ -16,8 +16,8 @@ const ROWS: DecisionRow[] = [
   {date: '2026-09-15', grade: 'A', action: 'hold', target_weight: 0.15, delta_weight: 0.01, rebalance: false},
 ]
 const FILLS = [
-  {date: '2026-09-15', side: 'buy', qty: 63, price: 224.81, filled_at: '2026-09-15T09:30:18-04:00'},
-  {date: '2026-09-15', side: 'buy', qty: 7, price: 225.1, kind: 'redeploy', filled_at: '2026-09-15T09:30:25-04:00'},
+  {date: '2026-09-15', side: 'buy', qty: 63, price: 224.81, filled_at: '2026-09-15T09:30:18-04:00', client_order_id: 'original-entry'},
+  {date: '2026-09-15', side: 'buy', qty: 7, price: 225.1, kind: 'redeploy', filled_at: '2026-09-15T09:30:25-04:00', client_order_id: 'original-redeploy'},
 ]
 // The two sessions of fifteen-minute bars the 15m view serves, in September (EDT).
 const SESSIONS = ['2026-09-14', '2026-09-15']
@@ -98,6 +98,7 @@ async function install(page: Page, frontendURL: string) {
     else if (url.pathname.startsWith('/api/v1/conversations/')) json = {conversations: [], messages: []}
     else if (url.pathname === base) json = {latest: {session: '2026-09-24', written: '2026-09-24T00:00:00Z', regime: {exposure: 1, flags: []}, grades: {AAPL: {grade: 'B', score: 1, votes: 3, stances: {}, ranks: {}}}, book: [], actions: [], briefs: {}}, sessions: ['2026-09-24']}
     else if (url.pathname === `${base}/holdings`) json = {holdings: []}
+    else if (url.pathname === `${base}/model-allocation`) json = {version: 'published-model-allocation/1', status: 'unavailable', reason: 'No original allocation in this chart-only fixture', rows: {}}
     else if (url.pathname === `${base}/live`) json = {as_of: '2026-09-24T14:00:00Z', quotes: {AAPL: {last: 110, bar: '2026-09-24T13:45:00Z'}}, technical: {}, technical_detail: {}, structure: STRUCTURE}
     else if (url.pathname === `${base}/session-prices`) json = {as_of: '2026-09-24T14:00:00Z', session: 'regular', signal_scope: 'regular-session', quotes: {}}
     else if (url.pathname === `${base}/history/AAPL`) json = history
@@ -195,7 +196,7 @@ for (const viewport of [{width: 1280, height: 900}, {width: 390, height: 844}]) 
       expect(await drawn(page, '15m')).not.toEqual(expect.arrayContaining(['BUY signal 14% fills at the open']))
       // Grade changes are session readings and are not drawn on the bars.
       await chart.getByRole('checkbox', {name: 'Grade signals'}).check()
-      expect((await drawn(page, '15m')).filter(text => /^Grade (BUY|SELL)/.test(text))).toEqual([])
+      expect(await drawn(page, '15m')).not.toEqual(expect.arrayContaining(['Saved grade A→B']))
       await expect(chart).toContainText('not marked on fifteen-minute bars')
       // The sessions selector re-reads the chart with the chosen count.
       const sessions = chart.getByRole('group', {name: 'Chart sessions'})

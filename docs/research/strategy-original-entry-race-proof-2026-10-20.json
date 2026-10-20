@@ -1,0 +1,19 @@
+{
+  "asset_sha256": "556a63a4574f728cd7296441aa144f55db7869e81d31d349731a54fe20f6c27c",
+  "prior_ui_proof": "3e34dc0b09474aa19133bbb4d8a08e2f745bb72553e3a66abdcbb78634a18ffa",
+  "result_path": "/tmp/original-entry-ui-race-20261020-results.json",
+  "result_sha256": "5ce082a1c2e791eb8c8b98ef5887ff9f3ee5128885a049391344f874075fb642",
+  "schema": "strategy-original-entry-selection-race/1",
+  "scope": "One additional named case, same built product bytes as original35; not a single all-green36-case cohort. Explicit synthetic response only in isolated browser fixture, never the real preview.",
+  "stats": {
+    "duration": 3680.8790000000004,
+    "expected": 1,
+    "flaky": 0,
+    "skipped": 0,
+    "startTime": "2026-10-20T04:18:44.469Z",
+    "unexpected": 0
+  },
+  "status": "BROWSER_VERIFIED_NOT_DEPLOYED",
+  "test_source_sha256": "623254987652a3c7b138d4e738dbf6f67e7174c347d9cdd3a7e3791a9ed9b72a",
+  "verified": "A real500ms response after closing details cannot reopen the card; selecting again restores original price99 and makes exactly one new request."
+}

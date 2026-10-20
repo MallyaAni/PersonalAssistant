@@ -1,0 +1,304 @@
+{
+  "base_revision": "224f9a5374022aae4a5ce7d6e190a68bf3b0d225",
+  "existing_cases": 39,
+  "failure_behavior": "Original selectors restored after injected publication failure; committed original/timing/sources/config remain required",
+  "files": {
+    "green/result.json": {
+      "bytes": 2531,
+      "sha256": "b35cc4eb06633e5f5f52a86dd24897f306472bfcade5e7ad4462a46ae737c572"
+    },
+    "green/start.json": {
+      "bytes": 2207,
+      "sha256": "92f9825b69021d933f2ff2d3df1f6cdfeb15b9fcaaea8f8711740ec39efe6bd7"
+    },
+    "green/stderr": {
+      "bytes": 121,
+      "sha256": "02ac9120fec307887033b166712f47f95c2e1207b238948453435e4695a00c2c"
+    },
+    "green/stdout": {
+      "bytes": 99,
+      "sha256": "49066a6b827c2ef767aed058625efc80a7a57aa5d3e1c33ef4ffb24d6bceb4fa"
+    },
+    "red/result.json": {
+      "bytes": 2435,
+      "sha256": "6209c6e3d6a9fd7eaab8f51e30805e6983548eeadbae551f74bcbcb37d2c17d6"
+    },
+    "red/start.json": {
+      "bytes": 2123,
+      "sha256": "77da6f91302f39d5822fa8c7a9ca9b67348afd8fd2bcd489c432202f25154551"
+    },
+    "red/stderr": {
+      "bytes": 122,
+      "sha256": "58857c3d07777a585b921c68f60137e097935fc46a801b97ce666ea1834db448"
+    },
+    "red/stdout": {
+      "bytes": 2714,
+      "sha256": "dd0cf77e00377a29160161c3acb9430823ceea93fae16a174bf5a2d9c5335a0b"
+    }
+  },
+  "new_cases": 4,
+  "observed_at": "2026-10-20T05:07:41.493553+00:00",
+  "production_activation": false,
+  "real_current_entry_acceptance": "UNVERIFIED",
+  "reports": {
+    "green": {
+      "result.json": {
+        "argv": [
+          "docker",
+          "compose",
+          "-f",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-224f9a53/checkout/docker-compose.yml",
+          "--profile",
+          "test",
+          "run",
+          "--rm",
+          "--no-deps",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-224f9a53/checkout/backend:/app/backend:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-224f9a53/checkout/scripts:/app/scripts:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-224f9a53/checkout/prompts:/app/prompts:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-224f9a53/checkout/docs:/app/docs:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-224f9a53/checkout/deploy:/app/deploy:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-224f9a53/checkout/skills:/app/skills:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-224f9a53/checkout/bridges:/app/bridges:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-224f9a53/checkout/.env.example:/app/.env.example:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-initial-publication-20261020-green/market_release_admission.py:/app/backend/cli/market_release_admission.py:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-initial-publication-20261020-green/test_strategy_initial_publication.py:/app/backend/tests/test_strategy_entry_services.py:ro",
+          "-e",
+          "POSTGRES_DB=anios_gate_trading_224f9a53",
+          "-e",
+          "REDIS_URL=redis://redis:6379/0",
+          "functional-tests",
+          "python",
+          "-m",
+          "pytest",
+          "backend/tests/test_strategy_entry_services.py",
+          "backend/tests/test_strategy_publication_admission.py",
+          "backend/tests/test_market_release_admission.py",
+          "backend/tests/test_strategy_publication.py",
+          "-q",
+          "-p",
+          "no:cacheprovider",
+          "--no-header"
+        ],
+        "finished_at": "2026-10-20T05:05:16.950565+00:00",
+        "returncode": 0,
+        "sources": {
+          "backend/cli/market_release_admission.py": {
+            "bytes": 28691,
+            "container_path": "backend/cli/market_release_admission.py",
+            "sha256": "2efb4327992585186d14fbc9e47cca9f11e4793df29a40578358d8792378ceee"
+          },
+          "backend/tests/test_strategy_initial_publication.py": {
+            "bytes": 6602,
+            "container_path": "backend/tests/test_strategy_entry_services.py",
+            "sha256": "66d5f8aa52ccddfa04750020bcb8e1e1036e5e64a665ae7941bf5ab9e2a5dae0"
+          }
+        },
+        "started_at": "2026-10-20T05:05:14.179445+00:00"
+      },
+      "start.json": {
+        "argv": [
+          "docker",
+          "compose",
+          "-f",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-224f9a53/checkout/docker-compose.yml",
+          "--profile",
+          "test",
+          "run",
+          "--rm",
+          "--no-deps",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-224f9a53/checkout/backend:/app/backend:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-224f9a53/checkout/scripts:/app/scripts:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-224f9a53/checkout/prompts:/app/prompts:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-224f9a53/checkout/docs:/app/docs:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-224f9a53/checkout/deploy:/app/deploy:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-224f9a53/checkout/skills:/app/skills:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-224f9a53/checkout/bridges:/app/bridges:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-224f9a53/checkout/.env.example:/app/.env.example:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-initial-publication-20261020-green/market_release_admission.py:/app/backend/cli/market_release_admission.py:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-initial-publication-20261020-green/test_strategy_initial_publication.py:/app/backend/tests/test_strategy_entry_services.py:ro",
+          "-e",
+          "POSTGRES_DB=anios_gate_trading_224f9a53",
+          "-e",
+          "REDIS_URL=redis://redis:6379/0",
+          "functional-tests",
+          "python",
+          "-m",
+          "pytest",
+          "backend/tests/test_strategy_entry_services.py",
+          "backend/tests/test_strategy_publication_admission.py",
+          "backend/tests/test_market_release_admission.py",
+          "backend/tests/test_strategy_publication.py",
+          "-q",
+          "-p",
+          "no:cacheprovider",
+          "--no-header"
+        ],
+        "sources": {
+          "backend/cli/market_release_admission.py": {
+            "bytes": 28691,
+            "container_path": "backend/cli/market_release_admission.py",
+            "sha256": "2efb4327992585186d14fbc9e47cca9f11e4793df29a40578358d8792378ceee"
+          },
+          "backend/tests/test_strategy_initial_publication.py": {
+            "bytes": 6602,
+            "container_path": "backend/tests/test_strategy_entry_services.py",
+            "sha256": "66d5f8aa52ccddfa04750020bcb8e1e1036e5e64a665ae7941bf5ab9e2a5dae0"
+          }
+        },
+        "started_at": "2026-10-20T05:05:14.179445+00:00"
+      },
+      "stderr": " Container anios-functional-tests-run-2b63247c653d Creating \n Container anios-functional-tests-run-2b63247c653d Created \n",
+      "stdout": "...........................................                              [100%]\n43 passed in 1.24s\n"
+    },
+    "red": {
+      "result.json": {
+        "argv": [
+          "docker",
+          "compose",
+          "-f",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-224f9a53/checkout/docker-compose.yml",
+          "--profile",
+          "test",
+          "run",
+          "--rm",
+          "--no-deps",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-224f9a53/checkout/backend:/app/backend:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-224f9a53/checkout/scripts:/app/scripts:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-224f9a53/checkout/prompts:/app/prompts:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-224f9a53/checkout/docs:/app/docs:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-224f9a53/checkout/deploy:/app/deploy:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-224f9a53/checkout/skills:/app/skills:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-224f9a53/checkout/bridges:/app/bridges:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-224f9a53/checkout/.env.example:/app/.env.example:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-initial-publication-20261020-red/market_release_admission.py:/app/backend/cli/market_release_admission.py:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-initial-publication-20261020-red/test_strategy_initial_publication.py:/app/backend/tests/test_strategy_entry_services.py:ro",
+          "-e",
+          "POSTGRES_DB=anios_gate_trading_224f9a53",
+          "-e",
+          "REDIS_URL=redis://redis:6379/0",
+          "functional-tests",
+          "python",
+          "-m",
+          "pytest",
+          "backend/tests/test_strategy_entry_services.py::test_initial_publication_is_readable_after_approval_without_paper_work",
+          "-q",
+          "-p",
+          "no:cacheprovider",
+          "--no-header"
+        ],
+        "finished_at": "2026-10-20T05:04:22.853329+00:00",
+        "returncode": 1,
+        "sources": {
+          "backend/cli/market_release_admission.py": {
+            "bytes": 25824,
+            "container_path": "backend/cli/market_release_admission.py",
+            "sha256": "3e7be3611042f14faa35325220634074818b014f4e9311f4561f10fb3a1c79df"
+          },
+          "backend/tests/test_strategy_initial_publication.py": {
+            "bytes": 6602,
+            "container_path": "backend/tests/test_strategy_entry_services.py",
+            "sha256": "66d5f8aa52ccddfa04750020bcb8e1e1036e5e64a665ae7941bf5ab9e2a5dae0"
+          }
+        },
+        "started_at": "2026-10-20T05:04:20.482950+00:00"
+      },
+      "start.json": {
+        "argv": [
+          "docker",
+          "compose",
+          "-f",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-224f9a53/checkout/docker-compose.yml",
+          "--profile",
+          "test",
+          "run",
+          "--rm",
+          "--no-deps",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-224f9a53/checkout/backend:/app/backend:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-224f9a53/checkout/scripts:/app/scripts:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-224f9a53/checkout/prompts:/app/prompts:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-224f9a53/checkout/docs:/app/docs:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-224f9a53/checkout/deploy:/app/deploy:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-224f9a53/checkout/skills:/app/skills:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-224f9a53/checkout/bridges:/app/bridges:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-224f9a53/checkout/.env.example:/app/.env.example:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-initial-publication-20261020-red/market_release_admission.py:/app/backend/cli/market_release_admission.py:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-initial-publication-20261020-red/test_strategy_initial_publication.py:/app/backend/tests/test_strategy_entry_services.py:ro",
+          "-e",
+          "POSTGRES_DB=anios_gate_trading_224f9a53",
+          "-e",
+          "REDIS_URL=redis://redis:6379/0",
+          "functional-tests",
+          "python",
+          "-m",
+          "pytest",
+          "backend/tests/test_strategy_entry_services.py::test_initial_publication_is_readable_after_approval_without_paper_work",
+          "-q",
+          "-p",
+          "no:cacheprovider",
+          "--no-header"
+        ],
+        "sources": {
+          "backend/cli/market_release_admission.py": {
+            "bytes": 25824,
+            "container_path": "backend/cli/market_release_admission.py",
+            "sha256": "3e7be3611042f14faa35325220634074818b014f4e9311f4561f10fb3a1c79df"
+          },
+          "backend/tests/test_strategy_initial_publication.py": {
+            "bytes": 6602,
+            "container_path": "backend/tests/test_strategy_entry_services.py",
+            "sha256": "66d5f8aa52ccddfa04750020bcb8e1e1036e5e64a665ae7941bf5ab9e2a5dae0"
+          }
+        },
+        "started_at": "2026-10-20T05:04:20.482950+00:00"
+      },
+      "stderr": " Container anios-functional-tests-run-5574333b920b Creating \n Container anios-functional-tests-run-5574333b920b Created \n\n",
+      "stdout": "F                                                                        [100%]\n=================================== FAILURES ===================================\n____ test_initial_publication_is_readable_after_approval_without_paper_work ____\n\ntmp_path = PosixPath('/tmp/pytest-of-root/pytest-0/test_initial_publication_is_re0')\nmonkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0xebc3535ffe30>\n\n    def test_initial_publication_is_readable_after_approval_without_paper_work(tmp_path,monkeypatch):\n        root,before,bundle,path,review,value,artifact=initial_renewal(tmp_path,monkeypatch)\n        digest=persist(path,bundle);revision=bundle['target_revision']\n        assert admission.preflight(root,path,digest,revision)['status']=='REVIEWED_BUNDLE_ADMITTED'\n        assert admission.installed(root)==before and not (root/publication.DIRECTORY).exists()\n        receipt=admission.activate(root,path,digest,revision,tmp_path/'archives')\n>       assert publication.read(root,datetime.now(UTC))==value\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nbackend/tests/test_strategy_entry_services.py:62: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \nbackend/market/strategy_publication.py:246: in read\n    pointer = json.loads((folder / \"latest.json\").read_bytes())\n                         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n/usr/local/lib/python3.12/pathlib.py:1019: in read_bytes\n    with self.open(mode='rb') as f:\n         ^^^^^^^^^^^^^^^^^^^^\n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n\nself = PosixPath('/tmp/pytest-of-root/pytest-0/test_initial_publication_is_re0/market/desk/strategy-recommendations/latest.json')\nmode = 'rb', buffering = -1, encoding = None, errors = None, newline = None\n\n    def open(self, mode='r', buffering=-1, encoding=None,\n             errors=None, newline=None):\n        \"\"\"\n        Open the file pointed to by this path and return a file object, as\n        the built-in open() function does.\n        \"\"\"\n        if \"b\" not in mode:\n            encoding = io.text_encoding(encoding)\n>       return io.open(self, mode, buffering, encoding, errors, newline)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nE       FileNotFoundError: [Errno 2] No such file or directory: '/tmp/pytest-of-root/pytest-0/test_initial_publication_is_re0/market/desk/strategy-recommendations/latest.json'\n\n/usr/local/lib/python3.12/pathlib.py:1013: FileNotFoundError\n=========================== short test summary info ============================\nFAILED backend/tests/test_strategy_entry_services.py::test_initial_publication_is_readable_after_approval_without_paper_work\n1 failed in 0.87s\n"
+    }
+  },
+  "schema": "strategy-initial-publication-tests/1",
+  "sources": {
+    "backend/cli/market_release_admission.py": "2efb4327992585186d14fbc9e47cca9f11e4793df29a40578358d8792378ceee",
+    "backend/tests/test_strategy_initial_publication.py": "66d5f8aa52ccddfa04750020bcb8e1e1036e5e64a665ae7941bf5ab9e2a5dae0"
+  }
+}

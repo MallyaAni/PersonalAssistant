@@ -13,6 +13,24 @@ flowchart TB
     Grades -->|A/A+ entry, below A exit| LearnedPlan
     LearnedPlan --> Journal
     LearnedPlan --> Records
+    Admission -.-> Independent[Independent model publication<br/>nightly percentages and original technical evidence<br/>before paper-account access]
+    Grades -.-> Independent
+    Independent -.-> ModelSnapshot[(Immutable source-bound model snapshot<br/>own universe, grades, sizes and original expiry)]
+    ModelSnapshot -.-> Numerical[Numerical 15-minute collector<br/>reference buys and owned-unit sells<br/>original IEX packet and timing heads; no orders]
+    Providers -.-> Numerical
+    Numerical -.-> EntryEvidence[(Original recommendation and quote evidence<br/>first intent retained once across candles<br/>viewing never implies a fill)]
+    EntryEvidence -.-> ModelBook[(Hypothetical model book<br/>later observed eligible bid/ask proxy; never actual fills<br/>original daily buy budget excludes same-day sales)]
+    Providers -.->|Original later quote inside original deadline| ModelBook
+    ModelBook -.->|Owned model units and pending objectives<br/>next-day original-close rebase; no reseeding| Numerical
+    ModelBook -.-> PositionView[Read-only daily Position view<br/>original model objective through publication expiry<br/>quote and candle expiry withdraw trade Size only]
+    PositionView -.->|Same Position in All names and every chart<br/>missing book never falls back to fresh-capital sizing| View
+    EntryEvidence -.-> RecordedIndex[(Source-bound per-stock index<br/>original decisions remain discoverable after expiry<br/>completed coverage and original-byte checks)]
+    ModelSnapshot -.-> View
+    RecordedIndex -.-> View
+    EntryEvidence -.->|Original reasons on marker selection| View
+    Frozen -.-> HistoryPublication[Audited numerical history import<br/>same economic code and trading costs<br/>original actions and next-open grade clocks]
+    HistoryPublication -.-> View
+    HistoryPublication -.->|Explicit counterfactual reference units and cash| Numerical
     Admission --> LearnedTiming[Shared learned completed-bar inference<br/>original published models; no runtime fitting]
     Quotes --> LearnedTiming
     LearnedTiming -->|Observed execute or wait verdict| Journal
@@ -54,10 +72,6 @@ flowchart TB
     Store --> Frozen
     Frozen --> MLForward[(Independent prospective accounts<br/>ML, rules, SPY, USD; delayed fills)]
     MLForward --> View
-    Records -->|Authenticated dated grades| CurrentHistory[(Current-model historical sizing<br/>new cash-only account, independent ledger checks<br/>private full run; publication pending)]
-    Store -->|Historical observation prefixes| CurrentHistory
-    Artifacts -->|Exact installed heads and banks<br/>explicit retrospective availability| CurrentHistory
-    CurrentHistory -.->|Candidate sized arrows and simulated fills<br/>separate from actual paper and old research| View
     Grades --> PolicyShadow[(Dry-run policy shadow ledgers<br/>the /4 candidate; whole shares, next-open fills, never traded)]
     PolicyShadow -->|receipt per session| Records
 
@@ -66,10 +80,10 @@ flowchart TB
     classDef model fill:#f1edff,stroke:#8872c6,color:#2e2450;
     classDef interface fill:#f5f5f7,stroke:#86868b,color:#1d1d1f;
     classDef application fill:#e8f1fb,stroke:#5e8fc4,color:#102a43;
-    classDef pending fill:#fff5d6,stroke:#b28b25,stroke-dasharray:5 4,color:#57400b;
     class Store,Journal,Records,Holdings,Research,PersonalHistory,DisplaySnapshot,PolicyShadow,Setups data;
     class Providers,Broker,Quotes external;
     class Models,LearnedTiming,SetupModel model;
     class View interface;
     class DisplayCollector,Admission,LearnedPlan,SetupCollector application;
-    class CurrentHistory pending;
+    class Independent,Numerical,HistoryPublication application;
+    class ModelSnapshot,EntryEvidence,RecordedIndex,ModelBook data;

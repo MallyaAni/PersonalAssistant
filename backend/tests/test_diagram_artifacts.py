@@ -340,8 +340,8 @@ def test_diagram_validator_rejects_unknown_declared_type() -> None:
 #
 # The validator refused every `<Book>` as an HTML tag, so a correct class
 # diagram from the model was rejected as active content. The generics must also
-# survive into the stored source: they are exempted from the scan, never
-# rewritten.
+# survive into the stored source, with the renderer's tilde delimiters. The
+# merged renderer keeps main's active-element guard before this conversion.
 def test_diagram_validator_accepts_class_generic_types() -> None:
     source = (
         "classDiagram\n"
@@ -358,7 +358,9 @@ def test_diagram_validator_accepts_class_generic_types() -> None:
     )
 
     assert specification.diagram_type == "class"
-    assert specification.source == source
+    assert specification.source == source.replace("List<Book>", "List~Book~").replace(
+        "Map<String, Loan>", "Map~String, Loan~"
+    ).replace("Map<String, List~Book~>", "Map~String, List~Book~~")
 
 
 # Verify active Mermaid directives, markup and remote links are rejected.

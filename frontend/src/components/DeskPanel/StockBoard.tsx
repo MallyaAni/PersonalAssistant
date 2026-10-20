@@ -121,11 +121,10 @@ export const SessionPrice = ({live, ticker, now, compact = false, close, closeSe
   const regularCurrent = fallback?.kind === 'regular' && now - fallback.at < 20 * 60_000
   return <div aria-label={`${ticker} session price`} title={`${quote?.at ? `Last observed ${at} ET. ` : ''}${source}. ${regularText}. Signal: regular session. Midpoint is not a trade or guaranteed fill. Reported quote timestamp: ${quote?.at ?? 'unavailable'}. Expected schedule: ${currentSchedule}; not proof of venue availability. For display only; execution checks are separate.${displayReason ? ` ${displayReason}` : ''}${staleCaveat}`}>
     {compact
-      // The board row: the price and one word for the session it belongs to;
-      // the provenance (feed, time, regular bar, caveats) is the hover text.
+      // Fresh quotes stay compact; an old observation always exposes its own time rather than just today's session label.
       ? state === 'fresh' ? <><span className="font-medium">${quote!.price!.toFixed(2)}</span><span className="ml-1">{" "}{(session ?? "quote").toLowerCase()}</span><ChangeMark last={quote!.price!} close={close} session={closeSession} /></>
-        : fallback?.kind === 'regular' ? <><span className={regularCurrent ? 'font-medium' : 'text-[#9a6700]'}>${fallback.price.toFixed(2)}</span><span className={`ml-1 ${regularCurrent ? '' : 'text-[#9a6700]'}`}>{" "}regular</span><ChangeMark last={fallback.price} close={close} session={closeSession} /></>
-        : <span className="text-[#9a6700]">{fallback ? `$${fallback.price.toFixed(2)} ${fallback.word}` : 'No price to display'}</span>
+        : fallback?.kind === 'regular' ? <><span className={regularCurrent ? 'font-medium' : 'text-[#9a6700]'}>${fallback.price.toFixed(2)}</span><span className={`ml-1 ${regularCurrent ? '' : 'text-[#9a6700]'}`}>{" "}{regularCurrent ? 'regular' : `last regular · ${quoteTime(fallback.at, now)} ET`}</span><ChangeMark last={fallback.price} close={close} session={closeSession} /></>
+        : <span className="text-[#9a6700]">{fallback ? `$${fallback.price.toFixed(2)} last ${fallback.word} · ${quoteTime(fallback.at, now) ? `${quoteTime(fallback.at, now)} ET` : closeSession ?? 'time unavailable'}` : 'No price to display'}</span>
       : state === 'fresh' ? <><span className="font-medium">${quote!.price!.toFixed(2)}</span><span className="ml-1">{session ?? 'Quote'} · {source} · {at} ET{qualification}</span></>
       : <span className="text-[#9a6700]">{fallback
           ? `$${fallback.price.toFixed(2)} last ${fallback.word} · ${fallback.kind === 'midpoint' ? source : fallback.kind === 'regular' ? 'IEX completed candle' : 'Saved decision close'}${quoteTime(fallback.at, now) ? ` · ${quoteTime(fallback.at, now)} ET` : ''}`
