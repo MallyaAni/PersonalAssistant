@@ -152,7 +152,13 @@ class InferenceBenchmarkService:
                     },
                 ],
                 [_benchmark_tool()],
-                max_tokens=64,
+                # 64 was a bare limit nobody chose, like the routing budget
+                # before ROUTING_DECISION_MAX_TOKENS: a reasoning model that
+                # thinks before the call (V4.1 at any effort above none, ~30
+                # tokens of reasoning) hit it and returned truncated
+                # arguments `{}` on 2026-10-20. The decision itself is ~50
+                # tokens; 256 leaves room for the thinking the role is set to.
+                max_tokens=256,
             )
             selected_name, arguments_valid = _validate_tool_message(message)
             elapsed = self._clock() - started
