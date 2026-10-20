@@ -191,18 +191,16 @@ def _without_generic_type_parameters(source: str) -> str:
         scanned = scanned[: match.start()] + scanned[match.end() :]
 
 
-# Validate and normalize a provider-produced Mermaid specification.
-def validate_diagram_specification(payload: dict[str, Any]) -> DiagramSpecification:
-    title = _validated_title(payload)
+# Assemble one cleaned Mermaid source from the `lines` array or the older
+# `source` string, repairing the separators a model writes instead of newlines.
+def _normalized_source(payload: dict[str, Any]) -> str:
     # `lines` is what the model is asked for now, because an array needs no
     # escape sequence. `source` is still accepted: it is what a stored artifact
     # from before 2026-08-29 holds, and what a caller assembling a diagram in
     # code naturally writes.
     listed = payload.get("lines")
     if isinstance(listed, list) and listed:
-        source = "\n".join(
-            str(line).strip() for line in listed if str(line).strip()
-        )
+        source = "\n".join(str(line).strip() for line in listed if str(line).strip())
     else:
         source = payload.get("source")
     if not isinstance(source, str) or not source.strip():
@@ -233,6 +231,38 @@ def validate_diagram_specification(payload: dict[str, Any]) -> DiagramSpecificat
     if source.startswith("```"):
         source = re.sub(r"^```(?:mermaid)?\s*", "", source, flags=re.IGNORECASE)
         source = re.sub(r"\s*```$", "", source).strip()
+    return source
+
+
+# Resolve the diagram type from the source's own header, prepending a
+# model-declared header when the source carries none.
+def _typed_source(payload: dict[str, Any], source: str) -> tuple[str, str]:
+    first_line = source.splitlines()[0].strip().lower()
+    prefix = first_line.split(maxsplit=1)[0]
+    diagram_type = DIAGRAM_PREFIXES.get(prefix)
+    if diagram_type is None:
+        declaration = _declared_mermaid_header(payload)
+        if declaration is None:
+            raise ValueError("Mermaid diagram type is not supported")
+        source = f"{declaration}\n{source}"
+        diagram_type = DIAGRAM_PREFIXES[declaration.lower().split(maxsplit=1)[0]]
+    return source, diagram_type
+
+
+# Enforce the size, line-count and body limits on the resolved source.
+def _validate_source_limits(source: str) -> None:
+    if len(source) > MAX_DIAGRAM_SOURCE_CHARS:
+        raise ValueError("Mermaid source is too large")
+    if len(source.splitlines()) > MAX_DIAGRAM_LINES:
+        raise ValueError("Mermaid source has too many lines")
+    if len(source.splitlines()) < 2:
+        raise ValueError("Mermaid diagram must contain a body")
+
+
+# Validate and normalize a provider-produced Mermaid specification.
+def validate_diagram_specification(payload: dict[str, Any]) -> DiagramSpecification:
+    title = _validated_title(payload)
+    source = _normalized_source(payload)
     # A class diagram declares member types with generics - "+List<Book>
     # books", "+Map<String, Loan> loans" - and the tag branch of the pattern
     # read every `<Book>` as an HTML element, so a valid class diagram was
@@ -247,21 +277,8 @@ def validate_diagram_specification(payload: dict[str, Any]) -> DiagramSpecificat
     if UNSAFE_MERMAID_PATTERN.search(_without_generic_type_parameters(source)):
         raise ValueError("Mermaid source contains unsupported active content")
 
-    first_line = source.splitlines()[0].strip().lower()
-    prefix = first_line.split(maxsplit=1)[0]
-    diagram_type = DIAGRAM_PREFIXES.get(prefix)
-    if diagram_type is None:
-        declaration = _declared_mermaid_header(payload)
-        if declaration is None:
-            raise ValueError("Mermaid diagram type is not supported")
-        source = f"{declaration}\n{source}"
-        diagram_type = DIAGRAM_PREFIXES[declaration.lower().split(maxsplit=1)[0]]
-    if len(source) > MAX_DIAGRAM_SOURCE_CHARS:
-        raise ValueError("Mermaid source is too large")
-    if len(source.splitlines()) > MAX_DIAGRAM_LINES:
-        raise ValueError("Mermaid source has too many lines")
-    if len(source.splitlines()) < 2:
-        raise ValueError("Mermaid diagram must contain a body")
+    source, diagram_type = _typed_source(payload, source)
+    _validate_source_limits(source)
     return DiagramSpecification(
         title=title,
         diagram_type=diagram_type,

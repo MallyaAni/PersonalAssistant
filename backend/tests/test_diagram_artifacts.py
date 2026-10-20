@@ -1,8 +1,8 @@
 import asyncio
-from pathlib import Path
 import os
 import uuid
 from collections.abc import Iterator
+from pathlib import Path
 from typing import Any
 
 import pytest
@@ -26,7 +26,7 @@ from backend.core.llm import LLMClient
 from backend.main import app
 from backend.services.conversation_service import ConversationService
 from backend.services.diagram_artifact_service import DiagramArtifactService
-from backend.services.main_action_selector import CreateDiagramAction, MainAction
+from backend.services.main_action_selector import CreateDiagramAction
 from backend.tests.doubles import (
     StubConversationRepository,
     StubMainActionSelector,
@@ -744,7 +744,10 @@ def test_a_source_that_already_has_lines_is_left_alone():
             "source": "flowchart TD\nA[First; then second] --> B[Done]",
         }
     )
-    assert spec.source.splitlines() == ["flowchart TD", "A[First; then second] --> B[Done]"]
+    assert spec.source.splitlines() == [
+        "flowchart TD",
+        "A[First; then second] --> B[Done]",
+    ]
 
 
 def test_a_header_with_no_body_is_still_refused():
@@ -830,7 +833,7 @@ def test_the_schema_asks_for_lines_and_bounds_them():
 
 @pytest.mark.asyncio
 async def test_the_diagram_is_drawn_from_the_resolved_subject_not_the_typed_words():
-    """"Try again" must not reach the diagram agent as the thing to draw.
+    """ "Try again" must not reach the diagram agent as the thing to draw.
 
     Reported live on 2026-08-30: after a conversation about Roman aqueducts and
     a diagram that had just failed, "try again" produced a diagram about
