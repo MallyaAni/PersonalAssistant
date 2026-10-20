@@ -310,13 +310,50 @@ def test_diagram_validator_rejects_unknown_declared_type() -> None:
         )
 
 
-# Verify active Mermaid directives and remote links are rejected.
+# Verify a class diagram's generic member types are declarations, not markup.
+#
+# The validator refused every `<Book>` as an HTML tag, so a correct class
+# diagram from the model was rejected as active content. The generics must also
+# survive into the stored source: they are exempted from the scan, never
+# rewritten.
+def test_diagram_validator_accepts_class_generic_types() -> None:
+    source = (
+        "classDiagram\n"
+        "  class Library {\n"
+        "    +List<Book> books\n"
+        "    +Map<String, Loan> loans\n"
+        "    +Map<String, List<Book>> shelves\n"
+        "  }\n"
+        "  Library --> Book"
+    )
+
+    specification = validate_diagram_specification(
+        {"title": "Library", "source": source}
+    )
+
+    assert specification.diagram_type == "class"
+    assert specification.source == source
+
+
+# Verify active Mermaid directives, markup and remote links are rejected.
 @pytest.mark.parametrize(
     "source",
     [
         "flowchart TD\n  A --> B\n  click A https://example.com",
         "flowchart TD\n  %%{init: {'securityLevel': 'loose'}}%%\n  A --> B",
         "flowchart TD\n  A[<script>alert(1)</script>] --> B",
+        # The generic exemption must not become a hole: each of these has a
+        # tag shape the validator used to refuse, now written where a class
+        # diagram writes a type.
+        "classDiagram\n  class Library {\n    +List<script> books\n  }",
+        "classDiagram\n  class Library {\n    +Map<String, <img src=x>> loans\n  }",
+        "classDiagram\n  Library --> Book : https://example.com",
+        "classDiagram\n  class Library {\n    +List<Book> books\n  }\n"
+        "  click Library https://example.com",
+        'flowchart TD\n  A[<a href="https://example.com">open</a>] --> B',
+        "flowchart TD\n  A[<img src=x onerror=alert(1)>] --> B",
+        "flowchart TD\n  A --> B\n  href A https://example.com",
+        "flowchart TD\n  A --> B\n  click A javascript:alert(1)",
     ],
 )
 def test_diagram_validator_rejects_active_content(source: str) -> None:

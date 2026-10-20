@@ -15,6 +15,53 @@ UNSAFE_MERMAID_PATTERN = re.compile(
     r"(?im)(?:^\s*(?:click|href)\b|%%\{|javascript\s*:|https?://|"
     r"<\s*/?\s*[a-z][^>]*>)"
 )
+# A generic type parameter list: type names separated by commas and nothing
+# else. `<Book>`, `<String, Loan>` and the inner `<Book>` of
+# `Map<String, List<Book>>` are declarations; an attribute, a quote or a slash
+# makes the same angle brackets markup instead.
+GENERIC_TYPE_PARAMETERS_PATTERN = re.compile(
+    r"(?i)<\s*[a-z_][\w.]*(?:\s*,\s*[a-z_][\w.]*)*\s*>"
+)
+TYPE_NAME_PATTERN = re.compile(r"(?i)[a-z_][\w.]*")
+# Element names that execute, fetch or submit something, or stand in for a URL,
+# once a browser sees them. A type list naming one of these is markup, not a
+# declaration - `<script>` is refused even though it has the same shape as
+# `<Book>`. Deliberately absent: elements that are inert without the attributes
+# and closing tags the pattern above already refuses, because their names are
+# ordinary domain words a class diagram declares (`List<Table>`,
+# `Map<String, Article>`, `List<Source>`).
+ACTIVE_ELEMENT_NAMES = frozenset(
+    {
+        "a",
+        "applet",
+        "area",
+        "base",
+        "button",
+        "embed",
+        "form",
+        "frame",
+        "frameset",
+        "iframe",
+        "img",
+        "input",
+        "keygen",
+        "link",
+        "marquee",
+        "math",
+        "meta",
+        "noscript",
+        "object",
+        "param",
+        "plaintext",
+        "script",
+        "select",
+        "style",
+        "svg",
+        "template",
+        "textarea",
+        "xmp",
+    }
+)
 DIAGRAM_PREFIXES = {
     "flowchart": "flowchart",
     "graph": "flowchart",
@@ -125,6 +172,25 @@ _DIAGRAM_REPLY_SCHEMA: dict[str, Any] = {
 _HTML_LINE_BREAK = re.compile(r"\s*<\s*br\s*/?\s*>\s*", re.IGNORECASE)
 
 
+# Blank out generic type parameter lists so the markup scan reads a class
+# diagram's declarations as declarations. Innermost lists go first, because
+# `Map<String, List<Book>>` only reduces to type names once `<Book>` is gone;
+# a list naming an active element is left in place, so the scan still refuses
+# `<script>` and `<img>` no matter what surrounds them.
+def _without_generic_type_parameters(source: str) -> str:
+    scanned = source
+    while True:
+        match = GENERIC_TYPE_PARAMETERS_PATTERN.search(scanned)
+        if match is None:
+            return scanned
+        if any(
+            name.lower() in ACTIVE_ELEMENT_NAMES
+            for name in TYPE_NAME_PATTERN.findall(match.group(0))
+        ):
+            return scanned
+        scanned = scanned[: match.start()] + scanned[match.end() :]
+
+
 # Validate and normalize a provider-produced Mermaid specification.
 def validate_diagram_specification(payload: dict[str, Any]) -> DiagramSpecification:
     title = _validated_title(payload)
@@ -167,7 +233,18 @@ def validate_diagram_specification(payload: dict[str, Any]) -> DiagramSpecificat
     if source.startswith("```"):
         source = re.sub(r"^```(?:mermaid)?\s*", "", source, flags=re.IGNORECASE)
         source = re.sub(r"\s*```$", "", source).strip()
-    if UNSAFE_MERMAID_PATTERN.search(source):
+    # A class diagram declares member types with generics - "+List<Book>
+    # books", "+Map<String, Loan> loans" - and the tag branch of the pattern
+    # read every `<Book>` as an HTML element, so a valid class diagram was
+    # refused as "unsupported active content" (seen in the gate: the model
+    # wrote `List<Book>`, the diagram was otherwise right, and the types were
+    # the only thing wrong with it). The declarations are blanked out before
+    # the scan rather than the tag branch being loosened, so every markup form
+    # the pattern refuses is still refused: a closing tag, an attribute, a
+    # slash, and any type list naming an element that can act on its own
+    # (<script>, <a>, <img> ...) all survive the blanking and are caught
+    # exactly as before.
+    if UNSAFE_MERMAID_PATTERN.search(_without_generic_type_parameters(source)):
         raise ValueError("Mermaid source contains unsupported active content")
 
     first_line = source.splitlines()[0].strip().lower()
