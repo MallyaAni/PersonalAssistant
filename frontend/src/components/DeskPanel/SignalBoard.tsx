@@ -9,7 +9,7 @@ type Signal = {word: string; ready: boolean; priority: string; rank: number; rea
 type Signals = {ticker: string; grade: string; setup: DeskCurrentSetup | null; buy: Signal; sell: Signal; plan?: {session: string; published: string; validUntil: string; calculated?: string}}
 const PRIORITY: Record<string, number> = {high: 3, medium: 2, low: 1}
 
-export type StrategyChartTarget = {ticker: string; date: string; at: string; validUntil: string | null; action: 'Buy' | 'Sell' | null; weight: number; record: string; strategyIdentity?: string; evidence?: DeskStrategyDecision['evidence']; entry?: {at: string; validUntil: string}; entryReason?: string}
+export type StrategyChartTarget = {ticker: string; date: string; at: string; validUntil: string | null; action: 'Buy' | 'Sell' | null; weight: number; record: string; strategyIdentity?: string; evidence?: DeskStrategyDecision['evidence']; entry?: {at: string; validUntil: string}; entryReason?: string; recordedHistoryAvailable?: boolean}
 
 // Recognize the independently authenticated publication formats without consulting an account.
 const independentAllocation = (allocation?: DeskModelAllocation): boolean => allocation?.version === 'strategy-model-allocation/1' || allocation?.version === 'strategy-model-allocation/2'
@@ -105,6 +105,7 @@ export const strategyChartTarget = (latest: DeskRecord, allocation: DeskModelAll
     return {ticker, date: current ? allocation.entry_assessment!.session! : allocation.session!, at: current?.at ?? allocation.as_of, validUntil: allocation.valid_until,
       action: weight > 0 && ['buy', 'hold'].includes(action ?? '') ? 'Buy' : action === 'sell' ? 'Sell' : null,
       weight, record: allocation.snapshot_id!, strategyIdentity: allocation.strategy_identity,
+      recordedHistoryAvailable:allocation.recorded_history_version==='strategy-recorded-entries/1',
       evidence: current?.row.evidence ?? allocation.rows[ticker].evidence,
       entry: current?.row.state === 'execute' ? {at:current.at,validUntil:current.validUntil} : undefined}
   }

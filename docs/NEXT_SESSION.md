@@ -1,5 +1,44 @@
 # Next session
 
+## 2026-10-20 07:26Z — recorded original recommendation discovery passes scoped acceptance; release OPEN
+
+New finite strategy-recorded-entry-index/1 and coverage/count checkpoint derive
+only from authenticated published numerical views before/after the existing
+collector. Original first recommendation bytes stay immutable; partial/unpublished
+work is not adopted. Source-bound owner GET recommendations pages64 originals
+after quote expiry without accounts/inference/current-pointer dependence. Missing
+counted references or tampered bodies refuse. Original scalar read stays separate.
+All35 reviewed numeric sources/config/economics unchanged. New backend gates NOT
+yet run; previous exact6ce full gates remain closed at their original source.
+
+New eight backend cases PASS.980s; one earlier capability fixture lacked required
+installed configSHA and stopped before intended assertion (7PASS/1ERROR retained).
+Earlier RED404/mount125 and missing persisted-service fixture failure retained;
+corrected stronger fixtures preserve every original assertion. Browser expected
+RED oldXlm blank marker; new FIVE PASS9.6s plus37existing regressionPASS2.2m,
+zero skip/flaky/unexpected/diagnostics. Same final index-qlbnE20d.js915600B SHA
+c1ab8a20ba9fcb215a61a33c6230adfc1aad40ce5b91f115549194715a13f4a4.
+TSC/build2.83s/diff/AST/backspaces PASS(existingwarnings). New diagram native33
+render/page synchronized;31 unrelated geometry renders archived outside Git.
+DATA collector ONCE proof research/strategy-recorded-history-proof-2026-10-20.json
+10943B/SHA72bc61b19672d1ca2bab309b8d5276162a3a8abd4f83ac619c10f3a6a908f057.
+All /tmp/strategy-recorded-index-* controls/transports and matching Spark scratch
+retain failed/completed cohorts; never rerun for docs. Not real feed acceptance.
+
+UI now retains recorded Buy/Size% markers after expiry/reload across D/W/15m,
+original quote/technical reasons checked against index rawSHA/time on selection;
+pagination/foreign-body/ticker-late responses checked. No fabricated Sell0.
+Temporary preview bridge still only simulation route, does not yet advertise
+new list capability; native read-only scalar/list bridge remains needed before
+real current entry. KEEP Vite33452/tunnel70626/symlink/tab4 signed-in/tab3handoff.
+
+NEXT independent release gap: audited5755/94-stock history import exists but NO
+canonical release caller; install exact original output/manifest/audit/binding
+without rerunning producers/audits. Then actual naturally current09:45ET native
+IEX15m→API→realpreview BEFORE scripts/deploy.sh; no fakeclocks, artificialruns,
+market_daily/market_balancer probes, paiddata, accounts/orders or paperreset.
+All old admission blockers separate; no full live-readiness/profitability claim.
+
 ## 2026-10-20 06:29Z — exact6ce full gates PASS; final frontend header correction verified
 
 Exact6ce28f8594cda2f56a4d65bff02f17c4e66b0a5d/tree

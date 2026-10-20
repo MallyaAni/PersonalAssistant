@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import {
   CandlestickSeries,
   CrosshairMode,
@@ -14,7 +14,7 @@ import {
   type Time,
   type UTCTimestamp,
 } from 'lightweight-charts'
-import { exportDeskPersonalReceipt, getDeskChart, getDeskPersonalHistory, getDeskOriginalStrategyRecommendation, DESK_CHART_DEFAULT_SESSIONS, type DeskOriginalStrategyRecommendation, type DeskPersonalReceipt, type DeskChart, type DeskChartBar, type DeskChartDecision, type DeskChartTimeframe } from '../../services/api'
+import { exportDeskPersonalReceipt, getDeskChart, getDeskPersonalHistory, getDeskOriginalStrategyRecommendation, getDeskRecordedStrategyRecommendations, DESK_CHART_DEFAULT_SESSIONS, type DeskRecordedStrategyReference, type DeskOriginalStrategyRecommendation, type DeskPersonalReceipt, type DeskChart, type DeskChartBar, type DeskChartDecision, type DeskChartTimeframe } from '../../services/api'
 import type { DeskHistory, DeskHistoryFill, DeskHistoryRow, DeskLive, DeskPaperLive, DeskStructure, DeskStrategyStock, DeskStrategyDecision } from '../../services/api'
 import { SessionPrice } from './StockBoard'
 import { LEVEL_NAME, percent, shares } from './TradeBoard'
@@ -334,7 +334,7 @@ const gradeMarkers = (history: {rows: {date: string; at?: string; grade?: string
 type ChartMarker = {
   id?: string
   recommendations?: {id: string; at: string; action: string; weight: number; evidence?: DeskStrategyDecision['evidence']; simulated: boolean;
-    originalRef?: {snapshot: string; completed: string; strategy: string}}[]
+    originalRef?: {snapshot: string; completed: string; strategy: string; at?: string; bytesSha?: string}}[]
   time: UTCTimestamp
   position: 'aboveBar' | 'belowBar'
   color: string
@@ -350,8 +350,8 @@ const targetLabel = (target: Pick<StrategyChartTarget, 'action' | 'weight'>): st
 const sizePercent = (weight: number): string => weight > 0 && weight < .001 ? '<0.1' : (weight * 100).toFixed(1)
 
 // Mark original simulated actions and confirmed current entries consistently across every timeframe.
-const strategyTargetMarkers = (simulation: DeskStrategyStock | null | undefined, current: StrategyChartTarget | null | undefined, bars: DeskChartBar[], timeframe: Timeframe): ChartMarker[] => {
-  const targets: (StrategyChartTarget & {decision?: DeskStrategyDecision})[] = []
+const strategyTargetMarkers = (simulation: DeskStrategyStock | null | undefined, current: StrategyChartTarget | null | undefined, bars: DeskChartBar[], timeframe: Timeframe, recorded: DeskRecordedStrategyReference[] = []): ChartMarker[] => {
+  const targets: (StrategyChartTarget & {decision?: DeskStrategyDecision; recorded?: DeskRecordedStrategyReference})[] = []
   if (strategyHistoryMatches(simulation, current) && simulation) {
     for (const row of simulation.decisions) {
       if (row.ticker !== (current?.ticker ?? simulation.ticker) || row.date > (current?.date ?? simulation.through) || !['BUY', 'SELL', 'TRIM'].includes(row.action) || typeof row.weight !== 'number'
@@ -360,7 +360,16 @@ const strategyTargetMarkers = (simulation: DeskStrategyStock | null | undefined,
       targets.push({ticker: row.ticker, date: row.date, at: row.at, validUntil: recordedInstant(row.valid_until) && Date.parse(row.valid_until!) > Date.parse(row.at) ? row.valid_until! : null, action: row.action === 'BUY' ? 'Buy' : 'Sell', weight: row.weight, record: current?.record ?? simulation.provenance.strategy_identity!, decision: row})
     }
   }
-  if (current?.action === 'Buy' && current.weight > 0 && current.entry) {
+  for (const original of recorded) {
+    const day=recordedSession(original.at)
+    if (!day || original.ticker!==(current?.ticker ?? simulation?.ticker)) continue
+    targets.push({ticker:original.ticker,date:day,at:original.at,validUntil:original.valid_until,action:'Buy',
+      weight:original.size_weight,record:original.snapshot_id,strategyIdentity:original.strategy_identity,
+      entry:{at:original.at,validUntil:original.valid_until},recorded:original})
+  }
+  const currentAlreadyRecorded = current && recorded.some(original=>original.snapshot_id===current.record
+    && original.completed_at===current.evidence?.completed_candle_at)
+  if (current?.action === 'Buy' && current.weight > 0 && current.entry && !currentAlreadyRecorded) {
     const entrySession = recordedSession(current.entry.at)
     if (entrySession) targets.push({...current, date:entrySession, at:current.entry.at, validUntil:current.entry.validUntil})
   }
@@ -377,9 +386,11 @@ const strategyTargetMarkers = (simulation: DeskStrategyStock | null | undefined,
     if (!candle) continue
     const time = barStamp(candle, timeframe)
     const key = `${time}:${target.action}`
-    const originalRef = !target.decision && target.entry && target.strategyIdentity && recordedInstant(target.evidence?.completed_candle_at)
+    const originalRef = target.recorded ? {snapshot:target.recorded.snapshot_id,completed:target.recorded.completed_at,
+      strategy:target.recorded.strategy_identity,at:target.recorded.at,bytesSha:target.recorded.original_bytes_sha256}
+      : !target.decision && target.entry && target.strategyIdentity && recordedInstant(target.evidence?.completed_candle_at)
       ? {snapshot:target.record,completed:target.evidence!.completed_candle_at!,strategy:target.strategyIdentity} : undefined
-    const recommendation = {id: target.decision?.id ?? `current:${target.ticker}:${target.at}`, at: target.at, action: target.action, weight: target.weight, evidence: target.decision?.evidence ?? target.evidence, simulated: Boolean(target.decision), originalRef}
+    const recommendation = {id: target.decision?.id ?? (target.recorded ? `recorded:${target.recorded.id}` : `current:${target.ticker}:${target.at}`), at: target.at, action: target.action, weight: target.weight, evidence: target.decision?.evidence ?? target.evidence, simulated: Boolean(target.decision), originalRef}
     markers.set(key, {id: `strategy:${key}`, time, recommendations: [...(markers.get(key)?.recommendations ?? []), recommendation], position: target.action === 'Buy' ? 'belowBar' : 'aboveBar',
       color: target.action === 'Buy' ? '#248a3d' : '#b42318', shape: 'circle',
       text: targetLabel(target), size: 1})
@@ -722,6 +733,48 @@ export const TickerChart = ({
   const [drawFailed, setDrawFailed] = useState(false)
   const [selectedRecommendations, setSelectedRecommendations] = useState<NonNullable<ChartMarker['recommendations']>>([])
   const [originalReads, setOriginalReads] = useState<Record<string,{status:'pending'|'ready'|'failed'; value?:DeskOriginalStrategyRecommendation}>>({})
+  const recordedIdentity = modelTarget?.strategyIdentity ?? (strategyHistoryMatches(simulation, null) ? simulation?.provenance.strategy_identity : undefined)
+  const recordedAvailable = strategy && (modelTarget?.recordedHistoryAvailable === true || simulation?.recorded_history_version === 'strategy-recorded-entries/1')
+  const recordedScope = JSON.stringify([userId,ticker,recordedIdentity,recordedAvailable])
+  const [recordedHistory, setRecordedHistory] = useState<{scope:string;rows:DeskRecordedStrategyReference[];cursor:string|null;busy:boolean;error:string}>({scope:'',rows:[],cursor:null,busy:false,error:''})
+  const recordedHistoryRef = useRef(recordedHistory)
+  const recordedRequest = useRef(0)
+  const recordedRows = recordedHistory.scope === recordedScope ? recordedHistory.rows : []
+
+  // Merge authenticated originals without replacing an earlier decision or letting a late response cross sources.
+  const loadRecorded = useCallback(async (before?:string) => {
+    if (!recordedAvailable || !recordedIdentity) return
+    const request=++recordedRequest.current
+    const initial=recordedHistoryRef.current.scope===recordedScope ? recordedHistoryRef.current : {scope:recordedScope,rows:[],cursor:null,busy:false,error:''}
+    recordedHistoryRef.current={...initial,busy:true,error:''}
+    setRecordedHistory(recordedHistoryRef.current)
+    try {
+      const page=await getDeskRecordedStrategyRecommendations(userId,ticker,recordedIdentity,before)
+      if (request!==recordedRequest.current) return
+      const previous=recordedHistoryRef.current
+      const merged=new Map(previous.rows.map(row=>[row.id,row]))
+      // Compare every original field, independent of JSON property order.
+      for (const row of page.items) {
+        const original=merged.get(row.id)
+        if (original && (Object.keys(row) as (keyof DeskRecordedStrategyReference)[]).some(key=>row[key]!==original[key])) throw new Error('Original recommendation changed')
+        merged.set(row.id,row)
+      }
+      const overlap=page.items.some(row=>previous.rows.some(original=>original.id===row.id))
+      const cursor=!before && overlap && previous.rows.length>page.items.length ? previous.cursor : page.next_cursor
+      recordedHistoryRef.current={scope:recordedScope,rows:[...merged.values()].sort((a,b)=>b.at.localeCompare(a.at)||b.id.localeCompare(a.id)),cursor:cursor===before ? null : cursor,busy:false,error:''}
+      setRecordedHistory(recordedHistoryRef.current)
+    } catch {
+      if (request!==recordedRequest.current) return
+      recordedHistoryRef.current={...recordedHistoryRef.current,busy:false,error:'Recorded recommendations unavailable.'}
+      setRecordedHistory(recordedHistoryRef.current)
+    }
+  },[recordedAvailable,recordedIdentity,recordedScope,userId,ticker])
+
+  // Discover the first saved entry on a new candle or confirmation, retaining originals when the quote expires.
+  useEffect(()=>{
+    void loadRecorded()
+    return()=>{recordedRequest.current++}
+  },[loadRecorded,modelTarget?.record,modelTarget?.evidence?.completed_candle_at,Boolean(modelTarget?.entry)])
   const [edgeLabels, setEdgeLabels] = useState<{key: string; text: string; left: number; top: number; color: string; recommendations: ChartMarker['recommendations']}[]>([])
   const holder = useRef<HTMLDivElement | null>(null)
   const chartRef = useRef<IChartApi | null>(null)
@@ -735,15 +788,16 @@ export const TickerChart = ({
   // Resolve selected live markers to their first saved record; late responses cannot cross selections or users.
   useEffect(()=>{
     let active=true
-    const selections=JSON.parse(originalSelection) as {id:string;weight:number;snapshot:string;completed:string;strategy:string}[]
+    const selections=JSON.parse(originalSelection) as {id:string;weight:number;snapshot:string;completed:string;strategy:string;at?:string;bytesSha?:string}[]
     for (const selected of selections) {
-      const key=`${userId}:${ticker}:${selected.id}:${selected.snapshot}:${selected.completed}:${selected.strategy}:${selected.weight}`
+      const key=`${userId}:${ticker}:${selected.id}:${selected.snapshot}:${selected.completed}:${selected.strategy}:${selected.weight}:${selected.at ?? ''}:${selected.bytesSha ?? ''}`
       if (originalReads[key]?.status==='ready') continue
       setOriginalReads(current=>({...current,[key]:{status:'pending'}}))
       // Preserve the server's original price, observation time and technical reasons rather than the refreshed row.
       const restore=async()=>{
         try {
-          const value=await getDeskOriginalStrategyRecommendation(userId,ticker,selected.snapshot,selected.completed,selected.strategy,selected.weight)
+          const value=await getDeskOriginalStrategyRecommendation(userId,ticker,selected.snapshot,selected.completed,selected.strategy,selected.weight,
+            selected.at && selected.bytesSha ? {at:selected.at,bytesSha:selected.bytesSha} : undefined)
           if (active) setOriginalReads(current=>({...current,[key]:{status:'ready',value}}))
         } catch {
           if (active) setOriginalReads(current=>({...current,[key]:{status:'failed'}}))
@@ -882,7 +936,7 @@ export const TickerChart = ({
   // The payload's bar time may be an assumed open/close; require the original execution instant instead.
   const timedFills = useMemo(() => timeframe === '15m' ? groupedFillMarkers(currentIntradayMarkers(fills, merged.bars)) : [], [timeframe, fills, merged])
   const simulatedTrades = useMemo(() => simulatedTradeMarkers(simulation, merged.bars, timeframe), [simulation, merged, timeframe])
-  const targetMarkers = useMemo(() => strategyTargetMarkers(simulation, modelTarget, merged.bars, timeframe), [simulation, modelTarget, merged, timeframe])
+  const targetMarkers = useMemo(() => strategyTargetMarkers(simulation, modelTarget, merged.bars, timeframe, recordedRows), [simulation, modelTarget, merged, timeframe, recordedRows])
 
   // Clear an inspected recommendation when its ticker or source changes.
   useEffect(() => {setSelectedRecommendations([])}, [ticker, simulation, modelTarget?.record])
@@ -1222,7 +1276,7 @@ export const TickerChart = ({
         <button type="button" aria-label="Close recommendation details" className="float-right text-[#6e6e73]" onClick={() => setSelectedRecommendations([])}>×</button>
         {selectedRecommendations.map(selected => {
           const reference=selected.originalRef
-          const read=reference ? originalReads[`${userId}:${ticker}:${selected.id}:${reference.snapshot}:${reference.completed}:${reference.strategy}:${selected.weight}`] : undefined
+          const read=reference ? originalReads[`${userId}:${ticker}:${selected.id}:${reference.snapshot}:${reference.completed}:${reference.strategy}:${selected.weight}:${reference.at ?? ''}:${reference.bytesSha ?? ''}`] : undefined
           const original=selected.originalRef && read?.status==='ready' ? read.value?.original : undefined
           const item=original ? {...selected,at:original.at,weight:original.size_weight,evidence:original.evidence} : selected
           return <article key={item.id} className="mb-3 last:mb-0">
@@ -1243,10 +1297,12 @@ export const TickerChart = ({
           </> : <p className="mt-2 text-xs text-[#6e6e73]">Detailed evidence was not recorded for this marker.</p>}
         </article>})}
       </section>}
-      {showFills && targetMarkers.length > 0 && <details className="mt-2 text-xs">
+      {showFills && (targetMarkers.length > 0 || recordedAvailable) && <details className="mt-2 text-xs">
         <summary className="cursor-pointer text-[#0071e3]">Recommendations</summary>
         {simulation && <p className="pt-2 text-[#6e6e73]">Simulation · {simulation.start}–{simulation.through}</p>}
         <div className="flex flex-wrap gap-2 pt-2">{targetMarkers.flatMap(marker => marker.recommendations ?? []).map(item => <button type="button" key={item.id} data-recommendation-id={item.id} title={`Exact action size ${(item.weight * 100).toPrecision(6)}%`} className="rounded border border-black/10 px-2 py-1" onClick={() => inspectRecommendation(item)}>{item.action} · Size {sizePercent(item.weight)}% · {recordedTime(item.at)}</button>)}</div>
+        {recordedHistory.scope===recordedScope && recordedHistory.error && <p role="status" className="pt-2">{recordedHistory.error} <button type="button" className="text-[#0071e3]" disabled={recordedHistory.busy} onClick={()=>void loadRecorded()}>Retry</button></p>}
+        {recordedHistory.scope===recordedScope && recordedHistory.cursor && <button type="button" className="pt-2 text-[#0071e3]" disabled={recordedHistory.busy} onClick={()=>void loadRecorded(recordedHistory.cursor!)}>Earlier recorded recommendations</button>}
       </details>}
       <ul className="sr-only" aria-label={`${ticker} historical grade signals`}>{changes.map((marker, index) => <li key={`${marker.time}-${index}`}>{marker.detail}</li>)}</ul>
     </>}

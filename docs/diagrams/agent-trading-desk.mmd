@@ -19,8 +19,10 @@ flowchart TB
     ModelSnapshot -.-> Numerical[Candidate numerical 15-minute collector<br/>original daily context and installed timing heads<br/>fresh IEX quote transport; no account or orders]
     Providers -.-> Numerical
     Numerical -.-> EntryEvidence[(Original entry and quote evidence<br/>first recommendation retained per candle)]
+    EntryEvidence -.-> RecordedIndex[(Candidate source-bound per-stock index<br/>original decisions remain discoverable after expiry<br/>completed coverage and original-byte checks)]
     ModelSnapshot -.-> View
-    EntryEvidence -.-> View
+    RecordedIndex -.-> View
+    EntryEvidence -.->|Original reasons on marker selection| View
     Frozen -.-> HistoryPublication[Candidate audited numerical history import<br/>same economic code and trading costs<br/>original actions and next-open grade clocks]
     HistoryPublication -.-> View
     Admission --> LearnedTiming[Shared learned completed-bar inference<br/>original published models; no runtime fitting]
@@ -78,4 +80,4 @@ flowchart TB
     class View interface;
     class DisplayCollector,Admission,LearnedPlan,SetupCollector application;
     class Independent,Numerical,HistoryPublication application;
-    class ModelSnapshot,EntryEvidence data;
+    class ModelSnapshot,EntryEvidence,RecordedIndex data;

@@ -2,7 +2,7 @@ import {expect, test, type Page} from '@playwright/test'
 
 const names = ['BUYLOW', 'BUYHIGH', 'SELLLOW', 'SELLHIGH', 'WAIT', 'MISSING']
 const session = '2026-10-13'
-type Fixture = {phase: string; paper: boolean; lost: boolean; expired: boolean; quoteMissing: boolean; liveReads: number; diagnostics: string[]; originalMode?: 'original' | 'foreign' | 'size'; originalReads?: number; originalDelay?: number; denseMarkers?: boolean; installedHistory?: boolean; numerical?: 'execute' | 'wait'; numericalForeign?: boolean; numericalExpired?: boolean; publicationV2?: boolean; simulationPolicy?: string; signalUntil?: string; allocationUntil?: string; allocationWrong?: boolean; allocationMissing?: boolean; regularFallback?: boolean; publishedPlan?: boolean; independentSizing?: boolean; independentSignalWrong?: boolean; targetWeight?: number; simulationIdentityWrong?: boolean; entryAt?: number; formingSignal?: boolean; chartFrames?: string[]; zoomHistory?: boolean; chartSessions?: number[]; currentSessionBars?: boolean}
+type Fixture = {phase: string; paper: boolean; lost: boolean; expired: boolean; quoteMissing: boolean; liveReads: number; diagnostics: string[]; recordedMode?: 'original' | 'foreign' | 'bytes' | 'late' | 'paged'; recordedReads?: number; originalMode?: 'original' | 'foreign' | 'size'; originalReads?: number; originalDelay?: number; denseMarkers?: boolean; installedHistory?: boolean; numerical?: 'execute' | 'wait'; numericalForeign?: boolean; numericalExpired?: boolean; publicationV2?: boolean; simulationPolicy?: string; signalUntil?: string; allocationUntil?: string; allocationWrong?: boolean; allocationMissing?: boolean; regularFallback?: boolean; publishedPlan?: boolean; independentSizing?: boolean; independentSignalWrong?: boolean; targetWeight?: number; simulationIdentityWrong?: boolean; entryAt?: number; formingSignal?: boolean; chartFrames?: string[]; zoomHistory?: boolean; chartSessions?: number[]; currentSessionBars?: boolean}
 
 // Exercise live signal evidence with deliberately contrary paper allocations and executions.
 async function install(page: Page, baseURL: string, state: Fixture) {
@@ -31,6 +31,7 @@ async function install(page: Page, baseURL: string, state: Fixture) {
       ? {version: 'strategy-model-allocation/2', status: 'available', policy: 'grade-led-learned-sizing/1', session: '2026-10-19',
         observed_at: '2026-10-19T23:49:42Z', as_of: at, published_at: at, valid_until: state.allocationUntil ?? until,
         strategy_identity: 'd'.repeat(64), snapshot_id: 'e'.repeat(64), receipt_sha256: 'f'.repeat(64), basis: 'account_independent_unit_capital_targets',
+        ...(state.recordedMode ? {recorded_history_version:'strategy-recorded-entries/1'} : {}),
         account_basis: 'no_account_inputs', timing_basis: 'nightly_position_size_not_immediate_trade_size',
         entry_assessment: state.numerical ? {version:'strategy-numerical-entries/1',status:'available',snapshot_id:(state.numericalForeign ? '0' : 'e').repeat(64),
           publication_receipt_sha256:'f'.repeat(64),strategy_identity:'d'.repeat(64),receipt_sha256:'a'.repeat(64),
@@ -97,16 +98,29 @@ async function install(page: Page, baseURL: string, state: Fixture) {
       const zoomBars = frame === '15m' && state.zoomHistory ? zoomCandles(sessions) : null
       json = {ticker: path.split('/').pop(), timeframe: frame, adjusted: frame !== '15m', basis: 'Explicit independent acceptance price candles', sessions, sessions_requested: sessions, bars: zoomBars ?? timedBars ?? dates.map(date => ({date, time: `${date}T14:00:00Z`, open: 100, high: 105, low: 99, close: 102, volume: 100})), overlays: {}, levels: {}, entries: []}
     }
+    else if (path.endsWith('/recommendations') && path.includes('/strategy-simulation/')) {
+      state.recordedReads=(state.recordedReads??0)+1
+      const ticker=path.split('/').at(-2),earlier=url.searchParams.has('before')
+      if (state.recordedMode==='late') await new Promise(resolve=>setTimeout(resolve,500))
+      const originalAt=(state.entryAt??now)-5000-(earlier ? 900000 : 0)
+      const completed=Math.floor(originalAt/900000)*900000
+      json={schema:'strategy-recorded-entries/1',ticker,current_instruction:false,account_inputs:false,recommendation_not_fill:true,
+        strategy_identity:(state.recordedMode==='foreign' ? '0' : 'd').repeat(64),coverage_from:new Date(completed).toISOString(),indexed_through:at,
+        next_cursor:state.recordedMode==='paged' && !earlier ? 'earlier-page' : null,
+        items:ticker==='BUYHIGH' ? [{id:(earlier ? '8' : '7').repeat(64),ticker,at:new Date(originalAt).toISOString(),completed_at:new Date(completed).toISOString(),
+          snapshot_id:(earlier ? 'b' : 'e').repeat(64),strategy_identity:'d'.repeat(64),action:'Buy',size_weight:.143,valid_until:new Date(completed+900000).toISOString(),original_bytes_sha256:'9'.repeat(64)}] : []}
+    }
     else if (path.endsWith('/recommendation') && path.includes('/strategy-simulation/')) {
       state.originalReads=(state.originalReads??0)+1
       if (state.originalDelay) await new Promise(resolve=>setTimeout(resolve,state.originalDelay))
       const ticker=path.split('/').at(-2),weight=state.originalMode==='size' ? .2 : .143
       json={schema:'strategy-recorded-entry/1',ticker,current_instruction:false,recommendation_not_fill:true,account_inputs:false,verified_against_installed_economics:true,
-        original:{ticker,action:'Buy',at:new Date((state.entryAt??now)-(state.originalMode ? 5000 : 0)).toISOString(),
+        original_bytes_sha256:(state.recordedMode==='bytes' ? '0' : '9').repeat(64),
+        original:{ticker,action:'Buy',at:new Date((state.entryAt??now)-(state.originalMode || state.recordedMode ? 5000 : 0)-(state.recordedMode && url.searchParams.get('snapshot_id')==='b'.repeat(64) ? 900000 : 0)).toISOString(),
           completed_at:url.searchParams.get('completed_at'),snapshot_id:state.originalMode==='foreign' ? '0'.repeat(64) : url.searchParams.get('snapshot_id'),
           strategy_identity:'d'.repeat(64),size_weight:weight,evidence:{grade:'A',inputs_as_of:'2026-10-19',model_position_size:weight,
-            reason:state.originalMode ? 'Original saved timing decision before refresh' : 'Original numerical timing recommendation',
-            observed_price:state.originalMode ? 99 : 102,features:{ema_21_distance:state.originalMode ? -.22 : -.0944},waiting_log_utility:-.002}}}
+            reason:state.originalMode || state.recordedMode ? 'Original saved timing decision before refresh' : 'Original numerical timing recommendation',
+            observed_price:state.originalMode || state.recordedMode ? 99 : 102,features:{ema_21_distance:state.originalMode || state.recordedMode ? -.22 : -.0944},waiting_log_utility:-.002}}}
     }
     else if (path.includes('/strategy-simulation/')) json = {schema: 'latest-strategy-simulation/1', ticker: path.split('/').pop(), policy: state.simulationPolicy ?? 'earlier-policy',
       start: session, through: '2026-10-15', counterfactual: true, real_orders: false, splits: [], decisions: [
@@ -155,6 +169,91 @@ async function refresh(page: Page, state: Fixture) {
   await page.getByRole('button', {name: 'Refresh', exact: true}).click()
   await expect.poll(() => state.liveReads).toBeGreaterThan(prior)
 }
+
+// Preserve saved recommendations after quote expiry and reload, restoring original reasons on every chart frame.
+test('Recorded entries survive expiry and reload with original size and technical reasons',async ({page,baseURL})=>{
+  const state=fixture()
+  Object.assign(state,{publicationV2:true,numerical:'execute',numericalExpired:true,entryAt:Date.now()-100,currentSessionBars:true,recordedMode:'original'})
+  await install(page,baseURL!,state)
+  await page.goto('/?deskView=strategy#desk')
+  const board=page.getByRole('region',{name:'All names signals',exact:true})
+  await expect(board.getByLabel('BUYHIGH action',{exact:true})).toHaveText('Wait')
+  await board.getByRole('button',{name:'BUYHIGH',exact:true}).click()
+  const dialog=page.getByRole('dialog',{name:'BUYHIGH history',exact:true})
+  for (const frame of ['D','W','15m']) {
+    await dialog.getByRole('group',{name:'Chart timeframe',exact:true}).getByRole('button',{name:frame,exact:true}).click()
+    await expect(dialog.getByLabel('BUYHIGH target chart markers',{exact:true})).toHaveText('Buy · Size 14.3%')
+  }
+  await dialog.getByText('Recommendations',{exact:true}).click()
+  await dialog.locator('button[data-recommendation-id^="recorded:"]').click()
+  const detail=dialog.getByRole('region',{name:'Recommendation details',exact:true})
+  await expect(detail).toContainText('Recorded recommendation')
+  await expect(detail).toContainText('Observed IEX midpoint $99.00')
+  await expect(detail).toContainText('-22.00%')
+  await expect(detail).not.toContainText('$102.00')
+  await page.reload()
+  await board.getByRole('button',{name:'BUYHIGH',exact:true}).click()
+  await expect(dialog.getByLabel('BUYHIGH target chart markers',{exact:true})).toHaveText('Buy · Size 14.3%')
+  await expect.poll(()=>state.recordedReads??0).toBeGreaterThanOrEqual(2)
+  expect(state.diagnostics).toEqual([])
+})
+
+for (const mode of ['foreign','bytes'] as const) {
+  // Reject a foreign history identity or a substituted original body without showing refreshed reasons as historical.
+  test(`Recorded entries refuse ${mode} identity`,async ({page,baseURL})=>{
+    const state=fixture()
+    Object.assign(state,{publicationV2:true,numerical:'wait',entryAt:Date.now()-100,currentSessionBars:true,recordedMode:mode})
+    await install(page,baseURL!,state)
+    await page.goto('/?deskView=strategy#desk')
+    await page.getByRole('button',{name:'BUYHIGH',exact:true}).click()
+    const dialog=page.getByRole('dialog',{name:'BUYHIGH history',exact:true})
+    await dialog.getByText('Recommendations',{exact:true}).click()
+    if (mode==='foreign') {
+      await expect(dialog).toContainText('Recorded recommendations unavailable.')
+      await expect(dialog.getByLabel('BUYHIGH target chart markers',{exact:true})).toHaveText('')
+    } else {
+      await dialog.locator('button[data-recommendation-id^="recorded:"]').click()
+      await expect(dialog.getByRole('region',{name:'Recommendation details',exact:true})).toContainText('Original recommendation unavailable.')
+      await expect(dialog).not.toContainText('Observed IEX midpoint $102.00')
+    }
+    expect(state.diagnostics).toEqual([])
+  })
+}
+
+// Keep separately recorded decisions on the same candle separate while paging without duplicates.
+test('Recorded entries page original decisions without duplicate markers or changed details',async ({page,baseURL})=>{
+  const state=fixture()
+  Object.assign(state,{publicationV2:true,numerical:'wait',entryAt:Date.now()-100,currentSessionBars:true,recordedMode:'paged'})
+  await install(page,baseURL!,state)
+  await page.goto('/?deskView=strategy#desk')
+  await page.getByRole('button',{name:'BUYHIGH',exact:true}).click()
+  const dialog=page.getByRole('dialog',{name:'BUYHIGH history',exact:true})
+  await dialog.getByText('Recommendations',{exact:true}).click()
+  await expect(dialog.locator('button[data-recommendation-id^="recorded:"]')).toHaveCount(1)
+  await dialog.getByRole('button',{name:'Earlier recorded recommendations',exact:true}).click()
+  await expect(dialog.locator('button[data-recommendation-id^="recorded:"]')).toHaveCount(2)
+  await expect(dialog.getByRole('button',{name:'Earlier recorded recommendations',exact:true})).toHaveCount(0)
+  await dialog.locator('button[data-recommendation-id="recorded:'+ '8'.repeat(64)+'"]').click()
+  await expect(dialog.getByRole('region',{name:'Recommendation details',exact:true})).toContainText('Observed IEX midpoint $99.00')
+  expect(state.diagnostics).toEqual([])
+})
+
+// Keep a late original-history response behind the ticker that requested it.
+test('Late recorded history cannot cross a ticker switch',async ({page,baseURL})=>{
+  const state=fixture()
+  Object.assign(state,{publicationV2:true,numerical:'wait',entryAt:Date.now()-100,currentSessionBars:true,recordedMode:'late'})
+  await install(page,baseURL!,state)
+  await page.goto('/?deskView=strategy#desk')
+  await page.getByRole('button',{name:'BUYHIGH',exact:true}).click()
+  await expect.poll(()=>state.recordedReads??0).toBeGreaterThan(0)
+  await page.getByRole('dialog',{name:'BUYHIGH history',exact:true}).getByRole('button',{name:'Close',exact:true}).click()
+  await page.getByRole('button',{name:'BUYLOW',exact:true}).click()
+  const dialog=page.getByRole('dialog',{name:'BUYLOW history',exact:true})
+  await expect.poll(()=>state.recordedReads??0).toBeGreaterThan(1)
+  await page.waitForTimeout(650)
+  await expect(dialog.getByLabel('BUYLOW target chart markers',{exact:true})).toHaveText('')
+  expect(state.diagnostics).toEqual([])
+})
 
 // Use the publication's own dated universe even when the funded record is older and disagrees.
 test('Numerical entries drive the action and 15m marker, with quote and snapshot refusal', async ({page, baseURL}) => {

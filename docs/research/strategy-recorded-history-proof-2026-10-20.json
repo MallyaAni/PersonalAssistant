@@ -1,0 +1,298 @@
+{
+  "all35_numeric_sources_unchanged": true,
+  "at": "2026-10-20T07:22:40.126592+00:00",
+  "base_revision": "c1aaacbfe01d8e4242c619d97cd1fd564ffccceb",
+  "browser": {
+    "green": {
+      "path": "/tmp/strategy-recorded-history-green-20261020-results.json",
+      "sha256": "229f7c35fcb9d00d83d58dde18b515e115d9d97612c31b84c342a64fbf61c7a0",
+      "stats": {
+        "duration": 9636.836000000001,
+        "expected": 5,
+        "flaky": 0,
+        "skipped": 0,
+        "startTime": "2026-10-20T07:16:49.713Z",
+        "unexpected": 0
+      }
+    },
+    "red": {
+      "path": "/tmp/strategy-recorded-history-red-20261020-results.json",
+      "sha256": "3d0affe94b11674eef54a8ba97942e276905c1e9bbc025dcda2a8f51a24de341",
+      "stats": {
+        "duration": 8663.211000000001,
+        "expected": 0,
+        "flaky": 0,
+        "skipped": 0,
+        "startTime": "2026-10-20T07:16:24.377Z",
+        "unexpected": 1
+      }
+    },
+    "regression": {
+      "path": "/tmp/strategy-recorded-history-regression-20261020-results.json",
+      "sha256": "9b66998374d30f6e121b2308f7b175147ca4251722e4be73f0e999833f370c2a",
+      "stats": {
+        "duration": 133369.157,
+        "expected": 37,
+        "flaky": 0,
+        "skipped": 0,
+        "startTime": "2026-10-20T07:17:50.489Z",
+        "unexpected": 0
+      }
+    }
+  },
+  "browser_regression_cases": 37,
+  "cohorts": {
+    "capability-fixture-green": {
+      "result.json": {
+        "bytes": 3157,
+        "sha256": "9e119066264cbca4e8fbd3a067e54dba01376d21870ecf53fdbeb931d7ec4a0b"
+      },
+      "start.json": {
+        "bytes": 3085,
+        "sha256": "aeed20580e2a5d531eabcf93e97fdf0caa9463ef0a9920f50fb735dbacedbe63"
+      },
+      "stderr": {
+        "bytes": 1979,
+        "sha256": "c38fe067e14180de3f943ad0cf04443bb10c01e3f2dde459c508c9b2d7fbc9f9"
+      },
+      "stdout": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "capability-green": {
+      "result.json": {
+        "bytes": 3109,
+        "sha256": "66301ba430ed8622cae3f520413645e51d182a8d391d8840e07c6f1f822f5893"
+      },
+      "start.json": {
+        "bytes": 3037,
+        "sha256": "dc7ee9c6d83dc4e583fcea79c587f6c899a09b3e935eff8daf5421990fe3681a"
+      },
+      "stderr": {
+        "bytes": 2658,
+        "sha256": "6c841a95b028fe00b6434418aefa75fee5b3da58615756e38e9a069879fc655b"
+      },
+      "stdout": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "count-green": {
+      "result.json": {
+        "bytes": 2815,
+        "sha256": "86c0c2c8fc1ecc2bcef587cfb22182da39114e077e5a0984a1ebda2a361ebd02"
+      },
+      "start.json": {
+        "bytes": 2743,
+        "sha256": "9e9e579d0849e3dc60d4d8275bc770190c66cdf49e0c3d94f8910c94c9362746"
+      },
+      "stderr": {
+        "bytes": 1792,
+        "sha256": "01bd69b7ea5d52d05e2990d4ec33a3579e943afecb6bca8067ec9dda479a2186"
+      },
+      "stdout": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "green": {
+      "result.json": {
+        "bytes": 2517,
+        "sha256": "75d556f096d5d92be21fb230e49aef6ba1b27d0479b85ff77a21554f38db3e25"
+      },
+      "start.json": {
+        "bytes": 2445,
+        "sha256": "4ba800e8cc83b986b980f0319167765e2f4e3eaa39ce7550b78ff868cda25c70"
+      },
+      "stderr": {
+        "bytes": 804,
+        "sha256": "6372eddfdbd64d6b0a3225c7e9c3751046a35808c8ede48330ee5a3204d0cc1a"
+      },
+      "stdout": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "http": {
+      "result.json": {
+        "bytes": 2513,
+        "sha256": "94d6c5390cc440a2b19455ae3d63e85903d0be90c6d39bda29f9c3e577b16b4b"
+      },
+      "start.json": {
+        "bytes": 2441,
+        "sha256": "f69ae649a06a4c8789a7793dcb9dec7e3c3523c915333e1121908578f116f8d9"
+      },
+      "stderr": {
+        "bytes": 1792,
+        "sha256": "56c425954129af72df84f1d78c5d999a022ccac96ab3f60c0f783dc38c02643a"
+      },
+      "stdout": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "red": {
+      "result.json": {
+        "bytes": 2586,
+        "sha256": "5cedbbd413dabed8f1a6473ce8bbf4eaa89152f9eeab89d37157adfce1c1ac70"
+      },
+      "start.json": {
+        "bytes": 2512,
+        "sha256": "6a4b6513dea107b3c983857ddaf6fc0e689fa4c90e209d1c6063cf5cc2e6e3ee"
+      },
+      "stderr": {
+        "bytes": 609,
+        "sha256": "bdbb40c5225805818a1b387f33fb83b894fe73dac0d313d8509f0e381343d71e"
+      },
+      "stdout": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "red2": {
+      "result.json": {
+        "bytes": 2513,
+        "sha256": "589a7b5a7acecca8354506af33c9da8f84c18c239509936b7012783ed553e019"
+      },
+      "start.json": {
+        "bytes": 2441,
+        "sha256": "32f748fd7a34d6b1d11af71adcd10a1b007a7d7d01d37e54bfd5e7d44c70dedd"
+      },
+      "stderr": {
+        "bytes": 1466,
+        "sha256": "036b6170b61c0f21cf183990063a13f7389b1a8275b3cb4f9e516c9bca713e65"
+      },
+      "stdout": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "regression-green": {
+      "result.json": {
+        "bytes": 2916,
+        "sha256": "d88671b264b3ad8072968272e3ba8e3a8c83452a0715315cc2ae925fc5af3d43"
+      },
+      "start.json": {
+        "bytes": 2844,
+        "sha256": "5e5c7af85f107f66dae5511786d2f888300f70ed9bdba0fadbfdb7d4ab13151d"
+      },
+      "stderr": {
+        "bytes": 287,
+        "sha256": "9b7d410a741dc37ef7cae6e2326fb7b98f48f331cf29dc4282c3de16b0d4b263"
+      },
+      "stdout": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    },
+    "regression-red": {
+      "result.json": {
+        "bytes": 2906,
+        "sha256": "72caa080c8ca880fea27105bfccf8fbcad042dbf19acec97470278721ed84b16"
+      },
+      "start.json": {
+        "bytes": 2834,
+        "sha256": "c5c2c9135bc14d208d9c8f5e8ba7d1e5b284756802f71f10223ae57b43080a81"
+      },
+      "stderr": {
+        "bytes": 945,
+        "sha256": "da95020c235abb0eeea56054ff7fcda498d30d1436037c33a718568ee04d71cd"
+      },
+      "stdout": {
+        "bytes": 0,
+        "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+      }
+    }
+  },
+  "collector_argv": [
+    "ssh",
+    "-o",
+    "BatchMode=yes",
+    "-o",
+    "StrictHostKeyChecking=yes",
+    "-o",
+    "HostKeyAlgorithms=ssh-ed25519",
+    "-o",
+    "ConnectTimeout=10",
+    "animallya96@172.16.8.3",
+    "python3 -c 'import base64,json\nfrom pathlib import Path\nfrom hashlib import sha256\nresult={}\nfor mode in ('\"'\"'red'\"'\"', '\"'\"'red2'\"'\"', '\"'\"'green'\"'\"', '\"'\"'http'\"'\"', '\"'\"'regression-red'\"'\"', '\"'\"'regression-green'\"'\"', '\"'\"'count-green'\"'\"', '\"'\"'capability-green'\"'\"', '\"'\"'capability-fixture-green'\"'\"'):\n    root=Path('\"'\"'/home/animallya96/scratch/strategy-recorded-index-20261020-'\"'\"'+mode)\n    rows={}\n    for name in ('\"'\"'start.json'\"'\"','\"'\"'result.json'\"'\"','\"'\"'stdout'\"'\"','\"'\"'stderr'\"'\"'):\n        raw=(root/name).read_bytes();assert len(raw)<=1048576\n        rows[name]={'\"'\"'bytes'\"'\"':len(raw),'\"'\"'sha256'\"'\"':sha256(raw).hexdigest(),'\"'\"'body'\"'\"':base64.b64encode(raw).decode()}\n    result[mode]=rows\nprint(json.dumps(result))\n'"
+  ],
+  "deployed": false,
+  "diagram": "Native33 render; unrelated geometry retained separately",
+  "failures_preserved": {
+    "capability-green": "Publication fixture lacked installed config SHA, failed before intended capability assertion",
+    "red": "Initial mount target absent under readonly source;125 before Python",
+    "red2": "Actual original API404 before route exists",
+    "regression-red": "Service fixture omitted original persisted publication"
+  },
+  "full_new_backend_gates": "UNVERIFIED",
+  "inference_or_account_or_broker_calls": 0,
+  "native_pool_adoption": false,
+  "new_backend_cases": 8,
+  "new_browser_cases": 5,
+  "not_capacity_or_hostile_filesystem_proof": true,
+  "real_regular_entry": "UNVERIFIED_before_natural_regular_candle",
+  "runtime": {
+    "bytes": 915600,
+    "path": "/tmp/strategy-recorded-history-green-20261020-dist/assets/index-qlbnE20d.js",
+    "sha256": "c1ab8a20ba9fcb215a61a33c6230adfc1aad40ce5b91f115549194715a13f4a4"
+  },
+  "schema": "strategy-recorded-history-proof/1",
+  "scope": "Original source/economics-bound metadata discovery, coverage, pagination and owner HTTP; browser expiry/reload/original reasons/foreign/tampered/ticker isolation",
+  "sources": {
+    "backend/api/v1/market_allocation.py": {
+      "bytes": 2030,
+      "sha256": "f4812d9a99d6b17585f06a1c2bcb6089adf58299b7f5be63eb602591e6dce787"
+    },
+    "backend/api/v1/market_simulation.py": {
+      "bytes": 3756,
+      "sha256": "4560734e7fcde26ef21325a16cebc2f1e87c8b6e39ac482dff2d56858c92158d"
+    },
+    "backend/market/strategy_entry_history.py": {
+      "bytes": 21594,
+      "sha256": "3d69be73b73aae2253d597eb300f633e6163e9067319a60a42869d135d88b039"
+    },
+    "backend/services/current_opportunity_collector.py": {
+      "bytes": 1848,
+      "sha256": "4ab429f6659d29655fbab8c56005d52d39382d0d3cf6c45f1919896a4ceeb661"
+    },
+    "backend/tests/test_strategy_entries.py": {
+      "bytes": 17650,
+      "sha256": "e9823e6184eb070daf684b65dcd4c38338662dd1598093a8742f0eeb427a6634"
+    },
+    "backend/tests/test_strategy_recorded_index.py": {
+      "bytes": 14562,
+      "sha256": "fb1a4b4b7ec50769f598d84a037725ebc671faa36e6700c6590ca167d2b6c7a1"
+    },
+    "docs/architecture.html": {
+      "bytes": 3993634,
+      "sha256": "33905f3fbe1c28a90b754b586f1459a53a6daa0bc7d2ddaa91fc6e3fc13359e6"
+    },
+    "docs/diagrams/agent-trading-desk.mmd": {
+      "bytes": 6036,
+      "sha256": "6615880106b1caa74049d235b456beb1a665548e29e9c839a818dc66fd3c06e3"
+    },
+    "docs/diagrams/agent-trading-desk.svg": {
+      "bytes": 123016,
+      "sha256": "ecb37905a10b68f6373f4d09f1eb305306df2e75d51ff9780bb783d15e939b18"
+    },
+    "frontend/e2e/all-names-signals.spec.ts": {
+      "bytes": 73592,
+      "sha256": "f7d1e459211f4f205f21f1e1cbced0fb0948b0927853f644cc053aa8a1d98937"
+    },
+    "frontend/src/components/DeskPanel/SignalBoard.tsx": {
+      "bytes": 28013,
+      "sha256": "c1edd43f55f3d3841545998c785683b4dc89498a1a842715fea600ad3b72b049"
+    },
+    "frontend/src/components/DeskPanel/TickerChart.tsx": {
+      "bytes": 104798,
+      "sha256": "509804938cfaa6a4d2e75ace2de4a62804ff53673388bfc406b4f9410a9c845a"
+    },
+    "frontend/src/services/api.ts": {
+      "bytes": 159278,
+      "sha256": "098b3afcaf8736655768170803006fc29918f7b4a18f8005ce05566b2729d007"
+    }
+  },
+  "tsc_build": "PASS; existing CSS/chunk warnings"
+}

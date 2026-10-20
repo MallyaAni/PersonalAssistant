@@ -14,7 +14,7 @@ import numpy as np
 
 from backend.market import calendar, forward_arithmetic, forward_probability_timing as inference
 from backend.market import probabilistic_execution as probability
-from backend.market import strategy_entry_context as context, strategy_entries as entries, strategy_publication as publication
+from backend.market import strategy_entry_context as context, strategy_entries as entries, strategy_publication as publication, strategy_entry_history as history
 from backend.market.daily_arithmetic_bridge import _hash
 from backend.services.current_opportunity_collector import CurrentOpportunityCollector
 
@@ -90,14 +90,14 @@ class StrategyEntryTests(unittest.TestCase):
             snapshot['receipt_sha256']=publication._digest({k:v for k,v in snapshot.items() if k!='receipt_sha256'})
             with self.assertRaisesRegex(ValueError,'identity differs'):publication.validate(snapshot,NOW)
 
-    # The installed display pass refreshes only quotes within a candle and persists readable numerical advice.
+    # The display pass refreshes only quotes within a candle and indexes its unchanged first advice against a real saved snapshot.
     def test_collect_reuses_forecast_and_keeps_original_recommendation(self):
         with TemporaryDirectory() as directory:
             root=Path(directory);snapshot,_,_=fixture(root);cache,quotes,_=timing_cache(snapshot)
             cache['config_bytes']=b'{}'
             target=root/entries.learned_live_timing.CONFIG;target.parent.mkdir(parents=True,exist_ok=True);target.write_bytes(b'{}')
             observed=[NOW]
-            (root/publication.DIRECTORY).mkdir(parents=True)
+            publication.publish(root,snapshot,NOW)
             collector=CurrentOpportunityCollector(root,enabled=False)
             collector._entry_cache=cache
             # Return original explicit IEX quote JSON through the actual native endpoint receipt parser.
@@ -108,7 +108,7 @@ class StrategyEntryTests(unittest.TestCase):
             # Drive the existing background service through the actual numerical collector and fixture source clock.
             def collect(root,cache):
                 return original_collect(root,cache,clock=lambda:observed[0],transport=transport)
-            with patch.object(publication,'read',return_value=snapshot),patch.object(entries.alpaca,'credentials',return_value={}),patch.object(entries,'acquire',side_effect=AssertionError('must reuse original forecast')),patch.object(entries,'collect',side_effect=collect):
+            with patch.object(publication,'read',return_value=snapshot),patch.object(history.learned_live_holding,'read_configuration',return_value=(b'fixture',{'cost_bps':10})),patch.object(entries.alpaca,'credentials',return_value={}),patch.object(entries,'acquire',side_effect=AssertionError('must reuse original forecast')),patch.object(entries,'collect',side_effect=collect):
                 result=collector._collect_once()
                 self.assertEqual(result['status'],'collected')
                 original=list((root/entries.DIRECTORY/'recommendations'/'2026-01-07').glob('*.json'))[0].read_bytes()

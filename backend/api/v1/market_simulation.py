@@ -34,7 +34,7 @@ async def view(user_id, response, ticker=None):
         raise HTTPException(
             status_code=503, detail="Latest-strategy simulation unavailable."
         ) from exc
-    return {"user_id": user_id, **value}
+    return {"user_id": user_id, **value, 'recorded_history_version':strategy_entry_history.PAGE_SCHEMA}
 
 
 # Return the simulated portfolio and dated coverage independently of the paper account.
@@ -61,4 +61,19 @@ async def original_recommendation(user_id: UserId, ticker: str, response: Respon
             ticker,completed_at,snapshot_id,datetime.now(UTC))
     except (OSError,ValueError,KeyError,TypeError) as exc:
         raise HTTPException(status_code=503,detail='Original model recommendation unavailable.') from exc
+    return {'user_id':user_id,**value}
+
+
+# Discover original decisions after expiry without inferring, reading an account or substituting current advice.
+@router.get('/{ticker}/recommendations')
+async def original_recommendations(user_id: UserId, ticker: str, response: Response,
+    before: Annotated[str | None, Query(max_length=256)]=None,
+    limit: Annotated[int, Query(ge=1,le=strategy_entry_history.MAX_PAGE)]=strategy_entry_history.MAX_PAGE):
+    _operator_only(user_id)
+    response.headers['Cache-Control']='private, no-store'
+    try:
+        value=await asyncio.to_thread(strategy_entry_history.recent,settings.MARKET_DATA_ROOT,
+            ticker,datetime.now(UTC),before=before,limit=limit)
+    except (OSError,ValueError,KeyError,TypeError) as exc:
+        raise HTTPException(status_code=503,detail='Original recorded recommendation history unavailable.') from exc
     return {'user_id':user_id,**value}

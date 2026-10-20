@@ -1,6 +1,7 @@
 """Keep chart judgments current even when no browser is open."""
 
 import os
+from datetime import UTC, datetime
 
 from backend.services.session_price_collector import SessionPriceCollector
 
@@ -17,11 +18,22 @@ class CurrentOpportunityCollector(SessionPriceCollector):
         )
         self._entry_cache = {}
 
-    # Use independent numerical timing when installed, retaining the legacy display collector otherwise.
+    # Complete original recording metadata before another numerical view can replace its discovery source.
     def _collect_once(self):
-        from backend.market import strategy_publication, strategy_entries
+        from backend.market import strategy_publication, strategy_entries, strategy_entry_history
         if (self._root / strategy_publication.DIRECTORY).exists():
-            return strategy_entries.collect(self._root,self._entry_cache)
+            history_status='available'
+            try:
+                strategy_entry_history.remember_latest(self._root,datetime.now(UTC))
+            except (OSError,ValueError,KeyError,TypeError):
+                return {'status':'unavailable','recorded_history':'unavailable'}
+            result=strategy_entries.collect(self._root,self._entry_cache)
+            if result.get('status')=='collected':
+                try:
+                    strategy_entry_history.remember_latest(self._root,datetime.now(UTC))
+                except (OSError,ValueError,KeyError,TypeError):
+                    history_status='unavailable'
+            return {**result,'recorded_history':history_status}
         from backend.core.dependencies import get_structured_llm_client
         from backend.market import current_opportunities
 

@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, Response
 
 from backend.api.v1 import market
 from backend.core.auth import authorize_path_user
-from backend.market import deskrecord, model_allocation_view, strategy_publication, strategy_entries
+from backend.market import deskrecord, model_allocation_view, strategy_publication, strategy_entries, strategy_entry_history
 
 router = APIRouter(
     prefix="/market/{user_id}",
@@ -23,7 +23,8 @@ def allocation(root, now):
     if (root / strategy_publication.DIRECTORY).exists():
         try:
             snapshot = strategy_publication.read(root, now)
-            return {**snapshot, 'entry_assessment':strategy_entries.read(root,snapshot,now)}
+            return {**snapshot, 'entry_assessment':strategy_entries.read(root,snapshot,now),
+                'recorded_history_version':strategy_entry_history.PAGE_SCHEMA}
         except (OSError, ValueError, TypeError, KeyError, AttributeError, OverflowError):
             return {"version": strategy_publication.VERSION, "status": "unavailable",
                     "policy": "grade-led-learned-sizing/1", "rows": {},

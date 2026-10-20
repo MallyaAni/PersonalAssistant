@@ -2501,6 +2501,7 @@ export type DeskOptionsEvidence = {
 
 export interface DeskModelAllocation {
   version: 'published-model-allocation/1' | 'strategy-model-allocation/1' | 'strategy-model-allocation/2';
+  recorded_history_version?: 'strategy-recorded-entries/1';
   status: 'available' | 'stale' | 'unavailable';
   reason?: string | null;
   policy: string;
@@ -3487,6 +3488,7 @@ export interface DeskStrategySimulation {
 }
 
 export interface DeskStrategyStock extends DeskStrategySimulation {
+  recorded_history_version?: 'strategy-recorded-entries/1';
   ticker: string;
   decisions: DeskStrategyDecision[];
   trades: DeskStrategyTrade[];
@@ -3533,12 +3535,13 @@ export const getDeskStrategyStock = async (userId: string, ticker: string): Prom
 export interface DeskOriginalStrategyRecommendation {
   schema: 'strategy-recorded-entry/1'; ticker: string; current_instruction: false;
   recommendation_not_fill: true; account_inputs: false; verified_against_installed_economics: true;
+  original_bytes_sha256?: string;
   original: {ticker: string; action: 'Buy'; at: string; completed_at: string; snapshot_id: string;
     strategy_identity: string; size_weight: number; evidence: NonNullable<DeskStrategyDecision['evidence']>};
 }
 
 // Restore the first saved numerical recommendation, never substituting today's quote or another snapshot.
-export const getDeskOriginalStrategyRecommendation = async (userId: string, ticker: string, snapshotId: string, completedAt: string, strategyIdentity: string, expectedSize: number): Promise<DeskOriginalStrategyRecommendation> => {
+export const getDeskOriginalStrategyRecommendation = async (userId: string, ticker: string, snapshotId: string, completedAt: string, strategyIdentity: string, expectedSize: number, expectedOriginal?: {at: string; bytesSha: string}): Promise<DeskOriginalStrategyRecommendation> => {
   const query=new URLSearchParams({snapshot_id:snapshotId,completed_at:completedAt});
   const response=await authenticatedFetch(`${API_BASE_URL}/api/v1/market/${encodeURIComponent(userId)}/desk/strategy-simulation/${encodeURIComponent(ticker)}/recommendation?${query}`);
   if (!response.ok) throw new Error('Original model recommendation unavailable.');
@@ -3551,8 +3554,45 @@ export const getDeskOriginalStrategyRecommendation = async (userId: string, tick
       || !Number.isFinite(Date.parse(original.at)) || Date.parse(original.at)>Date.now()
       || !Number.isFinite(original.size_weight) || !(original.size_weight>0 && original.size_weight<=1)
       || original.size_weight!==expectedSize
-      || original.evidence?.model_position_size!==original.size_weight) throw new Error('Original model recommendation identity differs.');
+      || original.evidence?.model_position_size!==original.size_weight
+      || expectedOriginal && (original.at!==expectedOriginal.at || result.original_bytes_sha256!==expectedOriginal.bytesSha)) throw new Error('Original model recommendation identity differs.');
   return result;
+};
+
+export interface DeskRecordedStrategyReference {
+  id: string; ticker: string; at: string; completed_at: string; snapshot_id: string;
+  strategy_identity: string; action: 'Buy'; size_weight: number; valid_until: string; original_bytes_sha256: string;
+}
+
+export interface DeskRecordedStrategyPage {
+  schema: 'strategy-recorded-entries/1'; ticker: string; current_instruction: false; account_inputs: false;
+  recommendation_not_fill: true; strategy_identity: string | null; items: DeskRecordedStrategyReference[];
+  next_cursor: string | null; coverage_from: string | null; indexed_through: string | null;
+}
+
+// Discover original source-matched decisions after quote expiry without replacing them with refreshed instructions.
+export const getDeskRecordedStrategyRecommendations = async (userId: string, ticker: string, strategyIdentity: string, before?: string): Promise<DeskRecordedStrategyPage> => {
+  const query=new URLSearchParams({limit:'64'});
+  if (before) query.set('before',before);
+  const response=await authenticatedFetch(`${API_BASE_URL}/api/v1/market/${encodeURIComponent(userId)}/desk/strategy-simulation/${encodeURIComponent(ticker)}/recommendations?${query}`);
+  if (!response.ok) throw new Error('Recorded recommendation history unavailable.');
+  const value=await response.json() as DeskRecordedStrategyPage;
+  if (value.schema!=='strategy-recorded-entries/1' || value.ticker!==ticker || value.current_instruction!==false
+      || value.account_inputs!==false || value.recommendation_not_fill!==true || !Array.isArray(value.items) || value.items.length>64
+      || value.strategy_identity!==null && value.strategy_identity!==strategyIdentity
+      || value.items.length>0 && value.strategy_identity!==strategyIdentity
+      || value.next_cursor!==null && (typeof value.next_cursor!=='string' || !value.next_cursor || value.next_cursor.length>256)) throw new Error('Recorded recommendation history identity differs.');
+  const ids=new Set<string>();
+  for (const item of value.items) {
+    const at=Date.parse(item.at),completed=Date.parse(item.completed_at),until=Date.parse(item.valid_until);
+    if (item.ticker!==ticker || item.action!=='Buy' || item.strategy_identity!==strategyIdentity
+        || ![item.id,item.snapshot_id,item.original_bytes_sha256].every(hash=>/^[a-f0-9]{64}$/.test(hash))
+        || ids.has(item.id) || !Number.isFinite(at) || !Number.isFinite(completed) || !Number.isFinite(until)
+        || !(completed<=at && at<until && until<=completed+900000 && at<=Date.now())
+        || !Number.isFinite(item.size_weight) || !(item.size_weight>0 && item.size_weight<=1)) throw new Error('Original recorded decision identity differs.');
+    ids.add(item.id);
+  }
+  return value;
 };
 
 // The newest earnings release read for one name, straight from the release

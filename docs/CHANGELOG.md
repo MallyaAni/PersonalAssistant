@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-10-20 — Keep original recorded recommendations discoverable after quote expiry
+
+Charts can now restore a saved numerical Buy and its model Size% after the live
+quote expires or the page reloads. Selecting it reads the original price and
+technical reasons rather than refreshed evidence. A finite source-bound index
+and completed coverage/count checkpoint retain original identities; missing,
+partial or altered history refuses without falling back to a funded account.
+The owner-only paginated history API performs no inference or account operation.
+
+Eight backend cases passed in .980s, including actual owner200/foreign403/
+anonymous401 HTTP, pagination and interrupted/tampered metadata. Five new browser
+journeys passed in9.6s and37 existing journeys in2.2m, with no skips, flaky cases
+or unexpected diagnostics. The original blank-marker RED and two fixture failures
+remain recorded in strategy-recorded-history-proof-2026-10-20.json. TSC/build and
+diagram/page synchronization pass. These are scoped component/fixture checks;
+new full backend gates and actual current regular-session entry acceptance remain
+unverified. No sizing math,35-source approval set, paper account or broker changed.
+
 ## 2026-10-20 — Date fresh numerical signals to their actual session
 
 The independent board kept saying Awaiting15-minuteentries even when it already
