@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-10-20 — Install exact audited chart history through the canonical release
+
+Release assets now retain the original 5,755 simulated recommendations for94
+tickers through Oct19. A separate explicit committed review binds compressed and
+raw bytes, accounting and economic identity. The canonical deploy can validate
+these assets before checkout movement and install them after source approval,
+before restart. It preserves original actions and technical reasons, never runs
+a simulation, and restores only the original selected pointer on rollback.
+Incomplete namespaces remain unselected and are never adopted.
+
+Five installation units and the previously unreached owner/foreign/anonymous
+HTTP journey passed across two isolated cohorts; the original missing-dependency
+runner error remains failed. Four canonical deployment-order cases passed2.51s
+after making the deterministic shell-fixture tmpfs executable; the first harness
+failure is retained. Actual94-file installation, new full backend gates and
+current regular-session preview acceptance remain unverified at this checkpoint.
+The35-source sizing/timing approval and its original config/evidence are unchanged.
+
 ## 2026-10-20 — Keep original recorded recommendations discoverable after quote expiry
 
 Charts can now restore a saved numerical Buy and its model Size% after the live

@@ -92,6 +92,8 @@ root=""
 declare -A old_image_ids=()
 trading_approval_archive=""
 trading_approval_attempted=false
+strategy_history_archive=""
+strategy_history_attempted=false
 trading_python=""
 
 # Print a section heading the way every deploy log has shown them.
@@ -434,6 +436,35 @@ trading_preflight() {
     (cd "$gate_tree" && PYTHONPATH="$gate_tree" "$trading_python" -m backend.cli.market_release_admission "${args[@]}")
 }
 
+# Admit only explicitly reviewed immutable history assets before moving the checkout.
+strategy_history_preflight() {
+    if [[ -z "${ANIOS_STRATEGY_HISTORY_REVIEW:-}${ANIOS_STRATEGY_HISTORY_REVIEW_SHA256:-}" ]]; then return 0; fi
+    [[ -n "${ANIOS_STRATEGY_HISTORY_REVIEW:-}" && -n "${ANIOS_STRATEGY_HISTORY_REVIEW_SHA256:-}" ]] || return 1
+    [[ -n "$gate_tree" ]] || make_gate_tree
+    (cd "$gate_tree" && PYTHONPATH="$gate_tree" "$trading_python" -m backend.cli.strategy_history_install preflight --root "$root/data/market" --revision "$target" --review "$ANIOS_STRATEGY_HISTORY_REVIEW" --review-sha256 "$ANIOS_STRATEGY_HISTORY_REVIEW_SHA256")
+}
+
+# Install original audited simulation data after source approval, without running a simulation or an account action.
+activate_strategy_history() {
+    [[ -n "${ANIOS_STRATEGY_HISTORY_REVIEW:-}" ]] || return 0
+    local receipt
+    strategy_history_attempted=true
+    receipt="$(cd "$root" && PYTHONPATH="$root" "$trading_python" -m backend.cli.strategy_history_install install --root "$root/data/market" --revision "$target" --review "$ANIOS_STRATEGY_HISTORY_REVIEW" --review-sha256 "$ANIOS_STRATEGY_HISTORY_REVIEW_SHA256" --archive-dir "$root/data/strategy-history-archives")" || return 1
+    strategy_history_archive="$("$trading_python" -c 'import json,sys; print(json.loads(sys.argv[1])["archive"] or "")' "$receipt")"
+    strategy_history_attempted=false
+    echo "$receipt"
+}
+
+# Restore a known history selection before rolling back source approval; unknown outcomes retain the new code for inspection.
+rollback_strategy_history() {
+    if [[ -n "$strategy_history_archive" ]]; then
+        (cd "$root" && PYTHONPATH="$root" "$trading_python" -m backend.cli.strategy_history_install rollback --root "$root/data/market" --archive "$strategy_history_archive")
+    elif $strategy_history_attempted; then
+        echo 'HISTORY INSTALLATION OUTCOME UNKNOWN; inspect the preserved history archive before code rollback' >&2
+        return 1
+    fi
+}
+
 # Treat partial or broken selector installations as configured and require admission.
 trading_configuration_present() {
     local name
@@ -470,7 +501,7 @@ on_exit() {
     local status="$1" line="$2" command="$3"
     drop_gate_tree || true
     if [[ $status -ne 0 && "$phase" == moved ]]; then
-        if rollback_trading_approval; then
+        if rollback_strategy_history && rollback_trading_approval; then
             roll_back_unrestarted || true
         else
             echo "TRADING APPROVAL ROLLBACK FAILED; code was not rolled back; inspect the preserved approval archive" >&2
@@ -629,6 +660,7 @@ main() {
 
     step "Trading approval preflight"
     trading_preflight || { nothing_changed "Candidate trading approval failed; explicit reviewed bundle required for source changes."; exit 1; }
+    strategy_history_preflight || { nothing_changed "Original audited history assets failed admission."; exit 1; }
     drop_gate_tree
 
     if $dry_run; then
@@ -670,6 +702,7 @@ main() {
 
     step "Reviewed trading approval"
     activate_trading_approval
+    activate_strategy_history
 
     step "Restarting"
     phase=restarted

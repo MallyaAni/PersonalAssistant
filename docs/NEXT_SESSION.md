@@ -1,5 +1,41 @@
 # Next session
 
+## 2026-10-20 07:42Z — audited history release assets and canonical installation ready for exact-source acceptance
+
+NEXT new committed source must exercise ONE private original94-stock install/API;
+no simulator/audit rerun. Exact original5755/94/Oct19 assets:8953411rawstockB /
+1653606gzipB, allmetadata+assets2123526B. Separate install review12423B/SHA
+6939c2f64cdf7bdeb98d6f89e8ef7cf3fbcdae6e6405344168ba7c4a7a53d92f;
+original manifestcc490399/audit8c47b5e9/bindingeac9489f unchanged. All35 numeric
+sources/config/release/evidence/old initial-publication reviewSHA unchanged.
+
+New strategy_history_installation verifies all finite raw/compressed identities
+and economics before output, only selects complete originals, retains failed
+namespaces without adoption, archives exact selector rollback. Explicit CLI
+requires separate committed review+SHA+revision; original source-approval bundle
+strings need no change. scripts/deploy.sh uses ANIOS_STRATEGY_HISTORY_REVIEW and
+ANIOS_STRATEGY_HISTORY_REVIEW_SHA256: asset preflight before checkout; install
+after source approval/before restart; unknown outcomes block code rollback.
+
+Five installer units pass in v1, original HTTP did not reach handler because
+isolated runner omitted current MAX_PAGE dependency (FAILED retained). Product
+unchanged; v2 targeted HTTP1PASS.922s, owner200/foreign403/anon401/exact original
+decisions. Six distinct named cases across TWOcohorts, not six at one greenrun.
+Canonical shell v1 FAILED2/reported2PASS before intended boundaries because tmpfs
+noexec prevented deterministic fixture stubs. v2 explicitly permits exec only
+inside same64MiB isolated harness tmpfs; no production/native-policy cap change.
+Assertions now require actual preflight error; four shell cases PASS2.51s. Shell
+fixtures write/read history selection, not just called-function assertions.
+Sources/controls/results retained /tmp/strategy-history-installation-v{1,2}-
+20261020-* and strategy-history-deploy-v{1,2}-20261020-* +matchingSpark scratch.
+AST/Bashsyntax/diff/backspaces pass. No full new backend gate/deploy yet.
+
+Recorded-index927b3f26/tree4413aa0c pushed, scoped proof72bc61b1 remains closed.
+Before deployment still actual private94 install/API, readonly preview scalar/
+list bridge, real naturally completed09:45ET IEX15m→API→signedinpreview, then
+full applicable gates/canonical35-source renewal. No artificial market runs,
+fakeclocks, paiddata, duplicatewatcher, nativepool adoption, paperreset or orders.
+
 ## 2026-10-20 07:26Z — recorded original recommendation discovery passes scoped acceptance; release OPEN
 
 New finite strategy-recorded-entry-index/1 and coverage/count checkpoint derive
