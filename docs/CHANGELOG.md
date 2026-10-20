@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-10-20 — Complete the current backend and routing acceptance gates
+
+Exact e7c91974 passed 11,001 unit tests (93 skipped, 6 expected failures,
+25 subtests) in 537.13s and all 100 routing/model checks in 444.09s. The later
+frontend checkpoint has identical backend/scripts bytes and separately passed
+43 browser cases. Original failed runs remain preserved. Production is unchanged;
+actual regular-session feed-to-preview entry acceptance is still unverified and
+requires a naturally completed current 15-minute candle. Evidence:
+strategy-history-current-gates-proof-2026-10-20.json, 4521B,
+b7cf07c93b9dadf750464d306a0deb64d6bc6e60f752dd41c8eb46031b6cb08a.
+
 ## 2026-10-20 — Match next-session labels in the table and every chart
 
 A valid closed-session Buy in All names no longer appears as Wait in the chart

@@ -1,5 +1,38 @@
 # Next session
 
+## 2026-10-20 08:30Z — full backend and routing gates passed; real regular entry remains open
+
+Both original e7 gates ended successfully; no evaluation remains active. Exact
+e7c919749ab51bf54593b138015127537c7a8b0f/tree3db89973844f45b4dc3fc82b54cf926b9eb2d2ee:
+UNIT 11001 passed, 93 skipped, 6 xfailed, 439 warnings, 25 subtests in 537.13s;
+ROUTING 100 passed in 444.09s, terminal 08:14:49.008554Z. Original session94881
+ended0. Nine fixed data files were collected once; proof4521B/SHA
+b7cf07c93b9dadf750464d306a0deb64d6bc6e60f752dd41c8eb46031b6cb08a,
+research/strategy-history-current-gates-proof-2026-10-20.json. Earlier f0 failure
+remains FAILED. Never rerun these completed gates or collector for documentation.
+
+Current f7607e72 production-based feature is pushed, not main or deployed. Its
+backend/scripts bytes are identical to green e7; its frontend separately passed
+43 browser cases. This is not a claim that the whole f760 tree ran e7 gates.
+Production b4 remains unchanged. Historical 5755 simulated actions/94 tickers,
+original 15m details and actual model percentages are verified in signed-in
+preview; simulation is not advice historically published or proof of profit.
+
+The remaining unavailable input is a genuinely completed current regular 15m
+candle. Native _window refuses before Oct20 09:45ET. Prepared acquisition scripts
+remain UNRUN: /tmp/run_strategy_regular_preview_acquisition_20261020.py and
+/tmp/acquire_strategy_regular_preview_20261020.py. After the actual window only,
+run ONE bounded original GET-only acquisition as described below, preserve source,
+forecast/quote receipts and caps, show real current action/Size%/technical reasons
+in the same preview before release. Respect Wait/unavailable; no fakeclock/replay,
+new watcher, duplicate collector, holding fit, account operation or paid feed.
+
+Keep Vite33452/tunnel70626/node_modules/tab4 deliverable/tab3 handoff. Paper LAST.
+Current allocation expires Oct20 16:00ET; holding recomputation09:30 is separate.
+Then canonical scripts/deploy.sh only, original approval bundle target-only rebind
+and separate history review6939c2f6. Never deploy historical main wholesale.
+Full live readiness and actual regular entry acceptance remain UNVERIFIED.
+
 ## 2026-10-20 08:14Z — current table/chart plan labels aligned;43browser PASS; e7 ROUTING active
 
 Real preview exposed a remaining closed-session label mismatch: table's valid
