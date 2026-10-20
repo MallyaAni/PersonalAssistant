@@ -103,6 +103,18 @@ recipe's defaults are the measured-safe shape; the cutover script records the
 MemAvailable low point under a ~200K prefill on both nodes and rolls back
 under 3 GiB. Raise the context only against that number.
 
+**Decision 2026-10-19 (owner): the model is the objective; app code may
+break.** The deploy checkout on spark1 had diverged from main (10 trading
+commits with no upstream equivalent, a Codex session live), so `deploy.sh`
+refused bf5f67b3/47915387 and they are NOT deployed. Two zero-code shims keep
+the assistant whole meanwhile, both transitional and both to be removed once
+the trading session reconciles the checkout and `deploy.sh` ships those two:
+`--default-chat-template-kwargs '{"thinking": false}'` on the server (the
+roles' top-level "none" is ignored by this image; off-by-default reproduces it,
+and opencode asks for thinking explicitly), and a `socat` forwarder on
+spark2:8001 -> spark1:8000 plus a served-name alias `qwen3-vl-8b`, because the
+deployed compose still names the retired VLM literally (cutover step 5b).
+
 **Engine difference that reaches the app.** This image reads the reasoning
 level only from `chat_template_kwargs` and ignores the top-level field,
 with thinking ON by default. `backend/core/llm.py` and the vision provider

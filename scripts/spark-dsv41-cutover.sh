@@ -14,7 +14,7 @@
 #   1. baseline the old server, so "faster" is measured, not assumed
 #   2. stop ds4-head, ds4-worker, anios-vlm (disable, so a reboot does not bring them
 #      back beside the new units; the ds41 units declare Conflicts= as a second guard)
-#   3. with the GPU pool empty: pull the image on spark2, rsync the model folder to
+#   3. with the GPU pool empty: copy the image to spark2 over the fabric, rsync the model folder to
 #      spark2 over the fabric, build the JIT kernels on both - HeNryous: building
 #      them next to loaded weights has OOM'd a node and left a stale lock
 #   4. enable --now ds41-worker, then ds41-head (units drop the page cache first)
@@ -82,7 +82,7 @@ rollback() {
   say "ROLLING BACK to ds4 + anios-vlm"
   s1 'sudo -n systemctl disable --now ds41-head' ; s2 'sudo -n systemctl disable --now ds41-worker'
   s2 'sudo -n systemctl enable --now ds4-worker'; sleep 20; s1 'sudo -n systemctl enable --now ds4-head'
-  s2 'sudo -n systemctl enable --now anios-vlm'
+  s2 'docker rm -f anios-vision-forward >/dev/null 2>&1; sudo -n systemctl enable --now anios-vlm'
   if wait_up ds4 && probe; then say "RESULT: ROLLED BACK, V4-Flash-0731 serving again"; else say "RESULT: ROLLBACK DID NOT COME UP - needs a person (worker then head, deploy/spark/README.md)"; fi
   exit 2
 }
@@ -97,6 +97,9 @@ for h in s1 s2; do $h "test -x ~/ds41-tp2.sh && test -f ~/ds41-serve.sh && test 
 busy=$(s1 "pgrep -ax opencode | grep -v ' web '" || true)
 [[ -z "$busy" || "${FORCE:-0}" == 1 ]] || { echo "$busy"; die "an opencode agent is running on spark1; FORCE=1 to proceed"; }
 s1 "docker image inspect $IMAGE >/dev/null 2>&1" || die "image not pulled on spark1"
+s1 "docker run --rm --entrypoint python3 $IMAGE -c 'import vllm.entrypoints.openai.cli_args as c, inspect; src=inspect.getsource(c); import sys; sys.exit(0 if \"default_chat_template_kwargs\" in src else 1)' 2>/dev/null || docker run --rm --entrypoint bash $IMAGE -c 'grep -rqs default_chat_template_kwargs \$(python3 -c \"import vllm,os;print(os.path.dirname(vllm.__file__))\")/entrypoints'" || die "image does not know --default-chat-template-kwargs (remove it from ds41-serve.sh or expect thinking-on for AniOS roles)"
+running=$(s1 "curl -s localhost:8000/metrics | awk '/^vllm:num_requests_running/{s+=\$2} END{print s+0}'")
+[[ "$running" == 0 || "${FORCE:-0}" == 1 ]] || die "old server has $running request(s) in flight (a Codex/opencode session?); FORCE=1 to proceed"
 n=$(s1 "ls $MODEL_DIR | wc -l"); sz=$(s1 "du -sb $MODEL_DIR | cut -f1")
 echo "model folder on spark1: $n files, $((sz/1000000000)) GB"
 (( n >= 192 && sz > 395000000000 )) || die "model folder incomplete on spark1 (expect >=192 files, ~402 GB)"
@@ -115,7 +118,10 @@ s2 'sudo -n systemctl disable --now anios-vlm' || rollback
 sleep 15; echo "pool empty: $(mem)"
 
 say "3. spark2: image + model; both: JIT kernels"
-s2 "docker image inspect $IMAGE >/dev/null 2>&1 || docker pull $IMAGE" || rollback
+# the image goes to spark2 over the fabric from spark1's copy (~1 min), not from ghcr over Wi-Fi (20+ GB, and the
+# registry connection died repeatedly with "unexpected EOF" beside a large download on 2026-10-19)
+s2 "docker image inspect $IMAGE >/dev/null 2>&1" || s1 "docker save $IMAGE | ssh -o BatchMode=yes 192.168.100.2 docker load" || rollback
+s2 "docker image inspect $IMAGE >/dev/null 2>&1" || rollback
 s2 "mkdir -p $MODEL_DIR ~/.cache/dsv41-serve"
 s1 "rsync -a --info=progress2 --exclude .cache -e 'ssh -o BatchMode=yes' $MODEL_DIR/ 192.168.100.2:$MODEL_DIR/" || rollback
 [[ "$(s1 "du -sb $MODEL_DIR | cut -f1")" == "$(s2 "du -sb $MODEL_DIR | cut -f1")" ]] || rollback
@@ -152,6 +158,10 @@ body={'model':'deepseek-v4.1-flash-1017','max_tokens':200,'temperature':0,'chat_
 r=urllib.request.urlopen(urllib.request.Request('http://localhost:8000/v1/chat/completions',json.dumps(body).encode(),{'Content-Type':'application/json'}),timeout=300)
 m=json.loads(r.read())['choices'][0]['message']; tc=m.get('tool_calls') or []; print('TOOLCALL:',[ (t['function']['name'],t['function']['arguments']) for t in tc]); assert tc and tc[0]['function']['name']=='get_weather' and 'Boston' in tc[0]['function']['arguments']
 PY" || rollback
+
+say "5b. transitional vision forwarder: spark2:8001 -> spark1:8000 (deployed compose still names spark2:8001)"
+s2 "docker rm -f anios-vision-forward >/dev/null 2>&1; docker run -d --name anios-vision-forward --restart unless-stopped --network host alpine/socat TCP-LISTEN:8001,fork,reuseaddr TCP:192.168.100.1:8000 >/dev/null && sleep 2 && curl -sf -m 10 localhost:8001/v1/models | grep -q qwen3-vl-8b" || rollback
+echo "forwarder up: spark2:8001 answers with the V4.1 server's model list"
 
 say "6. memory probe: ~200K-token prefill, MemAvailable sampled on both nodes"
 s1 'rm -f /tmp/memmin1'; s2 'rm -f /tmp/memmin2'

@@ -4,8 +4,20 @@
 # RANK and HEADLESS. It is the command sudoingX's launcher (dgx-spark-deepseek-v41
 # @ cc59c36, scripts/launch/dsv41_tp2.sh) generates, with HeNryous's
 # serve/serve_example.sh values where the two differ, and these choices of ours:
-#   - two served names: the honest one first, and the old name as an alias so
-#     every client (compose, opencode, tests) keeps working during the change.
+#   - three served names: the honest one first; the old name as an alias so
+#     every client (compose, opencode, tests) keeps working during the change;
+#     and qwen3-vl-8b, TRANSITIONAL: the deployed compose (b4b2eeb9) still
+#     names the retired VLM literally, and the deploy checkout cannot take the
+#     fix (47915387) until the trading session reconciles it with main. With
+#     the alias plus the forwarder on spark2:8001 (cutover step 5b), AniOS's
+#     vision role reaches this model unchanged. Remove both once 47915387 is
+#     deployed.
+#   - --default-chat-template-kwargs '{"thinking": false}': this image reads
+#     the reasoning level only from chat_template_kwargs and thinks by default.
+#     Every AniOS role runs at "none" today and, until bf5f67b3 is deployed,
+#     sends only the top-level field this image ignores. Thinking off by
+#     default reproduces today's behaviour for them; a client that wants
+#     thinking says so (opencode sends thinking:true + reasoning_effort).
 #   - --max-num-seqs 2 / --max-num-batched-tokens 2048 / KV 2.5 GiB: the base
 #     recipe's measured defaults, not renek's 4 / 4096 / 3.75 GiB. spark1 also
 #     carries the app stack, and renek saw the head node dip to 3.1 GiB free
@@ -22,7 +34,7 @@
 # NEVER put a comment inside the exec block below (see ds4-tp2.sh for the
 # incident); every line ends in a backslash.
 set -e
-exec vllm serve "$MODEL_DIR" --served-model-name deepseek-v4.1-flash-1017 deepseek-v4-flash --host 0.0.0.0 --port 8000 \
+exec vllm serve "$MODEL_DIR" --served-model-name deepseek-v4.1-flash-1017 deepseek-v4-flash qwen3-vl-8b --host 0.0.0.0 --port 8000 \
   --tensor-parallel-size 2 --nnodes 2 --node-rank "$RANK" --master-addr 192.168.100.1 --master-port 25000 \
   --gpu-memory-utilization 0.86 --max-model-len 262144 --max-num-seqs 2 \
   --max-num-batched-tokens 2048 --load-format auto \
@@ -30,6 +42,7 @@ exec vllm serve "$MODEL_DIR" --served-model-name deepseek-v4.1-flash-1017 deepse
   --compilation-config '{"cudagraph_mode":"FULL_DECODE_ONLY"}' \
   --kernel-config '{"enable_flashinfer_autotune":false}' \
   --enable-auto-tool-choice --tool-call-parser deepseek_v41 --reasoning-parser deepseek_v41 \
+  --default-chat-template-kwargs '{"thinking": false}' \
   --speculative-config '{"method":"dspark","num_speculative_tokens":5}' \
   --kv-cache-memory-bytes 2684354560 \
   --limit-mm-per-prompt '{"image":4}' --mm-processor-cache-gb 0 --long-prefill-token-threshold 512 \

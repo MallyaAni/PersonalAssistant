@@ -23,6 +23,13 @@ on ds4 unchanged); compose vision literals parameterized as `47915387`
 (no-op with the live .env). Weights downloading to spark1 (~21 MB/s, page
 cache dropped per file, pauses under 3 GiB available; no pause so far).
 
+**Owner decision, 20:30 ET:** proceed with the model; app code may break.
+`deploy.sh` for bf5f67b3/47915387 is BLOCKED - `~/deploy/anios` has 10 local
+trading commits with no equivalent on main (git cherry) and a Codex session
+live; not touched. Serving-side shims instead (README: "Decision 2026-10-19").
+hf refused the two 101 GB Engram shards without Xet; fetched by resumable
+curl with the same guards (`~/dsv41/dl_engram.sh`), ETA ~21:35 ET.
+
 **Not done:** Engram sha256 (after download); `sudo bash ~/install-ds41.sh`
 on both Sparks (needs a person); `scripts/deploy.sh` for bf5f67b3+47915387
 (blocked by the 19:20-19:55 ET window at the time); the cutover itself;
