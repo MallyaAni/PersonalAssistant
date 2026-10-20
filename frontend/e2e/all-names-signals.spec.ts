@@ -2,7 +2,7 @@ import {expect, test, type Page} from '@playwright/test'
 
 const names = ['BUYLOW', 'BUYHIGH', 'SELLLOW', 'SELLHIGH', 'WAIT', 'MISSING']
 const session = '2026-10-13'
-type Fixture = {phase: string; paper: boolean; lost: boolean; expired: boolean; quoteMissing: boolean; liveReads: number; diagnostics: string[]; recordedMode?: 'original' | 'foreign' | 'bytes' | 'late' | 'paged'; recordedReads?: number; originalMode?: 'original' | 'foreign' | 'size'; originalReads?: number; originalDelay?: number; denseMarkers?: boolean; installedHistory?: boolean; numerical?: 'execute' | 'wait'; numericalForeign?: boolean; numericalExpired?: boolean; publicationV2?: boolean; simulationPolicy?: string; signalUntil?: string; allocationUntil?: string; allocationWrong?: boolean; allocationMissing?: boolean; regularFallback?: boolean; publishedPlan?: boolean; independentSizing?: boolean; independentSignalWrong?: boolean; targetWeight?: number; simulationIdentityWrong?: boolean; entryAt?: number; formingSignal?: boolean; chartFrames?: string[]; zoomHistory?: boolean; chartSessions?: number[]; currentSessionBars?: boolean}
+type Fixture = {phase: string; paper: boolean; lost: boolean; expired: boolean; quoteMissing: boolean; liveReads: number; diagnostics: string[]; recordedMode?: 'original' | 'foreign' | 'bytes' | 'late' | 'paged'; recordedReads?: number; originalMode?: 'original' | 'foreign' | 'size'; originalReads?: number; originalDelay?: number; denseMarkers?: boolean; installedHistory?: boolean; numerical?: 'execute' | 'wait'; numericalForeign?: boolean; numericalExpired?: boolean; publicationV2?: boolean; noSellSignals?: boolean; simulationPolicy?: string; signalUntil?: string; allocationUntil?: string; allocationWrong?: boolean; allocationMissing?: boolean; regularFallback?: boolean; publishedPlan?: boolean; independentSizing?: boolean; independentSignalWrong?: boolean; targetWeight?: number; simulationIdentityWrong?: boolean; entryAt?: number; formingSignal?: boolean; chartFrames?: string[]; zoomHistory?: boolean; chartSessions?: number[]; currentSessionBars?: boolean}
 
 // Exercise live signal evidence with deliberately contrary paper allocations and executions.
 async function install(page: Page, baseURL: string, state: Fixture) {
@@ -43,7 +43,7 @@ async function install(page: Page, baseURL: string, state: Fixture) {
             evidence:{grade:'A',inputs_as_of:'2026-10-19',model_position_size:.143,completed_candle_at:new Date(Math.floor((state.entryAt ?? now-100)/900000)*900000).toISOString(),
               features:{ema_21_distance:-.0944},reason:'Original numerical timing recommendation',observed_price:102,waiting_log_utility:state.numerical==='execute' ? -.001 : .001}}}} : undefined,
         identity: {schema: 'strategy-recommendation-publication/1', strategy_identity: 'd'.repeat(64), session: '2026-10-19', policy: 'grade-led-learned-sizing/1', basis: 'account_independent_unit_capital_targets'},
-        grade_signals: Object.fromEntries([...names, 'NEWNAME'].map(ticker => [ticker, {action: ticker === 'SELLLOW' ? 'avoid' : ticker.startsWith('BUY') || ticker === 'NEWNAME' ? 'buy' : 'sell',
+        grade_signals: Object.fromEntries([...names, 'NEWNAME'].map(ticker => [ticker, {action: ticker.startsWith('BUY') || ticker === 'NEWNAME' ? 'buy' : ticker === 'SELLLOW' || state.noSellSignals ? 'avoid' : 'sell',
           grade: ticker.startsWith('BUY') || ticker === 'NEWNAME' ? 'A' : 'C', session: state.independentSignalWrong ? 'foreign' : '2026-10-19', basis: 'observed_close_grade'}])),
         rows: Object.fromEntries([...names, 'NEWNAME'].map(ticker => {const weight = ticker === 'BUYHIGH' ? .143 : ticker === 'NEWNAME' ? .075 : 0; return [ticker, {target_weight: weight,
           evidence: {inputs_as_of: '2026-10-19', grade: ticker.startsWith('BUY') || ticker === 'NEWNAME' ? 'A' : 'C', model_position_size: weight,
@@ -616,10 +616,13 @@ test('All names shows strategy percentages despite unavailable paper funding', a
   await board.getByRole('button', {name: 'Best sells', exact: true}).click()
   await expect(board.locator('tbody tr').first()).toHaveAttribute('data-ticker', 'SELLHIGH')
   await expect(board.getByLabel('SELLHIGH action', {exact: true})).toHaveText('Sell')
+  await expect(board.getByLabel('BUYHIGH action', {exact: true})).toHaveCount(0)
+  await board.getByRole('button', {name: 'All names', exact: true}).click()
   await expect(board.getByLabel('BUYHIGH action', {exact: true})).toHaveText('Buy')
   await expect(board.getByLabel('BUYHIGH model size', {exact: true})).toHaveText('2.5%')
   await board.getByRole('button', {name: 'Best buys', exact: true}).click()
   await expect(board.locator('tbody tr').first()).toHaveAttribute('data-ticker', 'BUYHIGH')
+  await board.getByRole('button', {name: 'All names', exact: true}).click()
   state.independentSignalWrong = true
   await refresh(page, state)
   await expect(board.getByLabel('BUYHIGH model size', {exact: true})).toContainText('Unavailable')
@@ -859,6 +862,53 @@ test('15m historical marker click opens original evidence at the completed-candl
   expect(state.diagnostics).toEqual([])
 })
 
+// Exclude unrelated actions from directional lists and show an honest empty sell result.
+test('Directional tabs contain only matching actions and no sells means an empty list',async ({page,baseURL})=>{
+  const state=fixture()
+  Object.assign(state,{publicationV2:true,phase:'closed'})
+  await install(page,baseURL!,state)
+  await page.goto('/?deskView=strategy#desk')
+  const board=page.getByRole('region',{name:'All names signals',exact:true})
+  await board.getByRole('button',{name:'Best sells',exact:true}).click()
+  await expect(board.locator('tbody tr')).toHaveCount(3)
+  await expect(board.locator('tbody td[aria-label$=" action"]')).toHaveText(['Sell','Sell','Sell'])
+  await expect(board.getByLabel('SELLLOW action',{exact:true})).toHaveCount(0)
+  await board.getByRole('button',{name:'Best buys',exact:true}).click()
+  await expect(board.locator('tbody tr')).toHaveCount(2)
+  await expect(board.locator('tbody td[aria-label$=" action"]')).toHaveText(['Buy','Buy'])
+  state.noSellSignals=true
+  await page.reload()
+  await board.getByRole('button',{name:'Best sells',exact:true}).click()
+  await expect(board.locator('tbody tr')).toHaveCount(0)
+  await expect(board).toContainText('No sell signals in the current strategy publication.')
+  await board.getByRole('button',{name:'All names',exact:true}).click()
+  await expect(board.locator('tbody tr')).toHaveCount(7)
+  await expect(board.getByLabel('SELLLOW action',{exact:true})).toHaveText('Avoid')
+  expect(state.diagnostics).toEqual([])
+})
+
+// Keep a tiny original trade intact while explaining its changing portfolio denominator.
+test('Historical size details distinguish the trade amount from the model position',async ({page,baseURL})=>{
+  const state=fixture()
+  Object.assign(state,{publicationV2:true,phase:'closed'})
+  await install(page,baseURL!,state)
+  await page.route('**/strategy-simulation/BUYHIGH',route=>route.fulfill({json:{schema:'latest-strategy-simulation/1',ticker:'BUYHIGH',policy:'grade-led-learned-sizing/1',start:session,through:session,counterfactual:true,real_orders:false,
+    provenance:{basis:'account_independent_unit_capital_targets',source_record_sha256:'a'.repeat(64),config_sha256:'1'.repeat(64),strategy_identity:'d'.repeat(64),strategy_contract:{schema:'strategy-history-economics-binding/1',strategy_identity:'d'.repeat(64),history_sha256:'2'.repeat(64),audit_sha256:'3'.repeat(64),source_record_sha256:'a'.repeat(64),config_sha256:'1'.repeat(64)}},
+    targets:[],trades:[],splits:[],decisions:[{id:'small-original',ticker:'BUYHIGH',date:session,at:`${session}T14:15:00Z`,action:'BUY',weight:.0007,target_weight:.25,
+      evidence:{reason:'Grade-permitted model allocation increase',inputs_as_of:'2026-10-12',grade:'A',model_position_size:.25,features:{},observed_price:100}}]}}))
+  await page.goto('/?deskView=strategy#desk')
+  await page.getByRole('button',{name:'BUYHIGH',exact:true}).click()
+  const dialog=page.getByRole('dialog',{name:'BUYHIGH history',exact:true})
+  await dialog.getByText('Recommendations',{exact:true}).click()
+  await dialog.locator('button[data-recommendation-id="small-original"]').click()
+  const detail=dialog.getByRole('region',{name:'Recommendation details',exact:true})
+  await expect(detail).toContainText('Buy · Size <0.1%')
+  await expect(detail).toContainText('Model position size 25.0%')
+  await expect(detail).toContainText('Trade amount as a percentage of the portfolio at that time, not the total position.')
+  await expect(detail).toContainText('Buy and sell percentages from different dates cannot be added as share quantities.')
+  expect(state.diagnostics).toEqual([])
+})
+
 // Exercise every chart frame without turning an unconfirmed next-session allocation into an entry.
 test('Chart timeframes preserve size while all frames wait for an actual entry', async ({page, baseURL}) => {
   const state = fixture()
@@ -1024,6 +1074,8 @@ test('All names separates waiting, invalidated and unavailable signals', async (
   await expect(board.locator('tbody tr[data-ticker]').first()).toHaveAttribute('data-ticker', 'BUYLOW')
   state.quoteMissing = true
   await refresh(page, state)
+  await expect(board.locator('tbody tr')).toHaveCount(0)
+  await board.getByRole('button', {name: 'All names', exact: true}).click()
   await expect(board.getByLabel('BUYLOW action', {exact: true})).toContainText('Wait')
   await expect(board.getByLabel('SELLHIGH action', {exact: true})).toContainText('Wait')
   state.quoteMissing = false; state.phase = 'post-market'

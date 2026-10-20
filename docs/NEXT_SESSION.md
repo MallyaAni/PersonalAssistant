@@ -1,5 +1,49 @@
 # Next session
 
+## 2026-10-20 — directional lists and historical amount explanations verified in preview
+
+Human reported Avoid rows under Best sells, tiny Buy sizes and sells larger than
+recent buys. REAL preview reproduced 5buys/0sells while Best sells listed Avoid
+and Buy rows. Fixed frontend filtering to include only the selected direction;
+that direction also supplies its displayed action. Empty current sell publication
+now says No sell signals. All names retains Avoid/Wait/unavailable rows. Original
+source/quote/expiry/grade/size guards and all backend/economic bytes unchanged.
+
+Historical markers remain exact original trade amounts, not total position sizes.
+Details now state each percentage uses portfolio value at that time and cannot
+be added across dates as share quantities. Original5755 actions include2417
+positive amounts below0.1%,2297buys. MU Sep23 Buy0.1478133% had modeltarget24.4914%;
+Sep24 Sell17.1171% reduced toward6.9741%. The tiny addition did not create the full
+position. No new minimum, removal of tiny actions, simulation, account or order.
+Practical tiny-trade churn was NOT solved by changing model policy. Native replay
+caps sells at owned units; no new whole-history ledger audit was run this turn.
+
+Two NEW expected browser REDs retained. First candidate42PASS/3FAIL176.372s:
+two old tests incorrectly expected unrelated rows in filtered tabs; now assert
+their exclusion then use All names for the unchanged content assertions. One
+desktop15m refresh moved view1400.333bars. Chart now stores observed viewport
+before teardown rather than relying only on its disappearing instance.
+Final45 browser cases PASS179.893853s/0skip/flaky/unexpected/diagnostics, including
+both mobile/desktop zoom-refresh checks. TSC/build pass, existing warnings.
+No full backend/model gate rerun for this frontend-only change. Original e7
+11001+100 evidence remains scoped to its exact revision/runtime.
+
+New proof5000B/SHA112ec5af658df664e60947b3c44e4a7b0e1939c622a6c297810b9ae7775736a8:
+research/strategy-action-clarity-proof-2026-10-20.json. CollectorONCE
+/tmp/collect_strategy_action_clarity_20261020.py; red/failedgreen/finalgreen-v2
+results and immutable builds /tmp/strategy-action-clarity-*-20261020* retained.
+REAL Best sells empty and MU Oct19 tinytrade/model25% screenshots+JSON at
+/tmp/strategy-action-clarity-real-ui-20261020-v1, diagnostics[]. Those images prove
+unchanged filtering/details before the separate viewport correction. User is
+actively browsing COHR; preserve selected tab rather than repeatedly navigate it.
+KEEP Vite33452/tunnel70626/symlink/tab4deliverable/tab3handoff. No deployment.
+
+Human reports DeepSeek upgraded. No model/service changed or new runtime identity
+verified here. Before canonical release inspect current model configuration;
+do not reapply old service settings. Existing sizing/timing heads unchanged.
+Actual current regular feed acceptance still waits for naturalOct20 >=09:45ET;
+both prepared bounded scripts remain UNRUN. Same next step/guards below.
+
 ## 2026-10-20 08:30Z — full backend and routing gates passed; real regular entry remains open
 
 Both original e7 gates ended successfully; no evaluation remains active. Exact

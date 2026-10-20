@@ -1057,9 +1057,10 @@ export const TickerChart = ({
       if (shifted >= 0) chart.timeScale().setVisibleLogicalRange({from: savedView.current.range.from + shifted, to: savedView.current.range.to + shifted})
       else frameView()
     } else frameView()
-    // Reveal older stored sessions at the left edge instead of shrinking ten sessions into empty space.
+    // Retain the last observed viewport before a refresh tears down the chart, and reveal older sessions at its edge.
     const observeRange = (range: LogicalRange | null) => {
       if (!range || !holder.current) return
+      savedView.current = {scope, first: Number(barStamp(merged.bars[0], timeframe)), range: {...range}}
       holder.current.dataset.chartFrom = String(range.from)
       holder.current.dataset.chartVisibleBars = String(range.to - range.from)
       if (strategy && timeframe === '15m' && !fullHistory && range.from <= 2
@@ -1068,16 +1069,12 @@ export const TickerChart = ({
     }
     chart.timeScale().subscribeVisibleLogicalRangeChange(observeRange)
     const initialRange = chart.timeScale().getVisibleLogicalRange()
-    if (holder.current && initialRange) {
-      holder.current.dataset.chartFrom = String(initialRange.from)
-      holder.current.dataset.chartVisibleBars = String(initialRange.to - initialRange.from)
-    }
+    observeRange(initialRange)
     // Auto sizing keeps the canvas responsive without resetting the trader's pan or zoom.
     setDrawFailed(false)
 
     return () => {
       chart.timeScale().unsubscribeVisibleLogicalRangeChange(observeRange)
-      savedView.current = {scope, first: Number(barStamp(merged.bars[0], timeframe)), range: chart.timeScale().getVisibleLogicalRange()}
       chart.remove()
       chartRef.current = null
       markersRef.current = null
@@ -1285,6 +1282,7 @@ export const TickerChart = ({
           return <article key={item.id} className="mb-3 last:mb-0">
           <h4 title={`Exact action size ${(item.weight * 100).toPrecision(6)}%`} className={`font-semibold ${item.action === 'Buy' ? 'text-[#248a3d]' : 'text-[#b42318]'}`}>{item.action} · Size {sizePercent(item.weight)}%</h4>
           <p className="text-xs text-[#6e6e73]">{item.simulated ? 'Simulation' : original ? 'Recorded recommendation' : 'Model position'} · {recordedTime(item.at)}</p>
+          {item.simulated && <p className="mt-2 text-xs text-[#6e6e73]">Trade amount as a percentage of the portfolio at that time, not the total position. Buy and sell percentages from different dates cannot be added as share quantities.</p>}
           {selected.originalRef && !original ? <p role="status" className="mt-2">{read?.status==='failed' ? 'Original recommendation unavailable.' : 'Loading original recommendation…'}</p> : item.evidence ? <>
             <p className="mt-2">{item.evidence.reason}</p>
             {item.evidence.grade && <p>Grade {item.evidence.grade}{item.evidence.inputs_as_of ? ` · ${item.evidence.inputs_as_of} close` : ''}</p>}

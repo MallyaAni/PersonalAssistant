@@ -1,0 +1,127 @@
+{
+  "backend_or_economic_code_changed": false,
+  "browser_reports": {
+    "green": {
+      "errors": [],
+      "path": "/tmp/strategy-action-clarity-green-20261020-results.json",
+      "stats": {
+        "duration": 176372.141,
+        "expected": 42,
+        "flaky": 0,
+        "skipped": 0,
+        "startTime": "2026-10-20T10:51:39.338Z",
+        "unexpected": 3
+      }
+    },
+    "green-v2": {
+      "errors": [],
+      "path": "/tmp/strategy-action-clarity-green-v2-20261020-results.json",
+      "stats": {
+        "duration": 179893.853,
+        "expected": 45,
+        "flaky": 0,
+        "skipped": 0,
+        "startTime": "2026-10-20T10:55:31.132Z",
+        "unexpected": 0
+      }
+    },
+    "red": {
+      "errors": [],
+      "path": "/tmp/strategy-action-clarity-red-20261020-results.json",
+      "stats": {
+        "duration": 28466.521,
+        "expected": 0,
+        "flaky": 0,
+        "skipped": 0,
+        "startTime": "2026-10-20T10:50:36.078Z",
+        "unexpected": 2
+      }
+    }
+  },
+  "deployed": false,
+  "failed_candidate": {
+    "contract_cases": 2,
+    "contract_reason": "Old cases expected Buy or Wait rows to remain in a directional tab. They now first assert exclusion, then use All names for the original unchanged content assertions.",
+    "correction": "Cache each observed logical range before chart teardown; do not query the disposed view as its only source.",
+    "zoom_case": 1,
+    "zoom_delta_bars": 1400.3333333333335
+  },
+  "files": {
+    "/tmp/strategy-action-clarity-green-20261020-results.json": {
+      "bytes": 476279,
+      "sha256": "6f5c653136edf0f52f749871a4f191c7174e9885243d47de709929d7818679ce"
+    },
+    "/tmp/strategy-action-clarity-green-v2-20261020-build.log": {
+      "bytes": 15681,
+      "sha256": "dd53858538d72800952e3d69bafae2fecc15f200dbd0fee829f2092dbd7afe97"
+    },
+    "/tmp/strategy-action-clarity-green-v2-20261020-dist/assets/index-Dwzu7m9s.js": {
+      "bytes": 916260,
+      "sha256": "cf4ccac7e5715551076989569b6b865d89fc3b054c93b8d56a0be67a18ac83b2"
+    },
+    "/tmp/strategy-action-clarity-green-v2-20261020-results.json": {
+      "bytes": 568420,
+      "sha256": "580039d96d7000d33bc2dc4997331403a98d152daf0e33f822a79e51cccbbfb8"
+    },
+    "/tmp/strategy-action-clarity-real-ui-20261020-v1/best-sells.json": {
+      "bytes": 493,
+      "sha256": "f909a98ae4895e542448ea183c8308870199259d060656f061f9037cb9212518"
+    },
+    "/tmp/strategy-action-clarity-real-ui-20261020-v1/best-sells.png": {
+      "bytes": 32754,
+      "sha256": "5b6724b54f6bf446e3bf03f696f4983735d3cf5d2ebcabddd54ea8c4f8b45631"
+    },
+    "/tmp/strategy-action-clarity-real-ui-20261020-v1/mu-small-trade.json": {
+      "bytes": 753,
+      "sha256": "7e44090201e075004ddf06b45d95b4748b60e843e4255ad6ed7c364ea955fa9c"
+    },
+    "/tmp/strategy-action-clarity-real-ui-20261020-v1/mu-small-trade.png": {
+      "bytes": 57274,
+      "sha256": "8ce5bcaf8c3e87455dbd024ca3052600175b8b183b400fc5b4a0f33b03039b65"
+    },
+    "/tmp/strategy-action-clarity-red-20261020-results.json": {
+      "bytes": 17909,
+      "sha256": "5ebd7c77a5df29722eca2c9ab7faff1ec0f1e53d12e526639f35c9cd1f268234"
+    },
+    "frontend/e2e/all-names-signals.spec.ts": {
+      "bytes": 79385,
+      "sha256": "bd84f046e82c2f0c1eb9ca8a7144e2579cb2c829e8f5d1067d724dba76cef85a"
+    },
+    "frontend/src/components/DeskPanel/SignalBoard.tsx": {
+      "bytes": 28545,
+      "sha256": "6dac2ca9b3980657b5bb4eb8075acc3b65cf14c6383f465ed0e71f7bcbaab7e8"
+    },
+    "frontend/src/components/DeskPanel/TickerChart.tsx": {
+      "bytes": 105116,
+      "sha256": "f00cdd2c414c16802b1a37d393e57fe2550b00d0c253e9d9f557ec360df56439"
+    }
+  },
+  "historical_inspection": {
+    "MU": {
+      "buy_at": "2026-09-23T15:45:00-04:00",
+      "buy_weight": 0.0014781329594269418,
+      "following_sell_at": "2026-09-24T09:45:00-04:00",
+      "model_target": 0.24491407656339162,
+      "model_target_after_sell": 0.06974109160506776,
+      "sell_weight": 0.17117082181850052
+    },
+    "actions": 5755,
+    "buys_below_0_1_percent": 2297,
+    "new_minimum_trade_policy": false,
+    "positive_below_0_1_percent": 2417,
+    "tiny_actions_removed": false
+  },
+  "limits": [
+    "No new simulation, forecast, account or broker operation",
+    "No claim that percentages from different dates reconcile as share counts",
+    "Practical minimum-trade policy remains unchanged",
+    "Real screenshots verify filtering and details before the separate viewport correction; those display bytes are unchanged in the final candidate",
+    "Actual current regular-session feed acceptance remains unverified",
+    "Existing full backend gates remain their exact original source/runtime evidence; user reports a DeepSeek upgrade, no new model runtime verified here"
+  ],
+  "model_service_changed": false,
+  "observed_at": "2026-10-20T10:58:37.213887+00:00",
+  "schema": "strategy-action-clarity-proof/1",
+  "source_base": "b50e498a123a9aac9e841aff3971bb52b4499b20",
+  "source_state": "uncommitted_frontend_candidate"
+}

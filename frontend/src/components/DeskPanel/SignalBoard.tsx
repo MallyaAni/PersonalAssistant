@@ -244,7 +244,7 @@ export const SignalDetail = ({signals}: {signals: Signals}) => <section aria-lab
   <p className="text-[#6e6e73]">Sell review means reassess or reduce an existing holding. Not a short-sale signal. Strength is the model’s qualitative priority, not a return probability or funded size.</p>
 </section>
 
-// Rank all covered names by fresh directional actionability, independent of the paper account.
+// Rank covered names independently of accounts and restrict each directional tab to its matching actions.
 export const SignalBoard = ({latest, live, allocation, now, onOpen, closes}: {latest: DeskRecord; live: DeskLive; allocation?: DeskModelAllocation; now: number; onOpen: (ticker: string) => void; closes?: Record<string, number | null>}) => {
   const [side, setSide] = useState<Side>('all')
   const [query, setQuery] = useState('')
@@ -259,7 +259,8 @@ export const SignalBoard = ({latest, live, allocation, now, onOpen, closes}: {la
     ? new Date(allocation.entry_assessment!.completed_at!).toLocaleDateString('en-CA', {timeZone: 'America/New_York'}) : null
   // Use directional evidence first, then actual target size for model buy setups, without calling size confidence.
   const selected = (row: Signals) => side === 'buy' ? row.buy : side === 'sell' ? row.sell : row.buy.rank <= row.sell.rank ? row.buy : row.sell
-  const ranked = rows.filter(row => row.ticker.toLowerCase().includes(query.trim().toLowerCase()))
+  const ranked = rows.filter(row => row.ticker.toLowerCase().includes(query.trim().toLowerCase())
+      && (side === 'all' || actionLabel(selected(row).word) === (side === 'buy' ? 'Buy' : 'Sell')))
     .sort((a, b) => selected(a).rank - selected(b).rank
       || (independent && side !== 'sell' && a.plan && b.plan
         ? (modelWeight(latest, allocation, b.ticker, now) ?? 0) - (modelWeight(latest, allocation, a.ticker, now) ?? 0) : 0)
@@ -282,7 +283,7 @@ export const SignalBoard = ({latest, live, allocation, now, onOpen, closes}: {la
     <table aria-label="Ranked stock signals" className="w-full text-left text-xs">
       <thead className="border-y bg-[#f5f5f7]"><tr><th className="p-2">Stock / price</th><th className="p-2">Grade</th><th className="p-2">Action</th><th className="p-2" title="Model position size as a percentage of portfolio capital">{independent ? 'Size %' : 'Position size %'}</th>{showPriority && <th className="p-2">Strength</th>}<th className="p-2">{independent ? '' : 'Reason / timing'}</th></tr></thead>
       <tbody>{ranked.slice(0, visible).map(row => {
-        const action = actionFor(row)
+        const action = side === 'all' ? actionFor(row) : selected(row)
         const label = actionLabel(action.word)
         return <tr key={row.ticker} data-ticker={row.ticker} className="border-t align-top">
         <td className="p-2"><button type="button" className="font-semibold text-[#0071e3]" onClick={() => onOpen(row.ticker)}>{row.ticker}</button><SessionPrice live={live} ticker={row.ticker} now={now} compact close={closes?.[row.ticker]} closeSession={latest.session} /></td>
@@ -293,7 +294,7 @@ export const SignalBoard = ({latest, live, allocation, now, onOpen, closes}: {la
         <td className="max-w-sm p-2">{!independent && <p>{selected(row).reason}</p>}<button type="button" aria-label={`details for ${row.ticker}`} aria-expanded={opened === row.ticker} className="text-[#0071e3]" onClick={() => setOpened(opened === row.ticker ? null : row.ticker)}>Details</button>{opened === row.ticker && <SignalDetail signals={row} />}</td>
       </tr>})}</tbody>
     </table>
-    {!ranked.length && <p className="p-3 text-xs">No matching stocks.</p>}
+    {!ranked.length && <p role="status" className="p-3 text-xs">{query.trim() ? 'No matching stocks.' : side === 'sell' ? 'No sell signals in the current strategy publication.' : side === 'buy' ? 'No buy signals in the current strategy publication.' : 'No matching stocks.'}</p>}
     {independent && <p className="px-3 py-2 text-[11px] text-[#6e6e73]">Size % is the strategy position size, not a profit target.</p>}
     {ranked.length > visible && <button type="button" className="p-3 text-xs text-[#0071e3]" onClick={() => setVisible(value => value + 25)}>Show more · {visible} of {ranked.length}</button>}
   </section>

@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-10-20 — Filter directional actions and explain historical trade percentages
+
+Best buys and Best sells now contain matching actions only. A publication with
+zero sell signals shows an empty result instead of Avoid or Buy rows. Historical
+details distinguish each original trade amount from the model position size;
+original tiny adjustments remain unchanged. The regression check also found a
+15-minute view reset on refresh; caching the observed viewport preserves it.
+
+Two expected REDs and the first candidate's three failures remain preserved.
+The corrected candidate passes all45 browser cases in179.893853s with no skips,
+flaky cases or unexpected diagnostics; TypeScript/build pass. Backend, sizing
+math, trade minimums, accounts and model services are unchanged. Real preview
+verified the empty sell list and original MU size explanation. No deployment or
+current regular-entry acceptance claim. Proof: strategy-action-clarity-proof-
+2026-10-20.json5000B/112ec5af658df664e60947b3c44e4a7b0e1939c622a6c297810b9ae7775736a8.
+
 ## 2026-10-20 — Complete the current backend and routing acceptance gates
 
 Exact e7c91974 passed 11,001 unit tests (93 skipped, 6 expected failures,
