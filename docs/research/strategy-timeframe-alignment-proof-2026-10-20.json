@@ -1,0 +1,263 @@
+{
+  "actual_regular_entry": "UNVERIFIED",
+  "all35_strategy_sources_unchanged": true,
+  "at": "2026-10-20T06:06:33.794543+00:00",
+  "base_revision": "1cf0fe283e1a0c87bda551cc088f249f8fa40f12",
+  "browser": {
+    "corrected_targeted": {
+      "cases": {
+        "Stock charts show Buy and Sell target percentages with grade changes only": true,
+        "Stock charts withhold an incompatible historical simulation": true
+      },
+      "stats": {
+        "duration": 6150.57,
+        "expected": 2,
+        "flaky": 0,
+        "skipped": 0,
+        "startTime": "2026-10-20T06:04:42.013Z",
+        "unexpected": 0
+      }
+    },
+    "final_full": {
+      "cases": {
+        "15m entry markers agree with the live action and never backdate the model size": true,
+        "15m historical marker click opens original evidence at the completed-candle time": true,
+        "15m zoom loads older candles without blank space or refresh jumps at 1280px": true,
+        "15m zoom loads older candles without blank space or refresh jumps at 390px": true,
+        "All names dates the comparison and shows independent model size in row and chart": true,
+        "All names expires its own signal receipt without a network update": true,
+        "All names ranks independent buy and sell signals, with matching details": true,
+        "All names separates waiting, invalidated and unavailable signals": true,
+        "All names shows a dated published plan after regular chart assessments expire": true,
+        "All names shows strategy percentages despite unavailable paper funding": true,
+        "All names withdraws closed-session plan directions when allocation authority is lost": true,
+        "All names withholds expired or foreign model percentages without hiding signal evidence": true,
+        "Chart timeframes preserve size while all frames wait for an actual entry": true,
+        "Current marker restores original numerical recommendation: foreign": true,
+        "Current marker restores original numerical recommendation: original": true,
+        "Current marker restores original numerical recommendation: size": true,
+        "Daily weekly and 15m charts require the same confirmed numerical entry": true,
+        "Dense strategy labels stay readable and every original decision remains inspectable at 1280px": true,
+        "Dense strategy labels stay readable and every original decision remains inspectable at 390px": true,
+        "Historical marker details show the original technical evidence and action size": true,
+        "Independent grade exits show Sell without a fabricated zero-percent trade": true,
+        "Independent publication does not invent numerical entries from display judgments": true,
+        "Independent publication retains original history through a stable economics contract": true,
+        "Independent publication uses its own universe, grades and clocks without a funded record": true,
+        "Installed strategy history remains visible when current allocation expires": true,
+        "Late original-recommendation response stays behind its closed selection": true,
+        "Numerical entries drive the action and 15m marker, with quote and snapshot refusal": true,
+        "Stock charts show Buy and Sell target percentages with grade changes only": false,
+        "Stock charts withhold an incompatible historical simulation": false
+      },
+      "stats": {
+        "duration": 118924.606,
+        "expected": 27,
+        "flaky": 0,
+        "skipped": 0,
+        "startTime": "2026-10-20T06:02:09.787Z",
+        "unexpected": 2
+      }
+    },
+    "first": {
+      "cases": {
+        "15m entry markers agree with the live action and never backdate the model size": true,
+        "15m historical marker click opens original evidence at the completed-candle time": true,
+        "15m zoom loads older candles without blank space or refresh jumps at 1280px": true,
+        "15m zoom loads older candles without blank space or refresh jumps at 390px": true,
+        "All names dates the comparison and shows independent model size in row and chart": true,
+        "All names expires its own signal receipt without a network update": true,
+        "All names ranks independent buy and sell signals, with matching details": true,
+        "All names separates waiting, invalidated and unavailable signals": true,
+        "All names shows a dated published plan after regular chart assessments expire": true,
+        "All names shows strategy percentages despite unavailable paper funding": true,
+        "All names withdraws closed-session plan directions when allocation authority is lost": true,
+        "All names withholds expired or foreign model percentages without hiding signal evidence": true,
+        "Chart timeframes preserve size while all frames wait for an actual entry": true,
+        "Current marker restores original numerical recommendation: foreign": true,
+        "Current marker restores original numerical recommendation: original": true,
+        "Current marker restores original numerical recommendation: size": true,
+        "Daily weekly and 15m charts require the same confirmed numerical entry": true,
+        "Dense strategy labels stay readable and every original decision remains inspectable at 1280px": true,
+        "Dense strategy labels stay readable and every original decision remains inspectable at 390px": true,
+        "Historical marker details show the original technical evidence and action size": false,
+        "Independent grade exits show Sell without a fabricated zero-percent trade": true,
+        "Independent publication does not invent numerical entries from display judgments": true,
+        "Independent publication retains original history through a stable economics contract": true,
+        "Independent publication uses its own universe, grades and clocks without a funded record": true,
+        "Installed strategy history remains visible when current allocation expires": true,
+        "Late original-recommendation response stays behind its closed selection": true,
+        "Numerical entries drive the action and 15m marker, with quote and snapshot refusal": true,
+        "Stock charts show Buy and Sell target percentages with grade changes only": false,
+        "Stock charts withhold an incompatible historical simulation": false
+      },
+      "stats": {
+        "duration": 128684.504,
+        "expected": 26,
+        "flaky": 0,
+        "skipped": 0,
+        "startTime": "2026-10-20T05:58:41.292Z",
+        "unexpected": 3
+      }
+    },
+    "red": {
+      "cases": {
+        "Daily weekly and 15m charts require the same confirmed numerical entry": false
+      },
+      "stats": {
+        "duration": 10676.468,
+        "expected": 0,
+        "flaky": 0,
+        "skipped": 0,
+        "startTime": "2026-10-20T05:57:24.511Z",
+        "unexpected": 1
+      }
+    }
+  },
+  "canonical_gate": "1cf fullunitFAILED only generated catalogue drift;10982pass/1fail535.33s; routing not run",
+  "catalogue": "Native generated tool page plus5original unit cases PASS; first generation failed missing isolated SECRET_KEY before native page write; corrected fresh process-only random test key, no production credentials",
+  "cohort_statement": "27 passing plus 2 corrected passing cases at identical final built product bytes; not29 in one green cohort",
+  "collector_failure": "First local data-only collector refused legitimate empty stderr before output creation. Failed source retained; only zero-byte diagnostic-file admission corrected. No test or native operation repeated.",
+  "deployed": false,
+  "distinct_final_product_cases": 29,
+  "files": {
+    "collect_strategy_timeframe_alignment_v1_failed_20261020.py": {
+      "bytes": 6095,
+      "path": "/tmp/collect_strategy_timeframe_alignment_v1_failed_20261020.py",
+      "sha256": "2854a9472ab8abb0bf0418f23647740f08fcc02901e56f1f1ebb05e4867efe78"
+    },
+    "docs/TOOL_CATALOG.md": {
+      "bytes": 7152,
+      "path": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/docs/TOOL_CATALOG.md",
+      "sha256": "a22b920c047947839c7b5fff7d1b6004d8f07ebc386fd1914ee380cf1a8a4af4"
+    },
+    "frontend/e2e/all-names-signals.spec.ts": {
+      "bytes": 66017,
+      "path": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/all-names-signals.spec.ts",
+      "sha256": "8e84085cb002296cbb8dbcdc34b8e63dcde224a52f1b50a83a028537cc791554"
+    },
+    "frontend/src/components/DeskPanel/TickerChart.tsx": {
+      "bytes": 99739,
+      "path": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/src/components/DeskPanel/TickerChart.tsx",
+      "sha256": "3556d44c1987d266a01a80b29805b9cbf60f3046f42702dd4b3850c93dd8c53d"
+    },
+    "regenerate_strategy_tool_catalog_20261020.py": {
+      "bytes": 3179,
+      "path": "/tmp/regenerate_strategy_tool_catalog_20261020.py",
+      "sha256": "0ff6f19663ceba9a4ec94bb2dcec671fb6134f19cacc320ff9ea7ae7cf83cae4"
+    },
+    "regenerate_strategy_tool_catalog_v1_failed_20261020.py": {
+      "bytes": 3064,
+      "path": "/tmp/regenerate_strategy_tool_catalog_v1_failed_20261020.py",
+      "sha256": "6041db3a53a7c639eb435f433620df30f4fcf969b19aef6705f27f789e521865"
+    },
+    "runtime-final": {
+      "bytes": 911529,
+      "path": "/tmp/strategy-timeframe-v2-green-20261020-dist/assets/index-t8TZbpxh.js",
+      "sha256": "be1e76f2bb683a5f8a51aafda98dde79370776b335115020eefd323679d02e46"
+    },
+    "runtime-first": {
+      "bytes": 911542,
+      "path": "/tmp/strategy-timeframe-green-20261020-dist/assets/index-Ckch2axL.js",
+      "sha256": "9d06b3ee8880e564865740b0b31d834babdeaf9aa3e442a4e6dcf3d420eb4217"
+    },
+    "runtime-red": {
+      "bytes": 911636,
+      "path": "/tmp/original-entry-ui-20261020-dist/assets/index-BC54DTAT.js",
+      "sha256": "556a63a4574f728cd7296441aa144f55db7869e81d31d349731a54fe20f6c27c"
+    },
+    "strategy-timeframe-green-20261020-results.json": {
+      "bytes": 450137,
+      "path": "/tmp/strategy-timeframe-green-20261020-results.json",
+      "sha256": "8b3e00dbe5347468ccc99ee3cd2be6a3e6572f412a1e445efb3f6b691bfcbe34"
+    },
+    "strategy-timeframe-real-ui-20261020-v2/15m-original-details.png": {
+      "bytes": 47581,
+      "path": "/tmp/strategy-timeframe-real-ui-20261020-v2/15m-original-details.png",
+      "sha256": "b6123b786d9d4c9cfa6eb3b1caa69298ad8493db2bd5ca8c40f9f60bc721ffc4"
+    },
+    "strategy-timeframe-real-ui-20261020-v2/evidence.json": {
+      "bytes": 924,
+      "path": "/tmp/strategy-timeframe-real-ui-20261020-v2/evidence.json",
+      "sha256": "bd0c847b1c2e39747d7353ac1cbe7d4b3e488fb7ecb251f7d1e21d593d85b664"
+    },
+    "strategy-timeframe-red-20261020-results.json": {
+      "bytes": 10192,
+      "path": "/tmp/strategy-timeframe-red-20261020-results.json",
+      "sha256": "5eeb684dbd658d1ddbafad9c829f7785328f27d358bd47d14ffcd245916a2469"
+    },
+    "strategy-timeframe-v2-browser-20261020.log": {
+      "bytes": 20703,
+      "path": "/tmp/strategy-timeframe-v2-browser-20261020.log",
+      "sha256": "db9ea1100f3c52e23e630f75fea84b395099a870675c47b91004ef05c31ce49d"
+    },
+    "strategy-timeframe-v2-build-20261020.log": {
+      "bytes": 15191,
+      "path": "/tmp/strategy-timeframe-v2-build-20261020.log",
+      "sha256": "a0ac402857fb9cec4ce5d3d4ae4ed6b235d320ab6a2f88d1a49633f52a5d8d92"
+    },
+    "strategy-timeframe-v2-green-20261020-results.json": {
+      "bytes": 445731,
+      "path": "/tmp/strategy-timeframe-v2-green-20261020-results.json",
+      "sha256": "c1234aa01172e48da9f0055e7a92e62b0bd280883bf0d2327d11e33f5e35e5a9"
+    },
+    "strategy-timeframe-v3-browser-20261020.log": {
+      "bytes": 1383,
+      "path": "/tmp/strategy-timeframe-v3-browser-20261020.log",
+      "sha256": "16824a2a1edbbbc6be2e71b781f05ae50c8aa246c1ed280c2358af1a9a2fdc91"
+    },
+    "strategy-timeframe-v3-targeted-20261020-results.json": {
+      "bytes": 93224,
+      "path": "/tmp/strategy-timeframe-v3-targeted-20261020-results.json",
+      "sha256": "364369f2d543ac1221e1e6611f6384c7e866b8ee67feb698c276fff6d92787f9"
+    },
+    "strategy-tool-catalog-20261020-v1/stderr": {
+      "bytes": 1723,
+      "path": "/tmp/strategy-tool-catalog-20261020-v1/stderr",
+      "sha256": "1440f600c8ae2008cfaa9048e0044de3794f06279f18423ea8a6eb586df8f8b8"
+    },
+    "strategy-tool-catalog-20261020-v1/stdout": {
+      "bytes": 0,
+      "path": "/tmp/strategy-tool-catalog-20261020-v1/stdout",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "strategy-tool-catalog-20261020-v2/stderr": {
+      "bytes": 0,
+      "path": "/tmp/strategy-tool-catalog-20261020-v2/stderr",
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "strategy-tool-catalog-20261020-v2/stdout": {
+      "bytes": 7667,
+      "path": "/tmp/strategy-tool-catalog-20261020-v2/stdout",
+      "sha256": "33b4494adabcd00d951ef26fef295b4250bb0f858b0508589deeb3c84633de48"
+    }
+  },
+  "first_failure": "daily chart Buy14.3 while original numerical entry Wait14.3",
+  "historical_simulation_unchanged": true,
+  "real_preview": {
+    "actualRegularEntry": false,
+    "at": "2026-10-20T06:05:38.900Z",
+    "diagnostics": [],
+    "frames": [
+      {
+        "frame": "daily",
+        "header": "Wait \u00b7 Size 10.6%"
+      },
+      {
+        "frame": "weekly",
+        "header": "Wait \u00b7 Size 10.6%"
+      },
+      {
+        "frame": "15m",
+        "header": "Wait \u00b7 Size 10.6%"
+      }
+    ],
+    "originalDetails": "\u00d7\nBuy \u00b7 Size 2.5%\n\nSimulation \u00b7 Oct 16, 2026, 9:45:00 AM EDT\n\nGrade-permitted model allocation increase\n\nGrade A \u00b7 2026-10-15 close\n\nModel position size 25.0%\n\nCandle close $56.70 \u00b7 adjusted historical basis\n\nFrom 252-session high\n-20.19%\nPrice vs 21-session EMA\n-9.44%\nPrice vs 63-session EMA\n1.50%\n20-session return\n-3.95%\nDaily volatility \u00b7 20 sessions\n3.64%\n\nActing now matched or exceeded the model\u2019s expected net growth from waiting one 15-minute candle.",
+    "realData": true,
+    "url": "http://localhost:5173/?deskView=strategy#desk"
+  },
+  "schema": "strategy-timeframe-alignment-proof/1",
+  "source_capture_limit": "Earlier uncommitted test source was not separately frozen; exact failed runtime bytes/results/screens/traces retained. Current final source is fully pinned here.",
+  "test_corrections": "Two legacy fixtures really confirm current entries but contain only old candles; preserve Buy header, refuse backdating marker. Original historical action/grade/detail assertions retained.",
+  "whole_live_trading_readiness": "UNVERIFIED"
+}

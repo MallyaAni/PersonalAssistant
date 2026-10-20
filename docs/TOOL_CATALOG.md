@@ -85,7 +85,7 @@ outcome and means the turn is answered as an ordinary reply.
 
 | tool | what it does | arguments | loaded | effect |
 | --- | --- | --- | --- | --- |
-| `manage_check_ins` | Check-ins: the assistant coming back later, on its own, to ask how something went - a trip, an interview, a hard week | `after_days`, `hour`, `kind`, `mode`, `question`, `subject` | catalogued | `write` · `fast` · `creates` |
+| `manage_check_ins` | Read or change check-ins: future questions that the assistant initiates about how something went or how a person is doing | `after_days`, `hour`, `kind`, `mode`, `question`, `subject` | catalogued | `write` · `fast` · `creates` |
 | `manage_runs` | Background runs: work the assistant is finishing on its own after a turn ran out of time, or an agent's review or investigation | `mode`, `which` | catalogued | `write` · `fast` · `creates` |
 | `manage_tasks` | Acts on a reminder or scheduled message this person already set up | `cadence`, `hour`, `instruction`, `minute`, `on_date`, `operation`, `weekday`, `which` | always | `write` · `fast` |
 | `schedule_task` | Set something up to happen later or on a schedule: a reminder, a daily or weekly message, a recurring check or lookup, anything they want done at a stated time rather than now | `cadence`, `hour`, `instruction`, `minute`, `on_date`, `weekday` | always | `write` · `fast` · `creates` |

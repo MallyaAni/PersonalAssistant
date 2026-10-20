@@ -349,7 +349,7 @@ const targetLabel = (target: Pick<StrategyChartTarget, 'action' | 'weight'>): st
 // Retain a positive model adjustment without rounding its displayed action to zero.
 const sizePercent = (weight: number): string => weight > 0 && weight < .001 ? '<0.1' : (weight * 100).toFixed(1)
 
-// Mark source-matched simulated action sizes, never treating a zero remaining position as a zero-sized sell.
+// Mark original simulated actions and confirmed current entries consistently across every timeframe.
 const strategyTargetMarkers = (simulation: DeskStrategyStock | null | undefined, current: StrategyChartTarget | null | undefined, bars: DeskChartBar[], timeframe: Timeframe): ChartMarker[] => {
   const targets: (StrategyChartTarget & {decision?: DeskStrategyDecision})[] = []
   if (strategyHistoryMatches(simulation, current) && simulation) {
@@ -360,8 +360,10 @@ const strategyTargetMarkers = (simulation: DeskStrategyStock | null | undefined,
       targets.push({ticker: row.ticker, date: row.date, at: row.at, validUntil: recordedInstant(row.valid_until) && Date.parse(row.valid_until!) > Date.parse(row.at) ? row.valid_until! : null, action: row.action === 'BUY' ? 'Buy' : 'Sell', weight: row.weight, record: current?.record ?? simulation.provenance.strategy_identity!, decision: row})
     }
   }
-  if (current?.action === 'Buy' && current.weight > 0 && (timeframe !== '15m' || current.entry))
-    targets.push(timeframe === '15m' ? {...current, at: current.entry!.at, validUntil: current.entry!.validUntil} : current)
+  if (current?.action === 'Buy' && current.weight > 0 && current.entry) {
+    const entrySession = recordedSession(current.entry.at)
+    if (entrySession) targets.push({...current, date:entrySession, at:current.entry.at, validUntil:current.entry.validUntil})
+  }
   const markers = new Map<string, ChartMarker>()
   for (const target of targets.sort((a, b) => Date.parse(a.at) - Date.parse(b.at))) {
     if (!target.action) continue
@@ -1186,8 +1188,8 @@ export const TickerChart = ({
   if (strategy) return <section className="mb-4" aria-label={`${ticker} price chart`}>
     {live && <div className="mb-2 text-xs"><SessionPrice live={live} ticker={ticker} now={now} close={close} closeSession={closeSession} compact /></div>}
     <div className="mb-2 flex flex-wrap items-center justify-between gap-2 text-xs">
-      {modelTarget?.action === 'Buy' && <span title={timeframe === '15m' ? modelTarget.entry ? `${recordedTime(modelTarget.entry.at)} · Confirmed entry; ${recordedTime(modelTarget.entry.validUntil)} expiry` : modelTarget.entryReason : `${recordedTime(modelTarget.at)} · Model position size as a share of portfolio capital`} className={`font-semibold ${timeframe === '15m' && !modelTarget.entry ? 'text-[#6e6e73]' : 'text-[#248a3d]'}`} aria-label={`${ticker} current chart target`}>
-        {timeframe === '15m' && !modelTarget.entry ? `Wait · Size ${(modelTarget.weight * 100).toFixed(1)}%` : targetLabel(modelTarget)}
+      {modelTarget?.action === 'Buy' && <span title={modelTarget.entry ? `${recordedTime(modelTarget.entry.at)} · Confirmed entry; ${recordedTime(modelTarget.entry.validUntil)} expiry` : modelTarget.entryReason} className={`font-semibold ${!modelTarget.entry ? 'text-[#6e6e73]' : 'text-[#248a3d]'}`} aria-label={`${ticker} current chart target`}>
+        {!modelTarget.entry ? `Wait · Size ${sizePercent(modelTarget.weight)}%` : targetLabel(modelTarget)}
       </span>}
       <div role="group" aria-label="Chart range" className="flex gap-2">
         <button type="button" aria-pressed={!fullHistory} onClick={() => resetRange(false)}>Recent</button>

@@ -1,5 +1,31 @@
 # Changelog
 
+## 2026-10-20 — Align current chart actions across timeframes
+
+Daily and weekly charts previously displayed Buy while the same numerical entry
+said Wait on15m. Every frame now requires the same confirmed entry. Current
+markers use its actual session/time rather than the earlier model-input close;
+without a matching current candle they are not backdated. Historical simulation
+actions and original technical explanations are unchanged. Tiny positive model
+sizes display<0.1% consistently, including when waiting.
+
+The original daily Buy14.3/Wait14.3 failure is preserved. At identical final
+built product bytes,27 browser cases passed plus2 corrected legacy-fixture cases
+passed separately (29 distinct, not one all-green cohort). Those fixtures confirm
+a current entry but supply only old candles: Buy header stays, backdated marker
+is refused. Original historical labels, grades and explanations remain asserted.
+The new numerical Wait→Buy case checks exact daily/weekly/15m marker sessions.
+TSC/build pass. Actual signed-in HPE preview now reads Wait10.6% on allthree
+frames, retaining its original Oct16 09:45Buy2.5% explanation; diagnostics empty.
+This overnight check does not verify an actual current regular-session entry.
+
+The prior full unit gate found only generated tool-catalogue drift after the
+description change:10982pass/1fail. Native regeneration and all5catalogue tests
+pass; initial isolated generation lacked SECRET_KEY and is retained as failed.
+Production was not changed. Diagram impact:NONE — existing chart entry/evidence
+paths and renderer unchanged. Full new-tree gates and real current-feed preview
+remain required before canonical deployment.
+
 ## 2026-10-20 — Repair two observed release-gate failures
 
 Passive class generic types are normalized to the installed Mermaid renderer's

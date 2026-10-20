@@ -2,7 +2,7 @@ import {expect, test, type Page} from '@playwright/test'
 
 const names = ['BUYLOW', 'BUYHIGH', 'SELLLOW', 'SELLHIGH', 'WAIT', 'MISSING']
 const session = '2026-10-13'
-type Fixture = {phase: string; paper: boolean; lost: boolean; expired: boolean; quoteMissing: boolean; liveReads: number; diagnostics: string[]; originalMode?: 'original' | 'foreign' | 'size'; originalReads?: number; originalDelay?: number; denseMarkers?: boolean; installedHistory?: boolean; numerical?: 'execute' | 'wait'; numericalForeign?: boolean; numericalExpired?: boolean; publicationV2?: boolean; simulationPolicy?: string; signalUntil?: string; allocationUntil?: string; allocationWrong?: boolean; allocationMissing?: boolean; regularFallback?: boolean; publishedPlan?: boolean; independentSizing?: boolean; independentSignalWrong?: boolean; targetWeight?: number; simulationIdentityWrong?: boolean; entryAt?: number; formingSignal?: boolean; chartFrames?: string[]; zoomHistory?: boolean; chartSessions?: number[]}
+type Fixture = {phase: string; paper: boolean; lost: boolean; expired: boolean; quoteMissing: boolean; liveReads: number; diagnostics: string[]; originalMode?: 'original' | 'foreign' | 'size'; originalReads?: number; originalDelay?: number; denseMarkers?: boolean; installedHistory?: boolean; numerical?: 'execute' | 'wait'; numericalForeign?: boolean; numericalExpired?: boolean; publicationV2?: boolean; simulationPolicy?: string; signalUntil?: string; allocationUntil?: string; allocationWrong?: boolean; allocationMissing?: boolean; regularFallback?: boolean; publishedPlan?: boolean; independentSizing?: boolean; independentSignalWrong?: boolean; targetWeight?: number; simulationIdentityWrong?: boolean; entryAt?: number; formingSignal?: boolean; chartFrames?: string[]; zoomHistory?: boolean; chartSessions?: number[]; currentSessionBars?: boolean}
 
 // Exercise live signal evidence with deliberately contrary paper allocations and executions.
 async function install(page: Page, baseURL: string, state: Fixture) {
@@ -85,7 +85,9 @@ async function install(page: Page, baseURL: string, state: Fixture) {
     else if (path.includes('/chart/')) {
       const frame = url.searchParams.get('timeframe') ?? 'daily'
       state.chartFrames?.push(frame)
-      const dates = frame === 'weekly' ? ['2026-10-09', '2026-10-16'] : frame === '15m' ? [session] : ['2026-10-09', '2026-10-12', session, '2026-10-14', '2026-10-15']
+      const entryDay = new Date(state.entryAt ?? now).toLocaleDateString('en-CA', {timeZone: 'America/New_York'})
+      const dates = state.currentSessionBars && frame !== '15m' ? [...new Set(frame === 'weekly' ? [entryDay] : ['2026-10-19', entryDay])]
+        : frame === 'weekly' ? ['2026-10-09', '2026-10-16'] : frame === '15m' ? [session] : ['2026-10-09', '2026-10-12', session, '2026-10-14', '2026-10-15']
       const timedBars = frame === '15m' && state.entryAt !== undefined ? [-2, -1, 0].map(offset => {
         const start = Math.floor(state.entryAt! / 900000) * 900000 + offset * 900000
         return {date: new Date(start).toLocaleDateString('en-CA', {timeZone: 'America/New_York'}), time: new Date(start).toISOString(), open: 100, high: 105, low: 99, close: 102, volume: 100}
@@ -184,6 +186,38 @@ test('Numerical entries drive the action and 15m marker, with quote and snapshot
   await refresh(page,state)
   await expect(board.getByLabel('BUYHIGH action',{exact:true})).toHaveText('Wait')
   await expect(board.getByLabel('BUYHIGH model size',{exact:true})).toHaveText('14.3%')
+  expect(state.diagnostics).toEqual([])
+})
+
+// Every chart frame must wait for the same numerical entry and mark its actual session after confirmation.
+test('Daily weekly and 15m charts require the same confirmed numerical entry',async ({page,baseURL})=>{
+  const state=fixture()
+  Object.assign(state,{publicationV2:true,numerical:'wait',entryAt:Date.now()-100,currentSessionBars:true})
+  await install(page,baseURL!,state)
+  await page.goto('/?deskView=strategy#desk')
+  const board=page.getByRole('region',{name:'All names signals',exact:true})
+  const dialog=page.getByRole('dialog',{name:'BUYHIGH history',exact:true})
+  await expect(board.getByLabel('BUYHIGH action',{exact:true})).toHaveText('Wait')
+  await board.getByRole('button',{name:'BUYHIGH',exact:true}).click()
+  for (const button of ['D','W','15m']) {
+    await dialog.getByRole('group',{name:'Chart timeframe',exact:true}).getByRole('button',{name:button,exact:true}).click()
+    await expect(dialog.getByLabel('BUYHIGH current chart target',{exact:true})).toHaveText('Wait · Size 14.3%')
+    await expect(dialog.getByLabel('BUYHIGH target chart markers',{exact:true})).toHaveText('')
+  }
+  await dialog.getByRole('button',{name:'Close',exact:true}).click()
+  state.numerical='execute'
+  await refresh(page,state)
+  await expect(board.getByLabel('BUYHIGH action',{exact:true})).toHaveText('Buy')
+  await board.getByRole('button',{name:'BUYHIGH',exact:true}).click()
+  for (const button of ['D','W','15m']) {
+    await dialog.getByRole('group',{name:'Chart timeframe',exact:true}).getByRole('button',{name:button,exact:true}).click()
+    await expect(dialog.getByLabel('BUYHIGH current chart target',{exact:true})).toHaveText('Buy · Size 14.3%')
+    const markers=dialog.getByLabel('BUYHIGH target chart markers',{exact:true})
+    await expect(markers).toHaveText('Buy · Size 14.3%')
+    const day=new Date(state.entryAt!).toLocaleDateString('en-CA',{timeZone:'America/New_York'})
+    const expected=button==='15m' ? Math.floor(state.entryAt!/900000)*900 : Date.parse(day+'T00:00:00Z')/1000
+    await expect(markers).toHaveAttribute('data-marker-times',String(expected))
+  }
   expect(state.diagnostics).toEqual([])
 })
 
@@ -551,7 +585,10 @@ test('Stock charts show Buy and Sell target percentages with grade changes only'
   await expect(dialog.getByRole('checkbox', {name: 'Buy / Sell sizes', exact: true})).toBeChecked()
   await expect(dialog.getByLabel('BUYHIGH target chart markers', {exact: true})).toContainText('Buy · Size 2.0%')
   await expect(dialog.getByLabel('BUYHIGH target chart markers', {exact: true})).toContainText('Sell · Size 2.0%')
-  await expect.poll(() => page.evaluate(() => (window as Window & {targetDraws?: string[]}).targetDraws)).toEqual(expect.arrayContaining(['Buy · Size 2.0%', 'Sell · Size 2.0%', 'Buy · Size 2.5%', 'C→A', 'A→B']))
+  await expect.poll(() => page.evaluate(() => (window as Window & {targetDraws?: string[]}).targetDraws)).toEqual(expect.arrayContaining(['Buy · Size 2.0%', 'Sell · Size 2.0%', 'C→A', 'A→B']))
+  // This fixture confirms an entry today, but its old price candles cannot receive today's marker.
+  await expect(dialog.getByLabel('BUYHIGH current chart target', {exact: true})).toHaveText('Buy · Size 2.5%')
+  await expect(dialog.getByLabel('BUYHIGH target chart markers', {exact: true})).not.toContainText('Buy · Size 2.5%')
   await expect(dialog).not.toContainText('BUY 7 sh')
   await expect(dialog).not.toContainText('SELL 5 sh')
   await expect(dialog.getByRole('checkbox', {name: 'Actual paper executions', exact: true})).toHaveCount(0)
@@ -564,7 +601,7 @@ test('Stock charts show Buy and Sell target percentages with grade changes only'
   await dialog.getByRole('button', {name: 'W', exact: true}).click()
   await expect(dialog.getByTestId('ticker-chart-canvas')).toHaveAttribute('data-chart-timeframe', 'weekly')
   await expect(dialog.getByLabel('BUYHIGH target chart markers', {exact: true})).toContainText('Sell · Size 2.0%')
-  await expect(dialog.getByLabel('BUYHIGH target chart markers', {exact: true})).toContainText('Buy · Size 2.5%')
+  await expect(dialog.getByLabel('BUYHIGH target chart markers', {exact: true})).not.toContainText('Buy · Size 2.5%')
   await dialog.getByRole('button', {name: '15m', exact: true}).click()
   await expect(dialog.getByTestId('ticker-chart-canvas')).toHaveAttribute('data-chart-timeframe', '15m')
   await expect(dialog.getByLabel('BUYHIGH target chart markers', {exact: true})).toHaveText('')
@@ -573,7 +610,7 @@ test('Stock charts show Buy and Sell target percentages with grade changes only'
   await page.reload()
   await page.getByRole('button', {name: 'BUYHIGH', exact: true}).click()
   await expect(page.getByLabel('BUYHIGH current chart target', {exact: true})).toHaveText('Buy · Size 14.3%')
-  await expect.poll(() => page.evaluate(() => (window as Window & {targetDraws?: string[]}).targetDraws)).toContain('Buy · Size 14.3%')
+  await expect(page.getByLabel('BUYHIGH target chart markers', {exact: true})).not.toContainText('Buy · Size 14.3%')
   await expect(page.getByLabel('BUYHIGH target chart markers', {exact: true})).not.toContainText('Buy · Size 2.5%')
   expect(state.diagnostics).toEqual([])
 })
@@ -588,7 +625,9 @@ test('Stock charts withhold an incompatible historical simulation', async ({page
   await page.getByRole('button', {name: 'BUYHIGH', exact: true}).click()
   const dialog = page.getByRole('dialog', {name: 'BUYHIGH history'})
   await expect(dialog).toContainText('Size history unavailable')
-  await expect(dialog.getByLabel('BUYHIGH target chart markers', {exact: true})).toContainText('Buy · Size 2.5%')
+  // Current entry confirmation is independent of whether the chart has a matching current-session candle.
+  await expect(dialog.getByLabel('BUYHIGH current chart target', {exact: true})).toHaveText('Buy · Size 2.5%')
+  await expect(dialog.getByLabel('BUYHIGH target chart markers', {exact: true})).toHaveText('')
   await expect(dialog.getByLabel('BUYHIGH target chart markers', {exact: true})).not.toContainText('Buy · Size 2.0%')
   await expect(dialog.getByLabel('BUYHIGH simulated chart markers', {exact: true})).toHaveCount(0)
   await expect(dialog).not.toContainText('BUY 7 sh')
@@ -619,7 +658,8 @@ test('Historical marker details show the original technical evidence and action 
   await page.getByRole('button', {name: 'BUYHIGH', exact: true}).click()
   const dialog = page.getByRole('dialog', {name: 'BUYHIGH history'})
   await dialog.getByText('Recommendations', {exact: true}).click()
-  await expect(dialog.getByLabel('BUYHIGH target chart markers', {exact: true})).toContainText('Buy · Size <0.1%')
+  await expect(dialog.getByLabel('BUYHIGH current chart target', {exact: true})).toHaveText('Wait · Size <0.1%')
+  await expect(dialog.getByLabel('BUYHIGH target chart markers', {exact: true})).not.toContainText('Buy · Size <0.1%')
   await expect(dialog.getByLabel('BUYHIGH target chart markers', {exact: true})).not.toContainText('Buy · Size 0.0%')
   await dialog.locator('button[data-recommendation-id="target-buy"]').click()
   const details = dialog.getByRole('region', {name: 'Recommendation details'})
@@ -689,8 +729,8 @@ test('15m historical marker click opens original evidence at the completed-candl
   expect(state.diagnostics).toEqual([])
 })
 
-// Exercise all chart frames without turning a next-session allocation into a confirmed intraday entry.
-test('Chart timeframes preserve size while 15m waits for an actual entry', async ({page, baseURL}) => {
+// Exercise every chart frame without turning an unconfirmed next-session allocation into an entry.
+test('Chart timeframes preserve size while all frames wait for an actual entry', async ({page, baseURL}) => {
   const state = fixture()
   state.independentSizing = true
   state.publishedPlan = true
@@ -704,10 +744,8 @@ test('Chart timeframes preserve size while 15m waits for an actual entry', async
     await dialog.getByRole('group', {name: 'Chart timeframe', exact: true}).getByRole('button', {name: button, exact: true}).click()
     await expect(dialog.getByTestId('ticker-chart-canvas')).toHaveAttribute('data-chart-timeframe', frame)
     await expect(dialog.getByTestId('ticker-chart-canvas')).toHaveAttribute('data-bar-count', /^[1-9]\d*$/)
-    if (frame === '15m') {
-      await expect(dialog.getByLabel('BUYHIGH current chart target', {exact: true})).toHaveText('Wait · Size 2.5%')
-      await expect(dialog.getByLabel('BUYHIGH target chart markers', {exact: true})).toHaveText('')
-    } else await expect(dialog.getByLabel('BUYHIGH current chart target', {exact: true})).toHaveText('Buy · Size 2.5%')
+    await expect(dialog.getByLabel('BUYHIGH current chart target', {exact: true})).toHaveText('Wait · Size 2.5%')
+    await expect(dialog.getByLabel('BUYHIGH target chart markers', {exact: true})).toHaveText('')
   }
   await dialog.getByRole('button', {name: '60 sessions', exact: true}).click()
   await expect(dialog.getByRole('button', {name: '60 sessions', exact: true})).toHaveAttribute('aria-pressed', 'true')

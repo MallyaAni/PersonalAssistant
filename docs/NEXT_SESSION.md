@@ -1,5 +1,49 @@
 # Next session
 
+## 2026-10-20 06:08Z — all-frame chart entry consistency verified; generated catalogue corrected
+
+HEAD1cf backend full gate ENDED/FAILED only generated TOOL_CATALOG drift:
+10982PASS/1FAIL/93skip/6xfail/439warnings/25subtests535.33s; routing DID NOT start.
+Native generator now refreshes exact tool row,5original catalogue testsPASS.24s.
+First isolated generation failed missing SECRET_KEY before generator write;
+v2uses fresh process-only random key/no production credentials. Mac generator
+also refused missinghttpx before mutation; no dependency install. Preserve roots
+/tmp and Spark strategy-tool-catalog-20261020-v1/v2. Do not repeat for docs.
+
+NEW frontend fix: D/W no longer claim Buy when current15m numerical entry Wait.
+All frames share entry confirmation and actual entry session/time; no current
+marker on old candles. Tiny positive Wait size<0.1% remains nonzero. No change to
+historical5755actions/simulation/economic35sources/initial171058B80476 snapshot.
+Expected REDBC54 preserved. First changed runtime Ckch2axL:26PASS/3FAIL retained;
+final productt8TZbpxh:27PASS/2FAIL (two wrong legacy fixture header assertions).
+Those fixtures actually CONFIRM current entries but have old candles: corrected
+tests keep Buy header/refuse backdated marker. Targeted2PASS6.2s at IDENTICAL
+final JS bytes, so29distinct accepted cases across TWOcohorts, NOT29onegreenrun.
+All original historical labels/grades/details checked; new Wait→Buy all-frame
+case checks exact original session/time. No guard/cap/source-fidelity weakening.
+
+Final index-t8TZbpxh.js911529B/SHA
+be1e76f2bb683a5f8a51aafda98dde79370776b335115020eefd323679d02e46;
+TSC/build2.42s/diffPASS(existingwarnings). Real signed-in HPE D/W/15m all
+Wait10.6%, originalOct16 09:45Buy2.5%/GradeA/model25%/EMA21−9.44/EMA63+1.50
+details remain accessible, diagnostics[]. Screens/DOM
+/tmp/strategy-timeframe-real-ui-20261020-v2; tab4 deliverable/tab3handoff preserved.
+Proof research/strategy-timeframe-alignment-proof-2026-10-20.json14651B/SHA
+cd2f9287ce2ea295be9a64b59dc184946e350ff090b84d7ea8cfc65986dd79af.
+First local collector refused empty stderr before output; failed source retained,
+only zero-byte diagnostic admission corrected; no runtime/test replay.
+Earlier uncommitted failed test source wasn't separately frozen; exact failed
+built bytes/results/screens/traces remain, current final source fully pinned.
+
+NEXT commit/push this frontend+catalogue correction; run ONE new exact-source
+unit→routing sequence. Old1cf gate is CLOSED, not running. Rebind approval bundle
+target ONLY; config/release/evidence strings/reviewSHA stay byte-identical. Then
+real naturally current09:45ET GET-only independent timing→API→preview. No fake
+clock/replay/provider/key/subscription change/newwatcher/marketCLIprobe. Existing
+Vite33452/tunnel70626/symlink KEEP; paperLAST/no reset/realorders. Not deployed or
+whole live-ready. Scalar original getter/preview bridge/current history listing
+still open. All failed evidence retained. Onlyscripts/deploy.sh, never main wholesale.
+
 ## 2026-10-20 05:51Z — Two release failures repaired; final source gates next
 
 Basef3e43234 initial installation/API/rollback is privately verified; candidate
