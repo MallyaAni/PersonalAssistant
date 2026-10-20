@@ -27,10 +27,17 @@ reconciled nothing in main deploys anyway.
 the opencode-vs-dsh numbers and the verdict: opencode primary, dsh second
 opinion). Remaining gate miss: `manage_check_ins` routing 3/4.
 
-**Observed, not changed:** spark1's `effort-inject.service` for opencode now
-runs with `INJECT_REASONING_EFFORT=max` (restarted 08:04:58 ET today, not by
-this session); opencode on spark1 sends `max_tokens` 32000, so that budget
-holds at max.
+**Corrected:** spark1's `effort-inject.service` for opencode has run with
+`INJECT_REASONING_EFFORT=max` since 2026-08-31 (unit file mtime), not
+`high`; opencode sends `max_tokens` 32000, which holds at max. Its three
+restarts this morning were `opencode-watchdog.sh`'s orphan check: it saw
+requests running on :8000 (this session's gate tests and probes, which do
+not go through the injector) with a quiet injector log and restarted a
+healthy injector each time. That check would also have severed a real
+opencode think longer than 12 minutes. `~/.local/bin/opencode-watchdog.sh`
+now only logs when the injector holds no socket to vLLM and never restarts
+it (backup `~/dsv41/opencode-watchdog.sh.pre-20261020`); the wedged-turn
+check is unchanged.
 
 ## 2026-10-19 22:56 ET — DeepSeek-V4.1-Flash-1017 is the main model (VERIFIED)
 
