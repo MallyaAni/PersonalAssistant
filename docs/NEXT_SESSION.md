@@ -1,5 +1,63 @@
 # Next session
 
+## 2026-10-20 — whole-dashboard user workflow audit; five preview gaps fixed, material strategy gaps OPEN
+
+Human asked to use the whole dashboard like a trader and find logical gaps.
+Reviewed real signed-in Stocks94 universe, both filters, search/no-match, help,
+HPE current details, AAOI Avoid chart, HPE original15m→D→W→15m details,60-session
+range, incomplete candles, normal refresh, read-only Paper and Archived research.
+This is primary-view/representative-stock coverage, NOT all94 charts manually.
+
+VERIFIED fixes in preview: stale compact prices now visibly say last plus original
+NY time (real HPE56.51 was04:00ET, misleadingly just pre-market after07:00); empty
+directional lists distinguish unavailable recommendations from verified no-sells;
+validated v2 chart headers retain Avoid/Sell/Wait as well as Buy, with no Sell0
+invention; help now describes independent model position size, retrospective trade
+amounts and real ranking/history limits; current details expose exact prior-close
+technical values through the same renderer as original history, without unused
+dash/Strength text. Numerical maths/eligibility/source/expiry guards unchanged.
+
+Five NEW expected browserREDs retained39.330869s. First candidate49PASS/1FAIL
+164.812498s: expanded header affected legacyv1 no-header contract. Restricted the
+new header behavior to validated v2 displayAction; original assertion unchanged.
+Final50 browsercases PASS149.825080s/0skip/flaky/unexpected/diagnostics;5new+45
+regressions, not100distinct tests. TSC/build2.97s pass(existingwarnings).
+New proof11220B/SHA5aac2438540ca735ed7025511c29cb709512b4e17df86644f80d3395c7d25c90,
+research/strategy-dashboard-user-audit-proof-2026-10-20.json; data collectorONCE
+/tmp/collect_strategy_dashboard_user_audit_20261020.py. All red/failed/final source
+builds/results retained /tmp/strategy-dashboard-audit-*-20261020*. Intermediate
+details-only build exists but testconfig NEVER dispatched; final50 covers it.
+Real before/after/UI evidence /tmp/strategy-dashboard-user-audit-20261020-v1.
+Backend/scripts/source35/math/approvals/model services/accounts/orders unchanged.
+
+CRITICAL OPEN: targets_from_model optimizes from zero holdings/unit cash and
+grade_led_policy.signals(report,{}). strategy_entries.project calls probability
+decision for BUY only. Historical replay carries evolving units, applies native
+preservation/rebalancing and evaluates BOTH buy/sell adjustments. signalsFor's
+current Sell is a grade exit, not all still-A model trims. Thus live target sizes
+and historical ongoing trade amounts are NOT a complete interchangeable workflow.
+Do not claim the full strategy finished because a fresh Buy passes. Next inspect
+these exact callsites plus native joint_funded_policy/learned_holding_transition
+and define the independent model reference/transition contract using unchanged
+approved economics. No paper/personal prerequisite or assumed viewer holdings;
+never adopt retrospective/failed/completed pools as actual published/live state.
+Any backend/source change needs fresh scoped tests and reviewed source binding;
+the old f0 acquisition/bundle cannot prove changed numerical code.
+
+OTHER OPEN:2297 historical buys below0.1% remain real micro-rebalances, no practical
+minimum rule introduced; Best buy ordering is readiness then position size/alpha
+ties, not an independently measured expected-return/confidence score;15m history
+bounded60sessions/missingOct15, not all-years tradable fills or profitability;
+original technical inputs are shown, causal sizing-feature attribution not saved.
+Paper normal view still reports missing allocation receipt and4/9 failed briefs;
+no repair/reset/model operation done, paper LAST. New DeepSeek runtime not verified.
+
+Actual current regular15m acceptance remains UNVERIFIED before09:45ET; existing
+ONE bounded scripts remain UNRUN, no watcher/replay/fakeclock/duplicate collector.
+Keep Vite33452/tunnel70626/symlink/tab4/tab3. REAL preview before any deployment;
+only scripts/deploy.sh, no historicalmain wholesale. No new full backend/model
+gate for this frontend-only change. Preserve all previous proof/failure roots.
+
 ## 2026-10-20 — directional lists and historical amount explanations verified in preview
 
 Human reported Avoid rows under Best sells, tiny Buy sizes and sells larger than

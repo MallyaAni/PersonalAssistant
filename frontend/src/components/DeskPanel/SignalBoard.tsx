@@ -3,13 +3,14 @@ import type {DeskCurrentSetup, DeskLive, DeskModelAllocation, DeskRecord, DeskSt
 import {currentSetup, confirmationText, invalidationText} from './currentRanking'
 import {currentAssessments} from './liveAssessment'
 import {displayedBoardPrice, SessionPrice} from './StockBoard'
+import {StrategyTechnicalEvidence} from './StrategyTechnicalEvidence'
 
 type Side = 'all' | 'buy' | 'sell'
 type Signal = {word: string; ready: boolean; priority: string; rank: number; reason: string}
-type Signals = {ticker: string; grade: string; setup: DeskCurrentSetup | null; buy: Signal; sell: Signal; plan?: {session: string; published: string; validUntil: string; calculated?: string}}
+type Signals = {ticker: string; grade: string; setup: DeskCurrentSetup | null; buy: Signal; sell: Signal; evidence?: DeskStrategyDecision['evidence']; plan?: {session: string; published: string; validUntil: string; calculated?: string}}
 const PRIORITY: Record<string, number> = {high: 3, medium: 2, low: 1}
 
-export type StrategyChartTarget = {ticker: string; date: string; at: string; validUntil: string | null; action: 'Buy' | 'Sell' | null; weight: number; record: string; strategyIdentity?: string; evidence?: DeskStrategyDecision['evidence']; entry?: {at: string; validUntil: string}; entryReason?: string; recordedHistoryAvailable?: boolean; nextSessionPlan?: boolean}
+export type StrategyChartTarget = {ticker: string; date: string; at: string; validUntil: string | null; action: 'Buy' | 'Sell' | null; weight: number; record: string; strategyIdentity?: string; evidence?: DeskStrategyDecision['evidence']; entry?: {at: string; validUntil: string}; entryReason?: string; recordedHistoryAvailable?: boolean; nextSessionPlan?: boolean; displayAction?: string}
 
 // Recognize the independently authenticated publication formats without consulting an account.
 const independentAllocation = (allocation?: DeskModelAllocation): boolean => allocation?.version === 'strategy-model-allocation/1' || allocation?.version === 'strategy-model-allocation/2'
@@ -107,7 +108,8 @@ export const strategyChartTarget = (latest: DeskRecord, allocation: DeskModelAll
       action: weight > 0 && ['buy', 'hold'].includes(action ?? '') ? 'Buy' : action === 'sell' ? 'Sell' : null,
       weight, record: allocation.snapshot_id!, strategyIdentity: allocation.strategy_identity,
       recordedHistoryAvailable:allocation.recorded_history_version==='strategy-recorded-entries/1',
-      nextSessionPlan:displayed.buy.word==='Buy setup',entryReason:displayed.buy.reason,
+      nextSessionPlan:displayed.buy.word==='Buy setup' || displayed.sell.word==='Exit',entryReason:actionFor(displayed).reason,
+      displayAction:actionLabel(actionFor(displayed).word),
       evidence: current?.row.evidence ?? allocation.rows[ticker].evidence,
       entry: current?.row.state === 'execute' ? {at:current.at,validUntil:current.validUntil} : undefined}
   }
@@ -168,7 +170,7 @@ const publishedPlanFor = (latest: DeskRecord, live: DeskLive, allocation: DeskMo
   const timing = v2 ? 'Await the numerical 15-minute entry assessment and a fresh regular-session quote; this is not an immediate action.' : 'Await a fresh regular-session candle and quote; this is not an immediate action.'
   const reason = `${independent ? 'Strategy model' : 'Published'} ${session} grade signal ${action.grade_signal}, grade ${grade}, ${(weight * 100).toFixed(1)}% ${independent ? 'position size' : 'target'}. ${timing}`
   return {
-    ticker, grade: independent ? grade : `${grade} · plan`, setup: null,
+    ticker, grade: independent ? grade : `${grade} · plan`, setup: null, evidence:v2 ? allocation.rows[ticker].evidence : undefined,
     buy: signal(eligible && weight > 0 ? waiting ? 'Wait' : independent ? 'Buy setup' : 'Buy plan' : eligible ? independent ? 'Wait' : 'No buy allocation' : independent ? 'Avoid' : 'Avoid new entry', false, '', reason, eligible && weight > 0 ? 1 : 2),
     sell: signal(hasExit ? waiting ? 'Wait' : independent ? 'Exit' : 'Exit if held' : independent ? '—' : 'No grade exit', false, '', hasExit
       ? `The published grade-led policy exits below A if held; this viewer's holdings are unknown. ${timing}`
@@ -235,13 +237,14 @@ const actionLabel = (word: string): string => ['Buy now', 'Buy plan', 'Buy setup
 // Show the same directional reasons and evidence in row expansion and the full stock chart.
 export const SignalDetail = ({signals}: {signals: Signals}) => <section aria-label={`${signals.ticker} signal details`} className="space-y-1 text-xs">
   <p><b>{actionLabel(signals.buy.word)}</b> · {signals.buy.reason}</p>
-  <p><b>{actionLabel(signals.sell.word)}</b> · {signals.sell.reason}</p>
+  {signals.sell.word !== '—' && <p><b>{actionLabel(signals.sell.word)}</b> · {signals.sell.reason}</p>}
   {signals.setup && <>
     <p>{confirmationText(signals.setup)} {invalidationText(signals.setup)}</p>
     <p>Completed candle {evidenceTime(signals.setup.bar)} · assessed {evidenceTime(signals.setup.generated_at)} · Valid until {evidenceTime(signals.setup.valid_until)}.</p>
   </>}
   {signals.plan && <p>{signals.plan.calculated ? 'Strategy model' : 'Published plan'} {signals.plan.session} · inputs published {evidenceTime(signals.plan.published)}{signals.plan.calculated ? ` · calculated ${evidenceTime(signals.plan.calculated)}` : ''} · Valid until {evidenceTime(signals.plan.validUntil)}. Grade and {signals.plan.calculated ? 'size' : 'target'} are not a current candle assessment.</p>}
-  <p className="text-[#6e6e73]">Sell review means reassess or reduce an existing holding. Not a short-sale signal. Strength is the model’s qualitative priority, not a return probability or funded size.</p>
+  {signals.evidence && <div><p>Prior-close technicals · {signals.evidence.inputs_as_of}</p><StrategyTechnicalEvidence evidence={signals.evidence} /></div>}
+  {!signals.evidence && <p className="text-[#6e6e73]">Sell review means reassess or reduce an existing holding. Not a short-sale signal. Strength is the model’s qualitative priority, not a return probability or funded size.</p>}
 </section>
 
 // Rank covered names independently of accounts and restrict each directional tab to its matching actions.
@@ -252,6 +255,7 @@ export const SignalBoard = ({latest, live, allocation, now, onOpen, closes}: {la
   const [visible, setVisible] = useState(25)
   const rows = useMemo(() => Object.keys(allocation?.version === 'strategy-model-allocation/2' ? allocation.grade_signals ?? {} : latest.grades ?? {}).map(ticker => signalsFor(latest, live, ticker, now, allocation)), [latest, live, now, allocation])
   const independent = independentAllocation(allocation)
+  const recommendationsUnavailable = !rows.length || rows.every(row=>row.buy.word==='Unavailable' && row.sell.word==='Unavailable')
   const showPriority = !independent || rows.some(row => row.setup)
   // Date fresh numerical signals to their own session rather than the nightly input close.
   const currentSession = allocation?.version === 'strategy-model-allocation/2' && publicationValid(allocation, now)
@@ -276,7 +280,7 @@ export const SignalBoard = ({latest, live, allocation, now, onOpen, closes}: {la
         <input aria-label="Find a stock" placeholder="Find a stock" value={query} onChange={event => {setQuery(event.target.value); setVisible(25)}} className="rounded border px-2 py-1 text-xs" />
       </div>
       <p aria-label="Signal coverage" className="text-xs text-[#6e6e73]">{independent
-        ? `${rows.filter(row => row.buy.word === 'Buy setup' || row.buy.ready).length} buys · ${rows.filter(row => row.sell.word === 'Exit' || row.sell.ready).length} sells`
+        ? recommendationsUnavailable ? 'Recommendations unavailable' : `${rows.filter(row => row.buy.word === 'Buy setup' || row.buy.ready).length} buys · ${rows.filter(row => row.sell.word === 'Exit' || row.sell.ready).length} sells`
         : `${rows.filter(row => row.setup).length} of ${rows.length} current assessments · ${rows.filter(row => row.buy.ready).length} buy now · ${rows.filter(row => row.sell.ready).length} sell reviews now · ${rows.filter(row => row.plan).length} published plan rows${live.market_status?.phase !== 'open' ? ' · regular session closed or unavailable' : ''}.`}</p>
       {!independent && <p className="text-xs text-[#6e6e73]">Model size is the published strategy target percentage, not shares or an instruction to buy that percentage now. Entry and exit reviews use fresh chart assessments; they do not recalculate the model’s allocation.</p>}
     </div>
@@ -294,7 +298,7 @@ export const SignalBoard = ({latest, live, allocation, now, onOpen, closes}: {la
         <td className="max-w-sm p-2">{!independent && <p>{selected(row).reason}</p>}<button type="button" aria-label={`details for ${row.ticker}`} aria-expanded={opened === row.ticker} className="text-[#0071e3]" onClick={() => setOpened(opened === row.ticker ? null : row.ticker)}>Details</button>{opened === row.ticker && <SignalDetail signals={row} />}</td>
       </tr>})}</tbody>
     </table>
-    {!ranked.length && <p role="status" className="p-3 text-xs">{query.trim() ? 'No matching stocks.' : side === 'sell' ? 'No sell signals in the current strategy publication.' : side === 'buy' ? 'No buy signals in the current strategy publication.' : 'No matching stocks.'}</p>}
+    {!ranked.length && <p role="status" className="p-3 text-xs">{recommendationsUnavailable ? 'Strategy recommendations unavailable. Refresh to retry.' : query.trim() ? 'No matching stocks.' : side === 'sell' ? 'No sell signals in the current strategy publication.' : side === 'buy' ? rows.some(row=>row.buy.word==='Wait') ? 'No confirmed buy signals yet.' : 'No buy signals in the current strategy publication.' : 'No matching stocks.'}</p>}
     {independent && <p className="px-3 py-2 text-[11px] text-[#6e6e73]">Size % is the strategy position size, not a profit target.</p>}
     {ranked.length > visible && <button type="button" className="p-3 text-xs text-[#0071e3]" onClick={() => setVisible(value => value + 25)}>Show more · {visible} of {ranked.length}</button>}
   </section>

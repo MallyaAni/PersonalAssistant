@@ -862,6 +862,86 @@ test('15m historical marker click opens original evidence at the completed-candl
   expect(state.diagnostics).toEqual([])
 })
 
+// Explain the actual account-independent model workflow rather than the retired personal-sizing flow.
+test('Trader audit guide describes model sizes and retrospective chart actions',async ({page,baseURL})=>{
+  const state=fixture();state.publicationV2=true
+  await install(page,baseURL!,state)
+  await page.goto('/?deskView=strategy#desk')
+  await page.getByRole('button',{name:'How to use this page',exact:true}).click()
+  const guide=page.getByRole('region',{name:'Strategy guide',exact:true})
+  await expect(guide).toContainText('Size % is the model’s desired position')
+  await expect(guide).toContainText('Historical markers are retrospective simulations')
+  await expect(guide).not.toContainText('Sizes belong to optional personal sizing')
+  await expect(guide).not.toContainText('High, Medium and Low')
+  expect(state.diagnostics).toEqual([])
+})
+
+// Keep the observation time visible when the selected quote is explicitly stale.
+test('Trader audit stale compact prices are visibly dated in both list and chart',async ({page,baseURL})=>{
+  const state=fixture();Object.assign(state,{publicationV2:true,phase:'closed'})
+  await install(page,baseURL!,state)
+  await page.route('**/session-prices',route=>{
+    const now=Date.now(),at=new Date(now-30000).toISOString()
+    return route.fulfill({json:{as_of:new Date(now).toISOString(),signal_scope:'regular-session',session:'pre-market',
+      quotes:Object.fromEntries(names.map(ticker=>[ticker,{price:103,at,feed:'iex',status:'stale',valid_until:new Date(now-1).toISOString(),session:'pre-market'}]))}})
+  })
+  await page.goto('/?deskView=strategy#desk')
+  const board=page.getByRole('region',{name:'All names signals',exact:true})
+  await expect(board.getByLabel('BUYHIGH session price',{exact:true})).toContainText('last pre-market')
+  await expect(board.getByLabel('BUYHIGH session price',{exact:true})).toContainText('ET')
+  await board.getByRole('button',{name:'BUYHIGH',exact:true}).click()
+  await expect(page.getByRole('dialog').getByLabel('BUYHIGH session price',{exact:true})).toContainText('last pre-market')
+  await expect(page.getByRole('dialog').getByLabel('BUYHIGH session price',{exact:true})).toContainText('ET')
+  expect(state.diagnostics).toEqual([])
+})
+
+// Distinguish unavailable publication evidence from a verified absence of sell signals.
+test('Trader audit unavailable recommendations never become a no-sell claim',async ({page,baseURL})=>{
+  const state=fixture();Object.assign(state,{publicationV2:true,phase:'closed',expired:true})
+  await install(page,baseURL!,state)
+  await page.goto('/?deskView=strategy#desk')
+  const board=page.getByRole('region',{name:'All names signals',exact:true})
+  await board.getByRole('button',{name:'Best sells',exact:true}).click()
+  await expect(board).toContainText('Strategy recommendations unavailable. Refresh to retry.')
+  await expect(board).not.toContainText('No sell signals in the current strategy publication.')
+  await expect(board.getByLabel('Signal coverage',{exact:true})).not.toContainText('0 sells')
+  expect(state.diagnostics).toEqual([])
+})
+
+// Preserve Avoid and actual sell-plan context across every chart without fabricating a zero-size exit.
+test('Trader audit Avoid and Sell chart headers match their list actions',async ({page,baseURL})=>{
+  const state=fixture();Object.assign(state,{publicationV2:true,phase:'closed'})
+  await install(page,baseURL!,state)
+  await page.goto('/?deskView=strategy#desk')
+  await page.getByRole('button',{name:'SELLLOW',exact:true}).click()
+  const dialog=page.getByRole('dialog')
+  for(const frame of ['D','W','15m']){
+    await dialog.getByRole('button',{name:frame,exact:true}).click()
+    await expect(dialog.getByLabel('SELLLOW current chart target',{exact:true})).toHaveText('Avoid · Size 0.0%')
+  }
+  await dialog.getByRole('button',{name:'Close',exact:true}).click()
+  await page.getByRole('button',{name:'SELLHIGH',exact:true}).click()
+  await expect(page.getByRole('dialog').getByLabel('SELLHIGH current chart target',{exact:true})).toHaveText('Sell · Size —')
+  await expect(page.getByRole('dialog').getByLabel('SELLHIGH chart plan timing',{exact:true})).toHaveText('Next session')
+  expect(state.diagnostics).toEqual([])
+})
+
+// Show original numerical technical inputs in current details without inventing a causal model explanation.
+test('Trader audit current details expose the original technical snapshot',async ({page,baseURL})=>{
+  const state=fixture();Object.assign(state,{publicationV2:true,phase:'closed'})
+  await install(page,baseURL!,state)
+  await page.goto('/?deskView=strategy#desk')
+  await page.getByRole('button',{name:'details for BUYHIGH',exact:true}).click()
+  const detail=page.getByLabel('BUYHIGH signal details',{exact:true})
+  await expect(detail).toContainText('Prior-close technicals · 2026-10-19')
+  await expect(detail).toContainText('Price vs 21-session EMA')
+  await expect(detail).toContainText('-9.44%')
+  await expect(detail).toContainText('1.50%')
+  await expect(detail).not.toContainText('Strength is')
+  await expect(detail).not.toContainText('— ·')
+  expect(state.diagnostics).toEqual([])
+})
+
 // Exclude unrelated actions from directional lists and show an honest empty sell result.
 test('Directional tabs contain only matching actions and no sells means an empty list',async ({page,baseURL})=>{
   const state=fixture()

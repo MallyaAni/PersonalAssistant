@@ -1008,11 +1008,12 @@ const TrackRecord = ({ curve, latest }: { curve: DeskCurve | undefined; latest: 
 // Explain the selected stock or paper-account view using its own recorded evidence.
 const HowToUse = ({ onClose, compact = false, plan, strategy = false }: { onClose?: () => void; compact?: boolean; plan?: DeskPaperPlan; strategy?: boolean }) => strategy ? (
   <section aria-label="Strategy guide" className="my-2 max-w-2xl rounded-xl border p-3 text-xs">
-    <p>All names ranks current chart signals independently of paper holdings, orders and personal cash. Best buys and Best sells rank each direction separately.</p>
-    <p>Fresh ready signals lead; then waiting, other assessments and unavailable names. High, Medium and Low are model priorities, not profit probabilities.</p>
-    <p>Buy now requires grade permission, chart confirmation and a fresh regular-session quote. Sell review now means review downside in an existing holding, not open a short. Sizes belong to optional personal sizing, not this ranking.</p>
-    <p>Open a ticker for historical grade signals and executions. The model-only simulation is available as a separate research layer.</p>
-    <p>Saved targets and grades retain their dates; prices and order status refresh live.</p>
+    <p>All names uses the strategy model independently of paper holdings and personal cash. Best buys and Best sells contain matching actions only.</p>
+    <p>Size % is the model’s desired position as a percentage of portfolio capital, not an additional purchase amount or a profit target. Buy candidates sort by readiness, then model size; size is not confidence.</p>
+    <p>A regular-session Buy requires a completed 15-minute assessment and a fresh quote. Next-session actions are plans, not confirmed entries. Old prices show their observation time.</p>
+    <p>Sell means reduce or exit an existing long position, not open a short. Avoid means no new entry; it is not a sell instruction.</p>
+    <p>Historical markers are retrospective simulations of this strategy, not advice published at the time. Their sizes are trade amounts at that time. Click a marker for original sizes, technical inputs and timing; daily or weekly candles can contain several decisions.</p>
+    <p>15-minute history covers up to 60 sessions. Missing candles remain marked incomplete. Paper activity and archived research stay separate.</p>
     {onClose && <button type="button" className="mt-2 text-[#0071e3]" onClick={onClose}>Close guide</button>}
   </section>
 ) : (

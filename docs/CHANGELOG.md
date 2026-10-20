@@ -1,5 +1,23 @@
 # Changelog
 
+## 2026-10-20 — Audit trader workflows and make recommendation context consistent
+
+The real workflow review found stale prices appearing current, missing Avoid/Sell
+chart context, unavailable recommendations described as no signals, outdated help,
+and hidden current technical inputs. The preview now visibly dates old prices,
+keeps current v2 chart/list actions aligned, distinguishes unknown from none,
+explains the actual model-size/history basis, and shares original numerical
+technical values between current and historical details. Legacy history refusal
+and header behavior remain unchanged after its regression caught an overreach.
+
+Five expected REDs and the49-pass/1-fail intermediate run remain preserved. The
+final50 browser cases pass149.825080s with zero skips/flaky/unexpected diagnostics;
+TypeScript/build pass. No backend, math, model service, account or order change.
+Material audit findings remain OPEN: fresh-capital Buy timing is not the full
+historical evolving-book rebalance/Sell path; micro-trade churn, allocation-size
+ranking limits, intraday coverage and genuine regular-session acceptance remain.
+Proof: strategy-dashboard-user-audit-proof-2026-10-20.json11220B/5aac2438540ca735ed7025511c29cb709512b4e17df86644f80d3395c7d25c90.
+
 ## 2026-10-20 — Filter directional actions and explain historical trade percentages
 
 Best buys and Best sells now contain matching actions only. A publication with

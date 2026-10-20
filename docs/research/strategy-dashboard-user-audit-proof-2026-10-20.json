@@ -1,0 +1,234 @@
+{
+  "browser_reports": {
+    "green": {
+      "errors": [],
+      "path": "/tmp/strategy-dashboard-audit-green-20261020-results.json",
+      "stats": {
+        "duration": 164812.498,
+        "expected": 49,
+        "flaky": 0,
+        "skipped": 0,
+        "startTime": "2026-10-20T11:09:47.604Z",
+        "unexpected": 1
+      }
+    },
+    "green-v2": {
+      "errors": [],
+      "path": "/tmp/strategy-dashboard-audit-green-v2-20261020-results.json",
+      "stats": {
+        "duration": 149825.08000000002,
+        "expected": 50,
+        "flaky": 0,
+        "skipped": 0,
+        "startTime": "2026-10-20T11:13:18.939Z",
+        "unexpected": 0
+      }
+    },
+    "red": {
+      "errors": [],
+      "path": "/tmp/strategy-dashboard-audit-red-20261020-results.json",
+      "stats": {
+        "duration": 39330.869,
+        "expected": 0,
+        "flaky": 0,
+        "skipped": 0,
+        "startTime": "2026-10-20T11:07:42.389Z",
+        "unexpected": 5
+      }
+    }
+  },
+  "deployed": false,
+  "diagram": "NONE: presentation audit; no pipeline architecture change",
+  "files": {
+    "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/all-names-signals.spec.ts": {
+      "bytes": 84512,
+      "sha256": "e1ffc4fbd3d43a65b6ad8a36a1208bfd1fae897605bb3606ff1910f96311b840"
+    },
+    "/tmp/strategy-dashboard-audit-green-20261020-results.json": {
+      "bytes": 595892,
+      "sha256": "96ea8d7c910422e044e0e25813226213c4d1e6d97b9a546c75111432143ed8a5"
+    },
+    "/tmp/strategy-dashboard-audit-green-v2-20261020-build.log": {
+      "bytes": 15779,
+      "sha256": "b584b93f31cd858466b5b993453c86dbab12cca4a9be683f7a4889df5df80699"
+    },
+    "/tmp/strategy-dashboard-audit-green-v2-20261020-dist/assets/index-D4xY3MD1.js": {
+      "bytes": 917488,
+      "sha256": "698b2ed5ad42ccc2933f9112990bdae007e215fb9617c919c406b2f3c4cc33f0"
+    },
+    "/tmp/strategy-dashboard-audit-green-v2-20261020-results.json": {
+      "bytes": 591795,
+      "sha256": "c769d459da19cb5258553a2b4fde5e21b55c41a0cc2ac959c17b66e2a5908c2c"
+    },
+    "/tmp/strategy-dashboard-audit-red-20261020-results.json": {
+      "bytes": 49152,
+      "sha256": "6c8af559d4401867f4ed1f82878c79ea60c16107dee9d53f536e6afd8f2e29ce"
+    },
+    "/tmp/strategy-dashboard-user-audit-20261020-v1/aaoi-after.json": {
+      "bytes": 156,
+      "sha256": "99ab5a4a98c00722799d82539e8e54c79e080f1bdd1c42a6f27df14a20bcb142"
+    },
+    "/tmp/strategy-dashboard-user-audit-20261020-v1/aaoi-before.txt": {
+      "bytes": 9593,
+      "sha256": "995479cba3640e0a60125d35e42a156747fe747e8fa4709aae3838169ae19c6c"
+    },
+    "/tmp/strategy-dashboard-user-audit-20261020-v1/final-details.json": {
+      "bytes": 740,
+      "sha256": "39d884ca05c1ddd40e159f2c1e03ec7655082d55caad5f0a9d21008bbb7f247e"
+    },
+    "/tmp/strategy-dashboard-user-audit-20261020-v1/final-details.png": {
+      "bytes": 70915,
+      "sha256": "467854ab30de0e58abcdfc399e3c125da377bf6a48c3f3fa9b2f0f06ceca7bce"
+    },
+    "/tmp/strategy-dashboard-user-audit-20261020-v1/guide-after.txt": {
+      "bytes": 1073,
+      "sha256": "f7b724e1fbb3bb6cc12b7b82ac4a8f0152794dcdb405b5888a172b0a08163c75"
+    },
+    "/tmp/strategy-dashboard-user-audit-20261020-v1/guide-before.txt": {
+      "bytes": 760,
+      "sha256": "85a48296d340f0bbebf2b5e619fddf0ae0347db33bf3fdcda29dc47c76693ca4"
+    },
+    "/tmp/strategy-dashboard-user-audit-20261020-v1/timeframes-before.json": {
+      "bytes": 2085,
+      "sha256": "6e20303b24bfe2b7fc3b04088fc4a76322387e2d303ed1ea5a2dc1cfe4a82bd6"
+    },
+    "frontend/src/components/DeskPanel/DeskPanel.tsx": {
+      "bytes": 196438,
+      "sha256": "fd69c5dcec47ab1b2647cce170a05bd54c1c6bd905889c779fefba6ff6d3f2ae"
+    },
+    "frontend/src/components/DeskPanel/SignalBoard.tsx": {
+      "bytes": 29412,
+      "sha256": "6ad2be087250d2cec7ddcb9df51b6c2d8faa97ece14140f145c7404bf03321d5"
+    },
+    "frontend/src/components/DeskPanel/StockBoard.tsx": {
+      "bytes": 21402,
+      "sha256": "b5e2f963ad14395f94ab12d803ace7e4bb4b7414446bd7949f389e8fdf4a8c6a"
+    },
+    "frontend/src/components/DeskPanel/StrategyTechnicalEvidence.tsx": {
+      "bytes": 931,
+      "sha256": "092482a6f73dedabfaff1e7eda608e9cae8b53a6e915bfeeac614a9bc9eeb154"
+    },
+    "frontend/src/components/DeskPanel/TickerChart.tsx": {
+      "bytes": 104918,
+      "sha256": "9c90647bfc5569dbe7de567498efd6197004e14b231cac3b722b0f43b5dc82b0"
+    }
+  },
+  "findings": [
+    {
+      "change": "Stale selected prices now visibly say last plus original New York date/time; fresh and execution eligibility guards unchanged.",
+      "finding": "The compact row and chart hid stale observation time in a tooltip. Real HPE56.51 at04:00ET looked merely pre-market after07:00.",
+      "id": "freshness",
+      "severity": "high",
+      "status": "VERIFIED_FIXED_PREVIEW"
+    },
+    {
+      "change": "Unknown publication displays recommendations unavailable, not zero sells; valid empty publications still show no sell signals.",
+      "finding": "Directional filtering could turn expired/unavailable publication evidence into a no-sell claim.",
+      "id": "unknown_vs_none",
+      "severity": "high",
+      "status": "VERIFIED_FIXED_PREVIEW"
+    },
+    {
+      "change": "Validated v2 chart headers now match list actions; exit amounts remain unknown rather than Sell0. Legacy non-Buy header behavior remains unchanged.",
+      "finding": "Current Avoid and Sell context disappeared from charts while historical actions remained visible.",
+      "id": "chart_context",
+      "severity": "high",
+      "status": "VERIFIED_FIXED_PREVIEW"
+    },
+    {
+      "change": "Help now explains model position sizes, plan/entry timing, long exits versus Avoid, retrospective trade amounts, actual ordering and 60-session history.",
+      "finding": "Help still attributed sizes to personal sizing and described old qualitative ranking/research layers.",
+      "id": "guide",
+      "severity": "medium",
+      "status": "VERIFIED_FIXED_PREVIEW"
+    },
+    {
+      "change": "Current and historical details share the same finite numerical-input display; current details label prior-close inputs and omit the unused legacy footer.",
+      "finding": "Current details omitted available original model technical inputs and retained irrelevant dash/Strength text.",
+      "id": "technical_snapshot",
+      "severity": "medium",
+      "status": "VERIFIED_FIXED_PREVIEW"
+    },
+    {
+      "callsites": [
+        "backend/market/strategy_model_allocation.py:targets_from_model",
+        "backend/market/strategy_entries.py:project",
+        "backend/market/strategy_model_history.py:replay",
+        "frontend/src/components/DeskPanel/SignalBoard.tsx:signalsFor"
+      ],
+      "consequence": "Do not claim live action amounts reproduce the complete simulated ongoing book or require paper positions as a substitute.",
+      "finding": "Live independent sizes optimize a fresh unit-capital allocation; the numerical entry path evaluates Buy only. Historical replay uses evolving shares and evaluates both increases and reductions. Current grade exits do not implement every still-A model trim.",
+      "id": "ongoing_rebalances",
+      "severity": "critical",
+      "status": "OPEN"
+    },
+    {
+      "consequence": "These are not just rounding errors; no actions removed and no arbitrary threshold or model tuning introduced.",
+      "finding": "Original5755 simulations contain2297 buys below0.1% of changing portfolio value. Continuous rebalancing has no new practical minimum.",
+      "id": "tiny_trade_churn",
+      "severity": "high",
+      "status": "OPEN_POLICY_UNCHANGED"
+    },
+    {
+      "consequence": "Guide states actual ordering; no unmeasured best-return score invented.",
+      "finding": "Next-session buy candidates sort by readiness then allocation size, with alphabetical ties. Allocation size is not an independent confidence or expected-return ranking.",
+      "id": "ranking_meaning",
+      "severity": "medium",
+      "status": "OPEN_LIMITATION_DISCLOSED"
+    },
+    {
+      "consequence": "No all-years intraday chart or achievable profitability claim; older daily/weekly history remains available.",
+      "finding": "15m navigation is bounded to60 sessions and real missingOct15 candles stay incomplete. Historical simulation is retrospective current-vintage math, not advice published then or guaranteed executions.",
+      "id": "history_coverage",
+      "severity": "high",
+      "status": "OPEN_LIMITATION_DISCLOSED"
+    },
+    {
+      "consequence": "Display original values without inventing why a particular feature caused a recommendation.",
+      "finding": "Technical input snapshots and timing rule reasons are available; causal per-feature attribution for the joint sizing optimizer is not recorded.",
+      "id": "causal_reason",
+      "severity": "medium",
+      "status": "OPEN_LIMITATION_DISCLOSED"
+    },
+    {
+      "consequence": "No repair/reset/order or model-service operation performed; new DeepSeek runtime not validated by this UI audit.",
+      "finding": "Normal Paper account view reports missing matching saved allocation receipt and4of9 failed model-written briefs. It remains visibly separate from independent model recommendations.",
+      "id": "paper_and_briefs",
+      "severity": "high",
+      "status": "FAILED_EXISTING_DEFERRED_PAPER_LAST"
+    },
+    {
+      "consequence": "Deferred bounded current acquisition remains UNRUN; no fake clock, old-session replay or duplicate collector.",
+      "finding": "Audit occurred before realOct20 09:45ET. No genuine completed current regular15m entry can be accepted yet.",
+      "id": "regular_acceptance",
+      "severity": "critical",
+      "status": "UNVERIFIED_WAITING_NATURAL_INPUT"
+    }
+  ],
+  "first_candidate_failure": "49pass/1fail: expanded chart header accidentally affected legacy v1. Fixed by restricting expansion to validated current displayAction; original foreign-history/no-header assertion unchanged.",
+  "full_live_readiness": "UNVERIFIED",
+  "manual_journeys": [
+    "94-name universe and directional filters",
+    "Search whitespace/case and no matches",
+    "Current HPE detail and price provenance",
+    "AAOI Avoid list-to-chart context",
+    "HPE original Oct16 09:45Buy2.5 across15m/D/W/15m",
+    "60-session range and incomplete history",
+    "Help guide before/after",
+    "Read-only Paper account separation",
+    "Read-only Archived research separation"
+  ],
+  "observed_at": "2026-10-20T11:17:17.903188+00:00",
+  "schema": "strategy-dashboard-user-audit/1",
+  "scope": "Real signed-in primary Stocks, Paper account and Archived research views plus representative ticker journeys; not an exhaustive manual review of all94 charts.",
+  "source_base": "074dc311b87966986d1864c022f9294427fa16b5",
+  "source_state": "uncommitted_frontend_candidate",
+  "unchanged": [
+    "all backend/scripts/economic math",
+    "source approvals and original publication expiry",
+    "model services/providers/subscriptions",
+    "accounts/orders/paper state",
+    "original historical recommendation bytes"
+  ],
+  "unused_build": "details-only intermediate build completed, its test config was never dispatched; final50 full regression covers the refinement instead."
+}

@@ -21,6 +21,7 @@ import { LEVEL_NAME, percent, shares } from './TradeBoard'
 import {confirmedPaperFills, paperActivitySession, paperFillSession} from './paperFills'
 import type {StrategyChartTarget} from './SignalBoard'
 import {strategyHistoryMatches} from './SignalBoard'
+import {StrategyTechnicalEvidence} from './StrategyTechnicalEvidence'
 
 // The picture behind the grade. The board says what the desk concluded; this
 // shows adjusted price indicators beside recorded and replayed grade changes.
@@ -1236,15 +1237,17 @@ export const TickerChart = ({
     scale.setVisibleLogicalRange({from: start, to: start + span})
   }
 
+  const chartAction = modelTarget?.displayAction ?? (!modelTarget?.entry && !modelTarget?.nextSessionPlan ? 'Wait' : modelTarget?.action ?? 'Avoid')
+  const chartSize = modelTarget?.action === 'Sell' && modelTarget.weight === 0 ? '—' : modelTarget ? `${sizePercent(modelTarget.weight)}%` : '—'
   if (strategy) return <section className="mb-4" aria-label={`${ticker} price chart`}>
     {live && <div className="mb-2 text-xs"><SessionPrice live={live} ticker={ticker} now={now} close={close} closeSession={closeSession} compact /></div>}
     <div className="mb-2 flex flex-wrap items-center justify-between gap-2 text-xs">
-      {modelTarget?.action === 'Buy' && <div className="flex items-center gap-2">
-        <span title={modelTarget.entry ? `${recordedTime(modelTarget.entry.at)} · Confirmed entry; ${recordedTime(modelTarget.entry.validUntil)} expiry` : modelTarget.entryReason} className={`font-semibold ${!modelTarget.entry && !modelTarget.nextSessionPlan ? 'text-[#6e6e73]' : 'text-[#248a3d]'}`} aria-label={`${ticker} current chart target`}>
-          {!modelTarget.entry && !modelTarget.nextSessionPlan ? `Wait · Size ${sizePercent(modelTarget.weight)}%` : targetLabel(modelTarget)}
+      {modelTarget ? (modelTarget.action === 'Buy' || modelTarget.displayAction ? <div className="flex items-center gap-2">
+        <span title={modelTarget.entry ? `${recordedTime(modelTarget.entry.at)} · Confirmed entry; ${recordedTime(modelTarget.entry.validUntil)} expiry` : modelTarget.entryReason} className={`font-semibold ${chartAction === 'Sell' ? 'text-[#b42318]' : chartAction === 'Buy' ? 'text-[#248a3d]' : 'text-[#6e6e73]'}`} aria-label={`${ticker} current chart target`}>
+          {chartAction} · Size {chartSize}
         </span>
         {modelTarget.nextSessionPlan && <span className="text-[#6e6e73]" aria-label={`${ticker} chart plan timing`}>Next session</span>}
-      </div>}
+      </div> : null) : <span className="text-[#6e6e73]" aria-label={`${ticker} current chart target`}>Current recommendation unavailable</span>}
       <div role="group" aria-label="Chart range" className="flex gap-2">
         <button type="button" aria-pressed={!fullHistory} onClick={() => resetRange(false)}>Recent</button>
         <button type="button" aria-pressed={fullHistory} onClick={() => resetRange(true)}>{timeframe === '15m' ? '60 sessions' : 'Full history'}</button>
@@ -1288,12 +1291,7 @@ export const TickerChart = ({
             {item.evidence.grade && <p>Grade {item.evidence.grade}{item.evidence.inputs_as_of ? ` · ${item.evidence.inputs_as_of} close` : ''}</p>}
             {typeof item.evidence.model_position_size === 'number' && <p>Model position size {(item.evidence.model_position_size * 100).toFixed(1)}%</p>}
             {typeof item.evidence.observed_price === 'number' && <p>{item.simulated ? 'Candle close' : 'Observed IEX midpoint'} ${item.evidence.observed_price.toFixed(2)} · {item.simulated ? 'adjusted historical basis' : 'current share basis'}</p>}
-            <dl className="mt-2 grid grid-cols-2 gap-x-4 gap-y-1 text-xs">
-              {Object.entries(item.evidence.features ?? {}).filter(([key, value]) => ['ema_21_distance', 'ema_63_distance', 'return_20', 'volatility_20', 'drawdown_252'].includes(key) && Number.isFinite(value)).map(([key, value]) => <div key={key}>
-                <dt className="text-[#6e6e73]">{{ema_21_distance:'Price vs 21-session EMA',ema_63_distance:'Price vs 63-session EMA',return_20:'20-session return',volatility_20:'Daily volatility · 20 sessions',drawdown_252:'From 252-session high'}[key]}</dt>
-                <dd>{((key === 'return_20' ? Math.expm1(value) : value) * 100).toFixed(2)}%</dd>
-              </div>)}
-            </dl>
+            <StrategyTechnicalEvidence evidence={item.evidence} />
             <p className="mt-2">{item.evidence.timing_reason === 'mandatory_grade_exit' ? 'Below-A exit at the next open.' : item.evidence.timing_reason === 'shared_terminal_deadline' ? 'Regular-session execution deadline reached.' : typeof item.evidence.waiting_log_utility === 'number' ? 'Acting now matched or exceeded the model’s expected net growth from waiting one 15-minute candle.' : 'Detailed entry timing was not recorded.'}</p>
           </> : <p className="mt-2 text-xs text-[#6e6e73]">Detailed evidence was not recorded for this marker.</p>}
         </article>})}
