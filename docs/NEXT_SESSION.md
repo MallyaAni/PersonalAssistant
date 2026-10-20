@@ -14,6 +14,21 @@ ConversationService(reply_llm=...)). None of it is deployed:
 `.env` MAIN_LLM_BASE_URL back to :8000, REPLY_LLM_REASONING_EFFORT=high,
 and `systemctl --user disable --now reply-effort-shaper` on spark1.
 
+**Last gate miss closed (`432007ad`, not deployed):** `manage_check_ins`
+3/4 was "stop checking in on me" on a greedy near-tie that only lost under
+concurrent load (0/8 loaded, 8/8 alone). The routing prompt's sentence on
+instructions that change what the assistant holds now names stop / switch
+off; measured full-matrix 0.75 -> 1.00 on check-ins with no other tool
+moving (no-tool 94 -> 95/100 at 4 reps). Routing with thinking (`low`) is
+NOT an option: the follow-up resolver shares the routing client and its
+220-token call came back empty. Pre-existing 2/2 misses on this model, all
+above their floors, for whoever wants them: "what agents do i have
+scheduled?" -> manage_tasks; "how long will it take me to drive to Dulles
+airport at 5pm?" -> none; "show me a picture of how our services connect"
+-> none/search_history; "a general one" and "can you regenerate it?" ->
+search_history/show_image; "no, don't send that" -> none; "which day has
+the Pompeii excursion?" -> none (1/2).
+
 **Unit suite on main, run in the test image with no database:** 11,427
 passed, 562 failed, 50 errors, 244 skipped (7.5 min, `~/dsv41/unit_all.log`).
 The failures seen are environmental (Postgres on :5432 absent, e.g.
