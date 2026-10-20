@@ -1,5 +1,39 @@
 # Next session
 
+## CURRENT — main published for review; merged branches retired
+
+The authorized merge is pushed to GitHub main at
+150e54f680faa93127435e5dca43115ca945ba89. This checkout is now on main:
+`/Users/animallya/.codex/worktrees/dashboard-main-review-20261020/PersonalAssistant`.
+Claude should review main here or on GitHub, not the older Desktop checkout.
+All 45 numerical/publication source files match the deployed dashboard feature;
+the new frontend build is byte-identical to the verified live-source build.
+The merge preserves newer main model/runtime/check-ins work and the separate
+legacy history API. That independent main work has NOT been deployed by us.
+
+Cleanup is complete: 18 local and 34 actual remote branches deleted, including
+the merged feature, temporary integration branch and four predecessor branches.
+Another 45 stale remote-tracking refs already absent on GitHub were pruned.
+Only main and branches with attached worktrees remain in the fully-merged local
+set; unique unmerged work remains preserved. See
+`docs/research/dashboard-main-branch-cleanup-proof-2026-10-20.json` and the
+integration review proof below for exact tips, ancestry and command receipts.
+The preview checkout is detached at unchanged39daad27; its code, node_modules,
+Vite33452 and tunnel70626 were retained. Subsequent handoff mirrors alter docs
+only. The Desktop checkout's unrelated AGENTS/Wi-Fi watchdog work was untouched.
+
+VERIFIED for the integration: TSC/build, exact frontend bytes, source45 parity,
+49 corrected focused backend/API cases and33diagram/page checks. The initial
+missing-protocol test-mount failure remains preserved; no assertions changed.
+No full merged-app gate or new deployment is claimed. LIVE remains frontend
+efc649a0/backend bf7a72fb. Original deployed full-post check-ins failure remains
+FAILED despite a separate newer source fix on main. Public authenticated-origin
+UI remains UNVERIFIED and the single existing sign-in request remains pending.
+No duplicate access request; no credential copying, jobs, accounts or orders.
+Next natural19:30ET publication/next-day rollover observation remains pending.
+Keep heartbeat ACTIVE, quiet on unchanged state. Never deploy historical main
+wholesale. Paper LAST; existing feed and all admission guards remain unchanged.
+
 ## CURRENT HUMAN — publish live dashboard source on main for Claude review; retire only merged branches
 
 The human now requests deleting merged/unwanted branches so Claude can review

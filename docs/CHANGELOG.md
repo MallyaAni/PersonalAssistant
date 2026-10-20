@@ -1,5 +1,14 @@
 # Changelog
 
+## 2026-10-20 — Main review checkout published and branch cleanup completed
+
+Pushed dashboard integration `150e54f6` to main. Retired18local/34remote merged
+branches and pruned45tracking refs already absent remotely; preserved attached
+worktrees and unique unmerged commits. The original preview remains detached at
+unchanged source, with its existing processes and dependencies. Main now has a
+dedicated review checkout; no app deployment was performed. Exact cleanup
+receipts are in `research/dashboard-main-branch-cleanup-proof-2026-10-20.json`.
+
 ## 2026-10-20 — Integrate deployed dashboard code for main review and retire merged branches
 
 Merge the production-based trading feature into current main while preserving

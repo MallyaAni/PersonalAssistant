@@ -1,0 +1,989 @@
+{
+  "schema": "dashboard-main-branch-cleanup-proof/1",
+  "merged_code_revision": "150e54f680faa93127435e5dca43115ca945ba89",
+  "status": "MERGED_AND_PUSHED_TO_MAIN_BRANCH_CLEANUP_COMPLETE",
+  "deleted_local_count": 18,
+  "deleted_remote_count": 34,
+  "already_absent_remote_count": 45,
+  "preserved_merged_local_branches": [
+    "codex/desk-live-provenance",
+    "codex/fresh-stock-assessment-20261014",
+    "codex/learned-live-release-20261006",
+    "codex/live-decision-contract-20261017",
+    "main",
+    "trading/nightly-fixes"
+  ],
+  "preserved_reason": "Only main and branches attached to existing worktrees remain in the fully-merged local set. Branches with unmerged commits are retained separately.",
+  "preview_checkout": {
+    "path": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant",
+    "detached_at": "39daad27e7e4d312012eb5f2b35157ff3d5ad3d1",
+    "file_changes_during_retirement": false,
+    "processes": "Existing Vite33452 and tunnel70626 kept; no replacement process or deployment"
+  },
+  "review_checkout": "/Users/animallya/.codex/worktrees/dashboard-main-review-20261020/PersonalAssistant",
+  "remote_deleted_feature": "codex/trading-fill-consistency-20261019",
+  "receipts": [
+    {
+      "path": "/tmp/dashboard-branch-cleanup-v2-20261020.json",
+      "bytes": 16579,
+      "sha256": "369521c28cac7347d6cc1576a45a725dab97fb755ec35dca4bf2e7d8de6e20a6",
+      "value": {
+        "original_inventory": "/tmp/dashboard-branch-cleanup-20261020.json",
+        "original_failure": "v1 stopped before remote mutation: claude/trader-board-20260930 absent from actual ls-remote",
+        "main": "3a9e0b8b72f20734616af3206f72704eced5aaf6",
+        "local_observed_absent": [
+          {
+            "name": "claude/trader-board-20260930",
+            "tip": "93dd9ee9be44f43ac6f6f882b8b7d177021e6190",
+            "ref": "refs/heads/claude/trader-board-20260930"
+          },
+          {
+            "name": "codex/bounded-execution-20261001",
+            "tip": "ae9aa07726d1f8e8b81f9f8c2e53398cc3ae8d77",
+            "ref": "refs/heads/codex/bounded-execution-20261001"
+          },
+          {
+            "name": "codex/current-entry-permission-20261002",
+            "tip": "27671d6f52e76f15f461637f0e8e947839a72358",
+            "ref": "refs/heads/codex/current-entry-permission-20261002"
+          },
+          {
+            "name": "codex/decision-points-board-20261002",
+            "tip": "8722db85c31b780908f7f931753f24c4d1f283fc",
+            "ref": "refs/heads/codex/decision-points-board-20261002"
+          },
+          {
+            "name": "codex/historical-current-settlement-cycle-20261017",
+            "tip": "a73e6c2a2638811243569106d8d8bd7109ab5787",
+            "ref": "refs/heads/codex/historical-current-settlement-cycle-20261017"
+          },
+          {
+            "name": "codex/immediate-actions-chart-20261002",
+            "tip": "0dfdcd8980de5890dd45aeeb3e400ebc92fa9900",
+            "ref": "refs/heads/codex/immediate-actions-chart-20261002"
+          },
+          {
+            "name": "codex/levels-chart-consistency-20261002",
+            "tip": "82008d764ede51019962c65e3d3fe2ed95004eb8",
+            "ref": "refs/heads/codex/levels-chart-consistency-20261002"
+          },
+          {
+            "name": "codex/live-buy-ranking-20261002",
+            "tip": "8be5ecbec5cfbaacd368561bbb52c9940a2a6304",
+            "ref": "refs/heads/codex/live-buy-ranking-20261002"
+          },
+          {
+            "name": "codex/open-source-research-20261001",
+            "tip": "fddd684467490c343b51bea04d07c7ebe4c62e5e",
+            "ref": "refs/heads/codex/open-source-research-20261001"
+          },
+          {
+            "name": "codex/personal-advice-refresh-20261002",
+            "tip": "8a77c1168dcee36df7ceb262a2d52d73f502d909",
+            "ref": "refs/heads/codex/personal-advice-refresh-20261002"
+          },
+          {
+            "name": "internet_watchdog",
+            "tip": "990fa9819a514c939b1777dca66b73e0e7e97a6d",
+            "ref": "refs/heads/internet_watchdog"
+          }
+        ],
+        "local_receipts": [
+          {
+            "name": "codex/entry-exit-audit-20261001",
+            "tip": "73ec5aa86add86111cfa8656174b1083bc555b8a",
+            "ref": "refs/heads/codex/entry-exit-audit-20261001",
+            "returncode": 0,
+            "stdout": "",
+            "stderr": ""
+          }
+        ],
+        "remote_absent": [
+          {
+            "name": "claude/trader-board-20260930",
+            "tip": "93dd9ee9be44f43ac6f6f882b8b7d177021e6190",
+            "ref": "refs/remotes/origin/claude/trader-board-20260930"
+          },
+          {
+            "name": "dashboard-words",
+            "tip": "8156af6bc287b81b9bd392088398d5540942bb78",
+            "ref": "refs/remotes/origin/dashboard-words"
+          },
+          {
+            "name": "desk-diagram",
+            "tip": "a58d31b04b3ce58e957ab385313346efa622bc38",
+            "ref": "refs/remotes/origin/desk-diagram"
+          },
+          {
+            "name": "desk-final-words",
+            "tip": "206a167fa01ed8b58d354a2436ae403ed0419c4a",
+            "ref": "refs/remotes/origin/desk-final-words"
+          },
+          {
+            "name": "desk-layout",
+            "tip": "5e86b1dc9b9e8d9aff5a149af00acff20a1eb9e4",
+            "ref": "refs/remotes/origin/desk-layout"
+          },
+          {
+            "name": "desk-one-list",
+            "tip": "660e6e8f3d17eb7f13c410d5668485a8b1ccc50e",
+            "ref": "refs/remotes/origin/desk-one-list"
+          },
+          {
+            "name": "desk-one-page",
+            "tip": "a08f1ac70b112a301080907ae49fc2c041e35261",
+            "ref": "refs/remotes/origin/desk-one-page"
+          },
+          {
+            "name": "desk-phone",
+            "tip": "e1326b18eb57cc919b72a0b42364e34e643c7bdf",
+            "ref": "refs/remotes/origin/desk-phone"
+          },
+          {
+            "name": "desk-plan-words",
+            "tip": "b4ad72bcc505516d48abab57d71091656a4a2701",
+            "ref": "refs/remotes/origin/desk-plan-words"
+          },
+          {
+            "name": "desk-simplify",
+            "tip": "3f5bd1e3e5748fbb951ac772fd27848b30ef6c5d",
+            "ref": "refs/remotes/origin/desk-simplify"
+          },
+          {
+            "name": "desk-two-sections",
+            "tip": "6d673805a93bcc28625b888015575bbaef0a187b",
+            "ref": "refs/remotes/origin/desk-two-sections"
+          },
+          {
+            "name": "desk-wording",
+            "tip": "1b31d22ba6e866376613d7678adfeebcc971beec",
+            "ref": "refs/remotes/origin/desk-wording"
+          },
+          {
+            "name": "dip-charts",
+            "tip": "15c3491fc2501d7f5eebd0a008632533c7770743",
+            "ref": "refs/remotes/origin/dip-charts"
+          },
+          {
+            "name": "ema9-merge",
+            "tip": "4af4cf51c612bb335458d963700a346cbc5f305b",
+            "ref": "refs/remotes/origin/ema9-merge"
+          },
+          {
+            "name": "ema9-read",
+            "tip": "e1503c39508382764f9d8bfca27ebd6d61d690df",
+            "ref": "refs/remotes/origin/ema9-read"
+          },
+          {
+            "name": "execution-quality",
+            "tip": "86751cd0e3417495fc34c20f155b51592f0732d7",
+            "ref": "refs/remotes/origin/execution-quality"
+          },
+          {
+            "name": "execution-rl",
+            "tip": "a9c5a0d3c10472a7dad4178fd79b382c1deb7d1d",
+            "ref": "refs/remotes/origin/execution-rl"
+          },
+          {
+            "name": "execution-split",
+            "tip": "ee0d1156c6a854ceaab2e428bda1bb8445137476",
+            "ref": "refs/remotes/origin/execution-split"
+          },
+          {
+            "name": "feat/desk-dashboard-overhaul",
+            "tip": "bc4e352f30d5cdec8659ad5c2b1f1613a1367b80",
+            "ref": "refs/remotes/origin/feat/desk-dashboard-overhaul"
+          },
+          {
+            "name": "fomc-calendar-2027",
+            "tip": "755fe9113a1e7576dd5ac1995dd952868ddd9646",
+            "ref": "refs/remotes/origin/fomc-calendar-2027"
+          },
+          {
+            "name": "fomc-gate",
+            "tip": "ef85d4f88135ee6d270e09b526b7d4e3905fff5b",
+            "ref": "refs/remotes/origin/fomc-gate"
+          },
+          {
+            "name": "fomc-sizing-view",
+            "tip": "b8991149db256ef0b507e64bf7657facca4b42aa",
+            "ref": "refs/remotes/origin/fomc-sizing-view"
+          },
+          {
+            "name": "fundamentals-asof-shadow",
+            "tip": "53b19ca24edf753994789435a660372b218d34dd",
+            "ref": "refs/remotes/origin/fundamentals-asof-shadow"
+          },
+          {
+            "name": "grading-input-fixes",
+            "tip": "4353db1ccb21c9f9c30461f9244ed8052394662e",
+            "ref": "refs/remotes/origin/grading-input-fixes"
+          },
+          {
+            "name": "intraday-timing",
+            "tip": "d6d2f5c7045eb8a70ad669f9da6e1f81b28cfb25",
+            "ref": "refs/remotes/origin/intraday-timing"
+          },
+          {
+            "name": "ml-ledger-continuity",
+            "tip": "8136d0d23f0cff2f6be90d20dbfb53229108e961",
+            "ref": "refs/remotes/origin/ml-ledger-continuity"
+          },
+          {
+            "name": "ml-receipt",
+            "tip": "da93218f2cf3b20a5adebf5470e653e5eb91b046",
+            "ref": "refs/remotes/origin/ml-receipt"
+          },
+          {
+            "name": "morning-fills",
+            "tip": "d4eb1e8facd44339aa5ebb0fe397860b897939e7",
+            "ref": "refs/remotes/origin/morning-fills"
+          },
+          {
+            "name": "nightly-hardening",
+            "tip": "76a0e998f12ba89e8be0d099718cb16e70a3151f",
+            "ref": "refs/remotes/origin/nightly-hardening"
+          },
+          {
+            "name": "nightly-tone-book",
+            "tip": "12bf7a254d5d3507a260a93c63441212ab245c26",
+            "ref": "refs/remotes/origin/nightly-tone-book"
+          },
+          {
+            "name": "opportunity-column",
+            "tip": "8bdc3a3a57326a1b4b50819d2a94d498e65d7940",
+            "ref": "refs/remotes/origin/opportunity-column"
+          },
+          {
+            "name": "ops-fixes",
+            "tip": "226f237adb310f988b25aefacb3a052e2afbaa7d",
+            "ref": "refs/remotes/origin/ops-fixes"
+          },
+          {
+            "name": "order-lifecycle-fixes",
+            "tip": "a0a9a6074ad5805bd905f1d1aa5a94dea3f434c6",
+            "ref": "refs/remotes/origin/order-lifecycle-fixes"
+          },
+          {
+            "name": "prose-beside-decision",
+            "tip": "b581881b9e97e4f09731e047a53190a1665597bb",
+            "ref": "refs/remotes/origin/prose-beside-decision"
+          },
+          {
+            "name": "research/growth-gpu-audit",
+            "tip": "376d02e82d06e4626d5897e02d5a6c9595a73612",
+            "ref": "refs/remotes/origin/research/growth-gpu-audit"
+          },
+          {
+            "name": "research/laggard-shadow",
+            "tip": "4c839769bb2c683553ace04caaee34fa10fd9e94",
+            "ref": "refs/remotes/origin/research/laggard-shadow"
+          },
+          {
+            "name": "research/persistence-length",
+            "tip": "c356bbe79ecbcaeccb95179f36d25a8eaeeec84f",
+            "ref": "refs/remotes/origin/research/persistence-length"
+          },
+          {
+            "name": "research/stage4",
+            "tip": "a0f5ff4daf55efef4fbb69d65842d35436b7912f",
+            "ref": "refs/remotes/origin/research/stage4"
+          },
+          {
+            "name": "reversal",
+            "tip": "c548b83515ed78cfd4082ad5d0a8f79c8b0dbc37",
+            "ref": "refs/remotes/origin/reversal"
+          },
+          {
+            "name": "review-fixes",
+            "tip": "3b260da1bcab2faa68173e9ab27f18c6cdbd7e69",
+            "ref": "refs/remotes/origin/review-fixes"
+          },
+          {
+            "name": "stretch-leg",
+            "tip": "a6c4770e1aae018ddbf648dfc72369922c490e65",
+            "ref": "refs/remotes/origin/stretch-leg"
+          },
+          {
+            "name": "ticker-panel-ux",
+            "tip": "ff76638e66266e4233fd4e5b335bae45568212c8",
+            "ref": "refs/remotes/origin/ticker-panel-ux"
+          },
+          {
+            "name": "tone-revisions",
+            "tip": "5730cb2d9362ef287043c4984085405f1a961cf9",
+            "ref": "refs/remotes/origin/tone-revisions"
+          },
+          {
+            "name": "trading/policy-v5-cap25",
+            "tip": "459596043bbbce902ba63918624f80dbe2622dfd",
+            "ref": "refs/remotes/origin/trading/policy-v5-cap25"
+          },
+          {
+            "name": "watch-env",
+            "tip": "f67eb5d834a73d17d89032cc7e99415d93822c8c",
+            "ref": "refs/remotes/origin/watch-env"
+          }
+        ],
+        "remote_preserved": [],
+        "remote_deleted": [
+          {
+            "name": "codex/bounded-execution-20261001",
+            "tip": "ae9aa07726d1f8e8b81f9f8c2e53398cc3ae8d77",
+            "ref": "refs/remotes/origin/codex/bounded-execution-20261001"
+          },
+          {
+            "name": "codex/current-entry-permission-20261002",
+            "tip": "27671d6f52e76f15f461637f0e8e947839a72358",
+            "ref": "refs/remotes/origin/codex/current-entry-permission-20261002"
+          },
+          {
+            "name": "codex/decision-points-board-20261002",
+            "tip": "8722db85c31b780908f7f931753f24c4d1f283fc",
+            "ref": "refs/remotes/origin/codex/decision-points-board-20261002"
+          },
+          {
+            "name": "codex/entry-exit-audit-20261001",
+            "tip": "4c365d0480887b7708253dca51f260baacf8ddbd",
+            "ref": "refs/remotes/origin/codex/entry-exit-audit-20261001"
+          },
+          {
+            "name": "codex/immediate-actions-chart-20261002",
+            "tip": "0dfdcd8980de5890dd45aeeb3e400ebc92fa9900",
+            "ref": "refs/remotes/origin/codex/immediate-actions-chart-20261002"
+          },
+          {
+            "name": "codex/levels-chart-consistency-20261002",
+            "tip": "82008d764ede51019962c65e3d3fe2ed95004eb8",
+            "ref": "refs/remotes/origin/codex/levels-chart-consistency-20261002"
+          },
+          {
+            "name": "codex/live-buy-ranking-20261002",
+            "tip": "8be5ecbec5cfbaacd368561bbb52c9940a2a6304",
+            "ref": "refs/remotes/origin/codex/live-buy-ranking-20261002"
+          },
+          {
+            "name": "codex/open-source-research-20261001",
+            "tip": "fddd684467490c343b51bea04d07c7ebe4c62e5e",
+            "ref": "refs/remotes/origin/codex/open-source-research-20261001"
+          },
+          {
+            "name": "codex/personal-advice-refresh-20261002",
+            "tip": "8a77c1168dcee36df7ceb262a2d52d73f502d909",
+            "ref": "refs/remotes/origin/codex/personal-advice-refresh-20261002"
+          },
+          {
+            "name": "codex/trading-dashboard-main-integration-20261017",
+            "tip": "8809d0a1dcc5e8fc6f4abc9a0c80984a5405e7e0",
+            "ref": "refs/remotes/origin/codex/trading-dashboard-main-integration-20261017"
+          },
+          {
+            "name": "codex/trading-evidence-20260923",
+            "tip": "eec2d6dd32eda1f4a9cff32015e046f478a33a3b",
+            "ref": "refs/remotes/origin/codex/trading-evidence-20260923"
+          },
+          {
+            "name": "codex/trading-integration-20260922",
+            "tip": "9e4fab94458e06e685d3d16e0a19633afa10fee2",
+            "ref": "refs/remotes/origin/codex/trading-integration-20260922"
+          },
+          {
+            "name": "desk/board-structure",
+            "tip": "908e683a042b6041c211a4e12d7949cdc41e53b6",
+            "ref": "refs/remotes/origin/desk/board-structure"
+          },
+          {
+            "name": "desk/release-coverage",
+            "tip": "d17f16325bcf97b9c2b9796693a019fe16de92ea",
+            "ref": "refs/remotes/origin/desk/release-coverage"
+          },
+          {
+            "name": "desk/tone-expiry-live",
+            "tip": "44d53b0378676edcf6892ef863c1f55202ebdb1f",
+            "ref": "refs/remotes/origin/desk/tone-expiry-live"
+          },
+          {
+            "name": "desk/vintage-banner",
+            "tip": "4384ea77b2115a2d0e504d392deb162096069c47",
+            "ref": "refs/remotes/origin/desk/vintage-banner"
+          },
+          {
+            "name": "docs/paper-moc-fills-record",
+            "tip": "e6d8737de3d039c47180861f20dfc000db3dcf60",
+            "ref": "refs/remotes/origin/docs/paper-moc-fills-record"
+          },
+          {
+            "name": "docs/trading-scenarios",
+            "tip": "cf5006e07aef8a5e6119fb4817a61e6cf57e76dd",
+            "ref": "refs/remotes/origin/docs/trading-scenarios"
+          },
+          {
+            "name": "fix/6k-classifier",
+            "tip": "8046f0c9ab8fc130f429f7c0c83ac993614864a5",
+            "ref": "refs/remotes/origin/fix/6k-classifier"
+          },
+          {
+            "name": "fix/6k-false-admissions",
+            "tip": "f49988d13eb1e1d20de3cb09b62c69398a8ae948",
+            "ref": "refs/remotes/origin/fix/6k-false-admissions"
+          },
+          {
+            "name": "fix/desk-order-evidence-20260930",
+            "tip": "a60831399f3dac35982150c001032d9b0d35cf04",
+            "ref": "refs/remotes/origin/fix/desk-order-evidence-20260930"
+          },
+          {
+            "name": "fix/paper-moc-fills",
+            "tip": "feeaadef024b15a61e3edeb0f84120b6d5f6c823",
+            "ref": "refs/remotes/origin/fix/paper-moc-fills"
+          },
+          {
+            "name": "fix/review-consistency-20261001",
+            "tip": "6b85cfe04300cdf405d5ff46e190478d9ea3f5db",
+            "ref": "refs/remotes/origin/fix/review-consistency-20261001"
+          },
+          {
+            "name": "ops/deploy-gate-first",
+            "tip": "6841411a09a5e85067285499f277a9835f8f1e1b",
+            "ref": "refs/remotes/origin/ops/deploy-gate-first"
+          },
+          {
+            "name": "research/adaptive-entry",
+            "tip": "ac7b209707c7169ee83160e87c755bc5b674ef7f",
+            "ref": "refs/remotes/origin/research/adaptive-entry"
+          },
+          {
+            "name": "research/grounded-release-pilot-20260930",
+            "tip": "81a74adf38c920f3ee5592bd6f7602099aec15f2",
+            "ref": "refs/remotes/origin/research/grounded-release-pilot-20260930"
+          },
+          {
+            "name": "research/tone-expiry",
+            "tip": "f5c56ae52a1c8ebf15f3353e1dbf9804f7b7aec8",
+            "ref": "refs/remotes/origin/research/tone-expiry"
+          },
+          {
+            "name": "test/trade-board-specs",
+            "tip": "dd2ea4e567859d58390e3a475e1656b4a29a2a55",
+            "ref": "refs/remotes/origin/test/trade-board-specs"
+          },
+          {
+            "name": "trading/tone-6k",
+            "tip": "99ed9b239ca4336ae0b275b0b440578bd71d7ec5",
+            "ref": "refs/remotes/origin/trading/tone-6k"
+          }
+        ],
+        "remote_outcome": {
+          "returncode": 0,
+          "stdout": "",
+          "stderr": "To https://github.com/MallyaAni/PersonalAssistant.git\n - [deleted]           codex/bounded-execution-20261001\n - [deleted]           codex/current-entry-permission-20261002\n - [deleted]           codex/decision-points-board-20261002\n - [deleted]           codex/entry-exit-audit-20261001\n - [deleted]           codex/immediate-actions-chart-20261002\n - [deleted]           codex/levels-chart-consistency-20261002\n - [deleted]           codex/live-buy-ranking-20261002\n - [deleted]           codex/open-source-research-20261001\n - [deleted]           codex/personal-advice-refresh-20261002\n - [deleted]           codex/trading-dashboard-main-integration-20261017\n - [deleted]           codex/trading-evidence-20260923\n - [deleted]           codex/trading-integration-20260922\n - [deleted]           desk/board-structure\n - [deleted]           desk/release-coverage\n - [deleted]           desk/tone-expiry-live\n - [deleted]           desk/vintage-banner\n - [deleted]           docs/paper-moc-fills-record\n - [deleted]           docs/trading-scenarios\n - [deleted]           fix/6k-classifier\n - [deleted]           fix/6k-false-admissions\n - [deleted]           fix/desk-order-evidence-20260930\n - [deleted]           fix/paper-moc-fills\n - [deleted]           fix/review-consistency-20261001\n - [deleted]           ops/deploy-gate-first\n - [deleted]           research/adaptive-entry\n - [deleted]           research/grounded-release-pilot-20260930\n - [deleted]           research/tone-expiry\n - [deleted]           test/trade-board-specs\n - [deleted]           trading/tone-6k\n"
+        }
+      }
+    },
+    {
+      "path": "/tmp/dashboard-final-branch-retirement-20261020.json",
+      "bytes": 14893,
+      "sha256": "482813e3f5bd88fdc573f868c2742579c11bf77265dd27e91110704775180c1a",
+      "value": {
+        "merge": "150e54f680faa93127435e5dca43115ca945ba89",
+        "commands": [
+          {
+            "cwd": "/Users/animallya/.codex/worktrees/dashboard-main-review-20261020/PersonalAssistant",
+            "args": [
+              "ls-remote",
+              "--heads",
+              "origin",
+              "refs/heads/main"
+            ],
+            "returncode": 0,
+            "stdout": "150e54f680faa93127435e5dca43115ca945ba89\trefs/heads/main\n",
+            "stderr": ""
+          },
+          {
+            "cwd": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant",
+            "args": [
+              "status",
+              "--porcelain",
+              "--untracked-files=no"
+            ],
+            "returncode": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          {
+            "cwd": "/Users/animallya/.codex/worktrees/dashboard-main-review-20261020/PersonalAssistant",
+            "args": [
+              "rev-parse",
+              "codex/trading-fill-consistency-20261019"
+            ],
+            "returncode": 0,
+            "stdout": "39daad27e7e4d312012eb5f2b35157ff3d5ad3d1\n",
+            "stderr": ""
+          },
+          {
+            "cwd": "/Users/animallya/.codex/worktrees/dashboard-main-review-20261020/PersonalAssistant",
+            "args": [
+              "merge-base",
+              "--is-ancestor",
+              "39daad27e7e4d312012eb5f2b35157ff3d5ad3d1",
+              "150e54f680faa93127435e5dca43115ca945ba89"
+            ],
+            "returncode": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          {
+            "cwd": "/Users/animallya/.codex/worktrees/dashboard-main-review-20261020/PersonalAssistant",
+            "args": [
+              "worktree",
+              "list",
+              "--porcelain"
+            ],
+            "returncode": 0,
+            "stdout": "worktree /Users/animallya/Desktop/PersonalAssistant\nHEAD 3b9f0f1dea1c853d079057d89b40eaac8f7342d8\nbranch refs/heads/codex/funded-execution-forward-20261002\n\nworktree /private/tmp/anios-desk-live-provenance\nHEAD d220f4317d6cc90a18cd394e9642f75d20a9ec4a\nbranch refs/heads/codex/desk-live-provenance\nprunable gitdir file points to non-existent location\n\nworktree /private/tmp/anios-entry-exit-zero-cost\nHEAD 0c37eb16944075f5f8f2eb5189313154afe73f17\nbranch refs/heads/codex/entry-exit-zero-cost-attribution\nprunable gitdir file points to non-existent location\n\nworktree /Users/animallya/.codex/worktrees/closing-window-backtest-20261002/PersonalAssistant\nHEAD a382af873abfb62af712da6cb5a118e836825d35\nbranch refs/heads/codex/learned-entry-risk-20261002\n\nworktree /Users/animallya/.codex/worktrees/dashboard-main-review-20261020/PersonalAssistant\nHEAD 150e54f680faa93127435e5dca43115ca945ba89\nbranch refs/heads/codex/dashboard-main-review-20261020\n\nworktree /Users/animallya/.codex/worktrees/execution-reconciliation-20261017/PersonalAssistant\nHEAD 6d4729c3df9b0ef2d62ab9b848c1499f2c3d954d\nbranch refs/heads/codex/original-audit-streamed-history-20261017\n\nworktree /Users/animallya/.codex/worktrees/fresh-stock-assessment-20261014/PersonalAssistant\nHEAD a2378e9565e6a557fbc3782ac1a5536bae961a75\nbranch refs/heads/codex/fresh-stock-assessment-20261014\n\nworktree /Users/animallya/.codex/worktrees/historical-packet-store-20261017/PersonalAssistant\nHEAD b9f5d7cde4cdbe01146e455674bdbb45004e53f9\nbranch refs/heads/codex/historical-current-settlement-cycle-v2-20261017\n\nworktree /Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant\nHEAD 39daad27e7e4d312012eb5f2b35157ff3d5ad3d1\nbranch refs/heads/codex/trading-fill-consistency-20261019\n\nworktree /Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant\nHEAD 6cbebcd9efd8907d24111c008c0c6dcf8c707cbf\nbranch refs/heads/codex/learned-live-release-20261006\n\nworktree /Users/animallya/.codex/worktrees/live-decision-contract-20261017/PersonalAssistant\nHEAD ad44d536a70d5c037cb931836a3c9f48b014d84a\nbranch refs/heads/codex/live-decision-contract-20261017\n\nworktree /Users/animallya/.codex/worktrees/settlement-quantity-retention-20261017/PersonalAssistant\nHEAD 79bd37c23af18ccaa8c908c8616d35890aecc4b6\nbranch refs/heads/codex/historical-physical-checkpoint-20261017\n\nworktree /Users/animallya/.codex/worktrees/trading-action-consistency-20261017/PersonalAssistant\nHEAD 12a3dd5143fdd93844767754e557af6e9a6a7a53\nbranch refs/heads/codex/trading-action-consistency-20261017\n\nworktree /Users/animallya/Desktop/anios-nightly-fixes\nHEAD 78a7b3c8cb434a3a7d4f7dd9424021fe6afe43e1\nbranch refs/heads/trading/nightly-fixes\n\nworktree /Users/animallya/Desktop/anios-trading-volatile-15m\nHEAD b9c2e371e6ccb62ad79cb987479eff7db8f469b1\nbranch refs/heads/trading/volatile-book-15m\n\nworktree /Users/animallya/Desktop/anios-vb15m-a-sip\nHEAD e3af34e2e7206049d1ad177a7222cfae69968120\nbranch refs/heads/trading/vb15m-a-sip\n\nworktree /Users/animallya/Desktop/anios-vb15m-b-harness\nHEAD 12f4c1099f3e8b3ab8a1667b190cad0076635cdc\nbranch refs/heads/trading/vb15m-b-harness\n\nworktree /Users/animallya/Desktop/anios-vb15m-c-simulator\nHEAD b84ea1332cc31229ab55beb9a252642876dcc319\nbranch refs/heads/trading/vb15m-c-simulator\n\nworktree /Users/animallya/Desktop/anios-vb15m-d-correctness\nHEAD f4fa704e943ff95ae5598909bd92514006d60eb3\nbranch refs/heads/trading/vb15m-d-correctness\n\nworktree /Users/animallya/Desktop/anios-vb15m-e-structure\nHEAD b896fcaa1c2134303cb013cbca4c7cdb2fcbb372\nbranch refs/heads/trading/vb15m-e-structure\n\nworktree /Users/animallya/Desktop/anios-vb15m-f-instrumentation\nHEAD 4f408ef26bf634adab0e79c28d7ed90585f067f6\nbranch refs/heads/trading/vb15m-f-instrumentation\n\nworktree /Users/animallya/Desktop/anios-vb15m-g-riskstate\nHEAD 21921e49a6f27026ace63b8bb5d42aecc74e2b16\nbranch refs/heads/trading/vb15m-g-riskstate\n\n",
+            "stderr": ""
+          },
+          {
+            "cwd": "/Users/animallya/.codex/worktrees/dashboard-main-review-20261020/PersonalAssistant",
+            "args": [
+              "rev-parse",
+              "refs/heads/main"
+            ],
+            "returncode": 0,
+            "stdout": "14f61a0fea31adb587f85fee8f94d8ee29756d6e\n",
+            "stderr": ""
+          },
+          {
+            "cwd": "/Users/animallya/.codex/worktrees/dashboard-main-review-20261020/PersonalAssistant",
+            "args": [
+              "merge-base",
+              "--is-ancestor",
+              "14f61a0fea31adb587f85fee8f94d8ee29756d6e",
+              "150e54f680faa93127435e5dca43115ca945ba89"
+            ],
+            "returncode": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          {
+            "cwd": "/Users/animallya/.codex/worktrees/dashboard-main-review-20261020/PersonalAssistant",
+            "args": [
+              "update-ref",
+              "refs/heads/main",
+              "150e54f680faa93127435e5dca43115ca945ba89",
+              "14f61a0fea31adb587f85fee8f94d8ee29756d6e"
+            ],
+            "returncode": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          {
+            "cwd": "/Users/animallya/.codex/worktrees/dashboard-main-review-20261020/PersonalAssistant",
+            "args": [
+              "switch",
+              "main"
+            ],
+            "returncode": 0,
+            "stdout": "Your branch is up to date with 'origin/main'.\n",
+            "stderr": "Switched to branch 'main'\n"
+          },
+          {
+            "cwd": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant",
+            "args": [
+              "switch",
+              "--detach",
+              "39daad27e7e4d312012eb5f2b35157ff3d5ad3d1"
+            ],
+            "returncode": 0,
+            "stdout": "",
+            "stderr": "HEAD is now at 39daad27 Record authorized main integration after dashboard acceptance\n"
+          },
+          {
+            "cwd": "/Users/animallya/.codex/worktrees/dashboard-main-review-20261020/PersonalAssistant",
+            "args": [
+              "rev-parse",
+              "codex/dashboard-main-review-20261020"
+            ],
+            "returncode": 0,
+            "stdout": "150e54f680faa93127435e5dca43115ca945ba89\n",
+            "stderr": ""
+          },
+          {
+            "cwd": "/Users/animallya/.codex/worktrees/dashboard-main-review-20261020/PersonalAssistant",
+            "args": [
+              "merge-base",
+              "--is-ancestor",
+              "150e54f680faa93127435e5dca43115ca945ba89",
+              "150e54f680faa93127435e5dca43115ca945ba89"
+            ],
+            "returncode": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          {
+            "cwd": "/Users/animallya/.codex/worktrees/dashboard-main-review-20261020/PersonalAssistant",
+            "args": [
+              "branch",
+              "-d",
+              "--",
+              "codex/dashboard-main-review-20261020"
+            ],
+            "returncode": 0,
+            "stdout": "Deleted branch codex/dashboard-main-review-20261020 (was 150e54f6).\n",
+            "stderr": ""
+          },
+          {
+            "cwd": "/Users/animallya/.codex/worktrees/dashboard-main-review-20261020/PersonalAssistant",
+            "args": [
+              "rev-parse",
+              "codex/trading-fill-consistency-20261019"
+            ],
+            "returncode": 0,
+            "stdout": "39daad27e7e4d312012eb5f2b35157ff3d5ad3d1\n",
+            "stderr": ""
+          },
+          {
+            "cwd": "/Users/animallya/.codex/worktrees/dashboard-main-review-20261020/PersonalAssistant",
+            "args": [
+              "merge-base",
+              "--is-ancestor",
+              "39daad27e7e4d312012eb5f2b35157ff3d5ad3d1",
+              "150e54f680faa93127435e5dca43115ca945ba89"
+            ],
+            "returncode": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          {
+            "cwd": "/Users/animallya/.codex/worktrees/dashboard-main-review-20261020/PersonalAssistant",
+            "args": [
+              "branch",
+              "-d",
+              "--",
+              "codex/trading-fill-consistency-20261019"
+            ],
+            "returncode": 0,
+            "stdout": "Deleted branch codex/trading-fill-consistency-20261019 (was 39daad27).\n",
+            "stderr": ""
+          },
+          {
+            "cwd": "/Users/animallya/.codex/worktrees/dashboard-main-review-20261020/PersonalAssistant",
+            "args": [
+              "ls-remote",
+              "--heads",
+              "origin",
+              "refs/heads/codex/trading-fill-consistency-20261019"
+            ],
+            "returncode": 0,
+            "stdout": "39daad27e7e4d312012eb5f2b35157ff3d5ad3d1\trefs/heads/codex/trading-fill-consistency-20261019\n",
+            "stderr": ""
+          },
+          {
+            "cwd": "/Users/animallya/.codex/worktrees/dashboard-main-review-20261020/PersonalAssistant",
+            "args": [
+              "push",
+              "origin",
+              "--delete",
+              "codex/trading-fill-consistency-20261019"
+            ],
+            "returncode": 0,
+            "stdout": "",
+            "stderr": "To https://github.com/MallyaAni/PersonalAssistant.git\n - [deleted]           codex/trading-fill-consistency-20261019\n"
+          },
+          {
+            "cwd": "/Users/animallya/.codex/worktrees/dashboard-main-review-20261020/PersonalAssistant",
+            "args": [
+              "fetch",
+              "--prune",
+              "origin"
+            ],
+            "returncode": 0,
+            "stdout": "",
+            "stderr": "From https://github.com/MallyaAni/PersonalAssistant\n - [deleted]           (none)     -> origin/board-sort\n - [deleted]           (none)     -> origin/claude/trader-board-20260930\n - [deleted]           (none)     -> origin/dashboard-words\n - [deleted]           (none)     -> origin/desk-diagram\n - [deleted]           (none)     -> origin/desk-final-words\n - [deleted]           (none)     -> origin/desk-layout\n - [deleted]           (none)     -> origin/desk-one-list\n - [deleted]           (none)     -> origin/desk-one-page\n - [deleted]           (none)     -> origin/desk-phone\n - [deleted]           (none)     -> origin/desk-plan-words\n - [deleted]           (none)     -> origin/desk-simplify\n - [deleted]           (none)     -> origin/desk-two-sections\n - [deleted]           (none)     -> origin/desk-wording\n - [deleted]           (none)     -> origin/dip-charts\n - [deleted]           (none)     -> origin/ema9-merge\n - [deleted]           (none)     -> origin/ema9-read\n - [deleted]           (none)     -> origin/execution-quality\n - [deleted]           (none)     -> origin/execution-rl\n - [deleted]           (none)     -> origin/execution-split\n - [deleted]           (none)     -> origin/feat/desk-dashboard-overhaul\n - [deleted]           (none)     -> origin/fomc-calendar-2027\n - [deleted]           (none)     -> origin/fomc-gate\n - [deleted]           (none)     -> origin/fomc-sizing-view\n - [deleted]           (none)     -> origin/fundamentals-asof-shadow\n - [deleted]           (none)     -> origin/grading-input-fixes\n - [deleted]           (none)     -> origin/intraday-timing\n - [deleted]           (none)     -> origin/ml-ledger-continuity\n - [deleted]           (none)     -> origin/ml-receipt\n - [deleted]           (none)     -> origin/morning-fills\n - [deleted]           (none)     -> origin/nightly-hardening\n - [deleted]           (none)     -> origin/nightly-tone-book\n - [deleted]           (none)     -> origin/opportunity-column\n - [deleted]           (none)     -> origin/ops-fixes\n - [deleted]           (none)     -> origin/order-lifecycle-fixes\n - [deleted]           (none)     -> origin/prose-beside-decision\n - [deleted]           (none)     -> origin/release-event-vote\n - [deleted]           (none)     -> origin/research/execution-validation-20260928\n - [deleted]           (none)     -> origin/research/fundamentals-asof\n - [deleted]           (none)     -> origin/research/growth-gpu-audit\n - [deleted]           (none)     -> origin/research/laggard-shadow\n - [deleted]           (none)     -> origin/research/persistence-length\n - [deleted]           (none)     -> origin/research/price-candidate\n - [deleted]           (none)     -> origin/research/price-sensitivity\n - [deleted]           (none)     -> origin/research/stage4\n - [deleted]           (none)     -> origin/research/valuation-increment\n - [deleted]           (none)     -> origin/reversal\n - [deleted]           (none)     -> origin/review-fixes\n - [deleted]           (none)     -> origin/stretch-leg\n - [deleted]           (none)     -> origin/ticker-panel-ux\n - [deleted]           (none)     -> origin/tone-revisions\n - [deleted]           (none)     -> origin/trading/policy-v5-cap25\n - [deleted]           (none)     -> origin/watch-env\n"
+          },
+          {
+            "cwd": "/Users/animallya/.codex/worktrees/dashboard-main-review-20261020/PersonalAssistant",
+            "args": [
+              "rev-parse",
+              "origin/main"
+            ],
+            "returncode": 0,
+            "stdout": "150e54f680faa93127435e5dca43115ca945ba89\n",
+            "stderr": ""
+          },
+          {
+            "cwd": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant",
+            "args": [
+              "rev-parse",
+              "HEAD"
+            ],
+            "returncode": 0,
+            "stdout": "39daad27e7e4d312012eb5f2b35157ff3d5ad3d1\n",
+            "stderr": ""
+          },
+          {
+            "cwd": "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant",
+            "args": [
+              "status",
+              "--porcelain",
+              "--untracked-files=no"
+            ],
+            "returncode": 0,
+            "stdout": "",
+            "stderr": ""
+          }
+        ],
+        "preview_files_changed": false,
+        "deleted_local": [
+          "codex/dashboard-main-review-20261020",
+          "codex/trading-fill-consistency-20261019"
+        ],
+        "deleted_remote": [
+          "codex/trading-fill-consistency-20261019"
+        ],
+        "final_main": "150e54f680faa93127435e5dca43115ca945ba89",
+        "preview_head": "39daad27e7e4d312012eb5f2b35157ff3d5ad3d1"
+      }
+    },
+    {
+      "path": "/tmp/dashboard-predecessor-branch-retirement-20261020.json",
+      "bytes": 10210,
+      "sha256": "aa9b38145f9a85ab3e3407401110b27009fc5750a4f9efcdb4f756feae67e270",
+      "value": {
+        "commands": [
+          {
+            "args": [
+              "worktree",
+              "list",
+              "--porcelain"
+            ],
+            "returncode": 0,
+            "stdout": "worktree /Users/animallya/Desktop/PersonalAssistant\nHEAD 3b9f0f1dea1c853d079057d89b40eaac8f7342d8\nbranch refs/heads/codex/funded-execution-forward-20261002\n\nworktree /private/tmp/anios-desk-live-provenance\nHEAD d220f4317d6cc90a18cd394e9642f75d20a9ec4a\nbranch refs/heads/codex/desk-live-provenance\nprunable gitdir file points to non-existent location\n\nworktree /private/tmp/anios-entry-exit-zero-cost\nHEAD 0c37eb16944075f5f8f2eb5189313154afe73f17\nbranch refs/heads/codex/entry-exit-zero-cost-attribution\nprunable gitdir file points to non-existent location\n\nworktree /Users/animallya/.codex/worktrees/closing-window-backtest-20261002/PersonalAssistant\nHEAD a382af873abfb62af712da6cb5a118e836825d35\nbranch refs/heads/codex/learned-entry-risk-20261002\n\nworktree /Users/animallya/.codex/worktrees/dashboard-main-review-20261020/PersonalAssistant\nHEAD 150e54f680faa93127435e5dca43115ca945ba89\nbranch refs/heads/main\n\nworktree /Users/animallya/.codex/worktrees/execution-reconciliation-20261017/PersonalAssistant\nHEAD 6d4729c3df9b0ef2d62ab9b848c1499f2c3d954d\nbranch refs/heads/codex/original-audit-streamed-history-20261017\n\nworktree /Users/animallya/.codex/worktrees/fresh-stock-assessment-20261014/PersonalAssistant\nHEAD a2378e9565e6a557fbc3782ac1a5536bae961a75\nbranch refs/heads/codex/fresh-stock-assessment-20261014\n\nworktree /Users/animallya/.codex/worktrees/historical-packet-store-20261017/PersonalAssistant\nHEAD b9f5d7cde4cdbe01146e455674bdbb45004e53f9\nbranch refs/heads/codex/historical-current-settlement-cycle-v2-20261017\n\nworktree /Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant\nHEAD 39daad27e7e4d312012eb5f2b35157ff3d5ad3d1\ndetached\n\nworktree /Users/animallya/.codex/worktrees/learned-live-release-20261006/PersonalAssistant\nHEAD 6cbebcd9efd8907d24111c008c0c6dcf8c707cbf\nbranch refs/heads/codex/learned-live-release-20261006\n\nworktree /Users/animallya/.codex/worktrees/live-decision-contract-20261017/PersonalAssistant\nHEAD ad44d536a70d5c037cb931836a3c9f48b014d84a\nbranch refs/heads/codex/live-decision-contract-20261017\n\nworktree /Users/animallya/.codex/worktrees/settlement-quantity-retention-20261017/PersonalAssistant\nHEAD 79bd37c23af18ccaa8c908c8616d35890aecc4b6\nbranch refs/heads/codex/historical-physical-checkpoint-20261017\n\nworktree /Users/animallya/.codex/worktrees/trading-action-consistency-20261017/PersonalAssistant\nHEAD 12a3dd5143fdd93844767754e557af6e9a6a7a53\nbranch refs/heads/codex/trading-action-consistency-20261017\n\nworktree /Users/animallya/Desktop/anios-nightly-fixes\nHEAD 78a7b3c8cb434a3a7d4f7dd9424021fe6afe43e1\nbranch refs/heads/trading/nightly-fixes\n\nworktree /Users/animallya/Desktop/anios-trading-volatile-15m\nHEAD b9c2e371e6ccb62ad79cb987479eff7db8f469b1\nbranch refs/heads/trading/volatile-book-15m\n\nworktree /Users/animallya/Desktop/anios-vb15m-a-sip\nHEAD e3af34e2e7206049d1ad177a7222cfae69968120\nbranch refs/heads/trading/vb15m-a-sip\n\nworktree /Users/animallya/Desktop/anios-vb15m-b-harness\nHEAD 12f4c1099f3e8b3ab8a1667b190cad0076635cdc\nbranch refs/heads/trading/vb15m-b-harness\n\nworktree /Users/animallya/Desktop/anios-vb15m-c-simulator\nHEAD b84ea1332cc31229ab55beb9a252642876dcc319\nbranch refs/heads/trading/vb15m-c-simulator\n\nworktree /Users/animallya/Desktop/anios-vb15m-d-correctness\nHEAD f4fa704e943ff95ae5598909bd92514006d60eb3\nbranch refs/heads/trading/vb15m-d-correctness\n\nworktree /Users/animallya/Desktop/anios-vb15m-e-structure\nHEAD b896fcaa1c2134303cb013cbca4c7cdb2fcbb372\nbranch refs/heads/trading/vb15m-e-structure\n\nworktree /Users/animallya/Desktop/anios-vb15m-f-instrumentation\nHEAD 4f408ef26bf634adab0e79c28d7ed90585f067f6\nbranch refs/heads/trading/vb15m-f-instrumentation\n\nworktree /Users/animallya/Desktop/anios-vb15m-g-riskstate\nHEAD 21921e49a6f27026ace63b8bb5d42aecc74e2b16\nbranch refs/heads/trading/vb15m-g-riskstate\n\n",
+            "stderr": ""
+          },
+          {
+            "args": [
+              "rev-parse",
+              "codex/settlement-quantity-retention-20261017"
+            ],
+            "returncode": 0,
+            "stdout": "3b72cd4e0bc15acd24432d501918c721685a5333\n",
+            "stderr": ""
+          },
+          {
+            "args": [
+              "merge-base",
+              "--is-ancestor",
+              "3b72cd4e0bc15acd24432d501918c721685a5333",
+              "origin/main"
+            ],
+            "returncode": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          {
+            "args": [
+              "ls-remote",
+              "--heads",
+              "origin",
+              "refs/heads/codex/settlement-quantity-retention-20261017"
+            ],
+            "returncode": 0,
+            "stdout": "3b72cd4e0bc15acd24432d501918c721685a5333\trefs/heads/codex/settlement-quantity-retention-20261017\n",
+            "stderr": ""
+          },
+          {
+            "args": [
+              "rev-parse",
+              "codex/trading-dashboard-dead-exports-20261017"
+            ],
+            "returncode": 0,
+            "stdout": "e237479c245ab78636913a4290c5e950d8fb143d\n",
+            "stderr": ""
+          },
+          {
+            "args": [
+              "merge-base",
+              "--is-ancestor",
+              "e237479c245ab78636913a4290c5e950d8fb143d",
+              "origin/main"
+            ],
+            "returncode": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          {
+            "args": [
+              "ls-remote",
+              "--heads",
+              "origin",
+              "refs/heads/codex/trading-dashboard-dead-exports-20261017"
+            ],
+            "returncode": 0,
+            "stdout": "e237479c245ab78636913a4290c5e950d8fb143d\trefs/heads/codex/trading-dashboard-dead-exports-20261017\n",
+            "stderr": ""
+          },
+          {
+            "args": [
+              "rev-parse",
+              "codex/trading-dashboard-single-action-20261017"
+            ],
+            "returncode": 0,
+            "stdout": "0655eea00ab4d42cda1041b510d36301c9aff715\n",
+            "stderr": ""
+          },
+          {
+            "args": [
+              "merge-base",
+              "--is-ancestor",
+              "0655eea00ab4d42cda1041b510d36301c9aff715",
+              "origin/main"
+            ],
+            "returncode": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          {
+            "args": [
+              "ls-remote",
+              "--heads",
+              "origin",
+              "refs/heads/codex/trading-dashboard-single-action-20261017"
+            ],
+            "returncode": 0,
+            "stdout": "0655eea00ab4d42cda1041b510d36301c9aff715\trefs/heads/codex/trading-dashboard-single-action-20261017\n",
+            "stderr": ""
+          },
+          {
+            "args": [
+              "rev-parse",
+              "codex/trading-paper-refresh-20261019"
+            ],
+            "returncode": 0,
+            "stdout": "50d62c63e654a86ddfaa01cdc70b475081e60cb4\n",
+            "stderr": ""
+          },
+          {
+            "args": [
+              "merge-base",
+              "--is-ancestor",
+              "50d62c63e654a86ddfaa01cdc70b475081e60cb4",
+              "origin/main"
+            ],
+            "returncode": 0,
+            "stdout": "",
+            "stderr": ""
+          },
+          {
+            "args": [
+              "ls-remote",
+              "--heads",
+              "origin",
+              "refs/heads/codex/trading-paper-refresh-20261019"
+            ],
+            "returncode": 0,
+            "stdout": "50d62c63e654a86ddfaa01cdc70b475081e60cb4\trefs/heads/codex/trading-paper-refresh-20261019\n",
+            "stderr": ""
+          },
+          {
+            "args": [
+              "branch",
+              "-d",
+              "--",
+              "codex/settlement-quantity-retention-20261017"
+            ],
+            "returncode": 0,
+            "stdout": "Deleted branch codex/settlement-quantity-retention-20261017 (was 3b72cd4e).\n",
+            "stderr": ""
+          },
+          {
+            "args": [
+              "branch",
+              "-d",
+              "--",
+              "codex/trading-dashboard-dead-exports-20261017"
+            ],
+            "returncode": 0,
+            "stdout": "Deleted branch codex/trading-dashboard-dead-exports-20261017 (was e237479c).\n",
+            "stderr": ""
+          },
+          {
+            "args": [
+              "branch",
+              "-d",
+              "--",
+              "codex/trading-dashboard-single-action-20261017"
+            ],
+            "returncode": 0,
+            "stdout": "Deleted branch codex/trading-dashboard-single-action-20261017 (was 0655eea0).\n",
+            "stderr": ""
+          },
+          {
+            "args": [
+              "branch",
+              "-d",
+              "--",
+              "codex/trading-paper-refresh-20261019"
+            ],
+            "returncode": 0,
+            "stdout": "Deleted branch codex/trading-paper-refresh-20261019 (was 50d62c63).\n",
+            "stderr": ""
+          },
+          {
+            "args": [
+              "push",
+              "--atomic",
+              "origin",
+              "--delete",
+              "codex/settlement-quantity-retention-20261017",
+              "codex/trading-dashboard-dead-exports-20261017",
+              "codex/trading-dashboard-single-action-20261017",
+              "codex/trading-paper-refresh-20261019"
+            ],
+            "returncode": 0,
+            "stdout": "",
+            "stderr": "To https://github.com/MallyaAni/PersonalAssistant.git\n - [deleted]           codex/settlement-quantity-retention-20261017\n - [deleted]           codex/trading-dashboard-dead-exports-20261017\n - [deleted]           codex/trading-dashboard-single-action-20261017\n - [deleted]           codex/trading-paper-refresh-20261019\n"
+          },
+          {
+            "args": [
+              "ls-remote",
+              "--heads",
+              "origin",
+              "refs/heads/codex/settlement-quantity-retention-20261017",
+              "refs/heads/codex/trading-dashboard-dead-exports-20261017",
+              "refs/heads/codex/trading-dashboard-single-action-20261017",
+              "refs/heads/codex/trading-paper-refresh-20261019"
+            ],
+            "returncode": 0,
+            "stdout": "",
+            "stderr": ""
+          }
+        ],
+        "tips": {
+          "codex/settlement-quantity-retention-20261017": "3b72cd4e0bc15acd24432d501918c721685a5333",
+          "codex/trading-dashboard-dead-exports-20261017": "e237479c245ab78636913a4290c5e950d8fb143d",
+          "codex/trading-dashboard-single-action-20261017": "0655eea00ab4d42cda1041b510d36301c9aff715",
+          "codex/trading-paper-refresh-20261019": "50d62c63e654a86ddfaa01cdc70b475081e60cb4"
+        },
+        "deleted_local": [
+          "codex/settlement-quantity-retention-20261017",
+          "codex/trading-dashboard-dead-exports-20261017",
+          "codex/trading-dashboard-single-action-20261017",
+          "codex/trading-paper-refresh-20261019"
+        ],
+        "deleted_remote": [
+          "codex/settlement-quantity-retention-20261017",
+          "codex/trading-dashboard-dead-exports-20261017",
+          "codex/trading-dashboard-single-action-20261017",
+          "codex/trading-paper-refresh-20261019"
+        ]
+      }
+    }
+  ],
+  "not_claimed": [
+    "Whole main equals the running app image",
+    "Merged full-app model or deployment gate",
+    "Authenticated public-origin walkthrough",
+    "Investment profitability or readiness"
+  ]
+}
