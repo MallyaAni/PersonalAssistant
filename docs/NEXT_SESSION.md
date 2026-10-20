@@ -1,5 +1,43 @@
 # Next session
 
+## 2026-10-20 07:52Z — real94 install/API and native real-preview history VERIFIED; fullf0 gate running
+
+Actual exactf0f0016d/tree4851c0d2 private install CID5a490c579aba94e4e93e6ad08ba0e1a3a1ae9dad72d59d4af59604702ce751ad,
+image136ebb46 exit0/noOOM07:35:46.537158067Z/327640KiB. All94 original bodies/
+5755actions/raw8953411B match. Actual API allocation94/summary5755/COHR87/HPE42/
+AAOI145 original decisions exact; owner200/foreign403/anon401/no-store. No model/
+simulator/account/broker calls; productionHEADb4+3selector hashes unchanged.
+DATA collectorONCE proof22140B/SHA96f9bfb08f096742ea51b24d03d62c41ddac9c288f8ff2ce501001e4dcfe46fa.
+Private normal metadata store retained for the real preview, no nativepooladoption.
+
+Temporary preview now calls native allocation/history/original/list readers on
+that exact store after normal upstream owner authentication; old one-shot bridge
+archived. No cookie/key copied into native process/argv/evidence, netnone/RO reads.
+Anonymous previewGET401/nonreadPOST405. REAL signed-in tab4 HPE originalOct16
+09:45Buy2.5/GradeA/model25%/EMA21−9.44/EMA63+1.50 unchanged acrossD/W/15m, current
+Wait10.6, diagnostics[]. Screenshot/evidence /tmp/strategy-history-installed-real-
+ui-20261020-v1/{hpe-original-15m.png,evidence.json}. KeepVite33452/tunnel70626/
+node_modules symlink/tab4deliverable/tab3handoff. No real regular-entry claim.
+
+ONE exactf0 FULL UNIT→ROUTING RUNNING original69728, controller
+/tmp/run_strategy_reused_source_gates_20261020.py, scratch/strategy-final-source-
+gates-20261020-f0f0016d. Reuses existing exactf0 private checkout; original env
+symlink only/isolatedgateDB/oneworker, no source/service change. Await ORIGINAL
+result/session, never duplicate. Old6ce10983+100 CLOSED at originalsource.
+
+Current regular acquisition scripts PREPARED/AST-only and NEVER RUN:
+/tmp/run_strategy_regular_preview_acquisition_20261020.py and
+/tmp/acquire_strategy_regular_preview_20261020.py. Actual local/remoteOct20
+09:45ET+ preconditions; one GET-only native collector pass on installed timing
+head/residual+original daily arrays; credentials original process/filemount only.
+No holding inference/account/broker, no fakeclock/replay/newwatcher/paiddata.
+Unique scratch strategy-current-regular-20261020-v1 must not exist; inspect rather
+than duplicate any first execution. Preserve all actual source/quote receipts/
+caps and show real current names/actions/size/reasons in preview BEFORE deploy.
+Do not forceBuy. Original allocation16:00ET expiry/recompute09:30 separate.
+Canonical release needs target-only approval-bundle rebind plus separate history
+review6939c2f6 environment flags. Only scripts/deploy.sh, never main wholesale.
+
 ## 2026-10-20 07:42Z — audited history release assets and canonical installation ready for exact-source acceptance
 
 NEXT new committed source must exercise ONE private original94-stock install/API;

@@ -1,5 +1,18 @@
 # Changelog
 
+## 2026-10-20 — Verify installed real history and its signed-in preview
+
+Exactf0f0016d privately installed all94 original histories and5755 simulated
+recommendations without running a simulator or model. All stock hashes match the
+original audited manifest. Actual owner HTTP returned94 model sizes and5755
+historical actions; COHR, HPE and AAOI decisions/trades matched original files,
+while anonymous401 and foreign403 remained enforced. The signed-in preview now
+uses these native readers and preserves HPE's original Oct16 15-minute size and
+technical explanation across D/W/15m, with no warning/error diagnostics. Production
+remains unchanged. Full new gates are running; actual current regular-session
+entry acceptance remains unverified. Evidence: strategy-history-installation-
+proof-2026-10-20.json22140B/96f9bfb08f096742ea51b24d03d62c41ddac9c288f8ff2ce501001e4dcfe46fa.
+
 ## 2026-10-20 — Install exact audited chart history through the canonical release
 
 Release assets now retain the original 5,755 simulated recommendations for94
