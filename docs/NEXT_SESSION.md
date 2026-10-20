@@ -1,5 +1,33 @@
 # Next session
 
+## CURRENT HUMAN — merge accepted dashboard code into main and push when finished
+
+Human explicitly authorized: “can you merge the code to main and push to git when
+this is done?” No further Git permission question is needed. Complete the final
+public authenticated dashboard acceptance, then reconcile the production-based
+codex/trading-fill-consistency-20261019 feature with latest origin/main, validate
+the actual integrated tree, and push main without force or rewriting published
+history. Do not deploy historical main wholesale; merging/pushing does not itself
+authorize an additional deployment or bypass canonical release checks.
+
+Readonly integration inspection: feature fece2bb1f1c32d32e4374e0cd5d3504312acb895,
+origin/main a4eed35ff3c22c04d69ae843d4e88ed9f9dadcce, merge base
+ad44d536a70d5c037cb931836a3c9f48b014d84a; 397 main-only/41 feature-only commits.
+git merge-tree --write-tree returned conflicts in 18 files: API registration,
+market_allocation, diagram renderer, release admission, CHANGELOG/NEXT_SESSION,
+architecture HTML and trading diagram pair, four frontend tests, DeskPanel,
+SignalBoard, StockBoard, TickerChart and api.ts. This was a READONLY conflict
+preview, not a merge or main push. Preserve independent model/runtime/main work;
+recheck latest main at integration time. Desktop checkout has unrelated modified
+AGENTS.md and untracked Wi-Fi watchdog files/trader-board.bundle; leave them alone.
+No main integration checkout or new release/job was started.
+
+Public sign-in request remains pending ONCE; never ask it again or copy/bypass
+authentication. Existing signed-in localhost preview uses normal production API.
+Trading release proof remains as below. Separate assistant check-in opt-out
+full-post failure remains FAILED; do not falsely claim that issue fixed by this
+Git integration. Keep heartbeat ACTIVE and preserve all closed evidence.
+
 ## CURRENT HUMAN 16:00Z — consistency fix and pending-Sell copy DEPLOYED; no active release/gate; public owner sign-in still pending
 
 Additional completed NORMAL production-API preview path: ALABtable/D/W/15m all5.8
