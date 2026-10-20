@@ -1,0 +1,111 @@
+{
+  "change": "All original markers remain clickable; zoom chooses non-overlapping same-side labels, clipped edge labels move inside the plot, selected original evidence is preserved.",
+  "clamp_32case_asset_sha256": "df9ee95fddb55a3da5a0392650b0d473f5f8a702775f0dce414badcda070d75f",
+  "failed_preserved": [
+    "First strict edge-hiding build30pass2fail because all dense-cluster labels disappeared; unchanged positive-label assertions caught it.",
+    "Initial clamp TSC rejected inferred marker union optional properties; explicit ChartMarker[] annotation corrected it without changing emitted bytes.",
+    "Real preview edge label was visible but native canvas intercepted its click; original CUA timeout preserved. Explicit stacking correction and actual overlay click assertions added."
+  ],
+  "files": {
+    "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/e2e/all-names-signals.spec.ts": {
+      "bytes": 58498,
+      "sha256": "84ef445a8e2e14d4cdb9965581207468b7ebbfa3a5a0fd115c12018811b7cb13"
+    },
+    "/Users/animallya/.codex/worktrees/historical-provenance-20261017/PersonalAssistant/frontend/src/components/DeskPanel/TickerChart.tsx": {
+      "bytes": 97197,
+      "sha256": "ce8f63da2d7a5f24757824c36882f989a50396a88d5128a9d7935099c869a4e7"
+    },
+    "/tmp/strategy-label-click-build-20261020.log": {
+      "bytes": 14505,
+      "sha256": "a938dc9b29e84740c3202e8d3dbce33e267308a47419dc2ef1422ab76a00d19e"
+    },
+    "/tmp/strategy-label-click-tsc-20261020.log": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "/tmp/strategy-numerical-real-preview-20261020-v1/clickable-hpe-60-sessions.png": {
+      "bytes": 38169,
+      "sha256": "01cc385dd9d7797132a2ed2c07da8e086795f7049d412b2dd2fa3ce5e5138e1f"
+    },
+    "/tmp/strategy-numerical-real-preview-20261020-v1/clickable-hpe-original-details.png": {
+      "bytes": 53497,
+      "sha256": "14002f2a2a77bd882984c237465e50db0158c78856a7a6190d6643997de92690"
+    }
+  },
+  "final_change": "Added edge-button z-index above canvas after real manual click timeout; two expanded desktop/mobile click journeys pass on final build. Previous32-case build stays separately identified.",
+  "identical_clamp_built_files_after_type_annotation": 98,
+  "prior_component_proof": "73ab3067a32f622547cc820c60f6dafb481e9ac21f47abdcd88a95f7e601bcd4",
+  "real_manual": [
+    "Signed-in original HPE60session15m1620bars/26markers/onegradechange; incompleteOct15 remains explicit.",
+    "Original Oct16 09:45Buy2.5%/original model25%/gradeA/EMA21-9.44%/EMA63+1.50% remains distinct from current10.6%.",
+    "Recent scoped warnings/errors empty."
+  ],
+  "reports": {
+    "clamp-complete": {
+      "path": "/tmp/strategy-label-clamp-complete-20261020-results.json",
+      "sha256": "dd8eeed7430334e82332e3fd8802d932991e97c8e3337102891e76f22b0d8d61",
+      "stats": {
+        "duration": 121114.889,
+        "expected": 32,
+        "flaky": 0,
+        "skipped": 0,
+        "startTime": "2026-10-20T03:56:46.658Z",
+        "unexpected": 0
+      }
+    },
+    "clamp-targeted": {
+      "path": "/tmp/strategy-label-clamp-targeted-20261020-results.json",
+      "sha256": "a3696f45e9b3ab8832b6cb3f30ac2cf89a9317fe2297347ae37739cbeaf776ff",
+      "stats": {
+        "duration": 6011.726,
+        "expected": 2,
+        "flaky": 0,
+        "skipped": 0,
+        "startTime": "2026-10-20T03:56:19.154Z",
+        "unexpected": 0
+      }
+    },
+    "click": {
+      "path": "/tmp/strategy-label-click-20261020-results.json",
+      "sha256": "825d4c0f4ab9194c1243f52749f390a0b14b31cbf0be141a1613eecbd48438e1",
+      "stats": {
+        "duration": 13540.372,
+        "expected": 2,
+        "flaky": 0,
+        "skipped": 0,
+        "startTime": "2026-10-20T04:00:26.424Z",
+        "unexpected": 0
+      }
+    },
+    "edges": {
+      "path": "/tmp/strategy-label-edges-20261020-results.json",
+      "sha256": "a9154a8cb34d981cb909cbc640e0460525947305ffc77eff48d6c3608b91a1e1",
+      "stats": {
+        "duration": 118504.27299999999,
+        "expected": 30,
+        "flaky": 0,
+        "skipped": 0,
+        "startTime": "2026-10-20T03:53:46.767Z",
+        "unexpected": 2
+      }
+    },
+    "spacing": {
+      "path": "/tmp/strategy-label-spacing-20261020-results.json",
+      "sha256": "69afb600d396d9b5e630293fe4c3d0144a943d284c9d02304d10b8efa79337e1",
+      "stats": {
+        "duration": 115928.95,
+        "expected": 32,
+        "flaky": 0,
+        "skipped": 0,
+        "startTime": "2026-10-20T03:51:29.401Z",
+        "unexpected": 0
+      }
+    }
+  },
+  "schema": "strategy-chart-label-layout-proof/1",
+  "status": "PREVIEW_VERIFIED_NOT_DEPLOYED",
+  "unverified": [
+    "Naturally current numerical regular-session entry",
+    "Full backend/routing/canonical release/deployed UI acceptance"
+  ]
+}

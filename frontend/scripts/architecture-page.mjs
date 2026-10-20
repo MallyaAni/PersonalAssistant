@@ -270,7 +270,7 @@ const publishedDiagrams = [
   {
     name: "agent-trading-desk",
     title: "Trading — the desk, from the close to the next open",
-    scope: "A fixed book graded every session by rules, sized by one allocation, carried to a paper account and reconciled by order id",
+    scope: "Adopted paper execution plus candidate independent model sizes, numerical 15-minute entry observations and audited original chart history",
     change: "The five tone fields of a release and the words of a brief. Every rank, grade, weight and order is a rule measured walk-forward before it was kept.",
   },
   {

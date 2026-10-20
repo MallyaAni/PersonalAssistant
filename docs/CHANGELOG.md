@@ -1,5 +1,29 @@
 # Changelog
 
+## 2026-10-20 — Candidate original numerical recommendation details
+
+The owner-only `GET /desk/strategy-simulation/{ticker}/recommendation` restores
+the first saved numerical recommendation by its original completed candle and
+snapshot. It verifies saved model size, technical inputs, forecast parts and raw
+quote evidence without inference, accounts or current-pointer fallback. Expired
+advice stays historical evidence with `current_instruction=false`. Current chart
+markers request that original record; simulated markers keep their original
+simulation details. A changed snapshot or size cannot replace the selected
+decision's explanation. No published history, orders or paper state are rewritten.
+
+Candidate validation: four new backend cases, one existing simulation HTTP
+journey, and 35 browser cases passed with zero skipped/flaky/unexpected browser
+cases. A separate real-timer late-response case passed on the same built bytes:
+closing a selection prevents its delayed response from reopening details; an
+explicit later selection restores the original record. HTTP asserts owner 200,
+foreign 403, anonymous 401, corrupt original 503,
+no-store and unchanged saved bytes. This REST read is not an LLM-selected tool;
+tool-routing prompts, selector cases and accuracy floors are unchanged. TSC and
+build pass. Actual regular-session feed acceptance, real-preview access to the
+new route, source-release gates and canonical deployment remain unverified.
+Diagram impact: NONE — the existing candidate EntryEvidence→View path covers
+the original-record read.
+
 ## 2026-10-19 — Preserve known fills and chart execution identity
 
 An absent later broker listing no longer erases an ordinary order's saved

@@ -1,0 +1,600 @@
+{
+  "existing_route_regression_cases": 1,
+  "failed_cases": [],
+  "new_cases": 4,
+  "production_changes": false,
+  "reports": [
+    {
+      "cid": "b204c835064160b8a82799d8edee2bfde7fba5bc60d7db9ca0f4f06bd7868a31",
+      "create_argv": [
+        "docker",
+        "create",
+        "--name",
+        "strategy-entries-20261020-v9",
+        "--read-only",
+        "--user",
+        "1000:1000",
+        "--network",
+        "none",
+        "--cap-drop",
+        "ALL",
+        "--security-opt",
+        "no-new-privileges",
+        "--cpus",
+        "1",
+        "--memory",
+        "512m",
+        "--memory-swap",
+        "512m",
+        "--pids-limit",
+        "32",
+        "--log-driver",
+        "none",
+        "--tmpfs",
+        "/tmp:rw,nosuid,nodev,size=64m",
+        "--workdir",
+        "/app",
+        "--env",
+        "PYTHONPATH=/app",
+        "--env",
+        "ANIOS_TEST_MODE=1",
+        "--env",
+        "PYTHONDONTWRITEBYTECODE=1",
+        "--env",
+        "OPENBLAS_NUM_THREADS=1",
+        "--env",
+        "OMP_NUM_THREADS=1",
+        "--env",
+        "MKL_NUM_THREADS=1",
+        "--env",
+        "NUMEXPR_NUM_THREADS=1",
+        "--mount",
+        "type=bind,src=/home/animallya96/deploy/anios/backend,dst=/app/backend,readonly",
+        "--mount",
+        "type=bind,src=/home/animallya96/deploy/anios/docs,dst=/app/docs,readonly",
+        "--mount",
+        "type=bind,src=/home/animallya96/deploy/anios/data/market,dst=/home/animallya96/deploy/anios/data/market,readonly",
+        "--mount",
+        "type=bind,src=/home/animallya96/scratch/strategy-entries-20261020-v9,dst=/calc,readonly",
+        "--mount",
+        "type=bind,src=/home/animallya96/scratch/strategy-entries-20261020-v9/out,dst=/out",
+        "sha256:136ebb46b7912f20472a375a6b29f6efec4cf2fdca13d56cbffb86a1be697db2",
+        "python",
+        "-B",
+        "/calc/run.py"
+      ],
+      "files": {
+        "cid": {
+          "bytes": 64,
+          "sha256": "655216affafa4ea2efdf657833c7055741b47766adbb7306f46174a6f621979f"
+        },
+        "create-argv.json": {
+          "bytes": 1189,
+          "sha256": "e5a3a5539cdb94b1d246756410bf71ce791e957700791918f680a3fdc2d68fc5"
+        },
+        "inspect-after.json": {
+          "bytes": 7039,
+          "sha256": "96809e56ad37d876e8d6da93c94f07d337a00c08a1e3e6d3c6bd5f137ca7dccb"
+        },
+        "inspect-before.json": {
+          "bytes": 10618,
+          "sha256": "8434a09876e5e49f34cb3b237f4e830826e37623bc8bc84614afd03d3b7d0acc"
+        },
+        "stderr": {
+          "bytes": 642,
+          "sha256": "9053a6174621936feb57c5abb38c3590b2d5578ba6053ad9667d5e642d7d514d"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "host_config": {
+        "AutoRemove": false,
+        "Binds": null,
+        "BlkioDeviceReadBps": [],
+        "BlkioDeviceReadIOps": [],
+        "BlkioDeviceWriteBps": [],
+        "BlkioDeviceWriteIOps": [],
+        "BlkioWeight": 0,
+        "BlkioWeightDevice": [],
+        "CapAdd": null,
+        "CapDrop": [
+          "ALL"
+        ],
+        "Cgroup": "",
+        "CgroupParent": "",
+        "CgroupnsMode": "private",
+        "ConsoleSize": [
+          0,
+          0
+        ],
+        "ContainerIDFile": "",
+        "CpuCount": 0,
+        "CpuPercent": 0,
+        "CpuPeriod": 0,
+        "CpuQuota": 0,
+        "CpuRealtimePeriod": 0,
+        "CpuRealtimeRuntime": 0,
+        "CpuShares": 0,
+        "CpusetCpus": "",
+        "CpusetMems": "",
+        "DeviceCgroupRules": null,
+        "DeviceRequests": null,
+        "Devices": [],
+        "Dns": null,
+        "DnsOptions": [],
+        "DnsSearch": [],
+        "ExtraHosts": null,
+        "GroupAdd": null,
+        "IOMaximumBandwidth": 0,
+        "IOMaximumIOps": 0,
+        "IpcMode": "private",
+        "Isolation": "",
+        "Links": null,
+        "LogConfig": {
+          "Config": {},
+          "Type": "none"
+        },
+        "MaskedPaths": [
+          "/proc/acpi",
+          "/proc/asound",
+          "/proc/interrupts",
+          "/proc/kcore",
+          "/proc/keys",
+          "/proc/latency_stats",
+          "/proc/sched_debug",
+          "/proc/scsi",
+          "/proc/timer_list",
+          "/proc/timer_stats",
+          "/sys/devices/virtual/powercap",
+          "/sys/firmware"
+        ],
+        "Memory": 536870912,
+        "MemoryReservation": 0,
+        "MemorySwap": 536870912,
+        "MemorySwappiness": null,
+        "Mounts": [
+          {
+            "ReadOnly": true,
+            "Source": "/home/animallya96/deploy/anios/backend",
+            "Target": "/app/backend",
+            "Type": "bind"
+          },
+          {
+            "ReadOnly": true,
+            "Source": "/home/animallya96/deploy/anios/docs",
+            "Target": "/app/docs",
+            "Type": "bind"
+          },
+          {
+            "ReadOnly": true,
+            "Source": "/home/animallya96/deploy/anios/data/market",
+            "Target": "/home/animallya96/deploy/anios/data/market",
+            "Type": "bind"
+          },
+          {
+            "ReadOnly": true,
+            "Source": "/home/animallya96/scratch/strategy-entries-20261020-v9",
+            "Target": "/calc",
+            "Type": "bind"
+          },
+          {
+            "Source": "/home/animallya96/scratch/strategy-entries-20261020-v9/out",
+            "Target": "/out",
+            "Type": "bind"
+          }
+        ],
+        "NanoCpus": 1000000000,
+        "NetworkMode": "none",
+        "OomKillDisable": null,
+        "OomScoreAdj": 0,
+        "PidMode": "",
+        "PidsLimit": 32,
+        "PortBindings": {},
+        "Privileged": false,
+        "PublishAllPorts": false,
+        "ReadonlyPaths": [
+          "/proc/bus",
+          "/proc/fs",
+          "/proc/irq",
+          "/proc/sys",
+          "/proc/sysrq-trigger"
+        ],
+        "ReadonlyRootfs": true,
+        "RestartPolicy": {
+          "MaximumRetryCount": 0,
+          "Name": "no"
+        },
+        "Runtime": "runc",
+        "SecurityOpt": [
+          "no-new-privileges"
+        ],
+        "ShmSize": 67108864,
+        "Tmpfs": {
+          "/tmp": "rw,nosuid,nodev,size=64m"
+        },
+        "UTSMode": "",
+        "Ulimits": [],
+        "UsernsMode": "",
+        "VolumeDriver": "",
+        "VolumesFrom": null
+      },
+      "image": "sha256:136ebb46b7912f20472a375a6b29f6efec4cf2fdca13d56cbffb86a1be697db2",
+      "mounts": [
+        {
+          "Destination": "/app/backend",
+          "Mode": "",
+          "Propagation": "rprivate",
+          "RW": false,
+          "Source": "/home/animallya96/deploy/anios/backend",
+          "Type": "bind"
+        },
+        {
+          "Destination": "/app/docs",
+          "Mode": "",
+          "Propagation": "rprivate",
+          "RW": false,
+          "Source": "/home/animallya96/deploy/anios/docs",
+          "Type": "bind"
+        },
+        {
+          "Destination": "/home/animallya96/deploy/anios/data/market",
+          "Mode": "",
+          "Propagation": "rprivate",
+          "RW": false,
+          "Source": "/home/animallya96/deploy/anios/data/market",
+          "Type": "bind"
+        },
+        {
+          "Destination": "/calc",
+          "Mode": "",
+          "Propagation": "rprivate",
+          "RW": false,
+          "Source": "/home/animallya96/scratch/strategy-entries-20261020-v9",
+          "Type": "bind"
+        },
+        {
+          "Destination": "/out",
+          "Mode": "",
+          "Propagation": "rprivate",
+          "RW": true,
+          "Source": "/home/animallya96/scratch/strategy-entries-20261020-v9/out",
+          "Type": "bind"
+        }
+      ],
+      "state": {
+        "Dead": false,
+        "Error": "",
+        "ExitCode": 0,
+        "FinishedAt": "2026-10-20T04:07:29.496355099Z",
+        "OOMKilled": false,
+        "Paused": false,
+        "Pid": 0,
+        "Restarting": false,
+        "Running": false,
+        "StartedAt": "2026-10-20T04:07:27.220987062Z",
+        "Status": "exited"
+      },
+      "stderr": "Executing <Task pending name='Task-2' coro=<OriginalEntryHTTPTests.test_owner_foreign_anonymous_and_corrupt() running at /calc/test_original_entry_history.py:104> wait_for=<Future pending cb=[_chain_future.<locals>._call_check_cancel() at /usr/local/lib/python3.12/asyncio/futures.py:389, Task.task_wakeup()] created at /usr/local/lib/python3.12/asyncio/base_events.py:448> cb=[_run_until_complete_cb() at /usr/local/lib/python3.12/asyncio/base_events.py:181] created at /usr/local/lib/python3.12/asyncio/runners.py:100> took 0.859 seconds\n....\n----------------------------------------------------------------------\nRan 4 tests in 0.900s\n\nOK\n",
+      "stdout": "",
+      "version": "9"
+    },
+    {
+      "cid": "127a5d2ea759466420101d89bef15843edb301c75968a78cb88c39f215276b05",
+      "create_argv": [
+        "docker",
+        "create",
+        "--name",
+        "strategy-entries-20261020-v10",
+        "--read-only",
+        "--user",
+        "1000:1000",
+        "--network",
+        "none",
+        "--cap-drop",
+        "ALL",
+        "--security-opt",
+        "no-new-privileges",
+        "--cpus",
+        "1",
+        "--memory",
+        "512m",
+        "--memory-swap",
+        "512m",
+        "--pids-limit",
+        "32",
+        "--log-driver",
+        "none",
+        "--tmpfs",
+        "/tmp:rw,nosuid,nodev,size=64m",
+        "--workdir",
+        "/app",
+        "--env",
+        "PYTHONPATH=/app",
+        "--env",
+        "ANIOS_TEST_MODE=1",
+        "--env",
+        "PYTHONDONTWRITEBYTECODE=1",
+        "--env",
+        "OPENBLAS_NUM_THREADS=1",
+        "--env",
+        "OMP_NUM_THREADS=1",
+        "--env",
+        "MKL_NUM_THREADS=1",
+        "--env",
+        "NUMEXPR_NUM_THREADS=1",
+        "--mount",
+        "type=bind,src=/home/animallya96/deploy/anios/backend,dst=/app/backend,readonly",
+        "--mount",
+        "type=bind,src=/home/animallya96/deploy/anios/docs,dst=/app/docs,readonly",
+        "--mount",
+        "type=bind,src=/home/animallya96/deploy/anios/data/market,dst=/home/animallya96/deploy/anios/data/market,readonly",
+        "--mount",
+        "type=bind,src=/home/animallya96/scratch/strategy-entries-20261020-v10,dst=/calc,readonly",
+        "--mount",
+        "type=bind,src=/home/animallya96/scratch/strategy-entries-20261020-v10/out,dst=/out",
+        "sha256:136ebb46b7912f20472a375a6b29f6efec4cf2fdca13d56cbffb86a1be697db2",
+        "python",
+        "-B",
+        "/calc/run.py"
+      ],
+      "files": {
+        "cid": {
+          "bytes": 64,
+          "sha256": "15f0eca84b5f0b0f1d8a8ee5ad7cd9c67fe6b73e2e1b14b02ea72674a3cfbc48"
+        },
+        "create-argv.json": {
+          "bytes": 1192,
+          "sha256": "a803608612fbf1172c8c36963d37397c8cec02ef3e63bc55a14a5e42877fef9a"
+        },
+        "inspect-after.json": {
+          "bytes": 7044,
+          "sha256": "fc77f42a8bc446280416370016ff362e8bcdf5364f4f38197fed8b27d0d9ccf3"
+        },
+        "inspect-before.json": {
+          "bytes": 10623,
+          "sha256": "e3b8bf52d03dc5cc2193395d9233500aa3f6de06940b7d21f40c9e84457dee47"
+        },
+        "stderr": {
+          "bytes": 650,
+          "sha256": "489be321eb4ee7f1a970cceef567c843fa6fbdca69b06b2e73dcdeb0d7d5e694"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      },
+      "host_config": {
+        "AutoRemove": false,
+        "Binds": null,
+        "BlkioDeviceReadBps": [],
+        "BlkioDeviceReadIOps": [],
+        "BlkioDeviceWriteBps": [],
+        "BlkioDeviceWriteIOps": [],
+        "BlkioWeight": 0,
+        "BlkioWeightDevice": [],
+        "CapAdd": null,
+        "CapDrop": [
+          "ALL"
+        ],
+        "Cgroup": "",
+        "CgroupParent": "",
+        "CgroupnsMode": "private",
+        "ConsoleSize": [
+          0,
+          0
+        ],
+        "ContainerIDFile": "",
+        "CpuCount": 0,
+        "CpuPercent": 0,
+        "CpuPeriod": 0,
+        "CpuQuota": 0,
+        "CpuRealtimePeriod": 0,
+        "CpuRealtimeRuntime": 0,
+        "CpuShares": 0,
+        "CpusetCpus": "",
+        "CpusetMems": "",
+        "DeviceCgroupRules": null,
+        "DeviceRequests": null,
+        "Devices": [],
+        "Dns": null,
+        "DnsOptions": [],
+        "DnsSearch": [],
+        "ExtraHosts": null,
+        "GroupAdd": null,
+        "IOMaximumBandwidth": 0,
+        "IOMaximumIOps": 0,
+        "IpcMode": "private",
+        "Isolation": "",
+        "Links": null,
+        "LogConfig": {
+          "Config": {},
+          "Type": "none"
+        },
+        "MaskedPaths": [
+          "/proc/acpi",
+          "/proc/asound",
+          "/proc/interrupts",
+          "/proc/kcore",
+          "/proc/keys",
+          "/proc/latency_stats",
+          "/proc/sched_debug",
+          "/proc/scsi",
+          "/proc/timer_list",
+          "/proc/timer_stats",
+          "/sys/devices/virtual/powercap",
+          "/sys/firmware"
+        ],
+        "Memory": 536870912,
+        "MemoryReservation": 0,
+        "MemorySwap": 536870912,
+        "MemorySwappiness": null,
+        "Mounts": [
+          {
+            "ReadOnly": true,
+            "Source": "/home/animallya96/deploy/anios/backend",
+            "Target": "/app/backend",
+            "Type": "bind"
+          },
+          {
+            "ReadOnly": true,
+            "Source": "/home/animallya96/deploy/anios/docs",
+            "Target": "/app/docs",
+            "Type": "bind"
+          },
+          {
+            "ReadOnly": true,
+            "Source": "/home/animallya96/deploy/anios/data/market",
+            "Target": "/home/animallya96/deploy/anios/data/market",
+            "Type": "bind"
+          },
+          {
+            "ReadOnly": true,
+            "Source": "/home/animallya96/scratch/strategy-entries-20261020-v10",
+            "Target": "/calc",
+            "Type": "bind"
+          },
+          {
+            "Source": "/home/animallya96/scratch/strategy-entries-20261020-v10/out",
+            "Target": "/out",
+            "Type": "bind"
+          }
+        ],
+        "NanoCpus": 1000000000,
+        "NetworkMode": "none",
+        "OomKillDisable": null,
+        "OomScoreAdj": 0,
+        "PidMode": "",
+        "PidsLimit": 32,
+        "PortBindings": {},
+        "Privileged": false,
+        "PublishAllPorts": false,
+        "ReadonlyPaths": [
+          "/proc/bus",
+          "/proc/fs",
+          "/proc/irq",
+          "/proc/sys",
+          "/proc/sysrq-trigger"
+        ],
+        "ReadonlyRootfs": true,
+        "RestartPolicy": {
+          "MaximumRetryCount": 0,
+          "Name": "no"
+        },
+        "Runtime": "runc",
+        "SecurityOpt": [
+          "no-new-privileges"
+        ],
+        "ShmSize": 67108864,
+        "Tmpfs": {
+          "/tmp": "rw,nosuid,nodev,size=64m"
+        },
+        "UTSMode": "",
+        "Ulimits": [],
+        "UsernsMode": "",
+        "VolumeDriver": "",
+        "VolumesFrom": null
+      },
+      "image": "sha256:136ebb46b7912f20472a375a6b29f6efec4cf2fdca13d56cbffb86a1be697db2",
+      "mounts": [
+        {
+          "Destination": "/app/backend",
+          "Mode": "",
+          "Propagation": "rprivate",
+          "RW": false,
+          "Source": "/home/animallya96/deploy/anios/backend",
+          "Type": "bind"
+        },
+        {
+          "Destination": "/app/docs",
+          "Mode": "",
+          "Propagation": "rprivate",
+          "RW": false,
+          "Source": "/home/animallya96/deploy/anios/docs",
+          "Type": "bind"
+        },
+        {
+          "Destination": "/home/animallya96/deploy/anios/data/market",
+          "Mode": "",
+          "Propagation": "rprivate",
+          "RW": false,
+          "Source": "/home/animallya96/deploy/anios/data/market",
+          "Type": "bind"
+        },
+        {
+          "Destination": "/calc",
+          "Mode": "",
+          "Propagation": "rprivate",
+          "RW": false,
+          "Source": "/home/animallya96/scratch/strategy-entries-20261020-v10",
+          "Type": "bind"
+        },
+        {
+          "Destination": "/out",
+          "Mode": "",
+          "Propagation": "rprivate",
+          "RW": true,
+          "Source": "/home/animallya96/scratch/strategy-entries-20261020-v10/out",
+          "Type": "bind"
+        }
+      ],
+      "state": {
+        "Dead": false,
+        "Error": "",
+        "ExitCode": 0,
+        "FinishedAt": "2026-10-20T04:08:43.719058059Z",
+        "OOMKilled": false,
+        "Paused": false,
+        "Pid": 0,
+        "Restarting": false,
+        "Running": false,
+        "StartedAt": "2026-10-20T04:08:41.651295331Z",
+        "Status": "exited"
+      },
+      "stderr": "Executing <Task pending name='Task-2' coro=<IndependentHistoryHTTPTests.test_original_owner_content_and_corrupt_refusal() running at /calc/test_strategy_entry_services.py:61> wait_for=<Future pending cb=[_chain_future.<locals>._call_check_cancel() at /usr/local/lib/python3.12/asyncio/futures.py:389, Task.task_wakeup()] created at /usr/local/lib/python3.12/asyncio/base_events.py:448> cb=[_run_until_complete_cb() at /usr/local/lib/python3.12/asyncio/base_events.py:181] created at /usr/local/lib/python3.12/asyncio/runners.py:100> took 0.798 seconds\n.\n----------------------------------------------------------------------\nRan 1 test in 0.824s\n\nOK\n",
+      "stdout": "",
+      "version": "10"
+    }
+  ],
+  "retained_data_read_bytes": 39125,
+  "schema": "strategy-original-entry-read-proof/1",
+  "scope": [
+    "Synthetic metadata fixture with native quote/parser/publication/persistence; no live acquisition or market-session replay",
+    "Process-only ephemeral HTTP test signing key; no production credential read or copied",
+    "Current configuration guard supplied explicit fixture cost; whole ordinary35-source source approval NOT tested",
+    "Readonly API is not an LLM-selected tool; no tool-selector model change",
+    "Existing diagram EntryEvidence\u2192View path already covers this read; no new architecture node or renderer rerun"
+  ],
+  "source_state": "UNCOMMITTED_PRODUCTION_BASED_CANDIDATE",
+  "sources": {
+    "backend/api/v1/market_simulation.py": {
+      "bytes": 2812,
+      "sha256": "f5650fba118f4e1fd383a14bb4c28708f799696628336ce55e53177540750ccf"
+    },
+    "backend/market/strategy_entry_history.py": {
+      "bytes": 6088,
+      "sha256": "0dbdaadac4197018ec58d8e47d889654223299ecedeb924fcfd437b7d9f49bc2"
+    },
+    "backend/tests/test_strategy_entry_history.py": {
+      "bytes": 8379,
+      "sha256": "143660bde63a515d211c4e9189d6ca1c2352b8ded198895b5c1d90c9f8883db0"
+    }
+  },
+  "starting_head": "b4b2eeb9ac3d1b0bb1f344b280ecd5f1b00be1b8",
+  "status": "COMPONENT_AND_HTTP_VERIFIED_NOT_DEPLOYED",
+  "unverified": [
+    "Current real regular-session IEX entry acquisition and preview",
+    "Frontend consumption of the new original-entry GET",
+    "Full backend/routing/source-release gates and canonical deployment",
+    "Whole live trading readiness"
+  ],
+  "verified": [
+    "Original first recommendation restored byte-for-byte after expiry and after latest pointers change",
+    "Exact original snapshot/economic cost/size/technical features/full forecast and raw quote receipt verified without re-inference",
+    "Current instruction false; recommendation remains distinct from counterfactual simulation, broker fill and account trade amount",
+    "Rehashed feature/midpoint drift, different cost, forming candle, foreign snapshot and changed forecast refuse",
+    "Actual ASGI owner200/foreign403/anonymous401/corrupt503/no-store and original file unchanged after GET",
+    "Existing stock history owner/foreign/anonymous/corrupt journey still passes at the extended route module"
+  ]
+}

@@ -13,7 +13,7 @@ import { TickerChart } from './TickerChart'
 import {currentAssessments, assessmentPermission} from './liveAssessment'
 import {currentSetup, confirmationText, invalidationText, quoteReferenceText} from './currentRanking'
 import { TradeBoard, RecordedModelDecision, boardRows, dollars, percent, orderWord, quantityLabel, executionRuleText, learnedAllocation, rankingText, savedTargetText, price as priceText, shares as sharesText, WORD_STYLE, type BoardRow } from './TradeBoard'
-import {ModelSize, SignalBoard, SignalDetail, signalsFor} from './SignalBoard'
+import {ModelSize, SignalBoard, SignalDetail, signalsFor, strategyChartTarget, strategyHistoryMatches} from './SignalBoard'
 import { StrategyBench } from './StrategyBench'
 import { NeuralStudy } from './NeuralStudy'
 import { OpportunityCard } from './OpportunityCard'
@@ -1514,8 +1514,8 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
 
   return (
     <div className="flex flex-1 flex-col gap-3 overflow-y-auto p-4 [&>section]:shrink-0 [&>details]:shrink-0">
-      {!research && todayLine}
-      {!research && <RecordStatus status={payload.record_status} prose={latest ? {state: latest.prose_state, status: latest.prose_status} : undefined} session={latest?.session} />}
+      {!research && !strategyView && todayLine}
+      {!research && !strategyView && <RecordStatus status={payload.record_status} prose={latest ? {state: latest.prose_state, status: latest.prose_status} : undefined} session={latest?.session} />}
       <header className="flex flex-wrap items-baseline justify-between gap-3">
         <div>
           <div className="flex items-center gap-2">
@@ -2914,9 +2914,9 @@ const NameDetail = ({
   const gradeReads = latest.grades?.[ticker]?.reads
   const currentAssessment = currentAssessments(live, latest.session, now)[ticker]
   const chartSetup = currentSetup(live, latest.session, ticker, now)
-  const matchingSimulation = simulation?.policy === latest.targets?.policy ? simulation : null
+  const matchingSimulation = strategyHistoryMatches(simulation, strategyChartTarget(latest, allocation, ticker, now, live)) ? simulation : null
   const matchingSimulationError = simulation && !matchingSimulation
-    ? 'Historical share-sized simulation unavailable for this strategy. The stored simulation belongs to a different policy; its trades are withheld.'
+    ? 'Size history does not match this strategy model and original evidence.'
     : simulationError
   const currentStances = row
     ? row.grade_source === 'intraday' ? row.stances_live ?? liveGrades[ticker]?.stances_live : undefined
@@ -2956,17 +2956,16 @@ const NameDetail = ({
             <X size={16} />
           </button>
         </div>
-        <div className="lg:flex lg:flex-row-reverse lg:items-start lg:gap-6">
+        <div className={strategy ? '' : 'lg:flex lg:flex-row-reverse lg:items-start lg:gap-6'}>
         {/* The picture before the prose. A trader looks at the chart first,
             so it leads on a phone and holds the right two-fifths of a wide
             window, staying in place while the reasoning scrolls beside it. */}
-        <div className="mb-4 lg:sticky lg:top-0 lg:w-[40vw] lg:max-w-[54rem] lg:shrink-0">
-          <TickerChart key={`${userId}:${ticker}:${personalHistory}:${historyGeneration}`} userId={userId} ticker={ticker} history={history ?? undefined} currentPolicy={latest.targets?.policy} paperActivity={paperActivity} paperRecordedFills={paperRecordedFills} paperRecordedFillsReason={paperRecordedFillsReason} paperAccountUnavailable={paperAccountUnavailable} quote={live.quotes[ticker]} live={live} now={now} personalHistory={personalHistory} personalReceiptId={personalReceiptId} tall close={lastClose ?? row?.last_close} closeSession={latest.session} suggestion={liveSuggestion} levels={live.structure?.[ticker] ?? null} strategy={strategy} simulation={strategy ? matchingSimulation : simulation} simulationError={strategy ? matchingSimulationError : simulationError} />
+        <div className={strategy ? 'mb-4 w-full' : 'mb-4 lg:sticky lg:top-0 lg:w-[40vw] lg:max-w-[54rem] lg:shrink-0'}>
+          <TickerChart key={`${userId}:${ticker}:${personalHistory}:${historyGeneration}`} userId={userId} ticker={ticker} history={history ?? undefined} currentPolicy={latest.targets?.policy} paperActivity={paperActivity} paperRecordedFills={paperRecordedFills} paperRecordedFillsReason={paperRecordedFillsReason} paperAccountUnavailable={paperAccountUnavailable} quote={live.quotes[ticker]} live={live} now={now} personalHistory={personalHistory} personalReceiptId={personalReceiptId} tall close={lastClose ?? row?.last_close} closeSession={latest.session} suggestion={liveSuggestion} levels={live.structure?.[ticker] ?? null} modelTarget={strategy ? strategyChartTarget(latest, allocation, ticker, now, live) : null} strategy={strategy} simulation={strategy ? matchingSimulation : simulation} simulationError={strategy ? matchingSimulationError : simulationError} />
         </div>
         <div className="lg:min-w-0 lg:flex-1">
-        {strategy && <><SignalDetail signals={signalsFor(latest, live, ticker, now)} /><ModelSize latest={latest} allocation={allocation} ticker={ticker} now={now} /></>}
         {order && <PaperOrderCard ticker={ticker} row={order} session={latest.session} />}
-        {history && <GradeMove changes={changes} session={latest.session} reads={gradeReads} revision={latest.grades?.[ticker]?.revision ?? null} />}
+        {!strategy && history && <GradeMove changes={changes} session={latest.session} reads={gradeReads} revision={latest.grades?.[ticker]?.revision ?? null} />}
         {!strategy && <section aria-label="Latest available grade" className="mb-3 rounded-xl border border-black/[0.08] bg-white p-3 text-sm">
         <h4 className="mb-1 font-medium text-[#6e6e73]">Latest available grade</h4>
         {row && (
@@ -3003,6 +3002,7 @@ const NameDetail = ({
         </section>}
         <details aria-label="All the evidence" className="mb-3">
           <summary className="cursor-pointer text-xs text-[#0071e3]">All the evidence</summary>
+        {strategy && <><SignalDetail signals={signalsFor(latest, live, ticker, now, allocation)} /><ModelSize latest={latest} allocation={allocation} ticker={ticker} now={now} /></>}
         {strategy && <section aria-label="Current assessment" className="mb-3 rounded-xl border border-black/[0.08] bg-white p-3 text-sm">
           <h4 className="font-medium">Current assessment</h4>
           {currentAssessment ? <>

@@ -599,6 +599,39 @@ holding models for risk and proposed sizes, the funded whole-share planner,
 and published timing models for execute/wait decisions. Current chart judgments
 are separate display interpretations and never change these models or orders.
 
+An **unreleased candidate** separates independent model publication from funded
+planning. `strategy_publication` calculates unit-capital percentages from the
+already admitted nightly close, saves the original grade and technical evidence
+under `desk/strategy-recommendations/`, and selects an immutable snapshot before
+the paper caller can access an account. Its API reader restores finite JSON,
+validates installed sources and original expiry, and never loads a head, account
+or funded record. A damaged or incomplete independent namespace cannot fall back
+to funded percentages. The candidate prepare hook and its four publication/input/entry modules must enter
+the exact reviewed release source set before ordinary production admission.
+Real-input snapshot persistence and owner-scoped HTTP reading have separate
+acceptance evidence. The real signed-in preview now consumes version-2's own
+universe, grades, sizes and clocks. Its historical projection binds unchanged
+audited stock results to matching economic source hashes, retaining original
+record/configuration/model provenance rather than requiring today's funded
+record. The candidate permanent `strategy_history_publication` imports only exact
+audited original stock bytes and binds their economic source hashes and trading
+costs. Original grade clocks use the next regular open, independently of a current
+allocation's expiry. `strategy_entry_context` restores original daily inputs;
+`strategy_entries` uses native timing heads, calibration and current-price
+transport on completed regular-session IEX prefixes, without loading an account.
+The existing collector shares one forecast per candle and refreshes quotes; its
+finite original forecast parts and first recommendation retain technical reasons
+for later inspection. The candidate owner-only original-recommendation GET uses
+ticker, original completed candle and snapshot identity to restore that saved
+record. It verifies the original snapshot, model features, full forecast receipt
+and actual quote response without inference or account access. Expired records
+remain historical evidence with `current_instruction=false`; newer pointers
+cannot replace them. Historical SIP simulation and current IEX observations
+remain explicitly different feeds. Component and browser tests cover this path;
+the reviewed production source release, actual regular-session entry observation
+and deployment remain unfinished. Version-2 does not substitute display judgments
+for numerical entries. A position size does not assert an immediate entry.
+
 Current opportunities use fresh grades and bounded structured chart judgments,
 collected independently of open browsers. The collector reads the exact live
 grade snapshot and completed raw current-session IEX candle prefixes; it writes

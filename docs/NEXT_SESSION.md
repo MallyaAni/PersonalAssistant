@@ -1,5 +1,57 @@
 # Next session
 
+## 2026-10-20 — Independent recommendations candidate, release gates and real current entries pending
+
+This production-based candidate remains independent of paper/personal accounts.
+Model percentages and original technical evidence publish before paper access;
+numerical current15m entries use installed timing models and existing IEX data.
+Original audited5755 historical actions/94stocks throughOct19 retain their exact
+values and original clocks, with matching economic-source/cost identity. Charts
+show action Size%, grade changes and clickable original reasons; dense labels
+remain readable and selectable across D/W/15m and desktop/mobile.
+
+Candidate component proofs in research/strategy-numerical-preview-proof-2026-10-20.json,
+strategy-chart-label-layout-proof-2026-10-20.json,
+strategy-original-entry-read-proof-2026-10-20.json,
+strategy-original-entry-ui-proof-2026-10-20.json and
+strategy-original-entry-race-proof-2026-10-20.json record exact source/artifact
+identities and failures retained. Latest backend4new+1existingHTTP journey pass;
+frontend35cases pass126.333s plus one separate real-timer selection race on the
+same index-BC54DTAT.js/556a63a4 bytes. These are36 distinct named cases across
+35+1 runs, NOTone36-case cohort. Earlier26 component/actual native context and
+all failed intermediate evidence remain separately identified. No live-ready,
+profitability or historically published-advice claim follows from simulation.
+
+Current numerical marker details restore the first saved quote/size/technical
+record by original ticker+candle+snapshot, with expiry and current_instruction
+false retained. Foreign snapshot/size and late responses cannot substitute a
+refreshed record. The owner-only read does not infer or access accounts. The
+real preview bridge still needs access to this candidate GET when an actual
+current entry becomes available; live backend does not expose it yet.
+
+Keep existing feed, Vite33452/tunnel70626/node_modules/tab4 normal sign-in. Show
+REAL current regular15m action/size/detail in preview BEFORE deployment. First
+naturally completed candle09:45ET; no fake clock/replay/new watcher/duplicate
+cron/job or market_daily/market_balancer probe. Original Oct20 snapshot deadline
+16:00ET unchanged; holding recomputation cutoff09:30 remains separate. Candidate
+source35 approval and full backend/routing gates remain pending. Source commit
+is an implementation checkpoint, NOT whole release verification. Only canonical
+scripts/deploy.sh may ship; NEVER historical main wholesale. Paper LAST/no reset
+or real orders. No model/provider/account/service change or paid data.
+
+Origin main advanced to e1acaf89 with a separate model cutover, observed via Git
+fetch. Its handoff describes DeepSeek-V4.1 and temporary compatibility aliases.
+This trading session has not changed those services. Before a canonical release,
+review the exact compatibility commits bf5f67b3/47915387 and running bindings;
+do not import historical main wholesale or claim previous routing numbers prove
+the changed model runtime. Current production-based branch keeps economic code
+separate; new35-source approval remains mandatory before ordinary admission.
+
+The detailed current continuation remains the TOP of the attached
+learned-live-release-20261006 worktree's NEXT_SESSION.md. Keep existing heartbeat
+ACTIVE and quiet unchanged. No question pending; no agents without delegation,
+usage-limited retries/replacements, denied-read bypass or native-pool adoption.
+
 ## 2026-10-19 — Production-based fill consistency candidate
 
 This candidate starts from deployed50d62c63, not historical main. The user goal

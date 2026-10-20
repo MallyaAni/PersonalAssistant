@@ -79,6 +79,10 @@ def source_identity():
         root / "backend/market/learned_order_observation.py",
         root / "backend/market/decision_view.py",
         root / "backend/market/live_model_decision.py",
+        root / "backend/market/strategy_model_allocation.py",
+        root / "backend/market/strategy_publication.py",
+        root / "backend/market/strategy_entry_context.py",
+        root / "backend/market/strategy_entries.py",
         root / "backend/market/personal_history.py",
         root / "backend/api/v1/market.py",
     )
@@ -402,4 +406,9 @@ def prepare(root, report, *, clock=None):
             else InstalledHoldingPolicy
         )
     )
-    return factory(reader, config["cost_bps"], root, raw, admission, completed)
+    selected = factory(reader, config["cost_bps"], root, raw, admission, completed)
+    if config["policy"] == grade_led_policy.POLICY:
+        from backend.market import strategy_publication
+
+        strategy_publication.publish_prepared(selected, report, clock=clock)
+    return selected

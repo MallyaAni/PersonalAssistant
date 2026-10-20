@@ -15,9 +15,13 @@ class CurrentOpportunityCollector(SessionPriceCollector):
             interval_seconds=15,
             enabled=enabled and not os.getenv("ANIOS_TEST_MODE"),
         )
+        self._entry_cache = {}
 
-    # Invoke the installed model over public chart facts, without account access.
+    # Use independent numerical timing when installed, retaining the legacy display collector otherwise.
     def _collect_once(self):
+        from backend.market import strategy_publication, strategy_entries
+        if (self._root / strategy_publication.DIRECTORY).exists():
+            return strategy_entries.collect(self._root,self._entry_cache)
         from backend.core.dependencies import get_structured_llm_client
         from backend.market import current_opportunities
 

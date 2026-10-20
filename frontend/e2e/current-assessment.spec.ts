@@ -40,7 +40,7 @@ test('Stocks and chart details refresh assessments without personal guidance', a
   await page.getByRole('textbox', {name: 'Find a stock'}).fill('CRWV')
   const cell = page.getByRole('cell', {name: 'CRWV displayed grade'})
   await expect(cell).toContainText('A+')
-  await expect(page.getByLabel('CRWV buy signal', {exact: true})).toHaveText('Unavailable')
+  await expect(page.getByLabel('CRWV action', {exact: true})).toHaveText('Unavailable')
   await expect(page.getByLabel('CRWV size', {exact: true})).toHaveCount(0)
   await page.getByRole('button', {name: 'CRWV', exact: true}).click()
   const assessment = page.getByRole('region', {name: 'Current assessment', exact: true})

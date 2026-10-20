@@ -13,6 +13,16 @@ flowchart TB
     Grades -->|A/A+ entry, below A exit| LearnedPlan
     LearnedPlan --> Journal
     LearnedPlan --> Records
+    Admission -.-> Independent[Candidate independent model publication<br/>nightly percentages and original technical evidence<br/>before paper-account access]
+    Grades -.-> Independent
+    Independent -.-> ModelSnapshot[(Immutable source-bound model snapshot<br/>own universe, grades, sizes and original expiry)]
+    ModelSnapshot -.-> Numerical[Candidate numerical 15-minute collector<br/>original daily context and installed timing heads<br/>fresh IEX quote transport; no account or orders]
+    Providers -.-> Numerical
+    Numerical -.-> EntryEvidence[(Original entry and quote evidence<br/>first recommendation retained per candle)]
+    ModelSnapshot -.-> View
+    EntryEvidence -.-> View
+    Frozen -.-> HistoryPublication[Candidate audited numerical history import<br/>same economic code and trading costs<br/>original actions and next-open grade clocks]
+    HistoryPublication -.-> View
     Admission --> LearnedTiming[Shared learned completed-bar inference<br/>original published models; no runtime fitting]
     Quotes --> LearnedTiming
     LearnedTiming -->|Observed execute or wait verdict| Journal
@@ -67,3 +77,5 @@ flowchart TB
     class Models,LearnedTiming,SetupModel model;
     class View interface;
     class DisplayCollector,Admission,LearnedPlan,SetupCollector application;
+    class Independent,Numerical,HistoryPublication application;
+    class ModelSnapshot,EntryEvidence data;

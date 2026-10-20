@@ -4,6 +4,7 @@ import asyncio
 import logging
 import math
 import time
+from datetime import UTC, datetime
 from contextlib import suppress
 from pathlib import Path
 
@@ -38,10 +39,17 @@ class SessionPriceCollector:
             logger.info("Display-price snapshot publication recovered")
             self._last_failure = None
 
-    # Read only the graded universe, then ask the shared writer for one due pass.
+    # Prefer the independent published universe, then ask the shared quote writer for one due pass.
     def _collect_once(self):
-        latest, _ = deskrecord.latest_pair(self._root)
-        symbols = list((latest or {}).get("grades") or {})
+        from backend.market import strategy_publication
+        if (self._root/strategy_publication.DIRECTORY).exists():
+            try:
+                symbols=list(strategy_publication.read(self._root,datetime.now(UTC))['rows'])
+            except (OSError,ValueError,TypeError,KeyError):
+                return {'status':'unavailable'}
+        else:
+            latest, _ = deskrecord.latest_pair(self._root)
+            symbols = list((latest or {}).get("grades") or {})
         return self._collect(self._root, symbols, interval_seconds=self._interval)
 
     # Drain each threaded pass before another pass or process shutdown may finish.
