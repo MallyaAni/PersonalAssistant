@@ -8,7 +8,7 @@ from fastapi import APIRouter, Depends, Response
 
 from backend.api.v1 import market
 from backend.core.auth import authorize_path_user
-from backend.market import deskrecord, model_allocation_view, strategy_publication, strategy_entries, strategy_entry_history, strategy_position_view
+from backend.market import deskrecord, market_phase, model_allocation_view, strategy_publication, strategy_entries, strategy_entry_history, strategy_position_view
 
 router = APIRouter(
     prefix="/market/{user_id}",
@@ -20,13 +20,18 @@ router = APIRouter(
 # Read original publication and persisted model objectives without recovering, recalculating or accessing accounts.
 def allocation(root, now):
     root = Path(root)
+    # Every answer carries the exchange clock, so the board can say which
+    # phase the market is in and when the desk acts next instead of leaving
+    # an evening or a weekend to be read as a failure.
+    phase = market_phase.describe(now)
     if (root / strategy_publication.DIRECTORY).exists():
         try:
             snapshot = strategy_publication.read(root, now)
             positions = strategy_position_view.read(root, snapshot, now)
             return {**snapshot, 'entry_assessment':strategy_entries.read(root,snapshot,now),
                 **({'reference_positions': positions} if positions is not None else {}),
-                'recorded_history_version':strategy_entry_history.PAGE_SCHEMA}
+                'recorded_history_version':strategy_entry_history.PAGE_SCHEMA,
+                'market_phase': phase}
         except strategy_publication.ExpiredError as expired:
             snapshot = expired.value
             return {"version": strategy_publication.VERSION,
@@ -35,12 +40,14 @@ def allocation(root, now):
                     "next_publication_at": strategy_publication.next_publication_at(
                         now).isoformat(),
                     "last_session": snapshot["session"], "last_rows": snapshot["rows"],
-                    "as_of": now.isoformat(), "valid_until": None}
+                    "as_of": now.isoformat(), "valid_until": None,
+                    "market_phase": phase}
         except (OSError, ValueError, TypeError, KeyError, AttributeError, OverflowError):
             return {"version": strategy_publication.VERSION, "status": "unavailable",
                     "policy": "grade-led-learned-sizing/1", "rows": {},
                     "reason": "Independent strategy publication could not be verified",
-                    "as_of": now.isoformat(), "valid_until": None}
+                    "as_of": now.isoformat(), "valid_until": None,
+                    "market_phase": phase}
     try:
         record, _ = deskrecord.latest_pair(root)
     except (OSError, ValueError, TypeError):

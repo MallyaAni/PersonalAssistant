@@ -7,6 +7,7 @@ from datetime import datetime
 import pytest
 
 from backend.api.v1 import market_allocation
+from backend.market import market_phase
 from backend.market import model_allocation_view as view
 from backend.market import strategy_publication as publication
 from backend.tests.test_live_model_decision import NOW, admitted
@@ -104,6 +105,7 @@ def test_current_publication_is_unchanged(monkeypatch, tmp_path):
             "reason": "Fresh numerical 15-minute observation required",
         },
         "recorded_history_version": "strategy-recorded-entries/1",
+        "market_phase": market_phase.describe(PUBLISHED_AT),
     }
 
 
@@ -123,6 +125,7 @@ def test_expired_publication_awaits_the_nightly(monkeypatch, tmp_path):
         "last_rows": value["rows"],
         "as_of": expired_at.isoformat(),
         "valid_until": None,
+        "market_phase": market_phase.describe(expired_at),
     }
 
 
