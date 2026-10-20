@@ -4,7 +4,7 @@ const names = ['BUYLOW', 'BUYHIGH', 'SELLLOW', 'SELLHIGH', 'WAIT', 'MISSING']
 const session = '2026-10-13'
 type Fixture = {phase: string; paper: boolean; lost: boolean; expired: boolean; quoteMissing: boolean; liveReads: number; diagnostics: string[]; recordedMode?: 'original' | 'foreign' | 'bytes' | 'late' | 'paged'; recordedReads?: number; originalMode?: 'original' | 'foreign' | 'size'; originalReads?: number; originalDelay?: number; denseMarkers?: boolean; installedHistory?: boolean; numerical?: 'execute' | 'wait'; numericalForeign?: boolean; numericalExpired?: boolean; publicationV2?: boolean; noSellSignals?: boolean; simulationPolicy?: string; signalUntil?: string; allocationUntil?: string; allocationWrong?: boolean; allocationMissing?: boolean; regularFallback?: boolean; publishedPlan?: boolean; independentSizing?: boolean; independentSignalWrong?: boolean; targetWeight?: number; simulationIdentityWrong?: boolean; entryAt?: number; formingSignal?: boolean; chartFrames?: string[]; zoomHistory?: boolean; chartSessions?: number[]; currentSessionBars?: boolean}
 
-type ReferenceFixture = Fixture & {referenceMode?: 'trim' | 'exit' | 'buy'; referenceUnknown?: boolean}
+type ReferenceFixture = Fixture & {referenceMode?: 'trim' | 'exit' | 'buy'; referenceUnknown?: boolean; referenceObserved?: boolean; referenceResolved?: boolean; referenceBookInvalid?: boolean}
 
 // Supply explicit reference-mode API fixtures without changing any production data or clocks.
 function referenceFixture(data: unknown, path: string, state: ReferenceFixture, at: string, now: number): unknown {
@@ -13,7 +13,7 @@ function referenceFixture(data: unknown, path: string, state: ReferenceFixture, 
   const action = state.referenceMode==='buy' ? 'Buy' : 'Sell'
   const size = state.referenceMode==='buy' ? .0005 : state.referenceMode==='exit' ? .2 : .13
   const position = state.referenceMode==='exit' ? 0 : .143
-  const basis = 'standing_counterfactual_reference_transition_not_viewer_order'
+  const basis = state.referenceObserved ? 'observed_hypothetical_reference_not_viewer_order' : 'standing_counterfactual_reference_transition_not_viewer_order'
   if (path.endsWith('/model-allocation')) {
     if (state.referenceUnknown) {
       value.grade_signals.MISSING={...value.grade_signals.MISSING,grade:null,action:'unavailable'}
@@ -25,8 +25,9 @@ function referenceFixture(data: unknown, path: string, state: ReferenceFixture, 
       value.grade_signals.BUYHIGH={...value.grade_signals.BUYHIGH,grade:'B',action:'sell'}
     }
     const entry=value.entry_assessment
-    entry.version='strategy-numerical-entries/2';entry.sizing_basis=basis
-    entry.reference_progression='standing_no_fills_assumed';entry.recommendation_not_fill=true
+    entry.version=state.referenceObserved ? 'strategy-numerical-entries/3' : 'strategy-numerical-entries/2';entry.sizing_basis=basis
+    entry.reference_progression=state.referenceObserved ? 'later_observed_hypothetical_quote_proxy' : 'standing_no_fills_assumed';entry.recommendation_not_fill=true
+    if(state.referenceObserved) Object.assign(entry,{execution_basis:'later_observed_IEX_bid_ask_proxy_not_actual_fill',day_id:'b'.repeat(64),book_sha256:state.referenceBookInvalid ? 'invalid' : 'c'.repeat(64)})
     entry.rows=Object.fromEntries(Object.keys(value.rows).map(name=>[name,{state:'no_trade',action:null,size_weight:0,
       model_position_weight:value.rows[name].target_weight,reference_units:0,proposed_units:0,quote_at:null,valid_until:at,
       evidence:{...value.rows[name].evidence,trade_size:0,sizing_basis:basis,completed_candle_at:entry.completed_at}}]))
@@ -35,10 +36,13 @@ function referenceFixture(data: unknown, path: string, state: ReferenceFixture, 
       valid_until:new Date(state.numericalExpired ? now-1000 : now+20000).toISOString(),
       evidence:{...value.rows.BUYHIGH.evidence,model_position_size:position,trade_size:size,sizing_basis:basis,
         completed_candle_at:entry.completed_at,timing_reason:'Original reference numerical timing',features:{ema_21_distance:-.0944}}}
+    if(state.referenceObserved) for(const row of Object.values(entry.rows) as Record<string,any>[]) Object.assign(row,{attempt_resolved:false,objective_pending:row.action!==null})
+    if(state.referenceResolved) Object.assign(entry.rows.BUYHIGH,{state:'no_trade',action:null,size_weight:0,proposed_units:0,attempt_resolved:true,objective_pending:true,
+      evidence:{...entry.rows.BUYHIGH.evidence,trade_size:0}})
   } else if (path.endsWith('/recommendations') && path.includes('/strategy-simulation/')) {
     value.items=value.items.map((item: Record<string, unknown>)=>({...item,action,size_weight:size}))
   } else if (path.endsWith('/recommendation') && path.includes('/strategy-simulation/')) {
-    value.original={...value.original,action,size_weight:size,entry_version:'strategy-numerical-entries/2',
+    value.original={...value.original,action,size_weight:size,entry_version:state.referenceObserved ? 'strategy-numerical-entries/3' : 'strategy-numerical-entries/2',
       model_position_weight:position,reference_units:.003,proposed_units:state.referenceMode==='exit' ? .003 : .0013,
       evidence:{...value.original.evidence,model_position_size:position,trade_size:size,sizing_basis:basis}}
   }
@@ -207,6 +211,60 @@ test('Standing reference trim shows a positive Sell and separate position',async
     await expect(dialog.getByLabel('BUYHIGH current chart position',{exact:true})).toHaveText('Position 14.3%')
     await expect(dialog.getByLabel('BUYHIGH target chart markers',{exact:true})).toHaveText('')
   }
+  expect(state.diagnostics).toEqual([])
+})
+
+// Keep an observed model reduction identical in the list and every current chart header.
+test('Observed reference Sell size and position agree across chart frames',async ({page,baseURL})=>{
+  const state=fixture()
+  Object.assign(state,{publicationV2:true,numerical:'execute',referenceMode:'trim',referenceObserved:true,entryAt:Date.now()-100,currentSessionBars:true})
+  await install(page,baseURL!,state);await page.goto('/?deskView=strategy#desk')
+  const board=page.getByRole('region',{name:'All names signals',exact:true})
+  await expect(board.getByLabel('BUYHIGH action',{exact:true})).toHaveText('Sell')
+  await expect(board.getByLabel('BUYHIGH trade size',{exact:true})).toHaveText('13.0%')
+  await expect(board.getByLabel('BUYHIGH model size',{exact:true})).toHaveText('14.3%')
+  await board.getByRole('button',{name:'BUYHIGH',exact:true}).click()
+  const dialog=page.getByRole('dialog',{name:'BUYHIGH history',exact:true})
+  for(const frame of ['D','W','15m']){
+    await dialog.getByRole('group',{name:'Chart timeframe',exact:true}).getByRole('button',{name:frame,exact:true}).click()
+    await expect(dialog.getByLabel('BUYHIGH current chart target',{exact:true})).toHaveText('Sell · Size 13.0%')
+    await expect(dialog.getByLabel('BUYHIGH current chart position',{exact:true})).toHaveText('Position 14.3%')
+  }
+  expect(state.diagnostics).toEqual([])
+})
+
+// A resolved model attempt must stop repeating the trade while preserving its original chart recommendation.
+test('Observed reference resolved attempt preserves original Sell without repeating it',async ({page,baseURL})=>{
+  const state=fixture()
+  Object.assign(state,{publicationV2:true,numerical:'execute',referenceMode:'trim',referenceObserved:true,referenceResolved:true,recordedMode:'original',entryAt:Date.now()-100,currentSessionBars:true})
+  await install(page,baseURL!,state);await page.goto('/?deskView=strategy#desk')
+  const board=page.getByRole('region',{name:'All names signals',exact:true})
+  await expect(board.getByLabel('BUYHIGH action',{exact:true})).toHaveText('Wait')
+  await expect(board.getByLabel('BUYHIGH trade size',{exact:true})).toHaveText('—')
+  await expect(board.getByLabel('BUYHIGH model size',{exact:true})).toHaveText('14.3%')
+  await board.getByRole('button',{name:'BUYHIGH',exact:true}).click()
+  const dialog=page.getByRole('dialog',{name:'BUYHIGH history',exact:true})
+  for(const frame of ['D','W','15m']){
+    await dialog.getByRole('group',{name:'Chart timeframe',exact:true}).getByRole('button',{name:frame,exact:true}).click()
+    await expect(dialog.getByLabel('BUYHIGH current chart target',{exact:true})).toHaveText('Wait · Size —')
+    await expect(dialog.getByLabel('BUYHIGH target chart markers',{exact:true})).toHaveText('Sell · Size 13.0%')
+  }
+  await dialog.getByText('Recommendations',{exact:true}).click()
+  await dialog.locator('button[data-recommendation-id^="recorded:"]').click()
+  const details=dialog.getByRole('region',{name:'Recommendation details',exact:true})
+  await expect(details).toContainText('Sell · Size 13.0%')
+  await expect(details).toContainText('Original saved timing decision before refresh')
+  expect(state.diagnostics).toEqual([])
+})
+
+// A damaged model-book receipt cannot recover a Sell from the older grade-only presentation.
+test('Observed reference malformed book cannot fall back to a Sell',async ({page,baseURL})=>{
+  const state=fixture()
+  Object.assign(state,{publicationV2:true,numerical:'execute',referenceMode:'exit',referenceObserved:true,referenceBookInvalid:true,entryAt:Date.now()-100})
+  await install(page,baseURL!,state);await page.goto('/?deskView=strategy#desk')
+  const board=page.getByRole('region',{name:'All names signals',exact:true})
+  await expect(board.getByLabel('BUYHIGH action',{exact:true})).toHaveText('Unavailable')
+  await expect(board.getByLabel('BUYHIGH trade size',{exact:true})).toHaveText('—')
   expect(state.diagnostics).toEqual([])
 })
 

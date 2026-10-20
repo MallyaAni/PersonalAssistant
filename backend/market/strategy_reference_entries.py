@@ -24,10 +24,14 @@ from backend.market import probabilistic_execution as probability
 from backend.market import strategy_publication as publication
 from backend.market import strategy_reference_transition as transition
 from backend.market import strategy_history_publication as history
+from backend.market import strategy_reference_book as reference_book
 
 VERSION = 'strategy-numerical-entries/2'
 BASIS = 'standing_counterfactual_reference_transition_not_viewer_order'
 BRIDGE = 'original_adjusted_reference_close_times_current_IEX_return_from_attested_prior_IEX_close'
+PROGRESSING_VERSION = 'strategy-numerical-entries/3'
+PROGRESSING_BASIS = 'observed_hypothetical_reference_not_viewer_order'
+VERSIONS = (VERSION,PROGRESSING_VERSION)
 
 
 # Select the independent reference only when audited model history was explicitly installed.
@@ -44,6 +48,55 @@ def prepare(root, snapshot, now):
         raise ValueError('Installed and reviewed original reference differ')
     reference, evidence = transition.from_reviewed_history(root, snapshot, source, review, now)
     return transition.prepare(snapshot, reference, now), evidence
+
+
+# Reopen or roll the original model book before acquiring advice, without ever reseeding a missing or damaged state.
+def prepare_book(root, snapshot, now):
+    folder=Path(root)/reference_book.DIRECTORY
+    if not folder.exists():
+        plan,evidence=prepare(root,snapshot,now)
+        trade=datetime.fromisoformat(snapshot['valid_until']).astimezone(reference_book.calendar.NEW_YORK).date().isoformat()
+        book=reference_book.initial(plan,trade)
+        return reference_book.commit(root,None,book,evidence)
+    book=reference_book.load(root,recover=True,snapshot=snapshot)
+    if book.plan.snapshot_id==snapshot['snapshot_id']:
+        book.plan.reference.validate(snapshot)
+        return book
+    context=transition.strategy_entry_context.load(root,snapshot,now)
+    after,evidence=reference_book.rollover(book,snapshot,context,now)
+    return reference_book.commit(root,book,after,evidence)
+
+
+# Consume only published first recommendations using a subsequent original quote, never loose files or a GET request.
+def observe_book(root, snapshot, cache, quote_page, now):
+    from backend.market import strategy_entries, strategy_entry_history
+    book=reference_book.load(root,recover=True,snapshot=snapshot)
+    if book.plan.snapshot_id!=snapshot['snapshot_id']:
+        raise ValueError('Original model book must precede current advice')
+    path=Path(root)/strategy_entries.DIRECTORY/'latest.json'
+    intents={}
+    if path.exists():
+        previous=json.loads(history._read(path,strategy_entries.MAX_BYTES))
+        if (previous['receipt_sha256']!=publication._digest({k:v for k,v in previous.items() if k!='receipt_sha256'})
+                or previous['sources']!=strategy_entries.sources()):
+            raise ValueError('Original published model view differs before hypothetical execution')
+        if previous['version']==PROGRESSING_VERSION and previous['day_id']==book.day_id():
+            for name,row in previous['rows'].items():
+                original=row.get('original_intent')
+                if original is None or name in dict(book.resolved):
+                    continue
+                restored=strategy_entry_history.read(root,name,original['completed_at'],snapshot['snapshot_id'],now)['original']
+                if restored.get('day_id')!=book.day_id() or restored.get('entry_version')!=PROGRESSING_VERSION:
+                    raise ValueError('Original published model attempt belongs to another day')
+                intents[name]=restored
+    anchors={name:float(cache['packet'].prefixes[name]['prior_close']) for name in intents}
+    after,evidence=reference_book.observe(book,intents,quote_page,anchors,now)
+    if evidence is not None:
+        after=reference_book.commit(root,book,after,evidence)
+    cache['reference_book']=after
+    cache['reference_plan']=reference_book.current_plan(after)
+    cache['reference_evidence']=asdict(after)
+    return after
 
 
 # Restore immutable scalar plan data without prediction, account access or filesystem adoption.
@@ -120,8 +173,16 @@ def project(snapshot, cache, quotes, now):
         raise ValueError('Original reference candle changed')
     packet_identity = {'packet_receipt_sha256': packet.receipt_sha256, 'forecast_receipt_sha256': forecast.receipt_sha256,
                        'quotes': quotes, 'completed_at': completed.isoformat(), 'at': now.isoformat(), 'bridge': BRIDGE}
-    value = transition.project(plan, marks, shifted, evidence_sha256=publication._digest(packet_identity),
-        price_basis=transition.PRICE_BASIS, terminal=count == 25)
+    progressing=type(cache.get('reference_book')) is reference_book.DayBook
+    if progressing:
+        book=cache['reference_book']
+        prepared,value=reference_book.project(book,marks,shifted,evidence_sha256=publication._digest(packet_identity),terminal=count==25)
+        if prepared!=plan:
+            raise ValueError('Current hypothetical book and prepared advice differ')
+    else:
+        value = transition.project(plan, marks, shifted, evidence_sha256=publication._digest(packet_identity),
+            price_basis=transition.PRICE_BASIS, terminal=count == 25)
+    basis=PROGRESSING_BASIS if progressing else BASIS
     rows = {}
     for name, row in value['rows'].items():
         pair = pairs.get(name)
@@ -136,6 +197,7 @@ def project(snapshot, cache, quotes, now):
             waiting_log_utility=row['waiting_log_utility'], completed_candle_at=completed.isoformat(),
             observed_price=pair[0] if pair else None, timing_engine=probability.POLICY, sizing_basis=BASIS,
             reference_basis=transition.BASIS, price_bridge=BRIDGE)
+        evidence['sizing_basis']=basis
         if name in shifted:
             distribution = shifted[name]
             evidence.update(waiting_advantage_mean=distribution.mean,
@@ -146,16 +208,21 @@ def project(snapshot, cache, quotes, now):
         rows[name] = {'action': row['action'], 'state': state, 'size_weight': row['trade_weight'],
                       'model_position_weight': row['model_position_weight'], 'reference_units': row['reference_units'],
                       'proposed_units': row['proposed_units'], 'quote_at': quoted, 'valid_until': until.isoformat(),
-                      'intent_id': publication._digest({'snapshot_id': plan.snapshot_id, 'reference': plan.reference.evidence_sha256, 'ticker': name}),
+                      'intent_id': publication._digest({'day_id':book.day_id(),'ticker':name}) if progressing else publication._digest({'snapshot_id': plan.snapshot_id, 'reference': plan.reference.evidence_sha256, 'ticker': name}),
+                      **({'attempt_resolved':name in dict(book.resolved),
+                          'objective_pending':abs(next(item[2] for item in plan.rows if item[0]==name)-row['reference_units'])>1e-12,
+                          'price_anchor':float(packet.prefixes[name]['prior_close']) if name in packet.prefixes and math.isfinite(float(packet.prefixes[name]['prior_close'])) else None} if progressing else {}),
                       'evidence': evidence}
-    result = {'version': VERSION, 'status': 'available', 'snapshot_id': snapshot['snapshot_id'],
+    result = {'version': PROGRESSING_VERSION if progressing else VERSION, 'status': 'available', 'snapshot_id': snapshot['snapshot_id'],
               'publication_receipt_sha256': snapshot['receipt_sha256'], 'strategy_identity': snapshot['strategy_identity'],
               'session': completed.date().isoformat(), 'completed_at': completed.isoformat(), 'generated_at': now.isoformat(),
               'valid_until': (completed+timedelta(minutes=15)).isoformat(), 'rows': rows, 'sources': cache['sources'],
               'forecast_receipt_sha256': forecast.receipt_sha256, 'forecast_evidence': cache.get('stored_forecast'),
               'context': cache['context'], 'feed': 'iex', 'historical_training_feed_matches': False, 'account_inputs': False,
-              'sizing_basis': BASIS, 'reference_plan': asdict(plan), 'reference_evidence': cache['reference_evidence'],
-              'reference_calculation': value, 'recommendation_not_fill': True, 'reference_progression': 'standing_no_fills_assumed'}
+              'sizing_basis': basis, 'reference_plan': asdict(plan), 'reference_evidence': cache['reference_evidence'],
+              'reference_calculation': value, 'recommendation_not_fill': True,
+              'reference_progression':'later_observed_hypothetical_quote_proxy' if progressing else 'standing_no_fills_assumed',
+              **({'day_id':book.day_id(),'book_sha256':book.receipt_sha256(),'execution_basis':reference_book.EXECUTION_BASIS} if progressing else {})}
     result['timing_binding'] = {'config_sha256': sha256(cache['config_bytes']).hexdigest(),
         'model_receipt': cache['config']['model_receipt_sha256'], 'residual_receipt': cache['config']['residual_receipt_sha256'],
         'cost_bps': cache['config']['cost_bps']}
@@ -167,8 +234,10 @@ def project(snapshot, cache, quotes, now):
 def validate(value, snapshot, forecast=None):
     plan = restore(value['reference_plan'])
     calculation = value['reference_calculation']
-    if (value['version'] != VERSION or value['sizing_basis'] != BASIS
-            or value['reference_progression'] != 'standing_no_fills_assumed' or value['recommendation_not_fill'] is not True
+    progressing=value['version']==PROGRESSING_VERSION
+    basis=PROGRESSING_BASIS if progressing else BASIS
+    if (value['version'] not in VERSIONS or value['sizing_basis'] != basis
+            or value['reference_progression'] != ('later_observed_hypothetical_quote_proxy' if progressing else 'standing_no_fills_assumed') or value['recommendation_not_fill'] is not True
             or plan.snapshot_id != snapshot['snapshot_id'] or plan.publication_receipt_sha256 != snapshot['receipt_sha256']
             or plan.reference.evidence_sha256 != publication._digest(value['reference_evidence'])
             or dict(plan.source_sha256) != transition.sources()
@@ -177,6 +246,14 @@ def validate(value, snapshot, forecast=None):
             or calculation['plan_sha256'] != plan.receipt_sha256()
             or calculation['receipt_sha256'] != publication._digest({k:v for k,v in calculation.items() if k != 'receipt_sha256'})):
         raise ValueError('Original standing reference advice differs')
+    if progressing:
+        book=reference_book.restore(value['reference_evidence'])
+        if (reference_book.current_plan(book)!=plan or value['day_id']!=book.day_id()
+                or value['book_sha256']!=book.receipt_sha256() or value['execution_basis']!=reference_book.EXECUTION_BASIS
+                or calculation['version']!=reference_book.VERSION or calculation['day_id']!=book.day_id()
+                or calculation['book_sha256']!=book.receipt_sha256() or calculation['book_source_sha256']!=reference_book.sources()
+                or calculation['original_daily_buy_budget']!=book.buy_budget):
+            raise ValueError('Original observed hypothetical book differs')
     if forecast is not None and (forecast['model_receipt'] != value['timing_binding']['model_receipt']
             or forecast['residual_receipt'] != value['timing_binding']['residual_receipt']
             or forecast['sources'] != inference._inference_sources()
@@ -212,6 +289,10 @@ def validate(value, snapshot, forecast=None):
                 or row['state'] != (saved['state'] if row['quote_at'] is not None or row['action'] is None else 'unavailable')
                 or any(row['evidence'][key] != snapshot['rows'][name]['evidence'][key] for key in ('grade','inputs_as_of','features'))):
             raise ValueError('Original reference action amount or position differs')
+        if progressing and (row['attempt_resolved']!=(name in dict(book.resolved))
+                or row['objective_pending']!=(abs(original[name][2]-row['reference_units'])>1e-12)
+                or row['intent_id']!=publication._digest({'day_id':book.day_id(),'ticker':name})):
+            raise ValueError('Original hypothetical pending objective differs')
         if quoted is not None and row['quote_at'] is not None:
             if not isinstance(quoted.get(name),dict):
                 raise ValueError('Original reference quote missing')
@@ -228,6 +309,43 @@ def validate(value, snapshot, forecast=None):
     return plan
 
 
+# Persist one shared original calculation so each stock's first record remains below its unchanged size cap.
+def store_proof(root, value):
+    proof=deepcopy({key:value[key] for key in ('version','sizing_basis','reference_progression','recommendation_not_fill',
+        'reference_plan','reference_evidence','reference_calculation','timing_binding','rows','quote_receipt','day_id','book_sha256','execution_basis')})
+    for row in proof['rows'].values():
+        row.pop('original_intent',None)
+    raw=json.dumps(proof,sort_keys=True,allow_nan=False).encode()
+    if len(raw)>524288:
+        raise ValueError('Finite shared original reference calculation required')
+    identity=sha256(raw).hexdigest();folder=Path(root)/'desk/strategy-entries/reference-proofs';folder.mkdir(mode=0o700,parents=True,exist_ok=True)
+    path=folder/(identity+'.json')
+    try:
+        with path.open('xb') as stream:
+            stream.write(raw);stream.flush();os.fsync(stream.fileno())
+    except FileExistsError:
+        if history._read(path,524288)!=raw:
+            raise ValueError('Original shared reference calculation differs')
+    descriptor=os.open(folder,os.O_RDONLY)
+    try:os.fsync(descriptor)
+    finally:os.close(descriptor)
+    return {'sha256':identity,'bytes':len(raw)}
+
+
+# Reopen the exact first calculation independently of current views, quote refreshes or account state.
+def read_proof(root, descriptor):
+    if set(descriptor)!={'sha256','bytes'} or type(descriptor['bytes']) is not int or not 0<descriptor['bytes']<=524288:
+        raise ValueError('Finite original reference proof descriptor required')
+    identity=publication._sha(descriptor['sha256'])
+    folder=Path(root)/'desk/strategy-entries/reference-proofs'
+    if folder.is_symlink():
+        raise ValueError('Original reference proof namespace required')
+    raw=history._read(folder/(identity+'.json'),524288)
+    if len(raw)!=descriptor['bytes'] or sha256(raw).hexdigest()!=identity:
+        raise ValueError('Original shared reference proof bytes differ')
+    return json.loads(raw)
+
+
 # Preserve one standing intent across quote refreshes and later candles without implying repeated trades.
 def original_intent(root, value, name):
     row = value['rows'][name]
@@ -236,19 +354,23 @@ def original_intent(root, value, name):
     if path.exists():
         raw = history._read(path, 131072)
         original = json.loads(raw)
-        if (original.get('entry_version') != VERSION or original['ticker'] != name
+        if (original.get('entry_version') != value['version'] or original['ticker'] != name
                 or original['snapshot_id'] != value['snapshot_id'] or original['intent_id'] != row['intent_id']
-                or original['reference_proof']['reference_calculation']['plan_sha256'] != value['reference_calculation']['plan_sha256']
+                or (original.get('day_id')!=value.get('day_id') if value['version']==PROGRESSING_VERSION else original['reference_proof']['reference_calculation']['plan_sha256'] != value['reference_calculation']['plan_sha256'])
                 or original['receipt_sha256'] != publication._digest({k:v for k,v in original.items() if k != 'receipt_sha256'})):
             raise ValueError('Original standing reference intent differs')
         return original
     if row['state'] != 'execute':
         return None
-    original = {'ticker': name, **row, 'entry_version': VERSION, 'at': value['generated_at'], 'completed_at': value['completed_at'],
+    original = {'ticker': name, **row, 'entry_version': value['version'], 'at': value['generated_at'], 'completed_at': value['completed_at'],
                 **{key:value[key] for key in ('snapshot_id', 'publication_receipt_sha256', 'forecast_receipt_sha256',
                     'strategy_identity', 'forecast_evidence', 'quote_receipt')}, 'recommendation_not_fill': True,
                 'reference_proof': {key:value[key] for key in ('version', 'sizing_basis', 'reference_progression', 'recommendation_not_fill',
                     'reference_plan', 'reference_evidence', 'reference_calculation', 'timing_binding', 'rows', 'quote_receipt')}}
+    if value['version']==PROGRESSING_VERSION:
+        original['day_id']=value['day_id']
+        original.pop('reference_proof')
+        original['reference_proof_ref']=store_proof(root,value)
     original['receipt_sha256'] = publication._digest(original)
     raw = json.dumps(original, sort_keys=True, allow_nan=False).encode()
     if len(raw) > 131072:

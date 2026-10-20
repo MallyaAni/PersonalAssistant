@@ -15,6 +15,15 @@ export type StrategyChartTarget = {ticker: string; date: string; at: string; val
 // Recognize the independently authenticated publication formats without consulting an account.
 const independentAllocation = (allocation?: DeskModelAllocation): boolean => allocation?.version === 'strategy-model-allocation/1' || allocation?.version === 'strategy-model-allocation/2'
 
+
+// Admit only the separately declared standing or observed-hypothetical reference formats.
+const referenceEntryFormat = (entry: DeskModelAllocation['entry_assessment']): boolean => entry?.recommendation_not_fill===true
+  && (entry.version==='strategy-numerical-entries/2'
+    ? entry.sizing_basis==='standing_counterfactual_reference_transition_not_viewer_order' && entry.reference_progression==='standing_no_fills_assumed'
+    : entry.version==='strategy-numerical-entries/3' && entry.sizing_basis==='observed_hypothetical_reference_not_viewer_order'
+      && entry.reference_progression==='later_observed_hypothetical_quote_proxy' && entry.execution_basis==='later_observed_IEX_bid_ask_proxy_not_actual_fill'
+      && [entry.day_id,entry.book_sha256].every(value=>/^[a-f0-9]{64}$/.test(value ?? '')))
+
 // Require a complete internally consistent publication before using its own stock universe or percentages.
 const publicationValid = (allocation: DeskModelAllocation | undefined, now: number): boolean => {
   if (allocation?.version !== 'strategy-model-allocation/2' || allocation.status !== 'available'
@@ -47,18 +56,17 @@ const numericalEntry = (allocation: DeskModelAllocation, ticker: string, now: nu
   const entry = allocation.entry_assessment, row = entry?.rows?.[ticker]
   const completed = Date.parse(entry?.completed_at ?? ''), generated = Date.parse(entry?.generated_at ?? '')
   const quoted = Date.parse(row?.quote_at ?? ''), until = Date.parse(row?.valid_until ?? '')
-  const reference = entry?.version === 'strategy-numerical-entries/2'
+  const reference = ['strategy-numerical-entries/2','strategy-numerical-entries/3'].includes(entry?.version ?? '')
   const referenceSize = reference && row && typeof row.model_position_weight === 'number' && Number.isFinite(row.model_position_weight)
     && row.model_position_weight >= 0 && row.model_position_weight <= 1 && row.evidence?.model_position_size === row.model_position_weight
     && row.evidence?.trade_size === row.size_weight && row.evidence?.sizing_basis === entry.sizing_basis
     && ['Buy','Sell'].includes(row.action ?? '') && (row.action !== 'Sell' || typeof row.reference_units === 'number'
       && typeof row.proposed_units === 'number' && row.proposed_units > 0 && row.proposed_units <= row.reference_units)
-  if (!['strategy-numerical-entries/1','strategy-numerical-entries/2'].includes(entry?.version ?? '') || entry?.status !== 'available'
+  if (!['strategy-numerical-entries/1','strategy-numerical-entries/2','strategy-numerical-entries/3'].includes(entry?.version ?? '') || entry?.status !== 'available'
       || entry.snapshot_id !== allocation.snapshot_id || entry.publication_receipt_sha256 !== allocation.receipt_sha256
       || entry.strategy_identity !== allocation.strategy_identity || !/^[a-f0-9]{64}$/.test(entry.receipt_sha256 ?? '')
       || entry.feed !== 'iex' || entry.account_inputs !== false
-      || (reference ? entry.sizing_basis !== 'standing_counterfactual_reference_transition_not_viewer_order'
-        || entry.reference_progression !== 'standing_no_fills_assumed' || entry.recommendation_not_fill !== true || !referenceSize
+      || (reference ? !referenceEntryFormat(entry) || !referenceSize
         : entry.sizing_basis !== 'fresh_unit_capital_allocation_not_account_trade_quantity'
           || row?.size_weight !== allocation.rows[ticker]?.target_weight || row?.action !== 'Buy' || row.evidence?.model_position_size !== row.size_weight)
       || !row || !['execute','wait'].includes(row.state) || !(row.size_weight > 0 && row.size_weight <= 1)
@@ -74,9 +82,7 @@ const numericalEntry = (allocation: DeskModelAllocation, ticker: string, now: nu
 const referencePosition = (allocation: DeskModelAllocation, ticker: string, now: number): number | null => {
   const entry = allocation.entry_assessment, row = entry?.rows?.[ticker]
   const completed = Date.parse(entry?.completed_at ?? ''), generated = Date.parse(entry?.generated_at ?? '')
-  return publicationValid(allocation,now) && entry?.version==='strategy-numerical-entries/2' && entry.status==='available'
-    && entry.sizing_basis==='standing_counterfactual_reference_transition_not_viewer_order'
-    && entry.reference_progression==='standing_no_fills_assumed' && entry.recommendation_not_fill===true
+  return publicationValid(allocation,now) && referenceEntryFormat(entry) && entry?.status==='available'
     && entry.snapshot_id===allocation.snapshot_id && entry.publication_receipt_sha256===allocation.receipt_sha256
     && entry.strategy_identity===allocation.strategy_identity && /^[a-f0-9]{64}$/.test(entry.receipt_sha256 ?? '')
     && completed<=generated && generated<=now && now<completed+900000
@@ -130,7 +136,7 @@ export const strategyChartTarget = (latest: DeskRecord, allocation: DeskModelAll
     const action = allocation.grade_signals?.[ticker]?.action
     const current = live.market_status?.phase === 'open' ? numericalEntry(allocation,ticker,now) : null
     const displayed = signalsFor(latest,live,ticker,now,allocation)
-    const reference = allocation.entry_assessment?.version==='strategy-numerical-entries/2' && referencePosition(allocation,ticker,now)!==null
+    const reference = referenceEntryFormat(allocation.entry_assessment) && referencePosition(allocation,ticker,now)!==null
     return {ticker, date: current ? allocation.entry_assessment!.session! : allocation.session!, at: current?.at ?? allocation.as_of, validUntil: allocation.valid_until,
       action: reference ? current?.row.action ?? null : weight > 0 && ['buy', 'hold'].includes(action ?? '') ? 'Buy' : action === 'sell' ? 'Sell' : null,
       weight:reference ? current?.row.size_weight ?? 0 : weight, positionWeight:weight, tradeWeight:current?.row.size_weight ?? null, referenceTransition:reference,
@@ -218,9 +224,9 @@ export const signalsFor = (latest: DeskRecord, live: DeskLive, ticker: string, n
     const unavailable = signal('Unavailable', false, '', 'Verified current strategy publication required.', 3)
     const plan = publishedPlanFor(latest, live, allocation, ticker, now)
     const entry = publicationValid(allocation,now) && live.market_status?.phase === 'open' ? numericalEntry(allocation,ticker,now) : null
-    if (live.market_status?.phase === 'open' && allocation.entry_assessment?.version==='strategy-numerical-entries/2') {
+    if (live.market_status?.phase === 'open' && ['strategy-numerical-entries/2','strategy-numerical-entries/3'].includes(allocation.entry_assessment?.version ?? '')) {
       const position = referencePosition(allocation,ticker,now)
-      const row = allocation.entry_assessment.rows[ticker]
+      const row = allocation.entry_assessment!.rows[ticker]
       if (position===null || !row) return {ticker,grade:'—',setup:null,buy:unavailable,sell:unavailable}
       const grade = allocation.grade_signals?.[ticker]?.grade ?? '—'
       if (grade==='—' && position===0) return {ticker,grade,setup:null,buy:unavailable,sell:unavailable,evidence:row.evidence}
@@ -228,10 +234,12 @@ export const signalsFor = (latest: DeskRecord, live: DeskLive, ticker: string, n
       const side = row.action
       const ready = entry?.row.state==='execute'
       const reason = side ? `${side} ${(row.size_weight*100).toFixed(3)}% of model reference capital toward a ${(position*100).toFixed(1)}% position. ${entry?.row.evidence?.timing_reason ?? 'Await a fresh compatible regular-session quote.'} This is a standing model reference, not your holdings or a recorded fill.`
-        : position>0 ? grade==='—' ? 'Grade unavailable; preserve the existing model reference without initiating a new trade.' : 'The reference position already meets the model objective; no additional trade is recommended.' : 'The model has no position to sell and no new allocation.'
-      const selected = signal(side ? ready ? side==='Buy' ? 'Buy now' : 'Sell review now' : 'Wait' : position>0 ? 'Hold' : 'Avoid',ready,'',reason,ready?0:1)
+        : row.attempt_resolved ? 'The original daily hypothetical attempt is resolved. No repeated trade is recommended; view its saved recommendation for the original evidence.'
+          : row.objective_pending ? 'The original daily cash budget cannot fund another model purchase.'
+            : position>0 ? grade==='—' ? 'Grade unavailable; preserve the existing model reference without initiating a new trade.' : 'The reference position already meets the model objective; no additional trade is recommended.' : 'The model has no position to sell and no new allocation.'
+      const selected = signal(side ? ready ? side==='Buy' ? 'Buy now' : 'Sell review now' : 'Wait' : row.attempt_resolved || row.objective_pending ? 'Wait' : position>0 ? 'Hold' : 'Avoid',ready,'',reason,ready?0:1)
       return {ticker,grade,setup:null,buy:side==='Sell'?inactive:selected,sell:side==='Sell'?selected:inactive,evidence:row.evidence,
-        current:entry ? {completed:allocation.entry_assessment.completed_at!,quote:entry.row.quote_at!,until:entry.validUntil} : undefined}
+        current:entry ? {completed:allocation.entry_assessment!.completed_at!,quote:entry.row.quote_at!,until:entry.validUntil} : undefined}
     }
     const quote = displayedBoardPrice(live,ticker,now)
     if (plan && allocation.grade_signals?.[ticker]?.action === 'sell' && live.market_status?.phase === 'open'

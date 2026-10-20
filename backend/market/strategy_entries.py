@@ -7,6 +7,7 @@ account nor sends orders. IEX is explicitly different from historical SIP.
 """
 
 from copy import deepcopy
+from dataclasses import asdict
 import base64
 from datetime import UTC, datetime, timedelta
 from hashlib import sha256
@@ -35,7 +36,7 @@ FORECAST_PART_BYTES = 262144
 # Bind the adapter and unchanged numerical/market input mechanisms in each observation.
 def sources():
     result = inference._inference_sources()
-    for module in (market, learned_live_timing, strategy_entry_context, reference_entries, reference_entries.transition):
+    for module in (market, learned_live_timing, strategy_entry_context, reference_entries, reference_entries.transition,reference_entries.reference_book):
         result['backend/market/' + Path(module.__file__).name] = sha256(Path(module.__file__).read_bytes()).hexdigest()
     result['backend/market/strategy_entries.py'] = sha256(Path(__file__).read_bytes()).hexdigest()
     return result
@@ -108,6 +109,7 @@ def acquire(root, snapshot, *, clock, transport):
     context = strategy_entry_context.load(root, snapshot, started)
     if context.receipt['trade_session'] != session.isoformat():
         raise ValueError('Current numerical entry session differs from original daily context')
+    book=reference_entries.prepare_book(root,snapshot,started) if reference_entries.configured(root) else None
     raw = (Path(root) / learned_live_timing.CONFIG).read_bytes()
     config = json.loads(raw)
     if (sha256(raw).hexdigest() != snapshot['identity']['timing_config_sha256']
@@ -135,8 +137,10 @@ def acquire(root, snapshot, *, clock, transport):
     result = {'completed':completed, 'snapshot_id':snapshot['snapshot_id'], 'forecast':forecast, 'packet': packet,
         'quotes':deepcopy(packet.snapshot['quotes']), 'config_bytes':raw, 'config':config,
         'context':context.receipt, 'sources':sources(), 'available':available}
-    if reference_entries.configured(root):
-        result['reference_plan'], result['reference_evidence'] = reference_entries.prepare(root, snapshot, available)
+    if book is not None:
+        result['reference_book']=book
+        result['reference_plan']=reference_entries.reference_book.current_plan(book)
+        result['reference_evidence']=asdict(book)
     return result
 
 
@@ -212,7 +216,7 @@ def publish(root, value):
     history = folder / 'recommendations' / value['session']
     history.mkdir(mode=0o700, parents=True, exist_ok=True)
     for name, row in value['rows'].items():
-        if value['version'] == reference_entries.VERSION:
+        if value['version'] in reference_entries.VERSIONS:
             original = reference_entries.original_intent(root, value, name)
             if original is None:
                 continue
@@ -245,7 +249,7 @@ def publish(root, value):
             if (publication._digest({k:v for k,v in stored.items() if k!='receipt_sha256'}) != stored['receipt_sha256']
                     or any(stored[field] != original[field] for field in ('ticker','completed_at','snapshot_id','strategy_identity'))):
                 raise ValueError('Original first recommendation evidence differs')
-    if value['version'] == reference_entries.VERSION:
+    if value['version'] in reference_entries.VERSIONS:
         value['receipt_sha256'] = publication._digest({k:v for k,v in value.items() if k!='receipt_sha256'})
         raw = json.dumps(value,sort_keys=True,allow_nan=False).encode()
         if len(raw) > MAX_BYTES:
@@ -269,7 +273,7 @@ def read(root, snapshot, now):
         if path.is_symlink() or path.stat().st_size > MAX_BYTES:
             raise ValueError('Finite original entry observation required')
         value = json.loads(path.read_bytes())
-        if (value['version'] not in (VERSION, reference_entries.VERSION) or value['sources'] != sources()
+        if (value['version'] not in (VERSION,*reference_entries.VERSIONS) or value['sources'] != sources()
                 or value['snapshot_id'] != snapshot['snapshot_id'] or value['strategy_identity'] != snapshot['strategy_identity']
                 or value['publication_receipt_sha256'] != snapshot['receipt_sha256']
                 or publication._digest({k:v for k,v in value.items() if k!='receipt_sha256'}) != value['receipt_sha256']
@@ -280,7 +284,7 @@ def read(root, snapshot, now):
         if sha256(forecast_raw).hexdigest()!=value['forecast_receipt_sha256']:
             raise ValueError('Original numerical forecast evidence differs')
         market._window(market._as_of(now))
-        if value['version'] == reference_entries.VERSION:
+        if value['version'] in reference_entries.VERSIONS:
             reference_entries.validate(value, snapshot, json.loads(forecast_raw))
             return value
         for name, row in value['rows'].items():
@@ -338,6 +342,8 @@ def collect(root, cache, *, clock=None, transport=None):
         if query != {'symbols':','.join(cache['forecast'].receipt['symbols']),'feed':'iex'}:
             raise ValueError('Original current quote cohort differs')
         quotes = json.loads(quote_page['body'])['quotes']
+        if 'reference_book' in cache:
+            reference_entries.observe_book(root,snapshot,cache,quote_page,observed)
         value = project(snapshot,cache,quotes,observed)
         value['quote_receipt'] = {key:quote_page[key] for key in ('url','requested_at','received_at','status','sha256')}
         value['quote_receipt']['body_base64'] = base64.b64encode(quote_page['body']).decode()

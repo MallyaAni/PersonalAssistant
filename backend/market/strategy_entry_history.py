@@ -63,7 +63,7 @@ def read(root, ticker, completed_at, snapshot_id, now):
         raise ValueError('Original recommendation namespace required')
     raw=_read(folder/(key+'.json'),MAX_RECORD_BYTES)
     original=json.loads(raw)
-    reference = original.get('entry_version') == entries.reference_entries.VERSION
+    reference = original.get('entry_version') in entries.reference_entries.VERSIONS
     at=_instant(original['at'])
     if (original['ticker']!=ticker or original['completed_at']!=completed.isoformat()
             or original['snapshot_id']!=snapshot_id or original['recommendation_not_fill'] is not True
@@ -83,20 +83,26 @@ def read(root, ticker, completed_at, snapshot_id, now):
             or not reference and original['size_weight']!=allocation['target_weight']
             or any(evidence[key]!=allocation['evidence'][key] for key in (('grade','inputs_as_of','features') if reference else ('grade','inputs_as_of','model_position_size','features')))
             or evidence['completed_candle_at']!=completed.isoformat()
-            or evidence['sizing_basis']!=(entries.reference_entries.BASIS if reference else 'fresh_unit_capital_allocation_not_account_trade_quantity')):
+            or evidence['sizing_basis']!=(entries.reference_entries.PROGRESSING_BASIS if original.get('entry_version')==entries.reference_entries.PROGRESSING_VERSION
+                else entries.reference_entries.BASIS if reference else 'fresh_unit_capital_allocation_not_account_trade_quantity')):
         raise ValueError('Original recommendation economics or position differs')
     forecast_raw=entries.read_forecast(root,original['forecast_evidence'])
     if sha256(forecast_raw).hexdigest()!=original['forecast_receipt_sha256']:
         raise ValueError('Original recommendation forecast differs')
     forecast=json.loads(forecast_raw)
     if reference:
-        proof = original['reference_proof']
+        proof = (entries.reference_entries.read_proof(root,original['reference_proof_ref'])
+            if original.get('entry_version')==entries.reference_entries.PROGRESSING_VERSION else original['reference_proof'])
         entries.reference_entries.validate(proof,snapshot,forecast)
         saved = proof['rows'][ticker]
         if any(original[field] != saved[field] for field in ('action','state','size_weight','model_position_weight','reference_units','proposed_units','quote_at','valid_until','evidence','intent_id')):
             raise ValueError('Original standing reference record differs')
+        if original.get('entry_version')==entries.reference_entries.PROGRESSING_VERSION and (
+                original['day_id']!=proof['day_id'] or any(original[field]!=saved[field]
+                    for field in ('price_anchor','attempt_resolved','objective_pending'))):
+            raise ValueError('Original hypothetical attempt differs')
     untimed_reference = reference and (original['evidence']['timing_reason']=='mandatory_grade_exit'
-        or original['reference_proof']['reference_calculation']['terminal'] is True and entries.market._window(completed)[1]==25)
+        or proof['reference_calculation']['terminal'] is True and entries.market._window(completed)[1]==25)
     if ticker not in forecast['symbols'] or forecast['distributions'].get(ticker) is None and not untimed_reference:
         raise ValueError('Original stock timing distribution required')
     quote=original['quote_receipt']
@@ -157,7 +163,7 @@ def _index(raw, ticker, day, key):
 # Save only a fully validated original reference; partial or conflicting references are never overwritten.
 def _write_index(root, restored, view):
     original=restored['original']
-    value={'schema':'strategy-recorded-entry-index/2' if original.get('entry_version')==entries.reference_entries.VERSION else INDEX_SCHEMA,'id':restored['id'],'ticker':restored['ticker'],
+    value={'schema':'strategy-recorded-entry-index/2' if original.get('entry_version') in entries.reference_entries.VERSIONS else INDEX_SCHEMA,'id':restored['id'],'ticker':restored['ticker'],
         **{key:original[key] for key in ('at','completed_at','snapshot_id','strategy_identity','action','size_weight','valid_until')},
         'original_bytes_sha256':restored['original_bytes_sha256'],'original_receipt_sha256':original['receipt_sha256'],
         'indexed_view_at':view['generated_at'],'indexed_view_sha256':view['receipt_sha256']}
@@ -233,7 +239,7 @@ def remember_latest(root, now):
     raw=_read(path,entries.MAX_BYTES)
     value=json.loads(raw)
     completed,generated=(_instant(value[key]) for key in ('completed_at','generated_at'))
-    if (value['version'] not in (entries.VERSION,entries.reference_entries.VERSION) or value['sources']!=entries.sources()
+    if (value['version'] not in (entries.VERSION,*entries.reference_entries.VERSIONS) or value['sources']!=entries.sources()
             or publication._digest({key:item for key,item in value.items() if key!='receipt_sha256'})!=value['receipt_sha256']
             or not completed<=generated<completed+timedelta(minutes=15) or generated>now
             or value['session']!=completed.astimezone(calendar.NEW_YORK).date().isoformat()
@@ -257,7 +263,7 @@ def remember_latest(root, now):
         count=0
         counts=dict(previous['counts']) if previous else {}
         for ticker,row in value['rows'].items():
-            reference = value['version']==entries.reference_entries.VERSION
+            reference = value['version'] in entries.reference_entries.VERSIONS
             first = row.get('original_intent') if reference else None
             if (reference and first is None) or (not reference and row['state']!='execute'):
                 continue

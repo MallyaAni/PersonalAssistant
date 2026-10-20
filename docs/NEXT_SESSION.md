@@ -1,5 +1,97 @@
 # Next session
 
+## CURRENT HUMAN 13:30Z — observed model-book progression and exact41 private snapshot verified; real preview migration next
+
+Continue till finished accurately. All names and charts must share original model
+units, trade Size%, desired Position%, both-side timing and original reasons.
+Existing feed only; paper LAST; real signed-in preview BEFORE deployment. No
+question pending. Productionb4 and old native preview source remain unchanged.
+
+NEW normal collector supports strategy-numerical-entries/3 and a separately named
+observed hypothetical reference book. Original later eligible IEX bid/ask inside
+the original recommendation deadline supplies a proxy, NEVER an actual fill or
+viewer holding. Advice and GETs do not advance units. Original first recommendation
+survives execution, refresh and pointer interruption. One original attempt per
+stock/day prevents repeated sells; expired attempts stay unfilled. Daily Buy cash
+budget excludes same-day sale proceeds. Next-day original-close rollover rebases
+units mechanically, retains actual returns/cash/fees and never silently reseeds
+from an older history endpoint. Shared finite proof keeps full original evidence
+without enlarging native caps. Core transition/native economic12 sources unchanged.
+
+FINAL flow-v4 CID3b8a87c5f8e4735e9f73cd448d4603fd62be7c2218dc5165ba76a6516418ba65
+exit0/noOOM13:21:57.534720204Z:44PASS/0fail/error/skip,2.191s/maxRSS297052KiB;
+21new ledger/flow/source-review cases+23changed-path regressions. Explicit synthetic
+JSON through actual native capture/collector/accounting/ASGI, NOT real current
+feed. Original native replay on independent inputs exactly matches units/cash/
+fees; current source-review reconstructs every original holding AST statement and
+rejects old35 review for new41. RO/netnone/UID1000/1CPU/512MiB=swap/PIDs32/tmp64/
+CPU30/FSIZE1MiB unchanged. These are source cohorts, not summed unique test counts.
+
+FAILURES preserved: book-v1 Docker RO missing mount target BEFORE interpreter;
+v2 harness package-prefix identity10errors; v3 tuple/list readback5pass5error;
+v4 original10pass. Integrated flow-v1 original39pass. New deadline regression in
+flow-v2 reproduced late-arriving response backdating an execution:39pass1fail.
+Targeted observed_at<original expiry fix, original assertion unchanged;flow-v3
+40pass. Source-review additions then finalv4 44pass. All original controls/pins/
+CIDs/inspects/stdout/stderr/results retained /tmp/strategy-reference-book-* and
+matching Spark1 scratch roots; never rerun for docs.
+
+Frontend 3NEW observed-format journeys PASS11.8s, then57regressions PASS~2.7m on
+SAME index-DKyr5O1I.js922554B (exact SHA in proof),0skip/flaky/unexpected/
+diagnostics.60distinct across split3+57, not one60-case cohort. TSC/build5.90s/diff
+pass(existingCSS/chunk warnings). Table/chart D/W/15m agree on Sell13%/Position
+14.3%; resolved current Wait/Size— retains original Sell marker/reason. Malformed
+book cannot fall back to a grade-only Sell. Fixtures are NOT real recommendations.
+
+NEW ACTUAL exact41 native calculation CID32c4c6397c6bc8aaa2146dce7b6cd2d7f136bbad59f0918edbbede85a65be6d1
+exit0/noOOM13:24:47.12348098Z/maxRSS320076KiB, before original09:30 recompute
+cutoff. Restores original admitted Oct19 close and runs actual new-source native
+publisher with unchanged economics, no account/broker/holding forecast fit.
+All94targets/grades/technical evidence EXACTLY equal original v8;96input symbols.
+New snapshot7df7df35110c68d31642f1a52a67292a701ead394738edcf27e83522b1d23eb2/
+receipt e344b2c91a338ea986cf39165bfe029f8280506661a4c8b36913916b61bd1327;
+171755B/SHAde05a6063b1a9d37cb7f9f17f1763897f07631a8b579eb21c0e6207163907f4c
+at docs/research/strategy-observed-initial-publication-2026-10-20.json.
+Original expiry Oct20 16:00ET unchanged. Private selectors41 only; original31
+production selectors byte-identical before/after; ordinary41 nightly NOT run.
+New explicit reviewed41 status retains old strict35 path. Initial snapshot was
+ACTUALLY recalculated by exact41 native publisher, not predecessor bytes rehashed.
+Review docs/research/strategy-observed-source-review-2026-10-20.json SHA
+8725e9c74e8c2e9cd569a0b41d640099298d7a379f1a297660854770dca41ae9.
+
+Proof docs/research/strategy-observed-book-proof-2026-10-20.json866086B/SHA
+0e74bab314db970958194916c402930ea4b8ef4e2ef8843de9396a0a46d8b746.
+ONE fixed-file collector retained9roots/72fields with exact SHA/physical bookends,
+fsync/readback; no gate replay or crash/powerloss claim. Source maps in proof.
+
+NEXT: finish committed exact41 private activation/normal history selection in a
+NEW private preview root/checkout; do not mutate old running f0 checkout/store.
+Use original94 audited history throughOct19, same economics contract, original
+native context/arrays/timing sources. No simulator/producer/audit rerun. Update
+authenticated preview read bridge only after actual native API checks; retain
+normal upstream owner auth/401/403/nonread405. KEEP Vite33452/tunnel70626/tab4
+signed-in/tab3handoff/node_modules. Real current math is NOT yet shown there.
+
+Then ONLY NATURALLY Oct20>=09:45ET/<16:00, ONE bounded GET-only acquisition with
+NEW exact41-source controller. Old f0 scripts remain UNRUN/UNSUITABLE. Require
+unique strategy-current-regular-20261020-v1 absent and no active model/full gate.
+Original.env only private filemount/keys selected INSIDE process; never expose
+keys/headers in argv/DockerEnv/evidence. Existing feed IEX; same caps; no account/
+orders/holding fit/provider change. Immediate SAME-preview refresh/capture before
+original30s quote expiry; no re-acquire merely for screenshots. Actual feed→API→
+preview and full current backend/routing/canonical release acceptance remain OPEN.
+
+Before model gates read MODEL_EVALUATION and inspect actual upgraded DeepSeek
+runtime/config; never restore old settings or change model/service/account.
+No duplicate jobs/watchers/cron/releases, usage-limitedworker retries/replacement,
+agents absent explicit delegation, paid data/tuning/G08weakening/Spark2load,
+denied-read bypass/history rewrite/native-pool adoption/reopening. No market_daily
+or balancer probes; they write/send/cancel. No paper reset/real orders. All older
+closed roots/gates/producers/audits stay closed. Separate physical allocator/
+filesystem/SQLite/fullRAM/twohost/powerloss remain blocked/unverified. No full
+live-readiness/profitability claim. ACTIVE/quiet unchanged, meaningful progress
+only; no ETA.
+
 ## CURRENT HUMAN 12:39Z — standing reference integrated/tested; real preview still old backend; NOT deployed
 
 Human: “i still dont see consistency in the current size recommendation with the

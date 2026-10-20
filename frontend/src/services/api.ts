@@ -2519,12 +2519,14 @@ export interface DeskModelAllocation {
   timing_basis?: string;
   identity?: {schema: string; strategy_identity: string; session: string; policy: string; basis: string};
   entry_assessment?: {
-    version: 'strategy-numerical-entries/1' | 'strategy-numerical-entries/2'; status: string; snapshot_id?: string;
+    version: 'strategy-numerical-entries/1' | 'strategy-numerical-entries/2' | 'strategy-numerical-entries/3'; status: string; snapshot_id?: string;
     publication_receipt_sha256?: string; strategy_identity?: string; receipt_sha256?: string;
     session?: string; completed_at?: string; generated_at?: string; valid_until?: string;
     sizing_basis?: string; feed?: string; account_inputs?: boolean; reference_progression?: string; recommendation_not_fill?: boolean;
+    day_id?: string; book_sha256?: string; execution_basis?: string;
     rows: Record<string, {state: string; action: 'Buy' | 'Sell' | null; size_weight: number; model_position_weight?: number;
       reference_units?: number; proposed_units?: number; quote_at: string | null;
+      attempt_resolved?: boolean; objective_pending?: boolean;
       original_intent?: {id: string; completed_at: string; at: string; size_weight: number; action: 'Buy' | 'Sell'; receipt_sha256: string};
       valid_until: string; evidence: DeskStrategyDecision['evidence']}>;
   };
@@ -3558,9 +3560,9 @@ export const getDeskOriginalStrategyRecommendation = async (userId: string, tick
       || !Number.isFinite(Date.parse(original.at)) || Date.parse(original.at)>Date.now()
       || !Number.isFinite(original.size_weight) || !(original.size_weight>0 && original.size_weight<=1)
       || original.size_weight!==expectedSize
-      || (original.entry_version==='strategy-numerical-entries/2'
+      || (['strategy-numerical-entries/2','strategy-numerical-entries/3'].includes(original.entry_version ?? '')
         ? original.evidence?.model_position_size!==original.model_position_weight || original.evidence?.trade_size!==original.size_weight
-          || original.evidence?.sizing_basis!=='standing_counterfactual_reference_transition_not_viewer_order'
+          || original.evidence?.sizing_basis!==(original.entry_version==='strategy-numerical-entries/3' ? 'observed_hypothetical_reference_not_viewer_order' : 'standing_counterfactual_reference_transition_not_viewer_order')
           || original.action==='Sell' && !(typeof original.proposed_units==='number' && typeof original.reference_units==='number'
             && original.proposed_units>0 && original.proposed_units<=original.reference_units)
         : original.action!=='Buy' || original.evidence?.model_position_size!==original.size_weight)

@@ -254,15 +254,30 @@ def reconciliation_review(old, new, review):
 
 # Admit the independent publisher hook only when the entire original strategy module reconstructs exactly.
 def independent_publication_review(old, new, review):
-    from backend.market import learned_live_holding as runtime
-
-    holding = "backend/market/learned_live_holding.py"
     added = {f"backend/market/{name}.py" for name in (
         "strategy_model_allocation", "strategy_publication", "strategy_entry_context", "strategy_entries"
     )}
+    _publication_review(old, new, review, added)
+
+
+# Admit the separate observed model-book closure without weakening the earlier four-component review.
+def observed_reference_review(old, new, review):
+    added = {f"backend/market/{name}.py" for name in (
+        "strategy_model_allocation", "strategy_publication", "strategy_entry_context", "strategy_entries",
+        "strategy_reference_transition", "strategy_reference_entries", "strategy_reference_book",
+        "strategy_model_history", "strategy_history_installation", "strategy_history_publication"
+    )}
+    _publication_review(old, new, review, added)
+
+
+# Reconstruct the entire admitted original holding module after removing only the declared guard additions and publisher hook.
+def _publication_review(old, new, review, added):
+    from backend.market import learned_live_holding as runtime
+
+    holding = "backend/market/learned_live_holding.py"
     changes = {name for name in old.keys() | new.keys() if old.get(name) != new.get(name)}
     if (
-        len(old) != 31 or len(new) != 35 or set(new) - set(old) != added or set(old) - set(new)
+        len(old) != 31 or len(new) != 31 + len(added) or set(new) - set(old) != added or set(old) - set(new)
         or changes != added | {holding} or set(review["source_changes"]) != changes
         or old[holding] != "25fee57bd3dc57c2b945e204aa3b83e39434cf4f84f8a165a4b9e41f9f6183e1"
         or type(review["other_reviewed_sources_unchanged"]) is not int
@@ -285,7 +300,7 @@ def independent_publication_review(old, new, review):
         and any(isinstance(target, ast.Name) and target.id == "paths" for target in node.targets))
     expected_paths = {ast.dump(ast.parse("root / " + repr(name), mode="eval").body, include_attributes=False) for name in added}
     removed = [node for node in paths.elts if ast.dump(node, include_attributes=False) in expected_paths]
-    if len(removed) != 4 or {ast.dump(node, include_attributes=False) for node in removed} != expected_paths:
+    if len(removed) != len(added) or {ast.dump(node, include_attributes=False) for node in removed} != expected_paths:
         raise ValueError("Exact independent publication guard additions required")
     paths.elts = [node for node in paths.elts if node not in removed]
     expected_tail = ast.parse('''selected = factory(reader, config["cost_bps"], root, raw, admission, completed)
@@ -303,6 +318,9 @@ return selected
 
 # Require an exact reviewed transition without broadening the production source guard.
 def reviewed_sources(old, new, review):
+    if review["status"] == "REVIEWED_EXACT_OBSERVED_REFERENCE_PUBLICATION":
+        observed_reference_review(old, new, review)
+        return
     if review["status"] == "REVIEWED_EXACT_INDEPENDENT_STRATEGY_PUBLICATION":
         independent_publication_review(old, new, review)
         return
@@ -366,7 +384,7 @@ def initial_publication(review, revision, config_raw, now):
         return None
     from backend.market import strategy_publication as publication
 
-    if (review["status"] != "REVIEWED_EXACT_INDEPENDENT_STRATEGY_PUBLICATION"
+    if (review["status"] not in ("REVIEWED_EXACT_INDEPENDENT_STRATEGY_PUBLICATION", "REVIEWED_EXACT_OBSERVED_REFERENCE_PUBLICATION")
             or not isinstance(metadata, dict) or set(metadata) != {"path", "sha256", "bytes"}
             or type(metadata["bytes"]) is not int or not 0 < metadata["bytes"] <= publication.MAX_BYTES):
         raise ValueError("Exact reviewed initial publication required")

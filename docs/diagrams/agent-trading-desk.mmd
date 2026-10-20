@@ -16,9 +16,12 @@ flowchart TB
     Admission -.-> Independent[Candidate independent model publication<br/>nightly percentages and original technical evidence<br/>before paper-account access]
     Grades -.-> Independent
     Independent -.-> ModelSnapshot[(Immutable source-bound model snapshot<br/>own universe, grades, sizes and original expiry)]
-    ModelSnapshot -.-> Numerical[Candidate numerical 15-minute collector<br/>fresh entries or standing reference buys and sells<br/>original IEX packet and timing heads; no orders]
+    ModelSnapshot -.-> Numerical[Candidate numerical 15-minute collector<br/>reference buys and owned-unit sells<br/>original IEX packet and timing heads; no orders]
     Providers -.-> Numerical
-    Numerical -.-> EntryEvidence[(Original recommendation and quote evidence<br/>standing intent retained once across candles<br/>viewing never implies a fill)]
+    Numerical -.-> EntryEvidence[(Original recommendation and quote evidence<br/>first intent retained once across candles<br/>viewing never implies a fill)]
+    EntryEvidence -.-> ModelBook[(Candidate hypothetical model book<br/>later observed eligible bid/ask proxy; never actual fills<br/>original daily buy budget excludes same-day sales)]
+    Providers -.->|Original later quote inside original deadline| ModelBook
+    ModelBook -.->|Owned model units and pending objectives<br/>next-day original-close rebase; no reseeding| Numerical
     EntryEvidence -.-> RecordedIndex[(Candidate source-bound per-stock index<br/>original decisions remain discoverable after expiry<br/>completed coverage and original-byte checks)]
     ModelSnapshot -.-> View
     RecordedIndex -.-> View
@@ -81,4 +84,4 @@ flowchart TB
     class View interface;
     class DisplayCollector,Admission,LearnedPlan,SetupCollector application;
     class Independent,Numerical,HistoryPublication application;
-    class ModelSnapshot,EntryEvidence,RecordedIndex data;
+    class ModelSnapshot,EntryEvidence,RecordedIndex,ModelBook data;
