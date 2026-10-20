@@ -1,5 +1,16 @@
 # Changelog
 
+## 2026-10-20 — Require the explicit history capability in the snapshot HTTP contract
+
+The full exactf0 unit run passed11,000 tests and failed one older exact-response
+assertion because it omitted the new recorded-history capability. That assertion
+now requires the original snapshot plus recorded_history_version strategy-
+recorded-entries/1; all ownership, corruption, missing-pointer and no-funded-
+fallback assertions remain. The targeted real HTTP journey passes1.011s. The
+original full run remains failed and routing did not start. No production or35
+numeric-source code changed. Evidence: strategy-history-gate-contract-proof-
+2026-10-20.json8405B/3cb2048f1fc98b7032c2e811e37622d89fc04ff4e14bb0e0f954e18c5f4171ef.
+
 ## 2026-10-20 — Verify installed real history and its signed-in preview
 
 Exactf0f0016d privately installed all94 original histories and5755 simulated

@@ -1,0 +1,175 @@
+{
+  "at": "2026-10-20T07:55:14.487275+00:00",
+  "collector_argv": [
+    "ssh",
+    "-o",
+    "BatchMode=yes",
+    "-o",
+    "StrictHostKeyChecking=yes",
+    "-o",
+    "HostKeyAlgorithms=ssh-ed25519",
+    "-o",
+    "ConnectTimeout=10",
+    "animallya96@172.16.8.3",
+    "python3 -c 'import base64,json,subprocess\nfrom pathlib import Path\nfrom hashlib import sha256\nroots={'\"'\"'full'\"'\"':Path('\"'\"'/home/animallya96/scratch/strategy-final-source-gates-20261020-f0f0016d/unit'\"'\"'),'\"'\"'targeted'\"'\"':Path('\"'\"'/home/animallya96/scratch/strategy-recorded-index-20261020-publication-capability-contract'\"'\"')};result={}\nfor name,root in roots.items():\n    result[name]={}\n    for file in ('\"'\"'start.json'\"'\"','\"'\"'result.json'\"'\"','\"'\"'stdout'\"'\"','\"'\"'stderr'\"'\"'):\n        raw=(root/file).read_bytes();assert len(raw)<=4194304\n        result[name][file]={'\"'\"'bytes'\"'\"':len(raw),'\"'\"'sha256'\"'\"':sha256(raw).hexdigest(),'\"'\"'body'\"'\"':base64.b64encode(raw).decode()}\nimage=json.loads(subprocess.check_output(['\"'\"'docker'\"'\"','\"'\"'image'\"'\"','\"'\"'inspect'\"'\"','\"'\"'anios-functional-tests:strategy-final-f0f0016d'\"'\"']))[0]\nprint(json.dumps({'\"'\"'files'\"'\"':result,'\"'\"'image'\"'\"':{'\"'\"'Id'\"'\"':image['\"'\"'Id'\"'\"'],'\"'\"'Created'\"'\"':image['\"'\"'Created'\"'\"']}}))\n'"
+  ],
+  "corrected_test": {
+    "bytes": 4661,
+    "path": "backend/tests/test_strategy_publication_http.py",
+    "sha256": "e301d774c4733076f857cb2a45739582f965da654fdc46269f6cd665ae5d7037"
+  },
+  "correction": "Require exact original snapshot plus explicit recorded_history_version strategy-recorded-entries/1, keeping all original authorization, corruption, missing-pointer and no-funded-fallback assertions",
+  "deployed": false,
+  "failed_full": {
+    "argv": [
+      "bash",
+      "/home/animallya96/scratch/strategy-history-real-install-20261020-v1/checkout/scripts/gate.sh",
+      "--unit"
+    ],
+    "environment_overrides": {
+      "ANIOS_FUNCTIONAL_TESTS_IMAGE": "anios-functional-tests:strategy-final-f0f0016d",
+      "ANIOS_GATE_DB": "anios_gate_trading_224f9a53",
+      "ANIOS_GATE_SKIP_INFRA": "1",
+      "ANIOS_GATE_WORKERS": "1",
+      "COMPOSE_PROJECT_NAME": "anios",
+      "POSTGRES_DB": "anios_gate_trading_224f9a53"
+    },
+    "finished_at": "2026-10-20T07:52:06.009366+00:00",
+    "no_model_or_service_change": true,
+    "not_deployment": true,
+    "phase": "unit",
+    "pid": 1842215,
+    "private_environment": "original file symlink; never read/logged by controller",
+    "production_head_after": "b4b2eeb9ac3d1b0bb1f344b280ecd5f1b00be1b8",
+    "production_head_before": "b4b2eeb9ac3d1b0bb1f344b280ecd5f1b00be1b8",
+    "returncode": 1,
+    "revision": "f0f0016dcf109d62f6cfdc24ac0bbb675990bed0",
+    "started_at": "2026-10-20T07:42:28.661948+00:00",
+    "tree": "4851c0d28716ff09600a9d13048ba504b7322b07"
+  },
+  "failure": "Legacy exact HTTP projection assertion omitted newly versioned recorded-history capability; original numeric snapshot content unchanged",
+  "not_a_full_green_run": true,
+  "production_head_unchanged": true,
+  "production_or_35source_code_change": false,
+  "retained_files": {
+    "files": {
+      "full": {
+        "result.json": {
+          "bytes": 1030,
+          "sha256": "1229f03fe8541aff347309f5b857b973438c041ea1520524eaa449392a064d21"
+        },
+        "start.json": {
+          "bytes": 887,
+          "sha256": "e1041a395334bdef8c26dc05c23a49babd3c75275f60f2b6dbd16dc7a47ef6dd"
+        },
+        "stderr": {
+          "bytes": 637,
+          "sha256": "a0be387de238532d7cce2814e9f2c4ecc9153f12ea8979cf28177fb7ed84bdd4"
+        },
+        "stdout": {
+          "bytes": 55654,
+          "sha256": "ab9eb8b502a6fcfc0dc4891999a56b78fadec46eba54550349b87f887ca781ad"
+        }
+      },
+      "targeted": {
+        "result.json": {
+          "bytes": 3544,
+          "sha256": "6591b9a5c8a1971fdec0def1168170bf418d903f2c630941a25a7debfb8705e6"
+        },
+        "start.json": {
+          "bytes": 3472,
+          "sha256": "c29845bd188b2f169420adb55a4ff1c2363b26dcc1c730d6c3dc94ffa8bbf2af"
+        },
+        "stderr": {
+          "bytes": 876,
+          "sha256": "5636397556df66b32d64c0b5993ae95fe44c676b52034c0404462f0d57a0c6b2"
+        },
+        "stdout": {
+          "bytes": 0,
+          "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+        }
+      }
+    },
+    "image": {
+      "Created": "2026-10-20T03:42:35.655138531-04:00",
+      "Id": "sha256:5336a71ff3f81dcc6e0442a3e3794324b0acaa28bd8debd0eee388a5a568898b"
+    }
+  },
+  "routing_started": false,
+  "schema": "strategy-history-gate-contract-proof/1",
+  "targeted": {
+    "argv": [
+      "docker",
+      "run",
+      "--rm",
+      "--read-only",
+      "--user",
+      "1000:1000",
+      "--network",
+      "none",
+      "--cap-drop",
+      "ALL",
+      "--security-opt",
+      "no-new-privileges",
+      "--cpus",
+      "1",
+      "--memory",
+      "512m",
+      "--memory-swap",
+      "512m",
+      "--pids-limit",
+      "32",
+      "--tmpfs",
+      "/tmp:rw,nosuid,nodev,size=64m",
+      "--workdir",
+      "/app",
+      "-e",
+      "ANIOS_TEST_MODE=1",
+      "-e",
+      "PYTHONPATH=/app",
+      "-e",
+      "PYTHONDONTWRITEBYTECODE=1",
+      "-e",
+      "OPENBLAS_NUM_THREADS=1",
+      "-e",
+      "OMP_NUM_THREADS=1",
+      "-v",
+      "/home/animallya96/scratch/strategy-final-source-gates-20261020-6ce28f85/checkout/backend:/app/backend:ro",
+      "-v",
+      "/home/animallya96/scratch/strategy-final-source-gates-20261020-6ce28f85/checkout/docs:/app/docs:ro",
+      "-v",
+      "/home/animallya96/scratch/strategy-recorded-index-20261020-publication-capability-contract/strategy_entry_history.py:/app/backend/market/strategy_entry_history.py:ro",
+      "-v",
+      "/home/animallya96/scratch/strategy-recorded-index-20261020-publication-capability-contract/current_opportunity_collector.py:/app/backend/services/current_opportunity_collector.py:ro",
+      "-v",
+      "/home/animallya96/scratch/strategy-recorded-index-20261020-publication-capability-contract/market_simulation.py:/app/backend/api/v1/market_simulation.py:ro",
+      "-v",
+      "/home/animallya96/scratch/strategy-recorded-index-20261020-publication-capability-contract/market_allocation.py:/app/backend/api/v1/market_allocation.py:ro",
+      "-v",
+      "/home/animallya96/scratch/strategy-recorded-index-20261020-publication-capability-contract/test_strategy_entries.py:/app/backend/tests/test_strategy_entries.py:ro",
+      "-v",
+      "/home/animallya96/scratch/strategy-recorded-index-20261020-publication-capability-contract/test_strategy_publication_http.py:/app/backend/tests/test_strategy_publication_http.py:ro",
+      "-v",
+      "/home/animallya96/scratch/strategy-recorded-index-20261020-publication-capability-contract:/measure:ro",
+      "sha256:136ebb46b7912f20472a375a6b29f6efec4cf2fdca13d56cbffb86a1be697db2",
+      "python",
+      "-c",
+      "import os,secrets,unittest;os.environ['SECRET_KEY']=secrets.token_urlsafe(32);suite=unittest.defaultTestLoader.loadTestsFromName('backend.tests.test_strategy_publication_http.PublicationHTTPTests');result=unittest.TextTestRunner(verbosity=2).run(suite);raise SystemExit(not result.wasSuccessful())"
+    ],
+    "base_revision": "6ce28f8594cda2f56a4d65bff02f17c4e66b0a5d",
+    "finished_at": "2026-10-20T07:54:11.891336+00:00",
+    "no_inference_account_or_provider_calls": true,
+    "returncode": 0,
+    "source_pins": {
+      "backend/api/v1/market_allocation.py": "f4812d9a99d6b17585f06a1c2bcb6089adf58299b7f5be63eb602591e6dce787",
+      "backend/api/v1/market_simulation.py": "4560734e7fcde26ef21325a16cebc2f1e87c8b6e39ac482dff2d56858c92158d",
+      "backend/market/strategy_entry_history.py": "3d69be73b73aae2253d597eb300f633e6163e9067319a60a42869d135d88b039",
+      "backend/services/current_opportunity_collector.py": "4ab429f6659d29655fbab8c56005d52d39382d0d3cf6c45f1919896a4ceeb661",
+      "backend/tests/test_strategy_entries.py": "e9823e6184eb070daf684b65dcd4c38338662dd1598093a8742f0eeb427a6634",
+      "backend/tests/test_strategy_publication_http.py": "e301d774c4733076f857cb2a45739582f965da654fdc46269f6cd665ae5d7037",
+      "backend/tests/test_strategy_recorded_index.py": "fb1a4b4b7ec50769f598d84a037725ebc671faa36e6700c6590ca167d2b6c7a1"
+    },
+    "started_at": "2026-10-20T07:54:09.209257+00:00"
+  },
+  "targeted_result": "1PASS1.011s"
+}

@@ -41,7 +41,8 @@ class PublicationHTTPTests(unittest.IsolatedAsyncioTestCase):
                     url='/api/v1/market/desk_user/desk/model-allocation'
                     response=await client.get(url,headers={'Authorization':'Bearer '+owner})
                     self.assertEqual(response.status_code,200)
-                    self.assertEqual({k:v for k,v in response.json().items() if k!='entry_assessment'},value)
+                    self.assertEqual({k:v for k,v in response.json().items() if k!='entry_assessment'},
+                        {**value,'recorded_history_version':'strategy-recorded-entries/1'})
                     self.assertEqual(response.json()['entry_assessment']['status'],'unavailable')
                     self.assertEqual(response.headers['cache-control'],'private, no-store')
                     self.assertEqual((await client.get(url,headers={'Authorization':'Bearer '+other})).status_code,403)

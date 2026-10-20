@@ -1,5 +1,26 @@
 # Next session
 
+## 2026-10-20 07:58Z — original fullf0 gate ENDED; legacy HTTP contract updated; targeted PASS
+
+Original69728 ENDED1. Exactf0 unit11000PASS/1FAIL/93skip/6xfail/439warnings/
+25subtests562.27s, ended07:52:06.009366Z. Sole old PublicationHTTPTests exact
+projection assertion omitted new recorded_history_version. No numeric snapshot,
+authorization, corruption or funded-fallback defect observed; all new18 cases
+pass in this full run. ROUTING DID NOT START. Failedfull remains FAILED, not a
+greenrun. ProductionHEADb4 unchanged. Image5336a71ff3f81dcc6e0442a3e3794324b0acaa28bd8debd0eee388a5a568898b.
+
+Only test now requires exact original snapshot plus explicit new capability
+strategy-recorded-entries/1; keeps every other original assertion. Targeted real
+HTTP journey1PASS1.011s, source/transport retained /tmp/strategy-recorded-index-
+publication-capability-contract-20261020-*. No production or35-source code changed.
+DATA collectorONCE proof8405B/SHA3cb2048f1fc98b7032c2e811e37622d89fc04ff4e14bb0e0f954e18c5f4171ef,
+research/strategy-history-gate-contract-proof-2026-10-20.json. No old gate rerun
+for docs. New full acceptance still OPEN after this test-contract correction.
+
+Real native preview remains installed94/5755/HPE original2.5 plus25model/technical
+reasons, D/W/15m checks clean. Prepared real current acquisition remains UNRUN
+until naturally completed09:45ET Oct20; see next section. No service/deploy/orders.
+
 ## 2026-10-20 07:52Z — real94 install/API and native real-preview history VERIFIED; fullf0 gate running
 
 Actual exactf0f0016d/tree4851c0d2 private install CID5a490c579aba94e4e93e6ad08ba0e1a3a1ae9dad72d59d4af59604702ce751ad,
