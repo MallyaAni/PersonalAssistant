@@ -41,6 +41,14 @@ class Settings(BaseSettings):
     MAIN_LLM_REASONING_EFFORT: Literal[
         "none", "minimal", "low", "medium", "high", "xhigh"
     ] = "none"
+    # Reasoning for the streamed reply only, separate from the main client so
+    # thinking can be enabled where the reply budget can afford it without
+    # spending the small budgets of the helper calls that share that client.
+    # Empty follows MAIN_LLM_REASONING_EFFORT, so leaving it unset changes
+    # nothing.
+    REPLY_LLM_REASONING_EFFORT: Literal[
+        "", "none", "minimal", "low", "medium", "high", "xhigh"
+    ] = ""
     # Blank means MainActionSelector's tool-calling decision rides the same
     # model as the conversational reply (MAIN_LLM_*), same as before this
     # setting existed. Set only when the two need to differ - e.g. a main

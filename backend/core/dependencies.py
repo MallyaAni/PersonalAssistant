@@ -269,6 +269,19 @@ def get_llm_client() -> LLMClient:
     )
 
 
+# Build the streamed reply's client on the same model as the main one, with its
+# own reasoning effort so thinking can be enabled where the reply budget can
+# afford it without spending the small budgets of the helper calls that share
+# the main client.
+def get_reply_llm_client() -> LLMClient:
+    return _build_llm_client(
+        settings.MAIN_INFERENCE_ADAPTER or settings.INFERENCE_ADAPTER,
+        settings.MAIN_LLM_BASE_URL or settings.LLM_BASE_URL,
+        settings.MAIN_LLM_MODEL or settings.LLM_MODEL,
+        settings.REPLY_LLM_REASONING_EFFORT or settings.MAIN_LLM_REASONING_EFFORT,
+    )
+
+
 # Build MainActionSelector's tool-calling model independently from the
 # conversational reply model. Falls back to MAIN_LLM_* so leaving this unset
 # reproduces today's behaviour exactly: one model does both jobs.
@@ -399,6 +412,7 @@ MemoryDependency = Annotated[
     Depends(get_memory_service),
 ]
 LlmDependency = Annotated[LLMClient, Depends(get_llm_client)]
+ReplyLlmDependency = Annotated[LLMClient, Depends(get_reply_llm_client)]
 RoutingLlmDependency = Annotated[LLMClient, Depends(get_routing_llm_client)]
 PresentationLlmDependency = Annotated[
     LLMClient,
@@ -1616,6 +1630,7 @@ MainActionSelectorDependency = Annotated[
 def get_conversation_service(
     memory: MemoryDependency,
     llm: LlmDependency,
+    reply_llm: ReplyLlmDependency,
     repository: RepositoryDependency,
     tracer: TracerDependency,
     memory_coordinator: MemoryCoordinatorDependency,
@@ -1641,6 +1656,7 @@ def get_conversation_service(
     return ConversationService(
         memory=memory,
         llm=llm,
+        reply_llm=reply_llm,
         repository=repository,
         tracer=tracer,
         history_turn_limit=settings.CONVERSATION_HISTORY_TURNS,

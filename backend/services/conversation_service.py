@@ -1399,6 +1399,7 @@ class ConversationService:
         agent_memory: AgentMemoryManager | None = None,
         referent_resolver: ReferentResolver | None = None,
         check_in_llm: Any | None = None,
+        reply_llm: LLMClient | None = None,
     ):
         self.memory = memory
         # The model that judges whether something mentioned in passing is
@@ -1409,6 +1410,11 @@ class ConversationService:
         # skill picker fall back to it when no action selector is wired, and
         # that read would otherwise raise AttributeError rather than degrade.
         self.llm = llm
+        # The streamed reply gets its own client so reasoning can be enabled
+        # where the reply budget can afford it without spending the small
+        # budgets of the helper calls that share `llm`. Falls back to `llm` so
+        # a caller that does not distinguish them behaves as before.
+        self.reply_llm = reply_llm if reply_llm is not None else llm
         # Traces already written, so a second call for the same turn is a
         # logged no-op rather than a duplicate row. `save_turn` is a bare
         # session.add plus commit with no idempotency key, and eleven call
@@ -5857,7 +5863,7 @@ class ConversationService:
                 seed,
                 stream_mode="custom",
                 subgraphs=True,
-                context=TurnDeps(llm=self.llm),
+                context=TurnDeps(llm=self.reply_llm),
             ):
                 # The wire shape. Everything a node emits is already a
                 # ChatStreamEvent, so this relays rather than translates.

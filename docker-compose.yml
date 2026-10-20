@@ -884,6 +884,9 @@ services:
       - MEMORY_DIGEST_MAX_WORDS=${MEMORY_DIGEST_MAX_WORDS:-200}
       - MEMORY_DIGEST_MAX_TOKENS=${MEMORY_DIGEST_MAX_TOKENS:-2048}
       - MAIN_LLM_REASONING_EFFORT=${MAIN_LLM_REASONING_EFFORT:-none}
+      # The streamed reply may think on its large budget; the bounded helper
+      # calls on the main client must not. Empty follows the main effort.
+      - REPLY_LLM_REASONING_EFFORT=${REPLY_LLM_REASONING_EFFORT:-}
       # Routing runs on the main model. It used to be pinned to a 4B purely
       # because that model enforced JSON grammars and the old engine ignored
       # them; vLLM enforces schemas, so the pin lost its reason and the 4B is
