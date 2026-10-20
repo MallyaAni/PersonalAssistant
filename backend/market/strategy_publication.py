@@ -7,7 +7,6 @@ contacts a broker. A position percentage remains a nightly composition, not
 an immediate trade amount or an intraday reoptimization.
 """
 
-import fcntl
 import json
 import math
 import os
@@ -200,6 +199,9 @@ def publish_prepared(policy, report, *, clock):
 
 # Save one immutable exact snapshot and atomically select it without renewing its original clocks.
 def publish(root, value, now):
+    # Reading the API remains portable; publishing still requires the original Unix lock.
+    import fcntl
+
     validate(value, now)
     folder = Path(root) / DIRECTORY
     folder.mkdir(mode=0o700, parents=True, exist_ok=True)

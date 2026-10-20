@@ -1,0 +1,640 @@
+{
+  "base_revision": "71efb23451cc9685d3a3041cab55db8ec22ff789",
+  "files": {
+    "original-approval/config.json": {
+      "bytes": 498,
+      "sha256": "a237bfe4e21db38a0fabf8d31a2c78542b8bff58a5d26895ac98f2387c144f7c"
+    },
+    "original-approval/evidence.json": {
+      "bytes": 4140,
+      "sha256": "4d6af1bb755243bdce9a5c74477ae43cf91a72cbe7fa9e2985d13bfd5d3cacb9"
+    },
+    "original-approval/release.json": {
+      "bytes": 3842,
+      "sha256": "fc3259718eb55daabc748120aa1c3791e87ee02b6f536762afbe2e16b8686c0c"
+    },
+    "strategy-portability-20261020-v1/result.json": {
+      "bytes": 2330,
+      "sha256": "00e8c401b5ed8c5a90e557a949e373bc0a10838459e706b4f03391ae431808d7"
+    },
+    "strategy-portability-20261020-v1/start.json": {
+      "bytes": 2046,
+      "sha256": "de44056e0058ed72ad826a13110afba151147ab2781b03d9eab1d8c1559e3907"
+    },
+    "strategy-portability-20261020-v1/stderr": {
+      "bytes": 121,
+      "sha256": "4b9ee6bfb7564505a81f5551c204f999db9f5308dbdee84292e753030dae2b47"
+    },
+    "strategy-portability-20261020-v1/stdout": {
+      "bytes": 99,
+      "sha256": "2b4ba39e411cf799915c196298831a737f22d9f854a246dcb6c3c497b2f02519"
+    },
+    "strategy-publication-admission-20261020-green/result.json": {
+      "bytes": 2806,
+      "sha256": "7146508e190815918f6bedc93ef644080f304b3275e98dcaee62dde55657855a"
+    },
+    "strategy-publication-admission-20261020-green/start.json": {
+      "bytes": 2478,
+      "sha256": "7a9ad099e54dc2cd1eb20824c57415cd367fa4cf15a53f2abce522a8fcca4d28"
+    },
+    "strategy-publication-admission-20261020-green/stderr": {
+      "bytes": 121,
+      "sha256": "b1df23289c12b310f73a28d72e77143b325e43373ae1e20090b4ac002af26acc"
+    },
+    "strategy-publication-admission-20261020-green/stdout": {
+      "bytes": 99,
+      "sha256": "663f04bfa1710029cb5a356f7f9bfe68324af37f0c478859316f838f4b6877c4"
+    },
+    "strategy-publication-admission-20261020-red/result.json": {
+      "bytes": 2632,
+      "sha256": "80205fe12af5ac05c1418e43455b0f147eb6068f44573b071a0f436d772d1af8"
+    },
+    "strategy-publication-admission-20261020-red/start.json": {
+      "bytes": 2326,
+      "sha256": "05750a7ace896c7d13b4bb984dc577362a5dca97e6c078e78c708914edfaba9f"
+    },
+    "strategy-publication-admission-20261020-red/stderr": {
+      "bytes": 711,
+      "sha256": "02eb2e29a7a36bfa76feec22c73b030c4f54749fd857915b023c765a1a1980fe"
+    },
+    "strategy-publication-admission-20261020-red/stdout": {
+      "bytes": 0,
+      "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+    },
+    "strategy-publication-admission-20261020-red2/result.json": {
+      "bytes": 2818,
+      "sha256": "a3fa03873b019885811e35b66fe32d8ec44af09b720bf0488667939870b952b7"
+    },
+    "strategy-publication-admission-20261020-red2/start.json": {
+      "bytes": 2494,
+      "sha256": "f4e1cc6147000d64dd894e6fe49cb7f206f8a98189ec7c670d3efe6171855609"
+    },
+    "strategy-publication-admission-20261020-red2/stderr": {
+      "bytes": 122,
+      "sha256": "e0ea94ec56d719fe82c2309c1aaebdb4bd454b2aaa025883d2bfc6018e5d809d"
+    },
+    "strategy-publication-admission-20261020-red2/stdout": {
+      "bytes": 4412,
+      "sha256": "3a2af531507adae63eed8574921cff12c3d40f1a3f00b2de0123ad04ad0b2dd9"
+    }
+  },
+  "image": "sha256:c12ac2f98b32e20e4cfe6446f6afbc8377b792e4a95ed203595efe0414db579c",
+  "local_root": "/tmp/strategy-release-components-20261020-evidence",
+  "new_full_unit_gate": "NOT_RUN",
+  "observed_at": "2026-10-20T04:40:11.576919+00:00",
+  "outcomes": {
+    "corrected_red": "1 expected FAIL: exact reviewed trading source extension required",
+    "first_red_harness": "FAILED before tests: absent mountpoint beneath readonly backend",
+    "green": "8 new source renewal cases plus23 existing admission cases:31 PASS",
+    "portability": "13 PASS including original startup path and no-files unsupported refusal"
+  },
+  "production_approval_activated": false,
+  "real_regular_entry_acceptance": "UNVERIFIED",
+  "reports": {
+    "strategy-portability-20261020-v1": {
+      "result.json": {
+        "argv": [
+          "docker",
+          "compose",
+          "-f",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-71efb234/checkout/docker-compose.yml",
+          "--profile",
+          "test",
+          "run",
+          "--rm",
+          "--no-deps",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-71efb234/checkout/backend:/app/backend:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-71efb234/checkout/scripts:/app/scripts:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-71efb234/checkout/prompts:/app/prompts:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-71efb234/checkout/docs:/app/docs:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-71efb234/checkout/deploy:/app/deploy:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-71efb234/checkout/skills:/app/skills:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-71efb234/checkout/bridges:/app/bridges:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-71efb234/checkout/.env.example:/app/.env.example:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-portability-20261020-v1/strategy_publication.py:/app/backend/market/strategy_publication.py:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-portability-20261020-v1/test_strategy_publication.py:/app/backend/tests/test_strategy_publication.py:ro",
+          "-e",
+          "POSTGRES_DB=anios_gate_trading_71efb234",
+          "-e",
+          "REDIS_URL=redis://redis:6379/0",
+          "functional-tests",
+          "python",
+          "-m",
+          "pytest",
+          "backend/tests/test_session_price_snapshot.py::test_application_import_survives_missing_fcntl",
+          "backend/tests/test_strategy_publication.py",
+          "backend/tests/test_strategy_entry_history.py",
+          "-q",
+          "-p",
+          "no:cacheprovider",
+          "--no-header"
+        ],
+        "finished_at": "2026-10-20T04:36:39.676777+00:00",
+        "returncode": 0,
+        "sources": {
+          "backend/market/strategy_publication.py": {
+            "bytes": 15790,
+            "sha256": "9272e399f94eac96e365298465e8840c384552f7769d98228fdc5814933f95f0"
+          },
+          "backend/tests/test_strategy_publication.py": {
+            "bytes": 10607,
+            "sha256": "f61bcefd6d69539eefe1175d6a27398add305d7465aec262ce448182619d870c"
+          }
+        },
+        "started_at": "2026-10-20T04:36:33.546709+00:00"
+      },
+      "start.json": {
+        "argv": [
+          "docker",
+          "compose",
+          "-f",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-71efb234/checkout/docker-compose.yml",
+          "--profile",
+          "test",
+          "run",
+          "--rm",
+          "--no-deps",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-71efb234/checkout/backend:/app/backend:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-71efb234/checkout/scripts:/app/scripts:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-71efb234/checkout/prompts:/app/prompts:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-71efb234/checkout/docs:/app/docs:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-71efb234/checkout/deploy:/app/deploy:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-71efb234/checkout/skills:/app/skills:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-71efb234/checkout/bridges:/app/bridges:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-71efb234/checkout/.env.example:/app/.env.example:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-portability-20261020-v1/strategy_publication.py:/app/backend/market/strategy_publication.py:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-portability-20261020-v1/test_strategy_publication.py:/app/backend/tests/test_strategy_publication.py:ro",
+          "-e",
+          "POSTGRES_DB=anios_gate_trading_71efb234",
+          "-e",
+          "REDIS_URL=redis://redis:6379/0",
+          "functional-tests",
+          "python",
+          "-m",
+          "pytest",
+          "backend/tests/test_session_price_snapshot.py::test_application_import_survives_missing_fcntl",
+          "backend/tests/test_strategy_publication.py",
+          "backend/tests/test_strategy_entry_history.py",
+          "-q",
+          "-p",
+          "no:cacheprovider",
+          "--no-header"
+        ],
+        "not_deployment": true,
+        "sources": {
+          "backend/market/strategy_publication.py": {
+            "bytes": 15790,
+            "sha256": "9272e399f94eac96e365298465e8840c384552f7769d98228fdc5814933f95f0"
+          },
+          "backend/tests/test_strategy_publication.py": {
+            "bytes": 10607,
+            "sha256": "f61bcefd6d69539eefe1175d6a27398add305d7465aec262ce448182619d870c"
+          }
+        },
+        "started_at": "2026-10-20T04:36:33.546709+00:00"
+      },
+      "stderr": " Container anios-functional-tests-run-94228e636223 Creating \n Container anios-functional-tests-run-94228e636223 Created \n",
+      "stdout": ".............                                                            [100%]\n13 passed in 4.36s\n"
+    },
+    "strategy-publication-admission-20261020-green": {
+      "result.json": {
+        "argv": [
+          "docker",
+          "compose",
+          "-f",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-71efb234/checkout/docker-compose.yml",
+          "--profile",
+          "test",
+          "run",
+          "--rm",
+          "--no-deps",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-71efb234/checkout/backend:/app/backend:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-71efb234/checkout/scripts:/app/scripts:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-71efb234/checkout/prompts:/app/prompts:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-71efb234/checkout/docs:/app/docs:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-71efb234/checkout/deploy:/app/deploy:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-71efb234/checkout/skills:/app/skills:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-71efb234/checkout/bridges:/app/bridges:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-71efb234/checkout/.env.example:/app/.env.example:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-publication-admission-20261020-green/strategy_publication.py:/app/backend/market/strategy_publication.py:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-publication-admission-20261020-green/market_release_admission.py:/app/backend/cli/market_release_admission.py:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-publication-admission-20261020-green/test_strategy_publication_admission.py:/app/backend/tests/test_strategy_publication.py:ro",
+          "-e",
+          "POSTGRES_DB=anios_gate_trading_71efb234",
+          "-e",
+          "REDIS_URL=redis://redis:6379/0",
+          "functional-tests",
+          "python",
+          "-m",
+          "pytest",
+          "backend/tests/test_strategy_publication.py",
+          "backend/tests/test_market_release_admission.py",
+          "-q",
+          "-p",
+          "no:cacheprovider",
+          "--no-header"
+        ],
+        "finished_at": "2026-10-20T04:39:25.594543+00:00",
+        "returncode": 0,
+        "sources": {
+          "backend/cli/market_release_admission.py": {
+            "bytes": 25824,
+            "container_path": "backend/cli/market_release_admission.py",
+            "sha256": "3e7be3611042f14faa35325220634074818b014f4e9311f4561f10fb3a1c79df"
+          },
+          "backend/market/strategy_publication.py": {
+            "bytes": 15790,
+            "container_path": "backend/market/strategy_publication.py",
+            "sha256": "9272e399f94eac96e365298465e8840c384552f7769d98228fdc5814933f95f0"
+          },
+          "backend/tests/test_strategy_publication_admission.py": {
+            "bytes": 4501,
+            "container_path": "backend/tests/test_strategy_publication.py",
+            "sha256": "c5cd2ba4b5917853012ca0d2391c89fa46a791b5af9377735d1ad3a9ee100d48"
+          }
+        },
+        "started_at": "2026-10-20T04:39:23.123466+00:00"
+      },
+      "start.json": {
+        "argv": [
+          "docker",
+          "compose",
+          "-f",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-71efb234/checkout/docker-compose.yml",
+          "--profile",
+          "test",
+          "run",
+          "--rm",
+          "--no-deps",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-71efb234/checkout/backend:/app/backend:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-71efb234/checkout/scripts:/app/scripts:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-71efb234/checkout/prompts:/app/prompts:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-71efb234/checkout/docs:/app/docs:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-71efb234/checkout/deploy:/app/deploy:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-71efb234/checkout/skills:/app/skills:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-71efb234/checkout/bridges:/app/bridges:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-71efb234/checkout/.env.example:/app/.env.example:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-publication-admission-20261020-green/strategy_publication.py:/app/backend/market/strategy_publication.py:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-publication-admission-20261020-green/market_release_admission.py:/app/backend/cli/market_release_admission.py:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-publication-admission-20261020-green/test_strategy_publication_admission.py:/app/backend/tests/test_strategy_publication.py:ro",
+          "-e",
+          "POSTGRES_DB=anios_gate_trading_71efb234",
+          "-e",
+          "REDIS_URL=redis://redis:6379/0",
+          "functional-tests",
+          "python",
+          "-m",
+          "pytest",
+          "backend/tests/test_strategy_publication.py",
+          "backend/tests/test_market_release_admission.py",
+          "-q",
+          "-p",
+          "no:cacheprovider",
+          "--no-header"
+        ],
+        "not_deployment": true,
+        "sources": {
+          "backend/cli/market_release_admission.py": {
+            "bytes": 25824,
+            "container_path": "backend/cli/market_release_admission.py",
+            "sha256": "3e7be3611042f14faa35325220634074818b014f4e9311f4561f10fb3a1c79df"
+          },
+          "backend/market/strategy_publication.py": {
+            "bytes": 15790,
+            "container_path": "backend/market/strategy_publication.py",
+            "sha256": "9272e399f94eac96e365298465e8840c384552f7769d98228fdc5814933f95f0"
+          },
+          "backend/tests/test_strategy_publication_admission.py": {
+            "bytes": 4501,
+            "container_path": "backend/tests/test_strategy_publication.py",
+            "sha256": "c5cd2ba4b5917853012ca0d2391c89fa46a791b5af9377735d1ad3a9ee100d48"
+          }
+        },
+        "started_at": "2026-10-20T04:39:23.123466+00:00"
+      },
+      "stderr": " Container anios-functional-tests-run-bbef7d0d65ed Creating \n Container anios-functional-tests-run-bbef7d0d65ed Created \n",
+      "stdout": "...............................                                          [100%]\n31 passed in 0.93s\n"
+    },
+    "strategy-publication-admission-20261020-red": {
+      "result.json": {
+        "argv": [
+          "docker",
+          "compose",
+          "-f",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-71efb234/checkout/docker-compose.yml",
+          "--profile",
+          "test",
+          "run",
+          "--rm",
+          "--no-deps",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-71efb234/checkout/backend:/app/backend:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-71efb234/checkout/scripts:/app/scripts:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-71efb234/checkout/prompts:/app/prompts:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-71efb234/checkout/docs:/app/docs:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-71efb234/checkout/deploy:/app/deploy:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-71efb234/checkout/skills:/app/skills:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-71efb234/checkout/bridges:/app/bridges:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-71efb234/checkout/.env.example:/app/.env.example:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-publication-admission-20261020-red/strategy_publication.py:/app/backend/market/strategy_publication.py:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-publication-admission-20261020-red/market_release_admission.py:/app/backend/cli/market_release_admission.py:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-publication-admission-20261020-red/test_strategy_publication_admission.py:/app/backend/tests/test_strategy_publication_admission.py:ro",
+          "-e",
+          "POSTGRES_DB=anios_gate_trading_71efb234",
+          "-e",
+          "REDIS_URL=redis://redis:6379/0",
+          "functional-tests",
+          "python",
+          "-m",
+          "pytest",
+          "backend/tests/test_strategy_publication_admission.py::test_publication_renewal_preflight_activation_and_original_rollback",
+          "-q",
+          "-p",
+          "no:cacheprovider",
+          "--no-header"
+        ],
+        "finished_at": "2026-10-20T04:38:28.153600+00:00",
+        "returncode": 1,
+        "sources": {
+          "backend/cli/market_release_admission.py": {
+            "bytes": 22356,
+            "sha256": "98a898cd136e41ecc580c8ac027faa7d04a77e1fd6840360756a51c59b77ac2a"
+          },
+          "backend/market/strategy_publication.py": {
+            "bytes": 15790,
+            "sha256": "9272e399f94eac96e365298465e8840c384552f7769d98228fdc5814933f95f0"
+          },
+          "backend/tests/test_strategy_publication_admission.py": {
+            "bytes": 4501,
+            "sha256": "c5cd2ba4b5917853012ca0d2391c89fa46a791b5af9377735d1ad3a9ee100d48"
+          }
+        },
+        "started_at": "2026-10-20T04:38:27.839299+00:00"
+      },
+      "start.json": {
+        "argv": [
+          "docker",
+          "compose",
+          "-f",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-71efb234/checkout/docker-compose.yml",
+          "--profile",
+          "test",
+          "run",
+          "--rm",
+          "--no-deps",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-71efb234/checkout/backend:/app/backend:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-71efb234/checkout/scripts:/app/scripts:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-71efb234/checkout/prompts:/app/prompts:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-71efb234/checkout/docs:/app/docs:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-71efb234/checkout/deploy:/app/deploy:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-71efb234/checkout/skills:/app/skills:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-71efb234/checkout/bridges:/app/bridges:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-71efb234/checkout/.env.example:/app/.env.example:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-publication-admission-20261020-red/strategy_publication.py:/app/backend/market/strategy_publication.py:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-publication-admission-20261020-red/market_release_admission.py:/app/backend/cli/market_release_admission.py:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-publication-admission-20261020-red/test_strategy_publication_admission.py:/app/backend/tests/test_strategy_publication_admission.py:ro",
+          "-e",
+          "POSTGRES_DB=anios_gate_trading_71efb234",
+          "-e",
+          "REDIS_URL=redis://redis:6379/0",
+          "functional-tests",
+          "python",
+          "-m",
+          "pytest",
+          "backend/tests/test_strategy_publication_admission.py::test_publication_renewal_preflight_activation_and_original_rollback",
+          "-q",
+          "-p",
+          "no:cacheprovider",
+          "--no-header"
+        ],
+        "not_deployment": true,
+        "sources": {
+          "backend/cli/market_release_admission.py": {
+            "bytes": 22356,
+            "sha256": "98a898cd136e41ecc580c8ac027faa7d04a77e1fd6840360756a51c59b77ac2a"
+          },
+          "backend/market/strategy_publication.py": {
+            "bytes": 15790,
+            "sha256": "9272e399f94eac96e365298465e8840c384552f7769d98228fdc5814933f95f0"
+          },
+          "backend/tests/test_strategy_publication_admission.py": {
+            "bytes": 4501,
+            "sha256": "c5cd2ba4b5917853012ca0d2391c89fa46a791b5af9377735d1ad3a9ee100d48"
+          }
+        },
+        "started_at": "2026-10-20T04:38:27.839299+00:00"
+      },
+      "stderr": " Container anios-functional-tests-run-9692f9e105a2 Creating \n Container anios-functional-tests-run-9692f9e105a2 Created \nError response from daemon: failed to create task for container: failed to create shim task: OCI runtime create failed: runc create failed: unable to start container process: error during container init: error mounting \"/home/animallya96/scratch/strategy-publication-admission-20261020-red/test_strategy_publication_admission.py\" to rootfs at \"/app/backend/tests/test_strategy_publication_admission.py\": create mountpoint for /app/backend/tests/test_strategy_publication_admission.py mount: make mountpoint \"/app/backend/tests/test_strategy_publication_admission.py\": read-only file system\n",
+      "stdout": ""
+    },
+    "strategy-publication-admission-20261020-red2": {
+      "result.json": {
+        "argv": [
+          "docker",
+          "compose",
+          "-f",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-71efb234/checkout/docker-compose.yml",
+          "--profile",
+          "test",
+          "run",
+          "--rm",
+          "--no-deps",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-71efb234/checkout/backend:/app/backend:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-71efb234/checkout/scripts:/app/scripts:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-71efb234/checkout/prompts:/app/prompts:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-71efb234/checkout/docs:/app/docs:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-71efb234/checkout/deploy:/app/deploy:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-71efb234/checkout/skills:/app/skills:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-71efb234/checkout/bridges:/app/bridges:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-71efb234/checkout/.env.example:/app/.env.example:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-publication-admission-20261020-red2/strategy_publication.py:/app/backend/market/strategy_publication.py:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-publication-admission-20261020-red2/market_release_admission.py:/app/backend/cli/market_release_admission.py:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-publication-admission-20261020-red2/test_strategy_publication_admission.py:/app/backend/tests/test_strategy_publication.py:ro",
+          "-e",
+          "POSTGRES_DB=anios_gate_trading_71efb234",
+          "-e",
+          "REDIS_URL=redis://redis:6379/0",
+          "functional-tests",
+          "python",
+          "-m",
+          "pytest",
+          "backend/tests/test_strategy_publication.py::test_publication_renewal_preflight_activation_and_original_rollback",
+          "-q",
+          "-p",
+          "no:cacheprovider",
+          "--no-header"
+        ],
+        "finished_at": "2026-10-20T04:38:55.710887+00:00",
+        "returncode": 1,
+        "sources": {
+          "backend/cli/market_release_admission.py": {
+            "bytes": 22356,
+            "container_path": "backend/cli/market_release_admission.py",
+            "sha256": "98a898cd136e41ecc580c8ac027faa7d04a77e1fd6840360756a51c59b77ac2a"
+          },
+          "backend/market/strategy_publication.py": {
+            "bytes": 15790,
+            "container_path": "backend/market/strategy_publication.py",
+            "sha256": "9272e399f94eac96e365298465e8840c384552f7769d98228fdc5814933f95f0"
+          },
+          "backend/tests/test_strategy_publication_admission.py": {
+            "bytes": 4501,
+            "container_path": "backend/tests/test_strategy_publication.py",
+            "sha256": "c5cd2ba4b5917853012ca0d2391c89fa46a791b5af9377735d1ad3a9ee100d48"
+          }
+        },
+        "started_at": "2026-10-20T04:38:53.340512+00:00"
+      },
+      "start.json": {
+        "argv": [
+          "docker",
+          "compose",
+          "-f",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-71efb234/checkout/docker-compose.yml",
+          "--profile",
+          "test",
+          "run",
+          "--rm",
+          "--no-deps",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-71efb234/checkout/backend:/app/backend:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-71efb234/checkout/scripts:/app/scripts:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-71efb234/checkout/prompts:/app/prompts:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-71efb234/checkout/docs:/app/docs:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-71efb234/checkout/deploy:/app/deploy:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-71efb234/checkout/skills:/app/skills:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-71efb234/checkout/bridges:/app/bridges:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-unit-gate-20261020-71efb234/checkout/.env.example:/app/.env.example:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-publication-admission-20261020-red2/strategy_publication.py:/app/backend/market/strategy_publication.py:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-publication-admission-20261020-red2/market_release_admission.py:/app/backend/cli/market_release_admission.py:ro",
+          "-v",
+          "/home/animallya96/scratch/strategy-publication-admission-20261020-red2/test_strategy_publication_admission.py:/app/backend/tests/test_strategy_publication.py:ro",
+          "-e",
+          "POSTGRES_DB=anios_gate_trading_71efb234",
+          "-e",
+          "REDIS_URL=redis://redis:6379/0",
+          "functional-tests",
+          "python",
+          "-m",
+          "pytest",
+          "backend/tests/test_strategy_publication.py::test_publication_renewal_preflight_activation_and_original_rollback",
+          "-q",
+          "-p",
+          "no:cacheprovider",
+          "--no-header"
+        ],
+        "not_deployment": true,
+        "sources": {
+          "backend/cli/market_release_admission.py": {
+            "bytes": 22356,
+            "container_path": "backend/cli/market_release_admission.py",
+            "sha256": "98a898cd136e41ecc580c8ac027faa7d04a77e1fd6840360756a51c59b77ac2a"
+          },
+          "backend/market/strategy_publication.py": {
+            "bytes": 15790,
+            "container_path": "backend/market/strategy_publication.py",
+            "sha256": "9272e399f94eac96e365298465e8840c384552f7769d98228fdc5814933f95f0"
+          },
+          "backend/tests/test_strategy_publication_admission.py": {
+            "bytes": 4501,
+            "container_path": "backend/tests/test_strategy_publication.py",
+            "sha256": "c5cd2ba4b5917853012ca0d2391c89fa46a791b5af9377735d1ad3a9ee100d48"
+          }
+        },
+        "started_at": "2026-10-20T04:38:53.340512+00:00"
+      },
+      "stderr": " Container anios-functional-tests-run-9bc34a932aa7 Creating \n Container anios-functional-tests-run-9bc34a932aa7 Created \n\n",
+      "stdout": "F                                                                        [100%]\n=================================== FAILURES ===================================\n_____ test_publication_renewal_preflight_activation_and_original_rollback ______\n\ntmp_path = PosixPath('/tmp/pytest-of-root/pytest-0/test_publication_renewal_prefl0')\nmonkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0xf21fc3b3f5c0>\n\n    def test_publication_renewal_preflight_activation_and_original_rollback(tmp_path,monkeypatch):\n        root,before,bundle,path,_=renewal(tmp_path,monkeypatch)\n        old,new,review=publication_review()\n        release=json.loads(before['release.json']);release['source_sha256']=old\n        config=json.loads(before['config.json']);config['release_receipt_sha256']=admission.digest(encoded(release))\n        before={**before,'release.json':encoded(release),'config.json':encoded(config)}\n        for name,raw in before.items():(root/admission.CONFIG).with_name(name).write_bytes(raw)\n        bundle['predecessor']={name.removesuffix('.json')+'_sha256':admission.digest(raw) for name,raw in before.items()}\n        monkeypatch.setattr(admission,'committed_review',lambda *_:deepcopy(review))\n        digest=persist(path,bundle);revision=bundle['target_revision']\n>       assert admission.preflight(root,path,digest,revision)['source_sha256']==new\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\nbackend/tests/test_strategy_publication.py:40: \n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \nbackend/cli/market_release_admission.py:410: in preflight\n    _, _, admitted = candidate(root, bundle_path, bundle_sha, revision)\n                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\nbackend/cli/market_release_admission.py:388: in candidate\n    reviewed_sources(old_release[\"source_sha256\"], new_release[\"source_sha256\"], review)\n_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ \n\nold = {'backend/agents/trading/desk/event_execution.py': '76e49243ffb7fff8bb989df2c384ee1f2f0dcc7885c9421f98a986eda667202f',...ckend/agents/trading/desk/intraday_orders.py': 'ca8c236746441e204f36a263e972104d48d442538ea189fd4cad9d4ccf9f0f1c', ...}\nnew = {'backend/agents/trading/desk/event_execution.py': '76e49243ffb7fff8bb989df2c384ee1f2f0dcc7885c9421f98a986eda667202f',...ckend/agents/trading/desk/intraday_orders.py': 'ca8c236746441e204f36a263e972104d48d442538ea189fd4cad9d4ccf9f0f1c', ...}\nreview = {'status': 'REVIEWED_EXACT_INDEPENDENT_STRATEGY_PUBLICATION', 'source_changes': {'backend/market/strategy_entries.py':...changed': 30, 'original_holding_module_ast_sha256': '458218fde5e6136cdd44fdf19bf03d4d382a1dc0e3327a6c7b707d315f86c880'}\n\n    def reviewed_sources(old, new, review):\n        if review[\"status\"] == \"REVIEWED_NATIVE_PAPER_OWNERSHIP_PRESERVATION\":\n            paper_ownership_review(old, new, review)\n            return\n        if review[\"status\"] == \"REVIEWED_EXACT_ORDER_RECONCILIATION_AND_FILL_PROJECTION\":\n            reconciliation_review(old, new, review)\n            return\n        if review[\"status\"] == \"REVIEWED_EXACT_SETTLEMENT_QUANTITY_METADATA\":\n            settlement_metadata_review(old, new, review)\n            return\n        changes = {\n            name for name in old.keys() | new.keys() if old.get(name) != new.get(name)\n        }\n        api = \"backend/api/v1/market.py\"\n        if review[\"status\"] == \"REVIEWED_EXACT_SERVING_SOURCE_APPROVAL_CANDIDATE\":\n            if (\n                changes != {api}\n                or review[\"changed_reviewed_file\"] != api\n                or review[\"previous_approved_sha256\"] != old.get(api)\n                or review[\"reviewed_serving_sha256\"] != new.get(api)\n                or review[\"other_reviewed_sources_unchanged\"] != len(old) - 1\n            ):\n                raise ValueError(\"Unreviewed trading API source change\")\n            return\n        if review[\"status\"] != \"REVIEWED_EXACT_SERVING_SOURCE_GUARD_EXTENSION\":\n>           raise ValueError(\"Exact reviewed trading source extension required\")\nE           ValueError: Exact reviewed trading source extension required\n\nbackend/cli/market_release_admission.py:281: ValueError\n=========================== short test summary info ============================\nFAILED backend/tests/test_strategy_publication.py::test_publication_renewal_preflight_activation_and_original_rollback\n1 failed in 0.81s\n"
+    }
+  },
+  "schema": "strategy-release-components-proof/1",
+  "source_sha256": {
+    "backend/cli/market_release_admission.py": "3e7be3611042f14faa35325220634074818b014f4e9311f4561f10fb3a1c79df",
+    "backend/market/strategy_publication.py": "9272e399f94eac96e365298465e8840c384552f7769d98228fdc5814933f95f0",
+    "backend/tests/test_strategy_publication.py": "f61bcefd6d69539eefe1175d6a27398add305d7465aec262ce448182619d870c",
+    "backend/tests/test_strategy_publication_admission.py": "c5cd2ba4b5917853012ca0d2391c89fa46a791b5af9377735d1ad3a9ee100d48"
+  }
+}

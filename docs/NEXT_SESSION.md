@@ -1,5 +1,34 @@
 # Next session
 
+## 2026-10-20 — Full-gate finding repaired; strict source renewal candidate
+
+71efb234/tree5da9e00f full unit gate FAILED:10961passed/1failed/93skipped/
+6xfailed/439warnings/25subtests545.32s. Only failure was unsupported-fcntl
+application startup. Preserved original result/logs in
+/tmp/strategy-frozen-unit-gate-20261020-evidence and matching Spark scratch.
+Moving the required Unix lock import into publish (before validation or writes)
+fixes startup without weakening publication locking.13 targeted cases PASS4.36s,
+including the unchanged original failure and new no-files unsupported refusal.
+
+The release helper previously refused the new31→35 source transition. NEW exact
+review type admits ONLY four added publication/entry modules and exact pre-account
+hook, requiring the full original deployed holding module AST after removing that
+hook/guard additions. Other30source hashes, original economics/model/cost/evidence
+stay unchanged. Expected one-case RED retained;31GREEN0.93s =8new+23existing
+admission cases, including selector activation/readback/original rollback in temp
+fixtures. First RED harness failed before tests (new mountpoint under readonly
+backend), retained separately; corrected distinct root reached intended refusal.
+No production approval activated. Committed source review is a candidate, not
+live entry/performance acceptance. A NEW full exact-tree gate is still required.
+Proofs strategy-frozen-unit-gate-proof-2026-10-20.json and
+strategy-release-components-proof-2026-10-20.json retain terminal raw evidence.
+
+Publisher source changed, so original v8 snapshot remains historical component
+evidence; use a NEW exact-source publication/context binding for actual current
+entry acquisition rather than relaxing original source guards. Stable economic
+identity/history bytes unchanged. Real first regular15m preview remains mandatory
+before canonical deploy. No questions, paper LAST, feed unchanged.
+
 ## 2026-10-20 — Independent recommendations candidate, release gates and real current entries pending
 
 This production-based candidate remains independent of paper/personal accounts.

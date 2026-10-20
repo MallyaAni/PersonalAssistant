@@ -1,5 +1,21 @@
 # Changelog
 
+## 2026-10-20 — Candidate portable startup and exact publication approval
+
+The independent publisher loads Unix locking only when publishing, so hosts
+without fcntl can still start the application and read APIs. Unsupported writes
+refuse before validation/filesystem mutation. The full gate found this startup
+regression (10961pass/1fail);13 targeted checks pass after repair.
+
+An explicit source-renewal review supports only the four independent publication
+components and their exact pre-account hook. It reconstructs the entire original
+holding module, preserves30other source hashes and all economic selectors, and
+cannot approve arbitrary strategy changes.31 checks pass (8new,23existing),
+including temporary selector readback/rollback and source/hook tamper refusal.
+Production approval and deployment remain unchanged; full new-tree gate and real
+regular-session preview are pending. Diagram impact: NONE — existing reviewed
+approval and publisher boundaries remain the same.
+
 ## 2026-10-20 — Candidate original numerical recommendation details
 
 The owner-only `GET /desk/strategy-simulation/{ticker}/recommendation` restores

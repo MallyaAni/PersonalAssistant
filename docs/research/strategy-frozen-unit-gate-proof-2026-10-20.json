@@ -1,0 +1,61 @@
+{
+  "collector_source_sha256": "109abbb565463e8484c4c5f100b80da6e0d0af46a04170348a0ad15a0983a945",
+  "finished_at": "2026-10-20T04:35:08.879945+00:00",
+  "local_root": "/tmp/strategy-frozen-unit-gate-20261020-evidence",
+  "not_deployment": true,
+  "not_real_market_entry_acceptance": true,
+  "observed_at": "2026-10-20T04:35:11.644968+00:00",
+  "original_files": {
+    "fetch.log": {
+      "bytes": 234,
+      "sha256": "026b9c512259c524c3767980b3f178387cd3a146dec0a584fa5ba07b539aa946"
+    },
+    "result.json": {
+      "bytes": 926,
+      "sha256": "32a9f6bfc0d104cbb3f8dcabda69574626e455c0e8c3ed4e516145f7d5bf2b2b"
+    },
+    "start.json": {
+      "bytes": 783,
+      "sha256": "58022d374202a6dba97625b62a6e96ed1ea1d090b647704772ae3b5cb66f515a"
+    },
+    "stderr": {
+      "bytes": 8396,
+      "sha256": "2c587fb79129307b3e11a679e71bf3dd4374a3d3025fdfe13a8f57de8f19ef44"
+    },
+    "stdout": {
+      "bytes": 55764,
+      "sha256": "55eceaf7c929a20e41c8757d9d85f79db50eed8f462bdf9ba8ac2c8ef01715f0"
+    }
+  },
+  "original_result": {
+    "argv": [
+      "bash",
+      "/home/animallya96/scratch/strategy-unit-gate-20261020-71efb234/checkout/scripts/gate.sh",
+      "--unit"
+    ],
+    "environment_overrides": {
+      "ANIOS_FUNCTIONAL_TESTS_IMAGE": "anios-functional-tests:strategy-71efb234-gate",
+      "ANIOS_GATE_DB": "anios_gate_trading_71efb234",
+      "ANIOS_GATE_SKIP_INFRA": "1",
+      "COMPOSE_PROJECT_NAME": "anios"
+    },
+    "finished_at": "2026-10-20T04:35:08.879945+00:00",
+    "not_deployment": true,
+    "pid": 1458693,
+    "private_environment": "original file symlink; never read or logged by this controller",
+    "production_head_after": "b4b2eeb9ac3d1b0bb1f344b280ecd5f1b00be1b8",
+    "production_head_before": "b4b2eeb9ac3d1b0bb1f344b280ecd5f1b00be1b8",
+    "returncode": 1,
+    "revision": "71efb23451cc9685d3a3041cab55db8ec22ff789",
+    "routing_gate_not_run": true,
+    "started_at": "2026-10-20T04:25:47.086661+00:00",
+    "tree": "5da9e00f982930591bb6daf6a4636c10b1180f45"
+  },
+  "remote_root": "/home/animallya96/scratch/strategy-unit-gate-20261020-71efb234",
+  "returncode": 1,
+  "revision": "71efb23451cc9685d3a3041cab55db8ec22ff789",
+  "routing_gate_not_run": true,
+  "schema": "strategy-frozen-unit-gate-proof/1",
+  "started_at": "2026-10-20T04:25:47.086661+00:00",
+  "tree": "5da9e00f982930591bb6daf6a4636c10b1180f45"
+}

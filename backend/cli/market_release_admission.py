@@ -252,8 +252,60 @@ def reconciliation_review(old, new, review):
         raise ValueError("Unreviewed numeric decision or terminal conclusion change")
 
 
+# Admit the independent publisher hook only when the entire original strategy module reconstructs exactly.
+def independent_publication_review(old, new, review):
+    from backend.market import learned_live_holding as runtime
+
+    holding = "backend/market/learned_live_holding.py"
+    added = {f"backend/market/{name}.py" for name in (
+        "strategy_model_allocation", "strategy_publication", "strategy_entry_context", "strategy_entries"
+    )}
+    changes = {name for name in old.keys() | new.keys() if old.get(name) != new.get(name)}
+    if (
+        len(old) != 31 or len(new) != 35 or set(new) - set(old) != added or set(old) - set(new)
+        or changes != added | {holding} or set(review["source_changes"]) != changes
+        or old[holding] != "25fee57bd3dc57c2b945e204aa3b83e39434cf4f84f8a165a4b9e41f9f6183e1"
+        or type(review["other_reviewed_sources_unchanged"]) is not int
+        or review["other_reviewed_sources_unchanged"] != 30
+        or new != runtime.source_identity()
+        or review["original_holding_module_ast_sha256"]
+        != "458218fde5e6136cdd44fdf19bf03d4d382a1dc0e3327a6c7b707d315f86c880"
+        or any(review["source_changes"][name] != {"before_sha256": old.get(name), "after_sha256": new[name]} for name in changes)
+    ):
+        raise ValueError("Exact independent publication source review required")
+    code = Path(__file__).resolve().parents[2]
+    for name in added:
+        require_hash((code / name).read_bytes(), new[name])
+    raw = Path(runtime.__file__).read_bytes()
+    require_hash(raw, new[holding])
+    tree = ast.parse(raw)
+    source = next(node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name == "source_identity")
+    prepare = next(node for node in tree.body if isinstance(node, ast.FunctionDef) and node.name == "prepare")
+    paths = next(node.value for node in source.body if isinstance(node, ast.Assign)
+        and any(isinstance(target, ast.Name) and target.id == "paths" for target in node.targets))
+    expected_paths = {ast.dump(ast.parse("root / " + repr(name), mode="eval").body, include_attributes=False) for name in added}
+    removed = [node for node in paths.elts if ast.dump(node, include_attributes=False) in expected_paths]
+    if len(removed) != 4 or {ast.dump(node, include_attributes=False) for node in removed} != expected_paths:
+        raise ValueError("Exact independent publication guard additions required")
+    paths.elts = [node for node in paths.elts if node not in removed]
+    expected_tail = ast.parse('''selected = factory(reader, config["cost_bps"], root, raw, admission, completed)
+if config["policy"] == grade_led_policy.POLICY:
+    from backend.market import strategy_publication
+    strategy_publication.publish_prepared(selected, report, clock=clock)
+return selected
+''').body
+    if [ast.dump(node, include_attributes=False) for node in prepare.body[-3:]] != [ast.dump(node, include_attributes=False) for node in expected_tail]:
+        raise ValueError("Exact pre-account publication callback required")
+    prepare.body[-3:] = [ast.Return(value=prepare.body[-3].value)]
+    if digest(ast.dump(tree, include_attributes=False).encode()) != review["original_holding_module_ast_sha256"]:
+        raise ValueError("Independent publication changed original holding economics or guards")
+
+
 # Require an exact reviewed transition without broadening the production source guard.
 def reviewed_sources(old, new, review):
+    if review["status"] == "REVIEWED_EXACT_INDEPENDENT_STRATEGY_PUBLICATION":
+        independent_publication_review(old, new, review)
+        return
     if review["status"] == "REVIEWED_NATIVE_PAPER_OWNERSHIP_PRESERVATION":
         paper_ownership_review(old, new, review)
         return

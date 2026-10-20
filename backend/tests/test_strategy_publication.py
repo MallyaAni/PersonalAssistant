@@ -1,5 +1,6 @@
 """Persistent independent recommendation snapshots, including a later paper failure."""
 from copy import deepcopy
+import builtins
 from datetime import datetime, timedelta
 import importlib.util
 import json
@@ -50,6 +51,18 @@ def signed(value):
 
 # Verify original bytes, clocks and technical snapshots survive failures and repeated reads.
 class PublicationTests(unittest.TestCase):
+    # An unsupported publisher refuses before validation, inference or any filesystem mutation.
+    def test_missing_lock_module_refuses_before_creating_publication(self):
+        original_import=builtins.__import__
+        # Simulate the absent platform module while retaining all ordinary imports.
+        def without_fcntl(name,*args,**kwargs):
+            if name=='fcntl':raise ImportError('synthetic unsupported publisher')
+            return original_import(name,*args,**kwargs)
+        with TemporaryDirectory() as directory, patch('builtins.__import__',side_effect=without_fcntl), patch.object(publication,'validate',side_effect=AssertionError('unsupported publisher must stop first')):
+            with self.assertRaisesRegex(ImportError,'unsupported publisher'):
+                publication.publish(directory,object(),NOW)
+            self.assertEqual(list(Path(directory).iterdir()),[])
+
     # A later paper error cannot erase the already persisted independent recommendation.
     def test_persisted_snapshot_survives_later_paper_error(self):
         with TemporaryDirectory() as directory:
