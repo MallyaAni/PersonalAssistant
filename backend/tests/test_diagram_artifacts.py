@@ -271,6 +271,32 @@ class RetryingJsonDiagramLLM(JsonDiagramLLM):
         return super().chat(messages, max_tokens)
 
 
+class EmptyOutputDiagramLLM(NoopLLM):
+    # Initialize a provider double whose first empty_calls requests see no
+    # message output from the engine, as an empty chat completion does.
+    def __init__(self, empty_calls: int) -> None:
+        self.empty_calls = empty_calls
+        self.calls = 0
+
+    # Raise the engine's empty-output error, then answer with a valid diagram.
+    def chat(
+        self,
+        messages: list[dict[str, str]],
+        max_tokens: int = 1024,
+        response_schema: dict[str, Any] | None = None,
+        temperature: float | None = None,
+    ) -> dict[str, Any]:
+        self.calls += 1
+        if self.calls <= self.empty_calls:
+            raise ValueError("Inference provider did not contain a message output")
+        return {
+            "content": (
+                '{"title":"Recovered flow","diagram_type":"flowchart",'
+                '"lines":["flowchart TD","  A --> B"]}'
+            )
+        }
+
+
 # Verify the validator accepts bounded passive Mermaid source.
 def test_diagram_validator_accepts_safe_source() -> None:
     specification = validate_diagram_specification(
@@ -385,6 +411,38 @@ async def test_llm_diagram_provider_retries_invalid_json_once() -> None:
 
     assert specification.title == "JSON flow"
     assert llm.calls == 2
+
+
+# Verify an empty engine response is retried like an invalid specification, so
+# one blank message from an intermittent engine does not fail the request.
+@pytest.mark.asyncio
+async def test_llm_diagram_provider_retries_an_empty_engine_response_once() -> None:
+    llm = EmptyOutputDiagramLLM(empty_calls=1)
+    provider = LLMDiagramProvider(llm, "test-model")
+
+    specification = await provider.generate("Create a flowchart of A to B")
+
+    assert specification.title == "Recovered flow"
+    assert llm.calls == 2
+
+
+# Verify two consecutive empty engine responses give the provider's own error,
+# with the engine's error chained so the cause is not lost.
+@pytest.mark.asyncio
+async def test_llm_diagram_provider_reports_two_empty_engine_responses() -> None:
+    llm = EmptyOutputDiagramLLM(empty_calls=2)
+    provider = LLMDiagramProvider(llm, "test-model")
+
+    with pytest.raises(
+        ValueError, match="Diagram provider did not return a valid specification"
+    ) as raised:
+        await provider.generate("Create a flowchart of A to B")
+
+    assert llm.calls == 2
+    assert isinstance(raised.value.__cause__, ValueError)
+    assert str(raised.value.__cause__) == (
+        "Inference provider did not contain a message output"
+    )
 
 
 # Verify the focused diagram graph returns the provider's validated specification.

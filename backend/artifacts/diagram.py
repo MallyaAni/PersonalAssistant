@@ -322,20 +322,26 @@ class LLMDiagramProvider(DiagramProvider):
             {"role": "user", "content": asked},
         ]
         for attempt in range(2):
-            result = await asyncio.to_thread(
-                self.llm.chat,
-                messages,
-                2_048,
-                response_schema=_DIAGRAM_REPLY_SCHEMA,
-                # Greedy, as every other call here is. This one ran at the
-                # provider default, so the same request drew a different
-                # diagram each time and a failure could not be reproduced long
-                # enough to diagnose — eight requests scored 0/8 and then 3/8
-                # with nothing changed in between.
-                temperature=0.0,
-            )
-            content = result.get("content")
             try:
+                # The engine's own empty-output ValueError belongs inside this
+                # attempt. Raised above the try it escaped the loop outright, so
+                # one blank message failed the request even though the retry was
+                # still available - seen in the gate as one empty response out of
+                # four identical requests. An empty answer and an invalid one are
+                # the same failure to this caller, so both get the second attempt.
+                result = await asyncio.to_thread(
+                    self.llm.chat,
+                    messages,
+                    2_048,
+                    response_schema=_DIAGRAM_REPLY_SCHEMA,
+                    # Greedy, as every other call here is. This one ran at the
+                    # provider default, so the same request drew a different
+                    # diagram each time and a failure could not be reproduced long
+                    # enough to diagnose — eight requests scored 0/8 and then 3/8
+                    # with nothing changed in between.
+                    temperature=0.0,
+                )
+                content = result.get("content")
                 if not isinstance(content, str):
                     raise ValueError("Diagram provider did not return text")
                 return validate_diagram_specification(_extract_json_object(content))
