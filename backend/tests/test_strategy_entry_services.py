@@ -60,7 +60,10 @@ class IndependentHistoryHTTPTests(unittest.IsolatedAsyncioTestCase):
                     other={'Authorization':'Bearer '+issue_user_token('other_user',scopes=['memory:read'])}
                     response=await client.get(url,headers=owner)
                     self.assertEqual(response.status_code,200)
-                    self.assertEqual(response.json()['decisions'],stock['decisions'])
+                    self.assertEqual(
+                        [{k:v for k,v in row.items() if k!='sample'}
+                         for row in response.json()['decisions']],
+                        stock['decisions'])
                     self.assertEqual(response.json()['grade_rows'][-1]['at'],'2026-10-20T09:30:00-04:00')
                     self.assertTrue(response.json()['provenance']['verified_against_installed_strategy'])
                     self.assertEqual(response.headers['cache-control'],'private, no-store')

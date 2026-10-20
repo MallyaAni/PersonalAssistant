@@ -128,7 +128,7 @@ class ReferenceBookTests(unittest.TestCase):
             quote={'BBB':{'bp':159.99,'ap':160.01,'bs':10,'as':10,'t':later.isoformat()}}
             after,evidence=ledger.observe(book,intents,page_for(book,later,quote),{'AAA':100.0,'BBB':100.0},later)
             names=('AAA','BBB','QQQ','SPY');dates=np.array(['2026-01-06','2026-01-07'],dtype='datetime64[D]')
-            marks=np.full((2,4),100.0);opens=marks.copy();opens[1,0]=99.99
+            marks=np.full((2,4),100.0);opens=marks.copy();opens[1,0]=99.99;closes=marks.copy()
             observations=np.full((2,25,4),100.0);execution=observations.copy();execution[1,0,1]=160.01
             grades=np.full((2,4),2,dtype=int);grades[0,0]=1
             allocations=np.zeros((2,4));allocations[0,1]=.25
@@ -136,8 +136,9 @@ class ReferenceBookTests(unittest.TestCase):
             # Run the actual unchanged native replay on a fresh independent book with the same explicit execution prices.
             def provider(day,clock,stock):
                 return distribution(-.02)
+            # The synthetic panel has no membership history; every name is eligible.
             result=native.replay(SimpleNamespace(cost_bps=10.0,timing_policy=transition.timing.POLICY),
-                SimpleNamespace(tickers=names,dates=dates,adj_close=marks,open=opens),grades,np.zeros_like(grades,dtype=bool),
+                SimpleNamespace(tickers=names,dates=dates,adj_close=marks,open=opens,close=closes),grades,np.zeros_like(grades,dtype=bool),np.ones_like(grades,dtype=bool),
                 observations,execution,provider,first=1,provenance={'explicit_synthetic_accounting_comparison':True},
                 generated_at=NOW,allocations=allocations,initial_book=initial)
             self.assertEqual(dict(after.positions)['AAA'],result['stocks']['AAA']['latest_holding'])
