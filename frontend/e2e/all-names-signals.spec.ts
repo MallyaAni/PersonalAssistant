@@ -170,6 +170,32 @@ async function refresh(page: Page, state: Fixture) {
   await expect.poll(() => state.liveReads).toBeGreaterThan(prior)
 }
 
+// Keep the table and every chart headline consistent about a next-session plan without inventing a current entry.
+test('Next-session Buy labels match the table on every chart without creating an entry marker',async ({page,baseURL})=>{
+  const state=fixture()
+  Object.assign(state,{publicationV2:true,phase:'post-market',currentSessionBars:true,entryAt:Date.now()-100})
+  await install(page,baseURL!,state)
+  await page.goto('/?deskView=strategy#desk')
+  const board=page.getByRole('region',{name:'All names signals',exact:true})
+  await expect(board.getByLabel('BUYHIGH action',{exact:true})).toHaveText('Buy')
+  await board.getByRole('button',{name:'BUYHIGH',exact:true}).click()
+  const dialog=page.getByRole('dialog',{name:'BUYHIGH history',exact:true})
+  for(const frame of ['D','W','15m']){
+    await dialog.getByRole('group',{name:'Chart timeframe',exact:true}).getByRole('button',{name:frame,exact:true}).click()
+    await expect(dialog.getByLabel('BUYHIGH current chart target',{exact:true})).toHaveText('Buy · Size 14.3%')
+    await expect(dialog.getByLabel('BUYHIGH chart plan timing',{exact:true})).toHaveText('Next session')
+    await expect(dialog.getByLabel('BUYHIGH target chart markers',{exact:true})).toHaveText('')
+  }
+  await dialog.getByRole('button',{name:'Close',exact:true}).click()
+  state.phase='open'
+  await refresh(page,state)
+  await expect(board.getByLabel('BUYHIGH action',{exact:true})).toHaveText('Wait')
+  await board.getByRole('button',{name:'BUYHIGH',exact:true}).click()
+  await expect(dialog.getByLabel('BUYHIGH current chart target',{exact:true})).toHaveText('Wait · Size 14.3%')
+  await expect(dialog.getByLabel('BUYHIGH chart plan timing',{exact:true})).toHaveCount(0)
+  expect(state.diagnostics).toEqual([])
+})
+
 // Preserve saved recommendations after quote expiry and reload, restoring original reasons on every chart frame.
 test('Recorded entries survive expiry and reload with original size and technical reasons',async ({page,baseURL})=>{
   const state=fixture()

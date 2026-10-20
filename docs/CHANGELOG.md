@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-10-20 — Match next-session labels in the table and every chart
+
+A valid closed-session Buy in All names no longer appears as Wait in the chart
+headline. Both read the same authenticated plan; charts show Buy and model Size%
+with Next session context. Entry markers still require an actual confirmed
+15-minute recommendation. Once regular trading opens without that evidence,
+both table and chart show Wait. No sizing, timing, quote or source guards changed.
+
+The original expected browser failure is retained. All43 browser cases pass on
+the new immutable build, including the new all-frame closed→open journey and42
+regressions; TSC/build pass. Real installed COHR history shows Sell15.3% and its
+original below-A exit evidence, distinct from resulting model position0%. This
+does not prove a current regular-session entry or historical published advice.
+
 ## 2026-10-20 — Require the explicit history capability in the snapshot HTTP contract
 
 The full exactf0 unit run passed11,000 tests and failed one older exact-response

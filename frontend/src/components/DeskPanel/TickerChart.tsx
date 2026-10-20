@@ -1242,9 +1242,12 @@ export const TickerChart = ({
   if (strategy) return <section className="mb-4" aria-label={`${ticker} price chart`}>
     {live && <div className="mb-2 text-xs"><SessionPrice live={live} ticker={ticker} now={now} close={close} closeSession={closeSession} compact /></div>}
     <div className="mb-2 flex flex-wrap items-center justify-between gap-2 text-xs">
-      {modelTarget?.action === 'Buy' && <span title={modelTarget.entry ? `${recordedTime(modelTarget.entry.at)} · Confirmed entry; ${recordedTime(modelTarget.entry.validUntil)} expiry` : modelTarget.entryReason} className={`font-semibold ${!modelTarget.entry ? 'text-[#6e6e73]' : 'text-[#248a3d]'}`} aria-label={`${ticker} current chart target`}>
-        {!modelTarget.entry ? `Wait · Size ${sizePercent(modelTarget.weight)}%` : targetLabel(modelTarget)}
-      </span>}
+      {modelTarget?.action === 'Buy' && <div className="flex items-center gap-2">
+        <span title={modelTarget.entry ? `${recordedTime(modelTarget.entry.at)} · Confirmed entry; ${recordedTime(modelTarget.entry.validUntil)} expiry` : modelTarget.entryReason} className={`font-semibold ${!modelTarget.entry && !modelTarget.nextSessionPlan ? 'text-[#6e6e73]' : 'text-[#248a3d]'}`} aria-label={`${ticker} current chart target`}>
+          {!modelTarget.entry && !modelTarget.nextSessionPlan ? `Wait · Size ${sizePercent(modelTarget.weight)}%` : targetLabel(modelTarget)}
+        </span>
+        {modelTarget.nextSessionPlan && <span className="text-[#6e6e73]" aria-label={`${ticker} chart plan timing`}>Next session</span>}
+      </div>}
       <div role="group" aria-label="Chart range" className="flex gap-2">
         <button type="button" aria-pressed={!fullHistory} onClick={() => resetRange(false)}>Recent</button>
         <button type="button" aria-pressed={fullHistory} onClick={() => resetRange(true)}>{timeframe === '15m' ? '60 sessions' : 'Full history'}</button>

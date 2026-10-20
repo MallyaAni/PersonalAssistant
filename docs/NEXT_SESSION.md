@@ -1,5 +1,35 @@
 # Next session
 
+## 2026-10-20 08:14Z — current table/chart plan labels aligned;43browser PASS; e7 ROUTING active
+
+Real preview exposed a remaining closed-session label mismatch: table's valid
+next-session Buy versus chart headline Wait. FRONTEND ONLY now reads the same
+authenticated plan state, displays Buy/modelSize% with explicit Next session
+context on allframes; actual marker creation still REQUIRES entry receipt.
+Opening without confirmed numerical signal reverts both table/chart to Wait.
+No fake immediate action/marker/clock. One expectedRED on priorqlbn bytes retained;
+new43browsercases PASS2.3m/0skip/flaky/unexpected/diagnostics at ONE new build,
+one new case+42regressions. Original entry/source/expiry/history refusal checks
+unchanged. TSC/build2.48s/diffPASS(existingwarnings). New index-BhmKHMST.js915919B
+SHA1967de8440d9110d8a0761d9739dbdf7e4a33a75c7606b6dc2cc3595e463098a.
+Proof3786B/SHAbb4f7c3a1386458d9004352f06700eb701b3839555e89303ee6b2ddf025c082a,
+strategy-next-session-chart-proof-2026-10-20.json. No backend/35-source change.
+
+Real native COHR15m60sessions originalOct1 09:30Sell15.3%/GradeB/priorSep30close/
+modelposition0/EMA21−2.22/EMA63−5.32 verified. This sells15.3%, rather than saying
+Sell0; original model position0 is distinct. Current COHRheaderBuy25/Nextsession
+matches table, no current trigger marker invented. Evidence screenshot/JSON
+/tmp/strategy-next-session-real-ui-20261020-v1/cohr-{original-sell-15m.png,evidence.json}.
+Historical output unchanged; market-price incomplete status preserved, no fake
+Oct15 candles. Real current regular entry remains UNVERIFIED.
+
+Originale7 full94881 UNIT phase finished0; ROUTING now running, do not duplicate.
+Await terminal original94881/result. Exact backend/sourcee7 unchanged by these
+frontend edits. Oldf0 fullfailure/targeted correction remain their own records.
+No service/production deployment. Keep same preview/tunnel/symlink and continue
+prepared ONE actual regular acquisition only after naturally completed09:45ET,
+then real preview before canonical release. Earlier sections retain exact paths.
+
 ## 2026-10-20 07:58Z — original fullf0 gate ENDED; legacy HTTP contract updated; targeted PASS
 
 Original69728 ENDED1. Exactf0 unit11000PASS/1FAIL/93skip/6xfail/439warnings/
