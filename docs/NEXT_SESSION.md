@@ -1,5 +1,37 @@
 # Next session
 
+## 2026-10-20 05:51Z — Two release failures repaired; final source gates next
+
+Basef3e43234 initial installation/API/rollback is privately verified; candidate
+remains NOT DEPLOYED. All35 approved strategy source hashes and original171058B
+80476bbb snapshot remain unchanged. Original224 unitPASS10971 and routingFAIL98/100
+remain their original evidence, never relabelled.
+
+Changed-description matrix FINISHED05:48:48.543692Z exit0:352/372=.9462 vs
+baseline345/372=.9274. Exact check-in sourceSHA20be1bcadd4048b83da7a0fc81a114242c1c7c527ef0a5830d6a0f28b30b11d8.
+Check-ins9/12→12/12, arguments15/15 both, all original floors PASS. Full category
+comparison retained, including shared_document4/6→3/6 regression. No floor/schema/
+parser/case/model/service change. Description uses general explicit-preference
+principle, removes case examples. No perfect-router claim.
+
+Diagram unit proof33PASS2.64s, expected3RED/5securityPASS and actual installed
+Mermaid rendered PNG retained. Original unchanged real class journey plus existing
+check-in route/mode/reply and stored-preference tests now14PASS17.75s,0skip.
+Evidence research/strategy-release-repairs-proof-2026-10-20.json22345B/SHA
+ef05f29f51afab00698b07c02f7f5cb764984d0c404891a31756d5b5a51651f0;
+local/tmp/strategy-release-repairs-20261020-evidence contains all original logs,
+sources/argv/terminal bindings. All model jobs FINISHED; no job to duplicate.
+
+NEXT run full canonical unit/routing gates on the new committed source. Do not
+cherry-pick model/compose changes merely for a passing alias; no service/selector
+change needed by these repairs. Main's model-cutover compatibility commits remain
+separately reviewed, not applied here. Actual naturally available09:45ET regular
+IEX→independent API→real signed-in preview still required BEFORE deployment.
+Vite33452/tunnel70626/tab4/symlink KEEP, paperLAST/existingfeed/no realorders.
+Original-record preview bridge and ongoing recorded marker history remain open;
+do not claim whole readiness. Deployment ONLYscripts/deploy.sh, never historical
+main wholesale; no fakeclock/sessionreplay/duplicatewatcher or market CLI probes.
+
 ## 2026-10-20 — Initial independent publication installation candidate
 
 Exact224f9a53 full unit gate PASSED10971/93skip/6xfail/439warnings/25subtests,

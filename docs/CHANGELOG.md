@@ -1,5 +1,28 @@
 # Changelog
 
+## 2026-10-20 — Repair two observed release-gate failures
+
+Passive class generic types are normalized to the installed Mermaid renderer's
+tilde syntax before the unchanged active-content refusal. Three expected syntax
+failures are preserved;33 parser/security checks and an actual Mermaid render
+pass. The unchanged real-model class journey passes after the repair.
+
+The check-in tool description now states that explicit enabling and disabling
+both persist a preference; the default setting cannot replace the requested
+write. No schema, parser, handler, selector case or accuracy floor changed.
+Official full-matrix measurements at three repetitions:345/372 before and352/372
+after; check-in selection9/12→12/12, argument fidelity15/15 both. Every category
+was compared:check_ins18/21→21/21,live_data29/33→30/33,personal_memory9/12→12/12,
+regenerate0/6→1/6,shared_document4/6→3/6; all other categories unchanged.
+The negative category change and remaining errors remain in the evidence. All
+original floors pass; no perfect-router claim. Existing route/mode/reply tests,
+stored-preference tests and the original class journey pass14/14 in17.75s.
+
+These are release repairs, not strategy or market-data changes. All35 reviewed
+strategy sources and the original initial-publication snapshot remain byte
+identical. New-tree full gates, actual regular-session preview and deployment
+are pending. Diagram impact:NONE — internal parser normalization only.
+
 ## 2026-10-20 — Candidate initial recommendation publication on canonical install
 
 An explicit committed approval review can include a finite initial model snapshot.

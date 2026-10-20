@@ -123,6 +123,22 @@ _DIAGRAM_REPLY_SCHEMA: dict[str, Any] = {
 # `<br>`, `<br/>`, `<br />` — any spelling of an HTML line break, used by the
 # model as a line separator.
 _HTML_LINE_BREAK = re.compile(r"\s*<\s*br\s*/?\s*>\s*", re.IGNORECASE)
+_CLASS_GENERIC_TYPE = re.compile(
+    r"(?<![A-Za-z0-9_.])([A-Za-z_][A-Za-z0-9_.]*)"
+    r"<([A-Za-z_][A-Za-z0-9_.]*(?:[ ]*,[ ]*[A-Za-z_][A-Za-z0-9_.]*)*)>"
+)
+
+
+# Translate passive class type annotations into Mermaid syntax before the unchanged active-content guard.
+def _class_generic_types(source: str) -> str:
+    if source.splitlines()[0].strip().lower() != "classdiagram":
+        return source
+
+    # Keep generic identifiers intact while replacing angle delimiters with the renderer's tilde delimiters.
+    def native_type(match: re.Match[str]) -> str:
+        return match.group(1) + "~" + match.group(2) + "~"
+
+    return _CLASS_GENERIC_TYPE.sub(native_type, source)
 
 
 # Validate and normalize a provider-produced Mermaid specification.
@@ -167,6 +183,7 @@ def validate_diagram_specification(payload: dict[str, Any]) -> DiagramSpecificat
     if source.startswith("```"):
         source = re.sub(r"^```(?:mermaid)?\s*", "", source, flags=re.IGNORECASE)
         source = re.sub(r"\s*```$", "", source).strip()
+    source = _class_generic_types(source)
     if UNSAFE_MERMAID_PATTERN.search(source):
         raise ValueError("Mermaid source contains unsupported active content")
 

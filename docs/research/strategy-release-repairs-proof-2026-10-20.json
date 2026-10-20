@@ -1,0 +1,789 @@
+{
+  "current_entry_real_acceptance": "UNVERIFIED",
+  "deployed": false,
+  "files": {
+    "baseline/result.json": {
+      "bytes": 1619,
+      "sha256": "f05519f52bab557213a99a5eb55d2bd2be39e4565efcf43bee4eb03a5be178ed"
+    },
+    "baseline/start.json": {
+      "bytes": 1580,
+      "sha256": "4e5f6990f5521148fec4e26af0de72b905520fe68b1a55c577d16014f8ba56e4"
+    },
+    "baseline/stderr": {
+      "bytes": 1028,
+      "sha256": "2568ba43763354efbc46ca65676b516015e885a7fa3675790efb3cd5125a698b"
+    },
+    "baseline/stdout": {
+      "bytes": 5377,
+      "sha256": "c55f9077dea2a0b281443559d35fb8b1f10934a52936eb3f6b39f67225e3120e"
+    },
+    "changed/result.json": {
+      "bytes": 1923,
+      "sha256": "f4d645960d2744d9d0b0eac81939a7f8aad47e46aebba0547e1bea19d02e0e89"
+    },
+    "changed/start.json": {
+      "bytes": 1858,
+      "sha256": "4f09913c89e41ec1df0245e9a282f014f25bd235d062686377ab0eacaf688532"
+    },
+    "changed/stderr": {
+      "bytes": 253,
+      "sha256": "8ca235a72359594e1a5ab597fe64477eb9a3e206ce95619a9fc41478e9218c0a"
+    },
+    "changed/stdout": {
+      "bytes": 4695,
+      "sha256": "82d2570b3b7eb9748f6990f9042b0fe1357d58347e411e807ace55dbc1f209f5"
+    },
+    "diagram_green/result.json": {
+      "bytes": 2147,
+      "sha256": "28ad6c1227382b4e8bc15f01b0f58f6c4e9f8e81cf0546f361fa3ce5fde00afd"
+    },
+    "diagram_green/start.json": {
+      "bytes": 1859,
+      "sha256": "e1cc8a293fee64426b4a07b1a9d7c8955a226a9919e8080144875b6aca8ec41c"
+    },
+    "diagram_green/stderr": {
+      "bytes": 121,
+      "sha256": "94eaa4bbfb1db47df8ed02f4fa61b123e4addf9338481e2cbbad86cdfeab224b"
+    },
+    "diagram_green/stdout": {
+      "bytes": 99,
+      "sha256": "7e8e34fafa6265818728087714772d8235e2eb6c7c4bb54e0b436458860c75b0"
+    },
+    "diagram_red/result.json": {
+      "bytes": 2096,
+      "sha256": "d28bae2be5ad3cc12fe9819427b88b047f0740a3efcbb3b1b1b032c96ea6e0e6"
+    },
+    "diagram_red/start.json": {
+      "bytes": 1812,
+      "sha256": "d3ed417c0b2e6bd4a2bb0803022714c04b3f159c403e4bb3112fe2d80a59a86b"
+    },
+    "diagram_red/stderr": {
+      "bytes": 122,
+      "sha256": "be6c2402febf26d753198e7e650bd98b1fb62ed794b1434d012a4700bfa93123"
+    },
+    "diagram_red/stdout": {
+      "bytes": 11992,
+      "sha256": "589e6dbc0e2235da846cbe7d43f71fb59f801f0e7cad7db3762e2607eef2173a"
+    },
+    "regressions/result.json": {
+      "bytes": 2485,
+      "sha256": "2fb0c64ed312aba6183c2fd3fa18d227a7c5160d90647f25618e693723b9b3d9"
+    },
+    "regressions/start.json": {
+      "bytes": 2413,
+      "sha256": "7d1802102b7eb6507d93223caa47a919ea56d96c64549a2a917164d04d9140b3"
+    },
+    "regressions/stderr": {
+      "bytes": 121,
+      "sha256": "84c7d044c23cbca052d07740341131525766fc3dd8e3aea30c55c731ee0fb1ed"
+    },
+    "regressions/stdout": {
+      "bytes": 100,
+      "sha256": "dc0fef59402ee929771db6ddf3fa954ed02e09e53f55dfe381b2d00719e52b44"
+    }
+  },
+  "floors_unchanged": true,
+  "full_category_comparison": {
+    "agent_config": {
+      "after": {
+        "correct": 24,
+        "total": 27
+      },
+      "before": {
+        "correct": 24,
+        "total": 27
+      },
+      "correct_delta": 0
+    },
+    "check_ins": {
+      "after": {
+        "correct": 21,
+        "total": 21
+      },
+      "before": {
+        "correct": 18,
+        "total": 21
+      },
+      "correct_delta": 3
+    },
+    "creative_writing": {
+      "after": {
+        "correct": 6,
+        "total": 6
+      },
+      "before": {
+        "correct": 6,
+        "total": 6
+      },
+      "correct_delta": 0
+    },
+    "credits": {
+      "after": {
+        "correct": 9,
+        "total": 9
+      },
+      "before": {
+        "correct": 9,
+        "total": 9
+      },
+      "correct_delta": 0
+    },
+    "deck": {
+      "after": {
+        "correct": 6,
+        "total": 6
+      },
+      "before": {
+        "correct": 6,
+        "total": 6
+      },
+      "correct_delta": 0
+    },
+    "diagram": {
+      "after": {
+        "correct": 12,
+        "total": 12
+      },
+      "before": {
+        "correct": 12,
+        "total": 12
+      },
+      "correct_delta": 0
+    },
+    "document_file": {
+      "after": {
+        "correct": 21,
+        "total": 21
+      },
+      "before": {
+        "correct": 21,
+        "total": 21
+      },
+      "correct_delta": 0
+    },
+    "edit": {
+      "after": {
+        "correct": 12,
+        "total": 12
+      },
+      "before": {
+        "correct": 12,
+        "total": 12
+      },
+      "correct_delta": 0
+    },
+    "edit_not_an_image": {
+      "after": {
+        "correct": 6,
+        "total": 6
+      },
+      "before": {
+        "correct": 6,
+        "total": 6
+      },
+      "correct_delta": 0
+    },
+    "firing": {
+      "after": {
+        "correct": 12,
+        "total": 12
+      },
+      "before": {
+        "correct": 12,
+        "total": 12
+      },
+      "correct_delta": 0
+    },
+    "followup_subject": {
+      "after": {
+        "correct": 9,
+        "total": 9
+      },
+      "before": {
+        "correct": 9,
+        "total": 9
+      },
+      "correct_delta": 0
+    },
+    "history": {
+      "after": {
+        "correct": 12,
+        "total": 12
+      },
+      "before": {
+        "correct": 12,
+        "total": 12
+      },
+      "correct_delta": 0
+    },
+    "listed_event_links": {
+      "after": {
+        "correct": 9,
+        "total": 9
+      },
+      "before": {
+        "correct": 9,
+        "total": 9
+      },
+      "correct_delta": 0
+    },
+    "live_data": {
+      "after": {
+        "correct": 30,
+        "total": 33
+      },
+      "before": {
+        "correct": 29,
+        "total": 33
+      },
+      "correct_delta": 1
+    },
+    "news": {
+      "after": {
+        "correct": 3,
+        "total": 3
+      },
+      "before": {
+        "correct": 3,
+        "total": 3
+      },
+      "correct_delta": 0
+    },
+    "opinion_about_image": {
+      "after": {
+        "correct": 9,
+        "total": 9
+      },
+      "before": {
+        "correct": 9,
+        "total": 9
+      },
+      "correct_delta": 0
+    },
+    "personal_memory": {
+      "after": {
+        "correct": 12,
+        "total": 12
+      },
+      "before": {
+        "correct": 9,
+        "total": 12
+      },
+      "correct_delta": 3
+    },
+    "picture": {
+      "after": {
+        "correct": 9,
+        "total": 9
+      },
+      "before": {
+        "correct": 9,
+        "total": 9
+      },
+      "correct_delta": 0
+    },
+    "picture_of_a_technical_subject": {
+      "after": {
+        "correct": 6,
+        "total": 9
+      },
+      "before": {
+        "correct": 6,
+        "total": 9
+      },
+      "correct_delta": 0
+    },
+    "regenerate": {
+      "after": {
+        "correct": 1,
+        "total": 6
+      },
+      "before": {
+        "correct": 0,
+        "total": 6
+      },
+      "correct_delta": 1
+    },
+    "role_holder": {
+      "after": {
+        "correct": 3,
+        "total": 3
+      },
+      "before": {
+        "correct": 3,
+        "total": 3
+      },
+      "correct_delta": 0
+    },
+    "run_answer": {
+      "after": {
+        "correct": 3,
+        "total": 6
+      },
+      "before": {
+        "correct": 3,
+        "total": 6
+      },
+      "correct_delta": 0
+    },
+    "run_status": {
+      "after": {
+        "correct": 3,
+        "total": 3
+      },
+      "before": {
+        "correct": 3,
+        "total": 3
+      },
+      "correct_delta": 0
+    },
+    "schedule_new": {
+      "after": {
+        "correct": 9,
+        "total": 9
+      },
+      "before": {
+        "correct": 9,
+        "total": 9
+      },
+      "correct_delta": 0
+    },
+    "shared_document": {
+      "after": {
+        "correct": 3,
+        "total": 6
+      },
+      "before": {
+        "correct": 4,
+        "total": 6
+      },
+      "correct_delta": -1
+    },
+    "show": {
+      "after": {
+        "correct": 15,
+        "total": 15
+      },
+      "before": {
+        "correct": 15,
+        "total": 15
+      },
+      "correct_delta": 0
+    },
+    "skill_change": {
+      "after": {
+        "correct": 3,
+        "total": 3
+      },
+      "before": {
+        "correct": 3,
+        "total": 3
+      },
+      "correct_delta": 0
+    },
+    "skill_list": {
+      "after": {
+        "correct": 3,
+        "total": 3
+      },
+      "before": {
+        "correct": 3,
+        "total": 3
+      },
+      "correct_delta": 0
+    },
+    "skill_save": {
+      "after": {
+        "correct": 3,
+        "total": 3
+      },
+      "before": {
+        "correct": 3,
+        "total": 3
+      },
+      "correct_delta": 0
+    },
+    "stable_knowledge": {
+      "after": {
+        "correct": 6,
+        "total": 6
+      },
+      "before": {
+        "correct": 6,
+        "total": 6
+      },
+      "correct_delta": 0
+    },
+    "task_change": {
+      "after": {
+        "correct": 15,
+        "total": 15
+      },
+      "before": {
+        "correct": 15,
+        "total": 15
+      },
+      "correct_delta": 0
+    },
+    "task_create": {
+      "after": {
+        "correct": 3,
+        "total": 3
+      },
+      "before": {
+        "correct": 3,
+        "total": 3
+      },
+      "correct_delta": 0
+    },
+    "task_list": {
+      "after": {
+        "correct": 6,
+        "total": 6
+      },
+      "before": {
+        "correct": 6,
+        "total": 6
+      },
+      "correct_delta": 0
+    },
+    "task_reschedule": {
+      "after": {
+        "correct": 18,
+        "total": 18
+      },
+      "before": {
+        "correct": 18,
+        "total": 18
+      },
+      "correct_delta": 0
+    },
+    "task_undo": {
+      "after": {
+        "correct": 18,
+        "total": 18
+      },
+      "before": {
+        "correct": 18,
+        "total": 18
+      },
+      "correct_delta": 0
+    },
+    "writing_followup": {
+      "after": {
+        "correct": 12,
+        "total": 12
+      },
+      "before": {
+        "correct": 12,
+        "total": 12
+      },
+      "correct_delta": 0
+    }
+  },
+  "local_root": "/tmp/strategy-release-repairs-20261020-evidence",
+  "matrix_summary": {
+    "after_correct": 352,
+    "all_original_floors_after": "PASS",
+    "arguments_before_after": "15/15",
+    "before_correct": 345,
+    "check_ins_after": "12/12",
+    "check_ins_before": "9/12",
+    "negative_category_change": "shared_document4/6 to3/6; retained, floor unchanged",
+    "no_perfect_router_claim": true,
+    "total": 372
+  },
+  "model_service_or_account_changed": false,
+  "observed_at": "2026-10-20T05:50:01.789514+00:00",
+  "results": {
+    "baseline": {
+      "argv": [
+        "docker",
+        "compose",
+        "--env-file",
+        "/home/animallya96/deploy/anios/.env",
+        "-f",
+        "/home/animallya96/scratch/strategy-initial-install-20261020-v1/checkout/docker-compose.yml",
+        "--profile",
+        "test",
+        "run",
+        "--rm",
+        "--no-deps",
+        "-v",
+        "/home/animallya96/scratch/strategy-initial-install-20261020-v1/checkout/backend:/app/backend:ro",
+        "-v",
+        "/home/animallya96/scratch/strategy-initial-install-20261020-v1/checkout/scripts:/app/scripts:ro",
+        "-v",
+        "/home/animallya96/scratch/strategy-initial-install-20261020-v1/checkout/prompts:/app/prompts:ro",
+        "-v",
+        "/home/animallya96/scratch/strategy-initial-install-20261020-v1/checkout/docs:/app/docs:ro",
+        "-v",
+        "/home/animallya96/scratch/strategy-initial-install-20261020-v1/checkout/deploy:/app/deploy:ro",
+        "-v",
+        "/home/animallya96/scratch/strategy-initial-install-20261020-v1/checkout/skills:/app/skills:ro",
+        "-v",
+        "/home/animallya96/scratch/strategy-initial-install-20261020-v1/checkout/bridges:/app/bridges:ro",
+        "-v",
+        "/home/animallya96/scratch/strategy-initial-install-20261020-v1/checkout/.env.example:/app/.env.example:ro",
+        "-e",
+        "POSTGRES_DB=anios_gate_trading_224f9a53",
+        "-e",
+        "REDIS_URL=redis://redis:6379/0",
+        "functional-tests",
+        "python",
+        "-m",
+        "backend.cli.evaluate_tool_selection",
+        "--reps",
+        "3"
+      ],
+      "finished_at": "2026-10-20T05:33:21.935037+00:00",
+      "returncode": 1,
+      "source_sha256": "170023fe67ffc2ca5f47bee9772e190dc69021d24fd0552ce4a0d1b2ddd3e528",
+      "started_at": "2026-10-20T05:19:36.796625+00:00"
+    },
+    "changed": {
+      "argv": [
+        "docker",
+        "compose",
+        "--env-file",
+        "/home/animallya96/deploy/anios/.env",
+        "-f",
+        "/home/animallya96/scratch/strategy-initial-install-20261020-v1/checkout/docker-compose.yml",
+        "--profile",
+        "test",
+        "run",
+        "--rm",
+        "--no-deps",
+        "-v",
+        "/home/animallya96/scratch/strategy-initial-install-20261020-v1/checkout/backend:/app/backend:ro",
+        "-v",
+        "/home/animallya96/scratch/strategy-initial-install-20261020-v1/checkout/scripts:/app/scripts:ro",
+        "-v",
+        "/home/animallya96/scratch/strategy-initial-install-20261020-v1/checkout/prompts:/app/prompts:ro",
+        "-v",
+        "/home/animallya96/scratch/strategy-initial-install-20261020-v1/checkout/docs:/app/docs:ro",
+        "-v",
+        "/home/animallya96/scratch/strategy-initial-install-20261020-v1/checkout/deploy:/app/deploy:ro",
+        "-v",
+        "/home/animallya96/scratch/strategy-initial-install-20261020-v1/checkout/skills:/app/skills:ro",
+        "-v",
+        "/home/animallya96/scratch/strategy-initial-install-20261020-v1/checkout/bridges:/app/bridges:ro",
+        "-v",
+        "/home/animallya96/scratch/strategy-initial-install-20261020-v1/checkout/.env.example:/app/.env.example:ro",
+        "-v",
+        "/home/animallya96/scratch/strategy-routing-matrix-20261020-changed/manage_check_ins.py:/app/backend/tools/manage_check_ins.py:ro",
+        "-v",
+        "/home/animallya96/scratch/strategy-routing-matrix-20261020-changed/evaluation:/evaluation",
+        "-e",
+        "ANIOS_EVALUATION_ROOT=/evaluation",
+        "-e",
+        "POSTGRES_DB=anios_gate_trading_224f9a53",
+        "-e",
+        "REDIS_URL=redis://redis:6379/0",
+        "functional-tests",
+        "python",
+        "-m",
+        "backend.cli.evaluate_tool_selection",
+        "--reps",
+        "3"
+      ],
+      "finished_at": "2026-10-20T05:48:48.543692+00:00",
+      "returncode": 0,
+      "source_sha256": "20be1bcadd4048b83da7a0fc81a114242c1c7c527ef0a5830d6a0f28b30b11d8",
+      "started_at": "2026-10-20T05:34:59.419139+00:00"
+    },
+    "diagram_green": {
+      "argv": [
+        "docker",
+        "compose",
+        "--env-file",
+        "/home/animallya96/deploy/anios/.env",
+        "-f",
+        "/home/animallya96/scratch/strategy-initial-install-20261020-v1/checkout/docker-compose.yml",
+        "--profile",
+        "test",
+        "run",
+        "--rm",
+        "--no-deps",
+        "-v",
+        "/home/animallya96/scratch/strategy-initial-install-20261020-v1/checkout/backend:/app/backend:ro",
+        "-v",
+        "/home/animallya96/scratch/strategy-initial-install-20261020-v1/checkout/scripts:/app/scripts:ro",
+        "-v",
+        "/home/animallya96/scratch/strategy-initial-install-20261020-v1/checkout/prompts:/app/prompts:ro",
+        "-v",
+        "/home/animallya96/scratch/strategy-initial-install-20261020-v1/checkout/docs:/app/docs:ro",
+        "-v",
+        "/home/animallya96/scratch/strategy-initial-install-20261020-v1/checkout/deploy:/app/deploy:ro",
+        "-v",
+        "/home/animallya96/scratch/strategy-initial-install-20261020-v1/checkout/skills:/app/skills:ro",
+        "-v",
+        "/home/animallya96/scratch/strategy-initial-install-20261020-v1/checkout/bridges:/app/bridges:ro",
+        "-v",
+        "/home/animallya96/scratch/strategy-initial-install-20261020-v1/checkout/.env.example:/app/.env.example:ro",
+        "-v",
+        "/home/animallya96/scratch/strategy-diagram-syntax-20261020-green:/measure:ro",
+        "-v",
+        "/home/animallya96/scratch/strategy-diagram-syntax-20261020-green/diagram.py:/app/backend/artifacts/diagram.py:ro",
+        "-e",
+        "POSTGRES_DB=anios_gate_trading_224f9a53",
+        "-e",
+        "REDIS_URL=redis://redis:6379/0",
+        "functional-tests",
+        "python",
+        "-m",
+        "pytest",
+        "/measure/test_class_generics.py",
+        "backend/tests/test_diagram_artifacts.py",
+        "-q",
+        "-p",
+        "no:cacheprovider",
+        "--no-header"
+      ],
+      "finished_at": "2026-10-20T05:24:09.905180+00:00",
+      "returncode": 0,
+      "sources": {
+        "diagram.py": {
+          "bytes": 13790,
+          "sha256": "23c21c57231dffedb7f73aac101a2df2f77d424978fe66077945479cafa059cf"
+        },
+        "test_class_generics.py": {
+          "bytes": 1664,
+          "sha256": "3b6e230db8e14832031af6621eabb3d0f5a7309680d180eced8229d0cfa586be"
+        }
+      },
+      "started_at": "2026-10-20T05:24:04.117961+00:00"
+    },
+    "diagram_red": {
+      "argv": [
+        "docker",
+        "compose",
+        "--env-file",
+        "/home/animallya96/deploy/anios/.env",
+        "-f",
+        "/home/animallya96/scratch/strategy-initial-install-20261020-v1/checkout/docker-compose.yml",
+        "--profile",
+        "test",
+        "run",
+        "--rm",
+        "--no-deps",
+        "-v",
+        "/home/animallya96/scratch/strategy-initial-install-20261020-v1/checkout/backend:/app/backend:ro",
+        "-v",
+        "/home/animallya96/scratch/strategy-initial-install-20261020-v1/checkout/scripts:/app/scripts:ro",
+        "-v",
+        "/home/animallya96/scratch/strategy-initial-install-20261020-v1/checkout/prompts:/app/prompts:ro",
+        "-v",
+        "/home/animallya96/scratch/strategy-initial-install-20261020-v1/checkout/docs:/app/docs:ro",
+        "-v",
+        "/home/animallya96/scratch/strategy-initial-install-20261020-v1/checkout/deploy:/app/deploy:ro",
+        "-v",
+        "/home/animallya96/scratch/strategy-initial-install-20261020-v1/checkout/skills:/app/skills:ro",
+        "-v",
+        "/home/animallya96/scratch/strategy-initial-install-20261020-v1/checkout/bridges:/app/bridges:ro",
+        "-v",
+        "/home/animallya96/scratch/strategy-initial-install-20261020-v1/checkout/.env.example:/app/.env.example:ro",
+        "-v",
+        "/home/animallya96/scratch/strategy-diagram-syntax-20261020-red:/measure:ro",
+        "-v",
+        "/home/animallya96/scratch/strategy-diagram-syntax-20261020-red/diagram.py:/app/backend/artifacts/diagram.py:ro",
+        "-e",
+        "POSTGRES_DB=anios_gate_trading_224f9a53",
+        "-e",
+        "REDIS_URL=redis://redis:6379/0",
+        "functional-tests",
+        "python",
+        "-m",
+        "pytest",
+        "/measure/test_class_generics.py",
+        "-q",
+        "-p",
+        "no:cacheprovider",
+        "--no-header"
+      ],
+      "finished_at": "2026-10-20T05:23:16.878335+00:00",
+      "returncode": 1,
+      "sources": {
+        "diagram.py": {
+          "bytes": 13072,
+          "sha256": "d173866f457fc71268d0533ba09bc3e141d889a8a4e1ed1ea6deefa79297bb82"
+        },
+        "test_class_generics.py": {
+          "bytes": 1664,
+          "sha256": "3b6e230db8e14832031af6621eabb3d0f5a7309680d180eced8229d0cfa586be"
+        }
+      },
+      "started_at": "2026-10-20T05:23:14.957429+00:00"
+    },
+    "regressions": {
+      "argv": [
+        "docker",
+        "compose",
+        "--env-file",
+        "/home/animallya96/deploy/anios/.env",
+        "-f",
+        "/home/animallya96/scratch/strategy-initial-install-20261020-v1/checkout/docker-compose.yml",
+        "--profile",
+        "test",
+        "run",
+        "--rm",
+        "--no-deps",
+        "-v",
+        "/home/animallya96/scratch/strategy-initial-install-20261020-v1/checkout/backend:/app/backend:ro",
+        "-v",
+        "/home/animallya96/scratch/strategy-initial-install-20261020-v1/checkout/scripts:/app/scripts:ro",
+        "-v",
+        "/home/animallya96/scratch/strategy-initial-install-20261020-v1/checkout/prompts:/app/prompts:ro",
+        "-v",
+        "/home/animallya96/scratch/strategy-initial-install-20261020-v1/checkout/docs:/app/docs:ro",
+        "-v",
+        "/home/animallya96/scratch/strategy-initial-install-20261020-v1/checkout/deploy:/app/deploy:ro",
+        "-v",
+        "/home/animallya96/scratch/strategy-initial-install-20261020-v1/checkout/skills:/app/skills:ro",
+        "-v",
+        "/home/animallya96/scratch/strategy-initial-install-20261020-v1/checkout/bridges:/app/bridges:ro",
+        "-v",
+        "/home/animallya96/scratch/strategy-initial-install-20261020-v1/checkout/.env.example:/app/.env.example:ro",
+        "-v",
+        "/home/animallya96/scratch/strategy-release-regressions-20261020-v1/diagram.py:/app/backend/artifacts/diagram.py:ro",
+        "-v",
+        "/home/animallya96/scratch/strategy-release-regressions-20261020-v1/manage_check_ins.py:/app/backend/tools/manage_check_ins.py:ro",
+        "-e",
+        "POSTGRES_DB=anios_gate_trading_224f9a53",
+        "-e",
+        "REDIS_URL=redis://redis:6379/0",
+        "functional-tests",
+        "python",
+        "-m",
+        "pytest",
+        "backend/tests/functional/test_check_in_request_behaviour.py",
+        "backend/tests/functional/test_diagram_generation_behaviour.py::test_a_diagram_request_produces_a_diagram[a class diagram for a library with books and members-class]",
+        "backend/tests/test_manage_check_ins_tool.py",
+        "-q",
+        "-p",
+        "no:cacheprovider",
+        "--no-header"
+      ],
+      "base_revision": "f3e432340c7a3cdec34351ed1579c2cf98ae9a2e",
+      "finished_at": "2026-10-20T05:49:56.870747+00:00",
+      "no_model_service_change": true,
+      "no_strategy_or_production_change": true,
+      "returncode": 0,
+      "sources": {
+        "backend/artifacts/diagram.py": "23c21c57231dffedb7f73aac101a2df2f77d424978fe66077945479cafa059cf",
+        "backend/tools/manage_check_ins.py": "20be1bcadd4048b83da7a0fc81a114242c1c7c527ef0a5830d6a0f28b30b11d8"
+      },
+      "started_at": "2026-10-20T05:49:37.393849+00:00"
+    }
+  },
+  "roots": {
+    "baseline": "/home/animallya96/scratch/strategy-routing-matrix-20261020-baseline2",
+    "changed": "/home/animallya96/scratch/strategy-routing-matrix-20261020-changed",
+    "diagram_green": "/home/animallya96/scratch/strategy-diagram-syntax-20261020-green",
+    "diagram_red": "/home/animallya96/scratch/strategy-diagram-syntax-20261020-red",
+    "regressions": "/home/animallya96/scratch/strategy-release-regressions-20261020-v1"
+  },
+  "schema": "strategy-release-repairs-proof/1",
+  "strategy_sources_unchanged": true
+}

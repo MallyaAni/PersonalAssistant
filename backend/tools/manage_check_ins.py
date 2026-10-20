@@ -1,5 +1,8 @@
-"""manage_check_ins: check-ins on request - turned on, turned off, armed once
-for one named thing, or listed. Off for everyone until they ask."""
+"""manage_check_ins: stored preferences and requested future questions.
+
+pinned by: functional/test_check_in_request_behaviour.py
+           functional/test_tool_selection_matrix_behaviour.py
+"""
 import re
 from typing import Any
 
@@ -73,17 +76,13 @@ TOOL = BuiltinTool(
     name=NAME,
     label="Check-ins",
     description=(
-        "Check-ins: the assistant coming back later, on its own, to ask how "
-        "something went - a trip, an interview, a hard week. Off unless the "
-        "person asks. Choose it when they ask to be checked in on, followed "
-        "up with, or asked later about something ('check in with me Friday "
-        "about the interview', 'from now on follow up on things I mention'), "
-        "when they ask for that to stop, or when they ask what check-ins are "
-        "waiting. Not for reminders they phrase as reminders. Not for a "
-        "statement about their day ('I put an offer in on a car this morning') "
-        "- that is not a request, even in a conversation where they just "
-        "asked for check-ins; the assistant decides on its own whether to "
-        "come back to it."
+        "Read or change check-ins: future questions that the assistant initiates "
+        "about how something went or how a person is doing. Choose this tool for "
+        "an explicit request to enable or disable these questions, schedule one, "
+        "or inspect what is pending. Enabling and disabling both write a stored "
+        "preference; do not replace an explicit request with an assumption about "
+        "the current or default setting. A report about someone's day is not a "
+        "check-in request. Reminders to perform an action use the reminder/task tools."
     ),
     schema=_SCHEMA,
     waiting=(
