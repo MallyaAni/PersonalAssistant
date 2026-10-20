@@ -22,6 +22,8 @@ flowchart TB
     EntryEvidence -.-> ModelBook[(Candidate hypothetical model book<br/>later observed eligible bid/ask proxy; never actual fills<br/>original daily buy budget excludes same-day sales)]
     Providers -.->|Original later quote inside original deadline| ModelBook
     ModelBook -.->|Owned model units and pending objectives<br/>next-day original-close rebase; no reseeding| Numerical
+    ModelBook -.-> PositionView[Candidate read-only daily Position view<br/>original model objective through publication expiry<br/>quote and candle expiry withdraw trade Size only]
+    PositionView -.->|Same Position in All names and every chart<br/>missing book never falls back to fresh-capital sizing| View
     EntryEvidence -.-> RecordedIndex[(Candidate source-bound per-stock index<br/>original decisions remain discoverable after expiry<br/>completed coverage and original-byte checks)]
     ModelSnapshot -.-> View
     RecordedIndex -.-> View

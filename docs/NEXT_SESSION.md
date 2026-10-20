@@ -1,5 +1,87 @@
 # Next session
 
+## CURRENT HUMAN 14:46Z — persistent daily Position boundary verified; real preview source migration and release next
+
+NEW scoped source fixes ALAB reference5.8→fresh14.3 fallback after15m expiry.
+strategy_position_view reads original persisted book.plan objectives through original
+16:00 publication expiry, independent of candle/quote permission. API GET never
+prepares/recovers/calculates/writes. Normal collector prepares/rolls objective before
+closed acquisition. Missing/corrupt/foreign book namespace explicitly unavailable,
+never fresh-capital fallback. Table/chart share Position; trade Size/Buy/Sell still
+require exact original current book/day/15m/30s quote. Numeric41/publication45 source
+bytes checked EXACT2b unchanged. Native timing/size maths/caps not changed.
+
+Final backendv3 CIDf8f91586e622085774dc6b9336b44536158e253faee75700a19e7b514e689ef9
+exit0/noOOM14:39:29.203104136Z/42PASS/0fail-error-skip/1.460s/maxRSS298712;
+5new objective/HTTP/collector cases+37 original changed-path regressions. V1failed
+38pass1fail3errors missing isolatedtestSECRET_KEY/config fixture, v2failed40pass2fail
+missing synthetic config_sha256. Fresh process-only testkey/no productionsecret;
+fixture config identity corrected, original assertions unchanged. CLOSED roots.
+Two new expected browserREDs retained; finalwhole64PASS178.321274s/0skip-flaky-
+unexpected/diagnostics on index-CY57b0Lt.js. TSC/build3.54s/diff/ASTpass(existing
+warnings).33diagrams/page synchronized, changed node candidate/dashedunreleased.
+First scoped renderer failed resolving browser import BEFORE rendering, corrected
+explicit installed module. Allclosed tests/getters/collector MUST NOT rerun fordocs.
+
+Permanent proof docs/research/strategy-position-objective-delivery-proof-2026-10-20.json
+1276320B/SHAa9d246cb681c7b23fc4998887884cc6db6eec1835e09b1a6a88ca81d088fb60e,
+57fixed originals includes actual original09:49HPE result/two10:08normalcycles/old
+failed fullUNIT/corrected16cases/current42/browser64/sourcepins; collectorONCE.
+No new market acquisition. Original currentroot and normalprogression CLOSED.
+
+NEXT migrate same signed-in real preview to exact new committed read-only source,
+same original normal metadata; verify ALAB5.8/table/D/W/15m/refresh/original HPE
+Sell13.7 details. Do not mutate healthy2b checkout or reacquire justscreenshots.
+Then target-only rebind original2b approval bundle, numerical/config/release/evidence
+bytes unchanged, use canonical scripts/deploy.sh with full correctedUNIT+actual
+upgradedV4.1routing/backups/rollback/postchecks. Whole correctedgate/release remain
+UNVERIFIED. No active gate, old4307ended1/old94881ended0; neverrestart. Productionb4
+unchanged. Existingfeed/paperLAST/no reset/orders/paiddata/model-servicechanges.
+KEEP Vite33452/tunnel70626/node_modules/tab4signedin/tab3handoff. Prior details follow.
+
+## CURRENT HUMAN 14:45Z — persisted position objective gap is being fixed; real acquisitions CLOSED
+
+Continue accurately. Actual original exact2b current acquisition at09:49 produced
+HPE Sell13.7% toward Position10.6%, later clicked as a recorded15m recommendation
+with original technical evidence. Its30s executable UI capture was MISSED; do not
+claim that screenshot or reacquire merely for it. A distinct two-normal-cycle
+journey at10:08 resolved the expired HPE intent UNFILLED, unchanged units/cash/fees,
+original intentSHA/index unchanged and bookgeneration1 on both passes. Current
+10:00 completed assessment correctly showed Wait, no executable buys/sells.
+Both actual acquisition/normal progression roots are CLOSED, never repeat fordocs.
+
+REAL next gap: ALAB reference Position5.7703296617% changed to fresh-capital14.3034%
+when15m assessment expired. Source2b modelWeight falls back between sizing methods.
+IN PROGRESS uncommitted read-only strategy_position_view exposes original book.plan
+targets through original daily publication16:00 expiry; API GET does not recover,
+calculate or write. Normal collector prepares/rolls book before closed acquisition.
+Frontend separates persistent Position from expiring action/trade Size. New scoped
+backend/HTTP/browser tests and real preview source activation still REQUIRED.
+Numeric guard41/publication45 sources remain byte-identical2b; do not change/rebind
+original numeric provenance after09:30 cutoff. New consumer has own detached source
+receipt. Missing/corrupt reference namespace MUST NOT fall back to fresh weights.
+
+Source2b5834ca8fc1beb9d1d21b0da9da8965386b9cbb pushed, productionb4 unchanged.
+Current uncommitted previous UI fixes: original Modelposition before→desired details,
+fresh no-trade assessment date, own quote/candle deadline timer.61-case cohort
+FAILED59PASS2FAIL; old expiredquote header assertion corrected to date+Wait/Size—,
+real-boundary fixture margin25→250ms avoids backdating its-100ms marker. Four
+affected cases nowPASS10.2s on SAME CMTLrtBq artifact. Splitcohorts, notwhole61green.
+FullUNIT exact2b FAILED11042pass3fail/93skip/6xfail/33subtests767.91s: all3 fail
+legacy35-source testfixture before intended assertions. Fixture only updated to41,
+16targetedPASS1.70s unchanged assertions. Corrected fullUNIT/routing stillUNRUN.
+Actual runtime upgraded DeepSeekV4.1 EXL3 ds41-head, aliasesdeepseek-v4-flash; no
+model/service changes. Old e7 gates do not prove newruntime. Session4307 ENDED1,
+68541 ENDED0, no active gate; never restart oldsessions.
+
+KEEP real signed-in tab4/Vite33452/tunnel70626/node_modules; current bridge exact2b
+normal metadata root scratch/strategy-observed-real-preview-20261020-v1/store.
+Oldf0 retained untouched. Existingfeed/paperLAST/no realorders/reset. New source
+read-view/API not activated yet. Persist screenshots/evidence/failures; only
+canonical deploy after concrete real preview acceptance and corrected gates.
+Actual receipts/newinstall proof in docs/research/strategy-observed-preview-install-proof-2026-10-20.json.
+Previous full factual history follows; current section governs outdated directions.
+
 ## CURRENT HUMAN 13:30Z — observed model-book progression and exact41 private snapshot verified; real preview migration next
 
 Continue till finished accurately. All names and charts must share original model

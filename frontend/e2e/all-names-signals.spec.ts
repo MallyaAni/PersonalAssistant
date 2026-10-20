@@ -4,7 +4,7 @@ const names = ['BUYLOW', 'BUYHIGH', 'SELLLOW', 'SELLHIGH', 'WAIT', 'MISSING']
 const session = '2026-10-13'
 type Fixture = {phase: string; paper: boolean; lost: boolean; expired: boolean; quoteMissing: boolean; liveReads: number; diagnostics: string[]; recordedMode?: 'original' | 'foreign' | 'bytes' | 'late' | 'paged'; recordedReads?: number; originalMode?: 'original' | 'foreign' | 'size'; originalReads?: number; originalDelay?: number; denseMarkers?: boolean; installedHistory?: boolean; numerical?: 'execute' | 'wait'; numericalForeign?: boolean; numericalExpired?: boolean; publicationV2?: boolean; noSellSignals?: boolean; simulationPolicy?: string; signalUntil?: string; allocationUntil?: string; allocationWrong?: boolean; allocationMissing?: boolean; regularFallback?: boolean; publishedPlan?: boolean; independentSizing?: boolean; independentSignalWrong?: boolean; targetWeight?: number; simulationIdentityWrong?: boolean; entryAt?: number; formingSignal?: boolean; chartFrames?: string[]; zoomHistory?: boolean; chartSessions?: number[]; currentSessionBars?: boolean}
 
-type ReferenceFixture = Fixture & {referenceMode?: 'trim' | 'exit' | 'buy'; referenceUnknown?: boolean; referenceObserved?: boolean; referenceResolved?: boolean; referenceBookInvalid?: boolean}
+type ReferenceFixture = Fixture & {referenceMode?: 'trim' | 'exit' | 'buy'; referenceUnknown?: boolean; referenceObserved?: boolean; referenceResolved?: boolean; referenceBookInvalid?: boolean; numericalQuoteUntil?: string; persistedPosition?: number; persistedInvalid?: 'unavailable' | 'foreign' | 'book'; assessmentMissing?: boolean}
 
 // Supply explicit reference-mode API fixtures without changing any production data or clocks.
 function referenceFixture(data: unknown, path: string, state: ReferenceFixture, at: string, now: number): unknown {
@@ -12,7 +12,7 @@ function referenceFixture(data: unknown, path: string, state: ReferenceFixture, 
   const value = data as Record<string, any>
   const action = state.referenceMode==='buy' ? 'Buy' : 'Sell'
   const size = state.referenceMode==='buy' ? .0005 : state.referenceMode==='exit' ? .2 : .13
-  const position = state.referenceMode==='exit' ? 0 : .143
+  const position = state.persistedPosition ?? (state.referenceMode==='exit' ? 0 : .143)
   const basis = state.referenceObserved ? 'observed_hypothetical_reference_not_viewer_order' : 'standing_counterfactual_reference_transition_not_viewer_order'
   if (path.endsWith('/model-allocation')) {
     if (state.referenceUnknown) {
@@ -33,21 +33,95 @@ function referenceFixture(data: unknown, path: string, state: ReferenceFixture, 
       evidence:{...value.rows[name].evidence,trade_size:0,sizing_basis:basis,completed_candle_at:entry.completed_at}}]))
     entry.rows.BUYHIGH={state:state.numerical,action,size_weight:size,model_position_weight:position,
       reference_units:.003,proposed_units:state.referenceMode==='exit' ? .003 : .0013,quote_at:at,
-      valid_until:new Date(state.numericalExpired ? now-1000 : now+20000).toISOString(),
+      valid_until:state.numericalQuoteUntil ?? new Date(state.numericalExpired ? now-1000 : now+20000).toISOString(),
       evidence:{...value.rows.BUYHIGH.evidence,model_position_size:position,trade_size:size,sizing_basis:basis,
         completed_candle_at:entry.completed_at,timing_reason:'Original reference numerical timing',features:{ema_21_distance:-.0944}}}
     if(state.referenceObserved) for(const row of Object.values(entry.rows) as Record<string,any>[]) Object.assign(row,{attempt_resolved:false,objective_pending:row.action!==null})
     if(state.referenceResolved) Object.assign(entry.rows.BUYHIGH,{state:'no_trade',action:null,size_weight:0,proposed_units:0,attempt_resolved:true,objective_pending:true,
       evidence:{...entry.rows.BUYHIGH.evidence,trade_size:0}})
+    if(state.persistedPosition!==undefined){
+      const viewBasis='original_persisted_daily_reference_targets_not_viewer_holdings'
+      value.reference_positions={version:'strategy-reference-positions/1',basis:viewBasis,status:state.persistedInvalid==='unavailable' ? 'unavailable' : 'available',
+        snapshot_id:(state.persistedInvalid==='foreign' ? '0' : 'e').repeat(64),publication_receipt_sha256:value.receipt_sha256,
+        strategy_identity:value.strategy_identity,session:value.session,valid_until:value.valid_until,
+        day_id:'b'.repeat(64),book_sha256:(state.persistedInvalid==='book' ? '0' : 'c').repeat(64),generation:0,
+        reader_sha256:'1'.repeat(64),receipt_sha256:'2'.repeat(64),rows:Object.fromEntries(Object.entries(value.rows).map(([name,row])=>{
+          const original=row as Record<string,any>,weight=name==='BUYHIGH' ? position : original.target_weight
+          return [name,{target_weight:weight,evidence:{...original.evidence,model_position_size:weight,sizing_basis:viewBasis}}]
+        }))}
+      if(state.assessmentMissing) value.entry_assessment={version:'strategy-numerical-entries/1',status:'unavailable',rows:{}}
+    }
   } else if (path.endsWith('/recommendations') && path.includes('/strategy-simulation/')) {
     value.items=value.items.map((item: Record<string, unknown>)=>({...item,action,size_weight:size}))
   } else if (path.endsWith('/recommendation') && path.includes('/strategy-simulation/')) {
     value.original={...value.original,action,size_weight:size,entry_version:state.referenceObserved ? 'strategy-numerical-entries/3' : 'strategy-numerical-entries/2',
       model_position_weight:position,reference_units:.003,proposed_units:state.referenceMode==='exit' ? .003 : .0013,
-      evidence:{...value.original.evidence,model_position_size:position,trade_size:size,sizing_basis:basis}}
+      evidence:{...value.original.evidence,model_position_size:position,trade_size:size,sizing_basis:basis,
+        ...(state.referenceObserved ? {reference_position_size:position+size,waiting_log_utility:-.001} : {})}}
   }
   return value
 }
+
+// A persisted model objective survives expired or absent candle advice in both the list and every chart frame.
+test('Persisted position stays consistent after candle expiry and reload without a fresh-capital fallback',async ({page,baseURL})=>{
+  const state=fixture() as ReferenceFixture
+  Object.assign(state,{publicationV2:true,numerical:'execute',referenceMode:'trim',referenceObserved:true,persistedPosition:.058,
+    entryAt:Date.now()-900100,currentSessionBars:true})
+  await install(page,baseURL!,state);await page.goto('/?deskView=strategy#desk')
+  const board=page.getByRole('region',{name:'All names signals',exact:true})
+  await expect(board.getByLabel('BUYHIGH action',{exact:true})).toHaveText('Wait')
+  await expect(board.getByLabel('BUYHIGH trade size',{exact:true})).toHaveText('—')
+  await expect(board.getByLabel('BUYHIGH model size',{exact:true})).toHaveText('5.8%')
+  await board.getByRole('button',{name:'BUYHIGH',exact:true}).click()
+  const dialog=page.getByRole('dialog',{name:'BUYHIGH history',exact:true})
+  for(const frame of ['D','W','15m']){
+    await dialog.getByRole('group',{name:'Chart timeframe',exact:true}).getByRole('button',{name:frame,exact:true}).click()
+    await expect(dialog.getByLabel('BUYHIGH current chart position',{exact:true})).toHaveText('Position 5.8%')
+    await expect(dialog.getByLabel('BUYHIGH current chart target',{exact:true})).toHaveText('Wait · Size —')
+  }
+  state.assessmentMissing=true
+  await page.reload()
+  await expect(board.getByLabel('BUYHIGH model size',{exact:true})).toHaveText('5.8%')
+  await expect(board.getByLabel('BUYHIGH action',{exact:true})).toHaveText('Wait')
+  expect(state.diagnostics).toEqual([])
+})
+
+// Reference read failures never expose the unrelated fresh-capital percentage or an executable trade.
+test('Persisted position rejects unavailable foreign and mismatched-book evidence',async ({page,baseURL})=>{
+  const state=fixture() as ReferenceFixture
+  Object.assign(state,{publicationV2:true,numerical:'execute',referenceMode:'trim',referenceObserved:true,persistedPosition:.058,
+    persistedInvalid:'unavailable',entryAt:Date.now()-100,currentSessionBars:true})
+  await install(page,baseURL!,state);await page.goto('/?deskView=strategy#desk')
+  const board=page.getByRole('region',{name:'All names signals',exact:true})
+  await expect(board.getByLabel('BUYHIGH model size',{exact:true})).toHaveText('Unavailable')
+  state.persistedInvalid='foreign';await page.reload()
+  await expect(board.getByLabel('BUYHIGH model size',{exact:true})).toHaveText('Unavailable')
+  state.persistedInvalid='book';await page.reload()
+  await expect(board.getByLabel('BUYHIGH model size',{exact:true})).toHaveText('5.8%')
+  await expect(board.getByLabel('BUYHIGH action',{exact:true})).toHaveText('Wait')
+  await expect(board.getByLabel('BUYHIGH trade size',{exact:true})).toHaveText('—')
+  expect(state.diagnostics).toEqual([])
+})
+
+// Expire an executable trade on its real quote deadline while keeping the same persisted objective in list and chart.
+test('Persisted position survives the original trade permission deadline',async ({page,baseURL})=>{
+  const state=fixture() as ReferenceFixture
+  Object.assign(state,{publicationV2:true,numerical:'execute',referenceMode:'trim',referenceObserved:true,persistedPosition:.058,
+    numericalQuoteUntil:new Date(Date.now()+5000).toISOString(),entryAt:Date.now()-100,currentSessionBars:true})
+  await install(page,baseURL!,state);await page.goto('/?deskView=strategy#desk')
+  const board=page.getByRole('region',{name:'All names signals',exact:true})
+  await expect(board.getByLabel('BUYHIGH action',{exact:true})).toHaveText('Sell')
+  await expect(board.getByLabel('BUYHIGH trade size',{exact:true})).toHaveText('13.0%')
+  await expect(board.getByLabel('BUYHIGH model size',{exact:true})).toHaveText('5.8%')
+  await board.getByRole('button',{name:'BUYHIGH',exact:true}).click()
+  const dialog=page.getByRole('dialog',{name:'BUYHIGH history',exact:true})
+  await expect(dialog.getByLabel('BUYHIGH current chart target',{exact:true})).toHaveText('Sell · Size 13.0%')
+  await expect(dialog.getByLabel('BUYHIGH current chart target',{exact:true})).toHaveText('Wait · Size —',{timeout:10000})
+  await expect(dialog.getByLabel('BUYHIGH current chart position',{exact:true})).toHaveText('Position 5.8%')
+  await expect(board.getByLabel('BUYHIGH trade size',{exact:true})).toHaveText('—')
+  await expect(board.getByLabel('BUYHIGH model size',{exact:true})).toHaveText('5.8%')
+  expect(state.diagnostics).toEqual([])
+})
 
 // Exercise live signal evidence with deliberately contrary paper allocations and executions.
 async function install(page: Page, baseURL: string, state: ReferenceFixture) {
@@ -242,6 +316,7 @@ test('Observed reference resolved attempt preserves original Sell without repeat
   await expect(board.getByLabel('BUYHIGH action',{exact:true})).toHaveText('Wait')
   await expect(board.getByLabel('BUYHIGH trade size',{exact:true})).toHaveText('—')
   await expect(board.getByLabel('BUYHIGH model size',{exact:true})).toHaveText('14.3%')
+  await expect(board).toContainText('15-minute signals · '+new Date(state.entryAt!).toLocaleDateString('en-CA',{timeZone:'America/New_York'}))
   await board.getByRole('button',{name:'BUYHIGH',exact:true}).click()
   const dialog=page.getByRole('dialog',{name:'BUYHIGH history',exact:true})
   for(const frame of ['D','W','15m']){
@@ -254,6 +329,8 @@ test('Observed reference resolved attempt preserves original Sell without repeat
   const details=dialog.getByRole('region',{name:'Recommendation details',exact:true})
   await expect(details).toContainText('Sell · Size 13.0%')
   await expect(details).toContainText('Original saved timing decision before refresh')
+  await expect(details).toContainText('Model position 27.3% → 14.3%')
+  await expect(details).toContainText('Acting now matched or exceeded the model’s expected net growth from waiting one 15-minute candle.')
   expect(state.diagnostics).toEqual([])
 })
 
@@ -265,6 +342,23 @@ test('Observed reference malformed book cannot fall back to a Sell',async ({page
   const board=page.getByRole('region',{name:'All names signals',exact:true})
   await expect(board.getByLabel('BUYHIGH action',{exact:true})).toHaveText('Unavailable')
   await expect(board.getByLabel('BUYHIGH trade size',{exact:true})).toHaveText('—')
+  expect(state.diagnostics).toEqual([])
+})
+
+// An unchanged short-lived quote must stop authorizing a Sell on screen without another completed network poll.
+test('Observed reference quote expires automatically in both table and chart',async ({page,baseURL})=>{
+  const state=fixture()
+  Object.assign(state,{publicationV2:true,numerical:'execute',referenceMode:'trim',referenceObserved:true,
+    entryAt:Date.now()-100,currentSessionBars:true,numericalQuoteUntil:new Date(Date.now()+3000).toISOString()})
+  await install(page,baseURL!,state);await page.goto('/?deskView=strategy#desk')
+  const board=page.getByRole('region',{name:'All names signals',exact:true})
+  await expect(board.getByLabel('BUYHIGH action',{exact:true})).toHaveText('Sell')
+  await board.getByRole('button',{name:'BUYHIGH',exact:true}).click()
+  const dialog=page.getByRole('dialog',{name:'BUYHIGH history',exact:true})
+  await expect(dialog.getByLabel('BUYHIGH current chart target',{exact:true})).toHaveText('Sell · Size 13.0%')
+  await expect(board.getByLabel('BUYHIGH action',{exact:true})).toHaveText('Wait',{timeout:5000})
+  await expect(board.getByLabel('BUYHIGH trade size',{exact:true})).toHaveText('—')
+  await expect(dialog.getByLabel('BUYHIGH current chart target',{exact:true})).toHaveText('Wait · Size —')
   expect(state.diagnostics).toEqual([])
 })
 
@@ -535,7 +629,8 @@ test('Numerical entries drive the action and 15m marker, with quote and snapshot
   state.numericalForeign=false;state.numericalExpired=true
   await refresh(page,state)
   await expect(board.getByLabel('BUYHIGH action',{exact:true})).toHaveText('Wait')
-  await expect(board).toContainText('Awaiting 15-minute entries')
+  await expect(board).toContainText('15-minute signals')
+  await expect(board.getByLabel('BUYHIGH trade size',{exact:true})).toHaveText('—')
   await expect(board.getByLabel('BUYHIGH model size',{exact:true})).toHaveText('14.3%')
   expect(state.diagnostics).toEqual([])
 })
@@ -577,7 +672,7 @@ for (const mode of ['original','foreign','size'] as const) {
   test(`Current marker restores original numerical recommendation: ${mode}`,async ({page,baseURL})=>{
     // Start this identity test inside a real candle; dedicated expiry cases cover its deadline.
     const remaining=900000-Date.now()%900000
-    if(remaining<10000) await new Promise(resolve=>setTimeout(resolve,remaining+25))
+    if(remaining<10000) await new Promise(resolve=>setTimeout(resolve,remaining+250))
     const state=fixture()
     Object.assign(state,{publicationV2:true,numerical:'execute',entryAt:Date.now()-100,simulationPolicy:'grade-led-learned-sizing/1',originalMode:mode})
     await install(page,baseURL!,state)

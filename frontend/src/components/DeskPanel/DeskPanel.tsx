@@ -1363,7 +1363,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
 
   // Expire displayed quotes, signals and numeric plans even when no network refresh completes.
   useEffect(() => {
-    const deadlines = [modelAllocation?.valid_until ?? '', ...Object.values(gradeContext.until), ...Object.values(live.grade_valid_until ?? {}), ...Object.values(live.opportunities?.rows ?? {}).map(row => row.valid_until), payload?.intraday_research?.valid_until ?? '', paperLive?.model_decisions?.valid_until ?? '', ...Object.values(decisions?.rows ?? {}).map(row => row.valid_until ?? ''), ...Object.values(live.extended_hours?.quotes ?? {}).map(row => row.valid_until ?? '')].map(Date.parse).filter(value => value > now)
+    const deadlines = [modelAllocation?.valid_until ?? '', modelAllocation?.entry_assessment?.valid_until ?? '', ...Object.values(modelAllocation?.entry_assessment?.rows ?? {}).map(row => row.valid_until), ...Object.values(gradeContext.until), ...Object.values(live.grade_valid_until ?? {}), ...Object.values(live.opportunities?.rows ?? {}).map(row => row.valid_until), payload?.intraday_research?.valid_until ?? '', paperLive?.model_decisions?.valid_until ?? '', ...Object.values(decisions?.rows ?? {}).map(row => row.valid_until ?? ''), ...Object.values(live.extended_hours?.quotes ?? {}).map(row => row.valid_until ?? '')].map(Date.parse).filter(value => value > now)
     deadlines.push(...[live.extended_hours?.as_of, ...Object.values(live.extended_hours?.quotes ?? {}).map(row => row.at)].map(value => Date.parse(value ?? '') + 60_000).filter(value => value > now))
     if (!deadlines.length) return
     const timer = window.setTimeout(() => setNow(Date.now()), Math.min(...deadlines) - now + 1)

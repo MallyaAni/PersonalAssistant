@@ -2518,6 +2518,13 @@ export interface DeskModelAllocation {
   account_basis?: string;
   timing_basis?: string;
   identity?: {schema: string; strategy_identity: string; session: string; policy: string; basis: string};
+  reference_positions?: {
+    version: 'strategy-reference-positions/1'; basis: string; status: 'available' | 'unavailable'; reason?: string;
+    snapshot_id: string; publication_receipt_sha256: string; strategy_identity: string; session: string;
+    valid_until: string; day_id?: string; book_sha256?: string; generation?: number; trade_session?: string;
+    reader_sha256: string; receipt_sha256: string;
+    rows: Record<string, {target_weight: number; evidence: DeskStrategyDecision['evidence']}>;
+  };
   entry_assessment?: {
     version: 'strategy-numerical-entries/1' | 'strategy-numerical-entries/2' | 'strategy-numerical-entries/3'; status: string; snapshot_id?: string;
     publication_receipt_sha256?: string; strategy_identity?: string; receipt_sha256?: string;

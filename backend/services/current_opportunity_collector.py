@@ -18,12 +18,17 @@ class CurrentOpportunityCollector(SessionPriceCollector):
         )
         self._entry_cache = {}
 
-    # Complete original recording metadata before another numerical view can replace its discovery source.
+    # Prepare the daily objective even while closed, then preserve originals before refreshing numerical permission.
     def _collect_once(self):
         from backend.market import strategy_publication, strategy_entries, strategy_entry_history
+        from backend.market import strategy_position_view, strategy_reference_entries
         if (self._root / strategy_publication.DIRECTORY).exists():
             history_status='available'
             try:
+                if strategy_position_view.configured(self._root):
+                    now = datetime.now(UTC)
+                    snapshot = strategy_publication.read(self._root, now)
+                    strategy_reference_entries.prepare_book(self._root, snapshot, now)
                 strategy_entry_history.remember_latest(self._root,datetime.now(UTC))
             except (OSError,ValueError,KeyError,TypeError):
                 return {'status':'unavailable','recorded_history':'unavailable'}

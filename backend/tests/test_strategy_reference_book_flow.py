@@ -60,6 +60,7 @@ class ReferenceBookFlowTests(unittest.TestCase):
             def collect(root,cache):
                 return original_collect(root,cache,clock=lambda:at,transport=transport)
             with patch.object(history.learned_live_holding,'read_configuration',return_value=(b'synthetic',{'cost_bps':10})), \
+                    patch('backend.services.current_opportunity_collector.datetime',SimpleNamespace(now=lambda tz:at)), \
                     patch.object(entries.alpaca,'credentials',return_value={}),patch.object(entries,'collect',side_effect=collect), \
                     patch.object(entries.learned_live_timing,'market_transport',side_effect=transport), \
                     patch.object(entries,'acquire',side_effect=AssertionError('no repeated forecast or native capture')):

@@ -10,16 +10,18 @@ from backend.market import learned_live_holding as runtime
 from backend.tests.test_market_release_admission import encoded, persist, renewal
 
 ADDED={f'backend/market/{name}.py' for name in (
-    'strategy_model_allocation','strategy_publication','strategy_entry_context','strategy_entries')}
+    'strategy_model_allocation','strategy_publication','strategy_entry_context','strategy_entries',
+    'strategy_reference_transition','strategy_reference_entries','strategy_reference_book',
+    'strategy_model_history','strategy_history_installation','strategy_history_publication')}
 HOLDING='backend/market/learned_live_holding.py'
 
 
-# Describe the exact deployed predecessor and four new independently reviewed components.
+# Exercise the separately reviewed current ten-component closure against the original deployed predecessor.
 def publication_review():
     new=runtime.source_identity()
     old={name:value for name,value in new.items() if name not in ADDED}
     old[HOLDING]='25fee57bd3dc57c2b945e204aa3b83e39434cf4f84f8a165a4b9e41f9f6183e1'
-    review={'status':'REVIEWED_EXACT_INDEPENDENT_STRATEGY_PUBLICATION',
+    review={'status':'REVIEWED_EXACT_OBSERVED_REFERENCE_PUBLICATION',
         'source_changes':{name:{'before_sha256':old.get(name),'after_sha256':new.get(name)} for name in ADDED|{HOLDING}},
         'other_reviewed_sources_unchanged':30,
         'original_holding_module_ast_sha256':'458218fde5e6136cdd44fdf19bf03d4d382a1dc0e3327a6c7b707d315f86c880'}
