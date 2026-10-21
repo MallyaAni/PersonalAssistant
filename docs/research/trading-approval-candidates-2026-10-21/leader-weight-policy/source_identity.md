@@ -8,7 +8,7 @@
 | `backend/agents/trading/desk/intraday_orders.py` | `ca8c236746441e204f36a263e972104d48d442538ea189fd4cad9d4ccf9f0f1c` |
 | `backend/agents/trading/desk/nightly_plan.py` | `9fe2c223f24086a8a978cf3d373f39f24e3f6dc810a624a5e8773cc3ae91a7ca` |
 | `backend/agents/trading/desk/paper.py` | `1a96dd96c254abb4799c6f14cb99938c65fb2907d6777fbc4b1194bfaa851bc4` |
-| `backend/api/v1/market.py` | `64e8ba220bbc2d1cd8baff0ab36f6fc6193daeab41cf8d3aaaa087c2038a014d` |
+| `backend/api/v1/market.py` | `dccb1ec3d69c975dc3802a39adf266257113de79ce230868cc05661646583926` |
 | `backend/cli/market_daily.py` | `5659e6ab0f04b116708c33ebb09d569ca288ac54f8d9a4b443dd3ff729c9dc76` |
 | `backend/market/adaptive_growth_policy.py` | `35a2d6a07276096acee78078886c9aefe02051f2b746a8739442814920114e34` |
 | `backend/market/alpaca_trading.py` | `105c5800d90b7f17b142d1678a781ecbf116ff89575466bec5e3c553eb24c3e2` |
@@ -18,7 +18,7 @@
 | `backend/market/forward_execution.py` | `62fa03e76d6f186a5084afe7ed1087891ce06f1d4b74040c6491f9c0b32ff295` |
 | `backend/market/forward_market_evidence.py` | `737f14c2ab3b4c12501d8707184871dd7c1f84287d4b43d182e2add0a02490a2` |
 | `backend/market/forward_probability_timing.py` | `0103852d53be711fcf4eeec80f74d707f42ef2ec86599ff72a305376d5632a92` |
-| `backend/market/grade_led_leader_policy.py` | `a9d5f9f79d9f6a263437e4c08bfad1c8c735d76b144e44bbe07617739d172b80` |
+| `backend/market/grade_led_leader_policy.py` | `018ad01288706669ef702cef9b0dae1b5fff88607c54b3d79c89b0509e0f37fa` |
 | `backend/market/grade_led_policy.py` | `4cc449484a3fdd4eaa5ae28e00fb35864d70c0a8c99d4ca629ab197d7e53b0c4` |
 | `backend/market/holding_risk_bank.py` | `4024753161e21521309e265c5e96a70de94a75e81a8f151a4e59fe659c7f6158` |
 | `backend/market/joint_funded_policy.py` | `e990c6bbc655c31651eafd6fe9e249513a04cb16c0a4425f2b0456f6d3a79517` |
@@ -45,3 +45,5 @@
 | `docs/research/grade-led-leader-weight-contract-2026-10-21.md` | `324e4c52b336955675c21782bf4b9ee68f8e0bd771e790cefba72735c1f7b05a` |
 | `docs/research/grade-led-sizing-contract-2026-10-13.md` | `51e4f718ed73a29188cb134a342615927a48c12f4647b30307cb996efd1393c6` |
 | `docs/research/learned-held-transition-2026-10-07.md` | `f2669e1a40f74f6ccccd3cfdfae6f299a1bd1d416ae916dc622d2fa61837218a` |
+
+Revision b3107ab8: EWMA-20 volatility estimate in `grade_led_leader_policy.py` (e22e9a25) and today's daily candle from a fifteen-minute grid with holes in `api/v1/market.py` (b3107ab8).
