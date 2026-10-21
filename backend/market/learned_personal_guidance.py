@@ -26,6 +26,7 @@ from backend.market import (
     learned_live_timing,
 )
 from backend.market import forward_probability_timing as timing
+from backend.market.grade_led_leader_policy import POLICY as LEADER_POLICY
 from backend.market.grade_led_policy import POLICY as GRADE_LED_POLICY
 from backend.market.joint_funded_policy import MARKET_TIMED_POLICY
 from backend.market.live_probability_timing import POLICY
@@ -39,6 +40,7 @@ def adopted(record):
         MARKET_TIMED_POLICY,
         learned_holding_transition.POLICY,
         GRADE_LED_POLICY,
+        LEADER_POLICY,
     )
 
 
@@ -175,7 +177,7 @@ def _personal_targets(record, weights, shares, prices, equity, cash):
         boundary is not None
         or unsupported
         or record["targets"]["policy"]
-        in (learned_holding_transition.POLICY, GRADE_LED_POLICY)
+        in (learned_holding_transition.POLICY, GRADE_LED_POLICY, LEADER_POLICY)
     ):
         desired = learned_holding_transition.personal_weights(
             boundary or {"retained_weights": {}, "modeled_fraction": 1},
@@ -188,7 +190,7 @@ def _personal_targets(record, weights, shares, prices, equity, cash):
         )
     else:
         desired = dict(weights)
-    if record["targets"]["policy"] == GRADE_LED_POLICY:
+    if record["targets"]["policy"] in (GRADE_LED_POLICY, LEADER_POLICY):
         for name in set(desired) | set(shares):
             grade = (record["grades"].get(name) or {}).get("grade")
             current = shares.get(name, 0) * prices.get(name, 0) / equity
@@ -665,7 +667,7 @@ def build(
                 reason=str(exc),
             )
             row.pop("timing", None)
-    if (record.get("targets") or {}).get("policy") == GRADE_LED_POLICY:
+    if (record.get("targets") or {}).get("policy") in (GRADE_LED_POLICY, LEADER_POLICY):
         owned = {position.ticker for position in held if position.shares > 0}
         for name, row in result["rows"].items():
             grade = (record.get("grades", {}).get(name) or {}).get("grade")

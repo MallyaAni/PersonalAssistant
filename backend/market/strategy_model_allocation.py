@@ -15,6 +15,7 @@ import numpy as np
 from backend.market import (
     adaptive_growth_policy as growth,
     forward_arithmetic as forward,
+    grade_led_leader_policy as leader,
     grade_led_policy,
     holding_risk_bank,
     joint_funded_policy as funded,
@@ -26,9 +27,16 @@ VERSION = "strategy-model-allocation/1"
 BASIS = "account_independent_unit_capital_targets"
 
 
-# Allocate the existing scenario model over a unit budget rather than any account's money or shares.
-def targets_from_model(report, reader, cost_bps, blocked):
-    policy = funded.GradeLedFundedPolicy(reader, cost_bps)
+# Allocate the installed sizing over a unit budget rather than an account's money.
+def targets_from_model(
+    report, reader, cost_bps, blocked, policy=grade_led_policy.POLICY
+):
+    if policy not in learned_live_holding.GRADE_LED_POLICIES:
+        raise ValueError("Installed grade-led model required")
+    policy = (
+        leader.GradeLedLeaderFundedPolicy if policy == leader.POLICY
+        else funded.GradeLedFundedPolicy
+    )(reader, cost_bps)
     signals = grade_led_policy.signals(report, {})
     grades = {
         name: int(report.graded.grades[-1, column])
@@ -41,7 +49,11 @@ def targets_from_model(report, reader, cost_bps, blocked):
         raise ValueError(qualification["refusal_reason"])
     proof = {"status": "no_eligible_entries", "targets": []}
     scenario = None
-    if names:
+    if names and policy.version == leader.POLICY:
+        # The same arithmetic the funded plan uses, on unit capital with no holdings.
+        sizes, proof = leader.size_report(report, names, blocked, {})
+        targets.update(sizes)
+    elif names:
         sample = policy.reader.distribution(day, names)
         scenario = sample.receipt
         if scenario["status"] != "available":
@@ -64,7 +76,8 @@ def targets_from_model(report, reader, cost_bps, blocked):
     return targets, signals, {
         "basis": BASIS, "cost_bps": cost_bps,
         "entry_qualification": qualification, "scenario": scenario,
-        "optimizer": proof,
+        **({"leader_sizing": proof} if policy.version == leader.POLICY
+           else {"optimizer": proof}),
     }
 
 
@@ -77,7 +90,7 @@ def read(root, record, now):
     if now >= until:
         raise ValueError("Current strategy inputs expired")
     digest, config, report = live_model_decision._authenticate(root, record, now)
-    if config["policy"] != grade_led_policy.POLICY:
+    if config["policy"] not in learned_live_holding.GRADE_LED_POLICIES:
         raise ValueError("Installed grade-led model required")
     admission = record["paper"]["learned_holding"]
     original, _ = holding_risk_bank.load_bank(
@@ -103,7 +116,7 @@ def read(root, record, now):
     ):
         raise ValueError("Original independent market entry evidence required")
     targets, signals, receipt = targets_from_model(
-        report, reader, config["cost_bps"], set(blocked)
+        report, reader, config["cost_bps"], set(blocked), config["policy"]
     )
     receipt.update(
         version=VERSION, record_sha256=digest,

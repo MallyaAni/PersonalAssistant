@@ -139,9 +139,9 @@ def _record_fingerprint(record: dict) -> str:
 def project(decisions: dict, record: dict, snapshot: dict, entries: dict) -> dict:
     from backend.agents.trading.desk.paper import POLICY_VERSION
     from backend.market import desk_freshness, holdings
-    from backend.market.grade_led_policy import POLICY as GRADE_LED_POLICY
     from backend.market.joint_funded_policy import MARKET_TIMED_POLICY
     from backend.market.learned_holding_transition import POLICY as RETAINED_POLICY
+    from backend.market.learned_live_holding import GRADE_LED_POLICIES
 
     generated = _instant(decisions["as_of"])
     readings = {}
@@ -210,7 +210,7 @@ def project(decisions: dict, record: dict, snapshot: dict, entries: dict) -> dic
         "policy_version": (
             record["targets"]["policy"]
             if (record.get("targets") or {}).get("policy")
-            in (MARKET_TIMED_POLICY, RETAINED_POLICY, GRADE_LED_POLICY)
+            in (MARKET_TIMED_POLICY, RETAINED_POLICY, *GRADE_LED_POLICIES)
             else POLICY_VERSION
         ),
         "decision_version": decisions["version"],

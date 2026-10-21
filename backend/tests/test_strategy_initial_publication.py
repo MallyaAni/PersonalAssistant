@@ -11,7 +11,7 @@ from backend.cli import market_release_admission as admission
 from backend.market import calendar,strategy_publication as publication
 from backend.tests.test_market_release_admission import encoded,persist,renewal
 from backend.tests.test_strategy_publication import snapshot,signed
-from backend.tests.test_strategy_publication_admission import publication_review,ADDED
+from backend.tests.test_strategy_publication_admission import publication_review,ADDED,LEADER_SUPERSEDES
 
 
 # Bind a clearly synthetic current snapshot to the actual approval writer and a real temporary Git commit.
@@ -53,6 +53,7 @@ def initial_renewal(tmp_path,monkeypatch,*,expired=False):
 
 
 # Installation makes the exact reviewed model bytes readable immediately and rollback retains evidence.
+@LEADER_SUPERSEDES
 def test_initial_publication_is_readable_after_approval_without_paper_work(tmp_path,monkeypatch):
     root,before,bundle,path,review,value,artifact=initial_renewal(tmp_path,monkeypatch)
     digest=persist(path,bundle);revision=bundle['target_revision']
@@ -84,6 +85,7 @@ def test_initial_publication_expiry_refuses_before_approval_write(tmp_path,monke
 
 
 # A publication failure restores exact selectors and cannot turn a failed installation into success.
+@LEADER_SUPERSEDES
 def test_initial_publication_failure_restores_original_approval(tmp_path,monkeypatch):
     root,before,bundle,path,_,_,_=initial_renewal(tmp_path,monkeypatch)
     # Refuse the synthetic persistence step after the normal approval writes.

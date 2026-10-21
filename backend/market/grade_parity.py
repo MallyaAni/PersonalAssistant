@@ -248,9 +248,13 @@ def mode_of(context: dict | None) -> str:
 
 # Recheck grade constraints and receipt consistency on the learned sizing basis.
 def _grade_led_targets(record: dict, report) -> dict:
-    from backend.market import grade_led_policy
+    from backend.market import grade_led_leader_policy, grade_led_policy
 
-    policy = grade_led_policy.POLICY
+    policy = (record.get("targets") or {}).get("policy")
+    basis = {
+        grade_led_policy.POLICY: "grade_constrained_learned_sizes",
+        grade_led_leader_policy.POLICY: grade_led_leader_policy.BASIS,
+    }.get(policy)
     day = record["session"]
     paper = record.get("paper") or {}
     selected = paper.get("selected_targets") or {}
@@ -265,7 +269,8 @@ def _grade_led_targets(record: dict, report) -> dict:
         or receipt.get("session") != day
         or paper.get("session") != day
         or receipt.get("status") != "available"
-        or receipt.get("target_basis") != "grade_constrained_learned_sizes"
+        or basis is None
+        or receipt.get("target_basis") != basis
     ):
         raise ValueError("Matching available grade-led allocation receipt required")
     names = {name for name in report.panel.tickers if name != report.panel.benchmark}
@@ -338,12 +343,15 @@ def _grade_led_targets(record: dict, report) -> dict:
 # Compare targets on their recorded policy basis, preserving failures in the result.
 def _compare_targets(record: dict, report) -> tuple[list[dict], bool, str]:
     from backend.agents.trading.desk import live_policy
-    from backend.market import grade_led_policy
+    from backend.market.learned_live_holding import GRADE_LED_POLICIES
 
     basis = "live_policy.targets on the same report"
-    grade_led = grade_led_policy.POLICY in (
-        (record.get("targets") or {}).get("policy"),
-        (record.get("paper") or {}).get("policy"),
+    grade_led = any(
+        policy in GRADE_LED_POLICIES
+        for policy in (
+            (record.get("targets") or {}).get("policy"),
+            (record.get("paper") or {}).get("policy"),
+        )
     )
     if grade_led:
         basis = (

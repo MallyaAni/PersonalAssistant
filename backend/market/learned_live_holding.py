@@ -23,6 +23,7 @@ from backend.market import (
     learned_live_timing,
 )
 from backend.market import forward_arithmetic as forward
+from backend.market import grade_led_leader_policy as leader
 from backend.market import joint_funded_policy as funded
 from backend.market import learned_holding_transition as transition
 from backend.market import sequential_shadow_context as context
@@ -56,6 +57,8 @@ def source_identity():
         Path(funded.__file__),
         Path(grade_led_policy.__file__),
         root / funded.GradeLedFundedPolicy.protocol,
+        Path(leader.__file__),
+        root / leader.PROTOCOL,
         Path(transition.__file__),
         root / transition.PROTOCOL,
         Path(context.__file__),
@@ -328,6 +331,17 @@ class GradeLedHoldingPolicy(funded.GradeLedFundedPolicy, InstalledHoldingPolicy)
     pass
 
 
+# Apply grade-led direction with leader-weight sizing under the same installed guards.
+class GradeLedLeaderHoldingPolicy(
+    leader.GradeLedLeaderFundedPolicy, InstalledHoldingPolicy
+):
+    pass
+
+
+# The policies that size by grade direction and publish account-free percentages.
+GRADE_LED_POLICIES = (grade_led_policy.POLICY, leader.POLICY)
+
+
 # Authenticate one installed configuration for nightly and personal decision readers.
 def read_configuration(root, now):
     raw = (Path(root) / CONFIG).read_bytes()
@@ -345,7 +359,7 @@ def read_configuration(root, now):
             "release_receipt_sha256",
         }
         or config["policy"]
-        not in (funded.MARKET_TIMED_POLICY, transition.POLICY, grade_led_policy.POLICY)
+        not in (funded.MARKET_TIMED_POLICY, transition.POLICY, *GRADE_LED_POLICIES)
         or isinstance(config["cost_bps"], bool)
         or not isinstance(config["cost_bps"], (int, float))
         or not np.isfinite(config["cost_bps"])
@@ -404,7 +418,9 @@ def prepare(root, report, *, clock=None):
         "provenance": provenance,
     }
     factory = (
-        GradeLedHoldingPolicy
+        GradeLedLeaderHoldingPolicy
+        if config["policy"] == leader.POLICY
+        else GradeLedHoldingPolicy
         if config["policy"] == grade_led_policy.POLICY
         else (
             RetainedHoldingPolicy
@@ -413,7 +429,7 @@ def prepare(root, report, *, clock=None):
         )
     )
     selected = factory(reader, config["cost_bps"], root, raw, admission, completed)
-    if config["policy"] == grade_led_policy.POLICY:
+    if config["policy"] in GRADE_LED_POLICIES:
         from backend.market import strategy_publication
 
         strategy_publication.publish_prepared(selected, report, clock=clock)
