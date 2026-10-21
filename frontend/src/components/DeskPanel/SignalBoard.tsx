@@ -280,16 +280,16 @@ export const marketPhaseLine = (allocation?: DeskModelAllocation): string | null
   switch (phase.phase) {
     case 'regular': {
       const close = phaseClock(phase.closes_at, false)
-      return `Regular session${close ? ` · open until ${close}` : ''} · the desk acts on completed 15-minute candles`
+      return `Regular session${close ? ` · until ${close}` : ''}`
     }
     case 'pre_market':
-      return `Pre-market · thin · the desk acts in regular hours · ${actionClock ? `next action at ${actionClock}` : 'next action time unavailable'}`
+      return `Pre-market${actionClock ? ` · opens ${actionClock}` : ''}`
     case 'after_hours':
-      return `After-hours (to 20:00 ET) · thin · the desk acts in regular hours · ${actionDay ? `next action ${actionDay}` : 'next action time unavailable'}${publicationClock ? ` · tonight's plan at ${publicationClock}` : ''}`
+      return `After-hours${actionDay ? ` · next session ${actionDay}` : ''}${publicationClock ? ` · tonight's plan ${publicationClock}` : ''}`
     case 'overnight':
-      return `Overnight · the desk acts in regular hours · ${actionDay ? `next action ${actionDay}` : 'next action time unavailable'}${publicationDay ? ` · next plan ${publicationDay}` : ''}`
+      return `Overnight${actionDay ? ` · next session ${actionDay}` : ''}${publicationDay ? ` · next plan ${publicationDay}` : ''}`
     case 'closed':
-      return `Market closed (weekend/holiday) · ${actionDay ? `next action ${actionDay}` : 'next action time unavailable'}${publicationDay ? ` · next plan ${publicationDay}` : ''}`
+      return `Closed${actionDay ? ` · next session ${actionDay}` : ''}${publicationDay ? ` · next plan ${publicationDay}` : ''}`
     default:
       return 'Exchange calendar not reviewed for this date'
   }
@@ -686,7 +686,7 @@ export const SignalBoard = ({latest, live, allocation, now, onOpen, closes, refr
       <p className="text-xs text-[#6e6e73]">{independent
         ? savedNamesOnly ? `Saved stocks · ${latest.session} · current strategy unavailable` : awaitingNightly
           ? `Last plan · awaiting tonight's publication · ${publicationSession ?? 'unavailable'}`
-          : `${sessionOpen(live, allocation) ? allocation?.version === 'strategy-model-allocation/2' && !currentSession ? 'Awaiting 15-minute entries' : '15-minute signals' : 'Regular market closed · Next-session actions'} · ${currentSession ?? allocation?.session ?? latest.session}`
+          : `${sessionOpen(live, allocation) ? allocation?.version === 'strategy-model-allocation/2' && !currentSession ? 'Awaiting 15-minute entries' : '15-minute signals' : 'Next-session actions'} · ${currentSession ?? allocation?.session ?? latest.session}`
         : 'Regular-session signals and published strategy plans · no paper account or portfolio inputs required. Immediate signals first, then waiting, plans and unavailable; High → Medium → Low within each group. Equal priorities sort alphabetically.'}</p>
       <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Signal ranking">
         {(['all', 'buy', 'sell'] as const).map(value => <button key={value} type="button" aria-pressed={side === value} className={`rounded-full border px-3 py-1 text-xs ${side === value ? 'bg-[#e8f2ff] text-[#0071e3]' : ''}`} onClick={() => {setSide(value); setVisible(25)}}>{value === 'all' ? 'All names' : value === 'buy' ? 'Best buys' : 'Best sells'}</button>)}
