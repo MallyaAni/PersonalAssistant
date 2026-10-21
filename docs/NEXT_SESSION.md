@@ -1,5 +1,75 @@
 # Next session
 
+## CURRENT — replay limitation visible and LIVE0940f6a8; real preview + deployed6PASS; temporary branch retired
+
+LIVEfrontend0940f6a8335ee7b9b1c11fc569713316cbfd90fa/tree
+5afe640d41726a0cf8acfb223f5cf3c2ebb0edde, exact child of4dfc7ab6. Only
+TickerChart.tsx + e2e test changed: a visible current-model replay note in all
+chartframes and simulated details. Original action/Size/Position/date/reason/
+technical facts remain unchanged. Recorded recommendation details do NOT inherit
+simulated training provenance. No model fit, new forecast, history rewrite,
+universe/math/price/expiry/quote guard change. The source contract already calls
+these later-trained parameters retrospective, not OOS/historically published
+advice; the UI now says so. This clarifies the limitation, not fixes performance.
+
+Initial new proof RED1PASS1FAIL15.440733s (missing visible note), preserved with
+trace/original testsource. Main-source6PASS18.19535s; exact production-child
+source6PASS22.629513s; extracted DEPLOYED gateway6PASS53.041342s. Each successful
+cohort0skip/flaky/unexpected/diagnostics; same6distinct=2new+4regressions across
+3builds, NOT18newcases. TSC/build2.34s main/2.93s candidate(existingwarnings),
+33diagram/page sync PASS. All completed originals closed; no rerun for docs.
+
+REAL signed-in candidate preview BEFORE release used the actual deployed owner
+API through normal authentication, no fixtures/interception/cookie copying.
+HPE D/W/15m new disclosure visible/current21.1%; originalOct16 09:45Buy2.5/
+then25%/GradeA/EMA21−9.44/EMA63+1.50/adjusted56.70/reasons unchanged, logs[].
+Original tunnel70626 had actually ENDED255/brokenpipe with no18081listener;
+new remote loopback8100 probe401. Restored ONE identical private SSH forward,
+new session94373 (KEEP), not a duplicate collector/service/auth bypass. Original
+failure/output/502 screenshot retained. Temporary candidate static preview54128
+on5299 was stopped after acceptance; original Vite33452 unchanged. Tab4 restored
+localhost5173 normal94 and handoff. Never await/restart70626 as if stillrunning.
+
+ONE canonical FE-only release60761 ENDED0, root scratch/strategy-replay-
+disclosure-release-20261021-v1; canonical finished02:07:42.930176Z, post02:07:44Z
+0940f6a8 ok(cheap). No skip flags/clock/bundle override. Source41 ADMITTED;
+backend/modelCID/image/start/restarts and approval3hashes exactlybeforeafter;
+upstream origin/main restored. Canonical lock/preflight/rollback preserved;
+no overlappingrelease was active. Original assistant opt-out FULLPOST remains
+FAILED, not relabelledgreen by this cheap frontend verdict.
+
+PublicHTTPS JS equals once-extracted gatewaybytes via defaultverifiedTLS:
+index-DmGmca8o.js926764B/SHA
+198c476fb6b8665a14359c4b9cc7e12f6fa4ca41dbde3e94374e29ff8d99e61f.
+Signed-in PUBLIC94/newasset/HPEallframes/current21.1/original2.5+newdisclosure/
+originalfacts verified, scopedlogs[]. Public tab3 restoredIREN/D/Recent/
+emptysearch/Allnames anddeliverable; tab4handoffKEEP. New screenshot/text/summary
+/tmp/strategy-replay-public-20261021-v1; actual candidate evidence separately
+/tmp/strategy-replay-real-preview-20261021-v1. These do not prove a real
+recorded-entry body in that manualpath or next regular-session execution.
+
+Main codefixfd3b7ba8 pushed, releaseancestry merged/pushed54dd0560 with identical
+tree3cb7cf1aaccf28b47e9d26416315b87990e7dc98. Temporary branch
+codex/dashboard-replay-disclosure-release-20261021 deleted local+remote after
+merge; its managed worktree ARCHIVED recoverably. Do not recreate/relaunch.
+Permanent proof docs/research/strategy-replay-disclosure-live-release-proof-
+2026-10-21.json1617152B/SHA7bd4976d1c0249843b8cb7ab7f500a308d58e8d9726d30addfbbc8904b46acb9
+retains40fixed original files (including failedRED/tunnel, source/preview/
+canonical/results/publicassets/UI). CollectorONCE/fsync/readback/decodedSHA PASS.
+One completed-source-session status lookup returned unknownprocess after its
+completed result; no worker/test was retried. Diagram impact: NONE — existing
+chart presentation; whole33/page check passed.
+
+NEXT meaningful live boundary is NATURAL Oct21 regular15m/normal collector and
+full reference day/units/cash/wealth accounting. Current publication expiryOct21
+16:00ET unchanged. No overnight fake-clock/replay/manualnewcollector/order/job
+just to claim readiness or screenshot an action. Legacy missing-valid_until15m
+marker review claim and other un-reproduced review findings remainOPEN/source
+triage, not blanket accepted or fixed. No fit/tuning/PIT performance claim.
+Original proof histories/5755simulated actions/94names/missingOct15 unchanged.
+PaperLAST; existingfeed/noorders/reset/paiddata/model-account-provider-service
+changes/privateguarddetours. Heartbeat ACTIVE/quiet unchanged/no ETA.
+
 ## CURRENT — saved-stock fallback DEPLOYED4dfc7ab6; source/deployed8PASS; temporary release branch retired
 
 LIVEfrontend now4dfc7ab62c2b22ddb1858728ee12a93cc60c58f3/tree

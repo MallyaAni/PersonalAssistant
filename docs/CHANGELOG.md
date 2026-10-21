@@ -1,5 +1,19 @@
 # Changelog
 
+## 2026-10-21 — make historical replay limits visible on stock charts
+
+- Deployed `0940f6a8` shows that historical sizing/timing uses the current model,
+  not a model refitted at each historical date or out-of-sample validation.
+  Simulated details repeat the distinction; recorded recommendations keep their
+  original provenance. No action, size, evidence or model calculation changed.
+- Real signed-in preview passed before the canonical frontend-only release;
+  six affected browser cases passed on its exact source and deployed build.
+  Public HPE all-frame/original-detail checks passed with no scoped errors.
+  Release merged to main; temporary branch deleted and worktree archived.
+- The original preview tunnel had exited with a broken pipe. Its failure was
+  retained and the same private forward restored once; temporary candidate
+  server stopped. Model/backend identities and approval hashes stayed unchanged.
+
 ## 2026-10-21 — saved-stock navigation fix deployed
 
 - Canonical frontend-only release `4dfc7ab6` completed with an ok cheap postcheck.
