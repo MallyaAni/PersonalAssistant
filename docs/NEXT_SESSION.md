@@ -1532,6 +1532,42 @@ The detailed current continuation remains the TOP of the attached
 learned-live-release-20261006 worktree's NEXT_SESSION.md. Keep existing heartbeat
 ACTIVE and quiet unchanged. No question pending; no agents without delegation,
 usage-limited retries/replacements, denied-read bypass or native-pool adoption.
+## 2026-10-21 17:20 ET — Open fills INSTALLED (1fa135f9); structure gates scored and declined
+
+Owner, 16:1x–16:4x ET: "do the implementation you feel is the best rather
+than being in your comfort zone by trusting the documentation (in the
+repo)"; "id want todays MU situation to be fixed as well as preventing
+crazy draw down like last 2 weeks stocks selloffs"; earlier: no arbitrary
+thresholds ("1% below open makes no sense").
+
+Finding on the learned timing: after the 12:20 ET clock fix it ran every
+candle, and every verdict for the pending MU intent was `unavailable`
+("Current observed open broker clocks required", "missing or stale
+completed raw quote", "Account changed during the observed funding
+snapshot", "unsupported learned clock" — see
+`paper/forecast-evidence/*` learned-order-observation receipts 12:15–15:31
+ET). The 15:45 fill came from the terminal deadline. The live timing has
+never filled on its own judgement.
+
+Decision (f6bec580, release installed 16:46 ET, deployed 1fa135f9 at
+17:16, ADMITTED host==container): `GradeLedLeaderFundedPolicy.plan()`
+routes every leg `execution_timing="next_open"`; the nightly submits
+market-on-open orders (`market_daily._submit` → `submit_market_on_open`),
+no `timing_policy` tag, no balancer involvement. Basis: execution-timing
+study 2026-09-27 (no convention beat the next open). The test fixture in
+`test_learned_live_holding` now accepts POST /orders for the leader case.
+Tonight's nightly (19:30) is the first under this contract: expect
+pending rows with `execution_timing: next_open` and broker acks.
+
+Structure gates (`point_in_time.structure_gated_allocator`, arms
+`ew_graded_leader_25_{trendexit,weeklyexit,entrygate}[_cash]`): none
+passes; table and reading in `sizing-timing-validation-2026-10-21.md`
+(last section). Not adopted.
+
+Learned-timing re-read for the paper balancer is moot under open fills.
+Still open: history regeneration for the new policy; income statements
+for ASML/NBIS/SIMO/TSM.
+
 ## 2026-10-21 14:45 ET — Structured board, chart audit, replay restored; fundamentals gap found
 
 Owner, 12:0x–14:1x ET: "for the action i don't want to see unstructured
