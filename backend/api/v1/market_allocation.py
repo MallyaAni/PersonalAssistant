@@ -99,10 +99,10 @@ def allocation(root, now):
             entries = _with_verdicts(
                 strategy_entries.read(root, snapshot, now), snapshot, reason_key="reason"
             )
-            positions = _with_verdicts(
-                positions, snapshot, reason_key="verdict_reason",
-                held_key="reference_position_weight",
-            )
+            # Reference-position rows carry a target for the next session and
+            # no state or action, so a verdict read from them said "nothing"
+            # for a name the plan buys at the open; the board reads the plan
+            # from the target itself.
             return {**snapshot, 'entry_assessment': entries,
                 **({'reference_positions': positions} if positions is not None else {}),
                 'recorded_history_version':strategy_entry_history.PAGE_SCHEMA,

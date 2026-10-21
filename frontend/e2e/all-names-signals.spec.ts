@@ -1009,7 +1009,7 @@ test('All names shows strategy percentages despite unavailable paper funding', a
   await page.goto('/?deskView=strategy#desk')
   const board = page.getByRole('region', {name: 'All names signals', exact: true})
   await expect(board.getByLabel('BUYHIGH model size', {exact: true})).toHaveText('2.5%')
-  await expect(board.getByRole('columnheader', {name: 'Action', exact: true})).toHaveCount(1)
+  await expect(board.getByRole('columnheader', {name: 'Verdict', exact: true})).toHaveCount(1)
   await expect(board.getByRole('columnheader', {name: 'Buy', exact: true})).toHaveCount(0)
   await expect(board.getByRole('columnheader', {name: 'Sell', exact: true})).toHaveCount(0)
   await expect(board.getByLabel('BUYHIGH verdict', {exact: true})).toHaveText('Buy')

@@ -278,8 +278,8 @@ def test_served_rows_carry_a_verdict(monkeypatch, tmp_path):
         "quote_stale",
     )
     assert served[name]["reason"] == "Act now at the current price"
+    # Reference rows are served as written: a target for the next session is
+    # the plan, not a verdict about this one.
     reference = result["reference_positions"]["rows"][name]
-    assert (reference["verdict"], reference["reason_code"]) == ("nothing", "at_target")
-    # The engine's own timing reason is kept beside the verdict's words.
+    assert "verdict" not in reference
     assert reference["reason"] == "No funded model reference change"
-    assert reference["verdict_reason"] == "The model position is already at target"

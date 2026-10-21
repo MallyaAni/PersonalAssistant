@@ -373,6 +373,20 @@ const signalsForBase = (latest: DeskRecord, live: DeskLive, ticker: string, now:
       const grade = allocation.grade_signals?.[ticker]?.grade ?? '—'
       if (grade==='—' && position===0) return {ticker,grade,setup:null,buy:unavailable,sell:unavailable,evidence}
       const inactive = signal('—',false,'','',2)
+      // Before the open (and after the close) there is no 15-minute entry to wait for, but the
+      // reference book already names the model position for the next regular session. That is the
+      // plan a person wants to see pre-market: what the desk buys or exits at 09:30 and how much,
+      // with "Do nothing" reserved for names the model truly allocates nothing to.
+      if (!open) {
+        const direction = allocation.grade_signals?.[ticker]?.action
+        if (direction === 'sell')
+          return {ticker,grade,setup:null,evidence,nextSession:true,buy:inactive,
+            sell:signal('Exit if held',false,'','',1)}
+        if (position > 0)
+          return {ticker,grade,setup:null,evidence,nextSession:true,size_weight:position,sell:inactive,
+            buy:signal('Buy plan',false,'','',1)}
+        return {ticker,grade,setup:null,evidence,nextSession:false,sell:inactive,buy:signal('Do nothing',false,'','',2)}
+      }
       const side = open ? row?.action : null
       const ready = entry?.row.state==='execute'
       const reason = side ? `${side} ${(row!.size_weight*100).toFixed(3)}% of model reference capital toward a ${(position*100).toFixed(1)}% position. ${entry?.row.evidence?.timing_reason ?? 'Await a fresh compatible regular-session quote.'} This is a standing model reference, not your holdings or a recorded fill.`
@@ -440,10 +454,13 @@ const verdictFields = (allocation: DeskModelAllocation | undefined, ticker: stri
 // acts only in regular hours, so "Wait" would imply a session decision that is
 // not coming. The next-session plan keeps its own wording and badge.
 export const signalsFor = (latest: DeskRecord, live: DeskLive, ticker: string, now: number, allocation?: DeskModelAllocation): Signals => {
-  const signals = {...signalsForBase(latest, live, ticker, now, allocation), ...verdictFields(allocation, ticker, now)}
-  if (outsideRegularSession(allocation) && signals.nextSession !== true && signals.lastPlan !== true)
+  const base = signalsForBase(latest, live, ticker, now, allocation)
+  // A next-session plan carries its own size and direction; the backend's live verdict fields
+  // describe the current session and would overwrite them with "nothing".
+  const signals = base.nextSession ? base : {...base, ...verdictFields(allocation, ticker, now)}
+  if (outsideRegularSession(allocation) && signals.nextSession !== true && signals.lastPlan !== true && signals.buy.word !== 'Do nothing')
     return {ticker: signals.ticker, grade: signals.grade, setup: null, evidence: signals.evidence, nextSession: false,
-      buy: signal('Do nothing', false, '', 'outside regular session', 2),
+      buy: signal('Do nothing', false, '', '', 2),
       sell: signal('—', false, '', '', 2)}
   return signals
 }
@@ -495,7 +512,8 @@ const signalsView = (signals: Signals, selected: Signal, allocation: DeskModelAl
   const verdict = verdictFor(selected.word)
   const entry = allocation ? numericalEntry(allocation, ticker, now) : null
   const size = verdict === 'nothing' ? null
-    : entry && Number.isFinite(entry.row.size_weight) && entry.row.size_weight > 0 ? entry.row.size_weight : null
+    : entry && Number.isFinite(entry.row.size_weight) && entry.row.size_weight > 0 ? entry.row.size_weight
+    : typeof signals.size_weight === 'number' && Number.isFinite(signals.size_weight) && signals.size_weight > 0 ? signals.size_weight : null
   const observedAt = signals.current?.quote ?? entry?.row.quote_at ?? null
   const until = Date.parse(signals.current?.until ?? entry?.validUntil ?? '')
   const sourceAt = Date.parse(observedAt ?? '') || Date.parse(signals.plan?.published ?? '') || now
@@ -506,7 +524,7 @@ const signalsView = (signals: Signals, selected: Signal, allocation: DeskModelAl
 // Carry the expired plan's own rows without presenting them as fresh advice.
 const lastPlanSignals = (allocation: DeskModelAllocation, ticker: string): Signals => {
   const row = allocation.last_rows?.[ticker]
-  const reason = outsideRegularSession(allocation) ? 'outside regular session'
+  const reason = outsideRegularSession(allocation) ? ''
     : allocation.expired_at && allocation.next_publication_at
       ? `Last plan expired at ${evidenceTime(allocation.expired_at)}; tonight's plan publishes at ${evidenceTime(allocation.next_publication_at)}.`
       : 'Last plan expired; awaiting the next publication.'
@@ -564,8 +582,8 @@ export const boardAction = (row: Signals): {word: string; action: 'Buy' | 'Sell'
 
 // Show the same directional reasons and evidence in row expansion and the full stock chart.
 export const SignalDetail = ({signals}: {signals: Signals}) => <section aria-label={`${signals.ticker} signal details`} className="space-y-1 text-xs">
-  {signals.buy.word!=='—' && <p><b>{actionLabel(signals.buy.word)}</b> · {signals.buy.reason}</p>}
-  {signals.sell.word !== '—' && <p><b>{actionLabel(signals.sell.word)}</b> · {signals.sell.reason}</p>}
+  {signals.buy.word!=='—' && <p><b>{actionLabel(signals.buy.word)}</b>{signals.buy.reason && ` · ${signals.buy.reason}`}</p>}
+  {signals.sell.word !== '—' && <p><b>{actionLabel(signals.sell.word)}</b>{signals.sell.reason && ` · ${signals.sell.reason}`}</p>}
   {signals.setup && <>
     <p>{confirmationText(signals.setup)} {invalidationText(signals.setup)}</p>
     <p>Completed candle {evidenceTime(signals.setup.bar)} · assessed {evidenceTime(signals.setup.generated_at)} · Valid until {evidenceTime(signals.setup.valid_until)}.</p>
