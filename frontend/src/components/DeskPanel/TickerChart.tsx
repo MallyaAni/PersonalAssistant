@@ -1379,8 +1379,7 @@ export const TickerChart = ({
       </div>
     </div>
     {simulation && <aside aria-label={`${ticker} replay basis`} className="mb-2 text-xs text-[#6e6e73]">
-      <p className="font-medium">Historical replay · current model</p>
-      <p>These simulated Buy/Sell sizes apply the current sizing and timing models to past observations. Models were not refitted at each past date. This is not out-of-sample validation or advice published at that time.</p>
+      <p>Historical replay · current model · models were not refitted at each past date · not out-of-sample validation or advice published at that time</p>
     </aside>}
     {/* The chart's window and provenance stay visible even when the simulation or chart is unavailable. */}
     <p aria-label={`${ticker} strategy chart window`} data-strategy-policy={simulation?.policy ?? livePolicy ?? ''}

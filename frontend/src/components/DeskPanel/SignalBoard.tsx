@@ -689,25 +689,16 @@ export const SignalBoard = ({latest, live, allocation, now, onOpen, closes, refr
       <h3 className="text-sm font-semibold">All names · {rows.length}</h3>
       <p className="text-xs text-[#6e6e73]">{independent
         ? savedNamesOnly ? `Saved stocks · ${latest.session} · current strategy unavailable` : awaitingNightly
-          ? `Last plan · awaiting tonight's publication · ${publicationSession ?? 'unavailable'}`
+          ? `Last plan · ${publicationSession ?? 'unavailable'}`
           : `${sessionOpen(live, allocation) ? allocation?.version === 'strategy-model-allocation/2' && !currentSession ? 'Awaiting 15-minute entries' : '15-minute signals' : 'Next-session actions'} · ${currentSession ?? allocation?.session ?? latest.session}`
         : 'Regular-session signals and published strategy plans · no paper account or portfolio inputs required. Immediate signals first, then waiting, plans and unavailable; High → Medium → Low within each group. Equal priorities sort alphabetically.'}</p>
       <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Signal ranking">
         {(['all', 'buy', 'sell'] as const).map(value => <button key={value} type="button" aria-pressed={side === value} className={`rounded-full border px-3 py-1 text-xs ${side === value ? 'bg-[#e8f2ff] text-[#0071e3]' : ''}`} onClick={() => {setSide(value); setVisible(25)}}>{value === 'all' ? 'All names' : value === 'buy' ? 'Best buys' : 'Best sells'}</button>)}
         <input aria-label="Find a stock" placeholder="Find a stock" value={query} onChange={event => {setQuery(event.target.value); setVisible(25)}} className="rounded border px-2 py-1 text-xs" />
       </div>
-      {awaitingNightly && <div role="status" aria-label="Plan status" className="rounded-xl border border-black/[0.08] bg-[#f5f5f7] px-3 py-2 text-xs text-[#6e6e73]">
-        <p>{allocation?.superseded_at
-          ? `Sizing policy replaced at ${evidenceTime(allocation.superseded_at)}; the first plan under it publishes ${allocation.next_publication_at ? `at ${evidenceTime(allocation.next_publication_at)}` : 'tonight'}.`
-          : allocation?.expired_at && allocation?.next_publication_at
-          ? `Today's plan expired at ${evidenceTime(allocation.expired_at)}; tonight's publishes at ${evidenceTime(allocation.next_publication_at)}.`
-          : allocation?.next_publication_at ? `Tonight's plan publishes at ${evidenceTime(allocation.next_publication_at)}.`
-            : allocation?.expired_at ? `Today's plan expired at ${evidenceTime(allocation.expired_at)}; tonight's plan is not yet published.`
-              : "Today's plan has expired; waiting for tonight's publication."}</p>
-        {lastRows && <p className="mt-1">Showing the last plan in grey until then.</p>}
-      </div>}
+      {awaitingNightly && <p role="status" aria-label="Plan status" className="text-xs text-[#6e6e73]">Last plan · next plan {allocation?.next_publication_at ? evidenceTime(allocation.next_publication_at) : 'not yet scheduled'}</p>}
       <p aria-label="Signal coverage" className="text-xs text-[#6e6e73]">{independent
-        ? recommendationsUnavailable ? 'Recommendations unavailable' : awaitingNightly ? `${rows.length} last-plan rows · awaiting tonight's plan` : `${displayed.filter(item => item.view.verdict === 'buy').length} buys · ${displayed.filter(item => item.view.verdict === 'sell').length} sells`
+        ? recommendationsUnavailable ? 'Recommendations unavailable' : awaitingNightly ? `${rows.length} last-plan rows` : `${displayed.filter(item => item.view.verdict === 'buy').length} buys · ${displayed.filter(item => item.view.verdict === 'sell').length} sells`
         : `${rows.filter(row => row.setup).length} of ${rows.length} current assessments · ${rows.filter(row => row.buy.ready).length} buy now · ${rows.filter(row => row.sell.ready).length} sell reviews now · ${rows.filter(row => row.plan).length} published plan rows${!sessionOpen(live, allocation) ? ' · regular session closed or unavailable' : ''}.`}</p>
       {!independent && <p className="text-xs text-[#6e6e73]">Model size is the published strategy target percentage, not shares or an instruction to buy that percentage now. Entry and exit reviews use fresh chart assessments; they do not recalculate the model’s allocation.</p>}
     </div>
