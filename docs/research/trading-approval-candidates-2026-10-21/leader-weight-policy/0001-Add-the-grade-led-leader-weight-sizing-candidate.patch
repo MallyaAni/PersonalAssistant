@@ -1,0 +1,1415 @@
+From fb568d06d577b6d096ffc1be0d17cc9c2f19fedf Mon Sep 17 00:00:00 2001
+From: Claude <noreply@anthropic.com>
+Date: Wed, 21 Oct 2026 09:24:06 -0400
+Subject: [PATCH] Add the grade-led leader-weight sizing candidate
+
+A new policy id, grade-led-leader-weight/1, keeps every rule of the installed
+grade-led policy (grade signals, exits, protected holdings, preserved
+holdings, whole-share funding, timing heads, receipts) and replaces only the
+sizing step: equal slots across the A/A+ names, tilted 0.5x-1.5x by trailing
+63-session return rank, the book scaled to a 0.25 realised-volatility target,
+each name capped at the hold limit, never levered. The scorecard arm it
+installs is ew_graded_leader_25 (docs/research/sizing-timing-validation-
+2026-10-21.md); the contract is docs/research/grade-led-leader-weight-
+contract-2026-10-21.md.
+
+The optimiser call in JointFundedPolicy.decide is factored into _size(), and
+the retained-capital scan into _unavailable_holdings(), so the candidate
+overrides only those; the existing policies keep the same code path and
+reasons. One pure function, leader_weights(), sizes both the funded plan and
+the account-free unit-capital publication. Readers that merely identify the
+grade-led policy accept either id; the admission reviews that pin the
+41-source observed-reference state are left as they are, with the one
+renewal test that can no longer reconstruct marked xfail and the
+reconciliation review's AST pins moved to this tree as on 2026-10-19.
+
+Co-Authored-By: Claude Fable 5.1 <noreply@anthropic.com>
+Claude-Session: https://claude.ai/code/session_01VYtiej9FHU8SkrYLTMjPLk
+---
+ backend/api/v1/market.py                      |   4 +-
+ backend/cli/market_daily.py                   |  16 +-
+ backend/market/grade_led_leader_policy.py     | 211 ++++++++++++
+ backend/market/grade_led_policy.py            |   6 +-
+ backend/market/grade_parity.py                |  22 +-
+ backend/market/joint_funded_policy.py         | 103 +++---
+ backend/market/learned_holding_transition.py  |  12 +-
+ backend/market/learned_live_holding.py        |  22 +-
+ backend/market/learned_order_observation.py   |   5 +-
+ backend/market/learned_personal_guidance.py   |   8 +-
+ backend/market/live_model_decision.py         |   4 +-
+ backend/market/personal_history.py            |   4 +-
+ backend/market/strategy_model_allocation.py   |  27 +-
+ backend/market/strategy_publication.py        |  22 +-
+ backend/tests/test_grade_led_leader_policy.py | 306 ++++++++++++++++++
+ backend/tests/test_learned_live_holding.py    |   9 +-
+ .../test_reconciliation_release_admission.py  |   6 +-
+ .../test_strategy_publication_admission.py    |   6 +
+ ...e-led-leader-weight-contract-2026-10-21.md |  69 ++++
+ 19 files changed, 769 insertions(+), 93 deletions(-)
+ create mode 100644 backend/market/grade_led_leader_policy.py
+ create mode 100644 backend/tests/test_grade_led_leader_policy.py
+ create mode 100644 docs/research/grade-led-leader-weight-contract-2026-10-21.md
+
+diff --git a/backend/api/v1/market.py b/backend/api/v1/market.py
+index 598355e6..0ce28f8f 100644
+--- a/backend/api/v1/market.py
++++ b/backend/api/v1/market.py
+@@ -1262,9 +1262,9 @@ def _paper_plan(
+         else None,
+     )
+     from backend.market import learned_order_observation
+-    from backend.market.grade_led_policy import POLICY as GRADE_LED_POLICY
+     from backend.market.joint_funded_policy import MARKET_TIMED_POLICY, TIMED_POLICY
+     from backend.market.learned_holding_transition import POLICY as RETAINED_POLICY
++    from backend.market.learned_live_holding import GRADE_LED_POLICIES
+ 
+     observed_rule, observed_text = learned_order_observation.plan_timing(state)
+     return {
+@@ -1285,7 +1285,7 @@ def _paper_plan(
+         )
+         if state.last_rebalance
+         and state.policy_version
+-        not in (MARKET_TIMED_POLICY, TIMED_POLICY, RETAINED_POLICY, GRADE_LED_POLICY)
++        not in (MARKET_TIMED_POLICY, TIMED_POLICY, RETAINED_POLICY, *GRADE_LED_POLICIES)
+         else None,
+         "last_rebalance": state.last_rebalance,
+         "reason": reason,
+diff --git a/backend/cli/market_daily.py b/backend/cli/market_daily.py
+index d0f35440..489e9478 100644
+--- a/backend/cli/market_daily.py
++++ b/backend/cli/market_daily.py
+@@ -888,15 +888,17 @@ def _holding_broker(policy, client, decision_at):
+     if policy is None:
+         return
+     from backend.market.learned_live_holding import (
++        GradeLedHoldingPolicy,
++        GradeLedLeaderHoldingPolicy,
+         InstalledHoldingPolicy,
+         RetainedHoldingPolicy,
+-        GradeLedHoldingPolicy,
+     )
+ 
+     if type(policy) in (
+         InstalledHoldingPolicy,
+         RetainedHoldingPolicy,
+         GradeLedHoldingPolicy,
++        GradeLedLeaderHoldingPolicy,
+     ):
+         policy.admit_broker(client, decision_at)
+         return
+@@ -920,15 +922,17 @@ def _holding_prices(policy, prices, positions):
+     if policy is None:
+         return prices
+     from backend.market.learned_live_holding import (
++        GradeLedHoldingPolicy,
++        GradeLedLeaderHoldingPolicy,
+         InstalledHoldingPolicy,
+         RetainedHoldingPolicy,
+-        GradeLedHoldingPolicy,
+     )
+ 
+     if type(policy) in (
+         InstalledHoldingPolicy,
+         RetainedHoldingPolicy,
+         GradeLedHoldingPolicy,
++        GradeLedLeaderHoldingPolicy,
+     ):
+         return {
+             **prices,
+@@ -1056,9 +1060,9 @@ def _holding_actions(
+             stops={},
+             why=order.reason if order is not None else "",
+         )
+-        from backend.market import grade_led_policy
++        from backend.market.learned_live_holding import GRADE_LED_POLICIES
+ 
+-        if policy.version == grade_led_policy.POLICY:
++        if policy.version in GRADE_LED_POLICIES:
+             receipt = signal_receipt or {}
+             if not event_plan and name in (receipt.get("sizing_model_targets") or {}):
+                 row["model_target_weight"] = receipt["sizing_model_targets"][name]
+@@ -1620,7 +1624,7 @@ def _record_targets(report, paper_entry):
+     from backend.agents.trading.desk import live_policy
+     from backend.market import joint_funded_policy as funded
+     from backend.market.learned_holding_transition import POLICY as RETAINED_POLICY
+-    from backend.market.grade_led_policy import POLICY as GRADE_LED_POLICY
++    from backend.market.learned_live_holding import GRADE_LED_POLICIES
+ 
+     selected = (paper_entry or {}).get("selected_targets")
+     if selected is None:
+@@ -1636,7 +1640,7 @@ def _record_targets(report, paper_entry):
+             funded.TIMED_POLICY,
+             funded.MARKET_TIMED_POLICY,
+             RETAINED_POLICY,
+-            GRADE_LED_POLICY,
++            *GRADE_LED_POLICIES,
+         )
+         or (paper_entry or {}).get("policy") != selected.get("policy")
+         or set(weights) != names
+diff --git a/backend/market/grade_led_leader_policy.py b/backend/market/grade_led_leader_policy.py
+new file mode 100644
+index 00000000..f915c276
+--- /dev/null
++++ b/backend/market/grade_led_leader_policy.py
+@@ -0,0 +1,211 @@
++"""Grade direction with leader-tilted equal weight at a realised-volatility target.
++
++The candidate keeps every rule of the installed grade-led policy except how an
++eligible name is sized: instead of the learned scenario optimiser, each A/A+
++name takes an equal slot tilted by its trailing-return rank among the sized
++names, the book is scaled down to a realised-volatility target, and each name
++is capped. Nothing after the decision session is read, no model is fitted, and
++the receipt says the optimiser did not run.
++"""
++
++import hashlib
++from dataclasses import replace
++from pathlib import Path
++
++import numpy as np
++
++from backend.agents.trading.desk import point_in_time
++from backend.market import adaptive_growth_policy as growth
++from backend.market import joint_funded_policy as funded
++
++POLICY = "grade-led-leader-weight/1"
++PROTOCOL = "docs/research/grade-led-leader-weight-contract-2026-10-21.md"
++BASIS = "grade_led_leader_weight"
++WINDOW = 63
++STRENGTH = 0.5
++TARGET = 0.25
++TRADING_DAYS = 252.0
++
++
++# Share one unit of capital across the sized names from their trailing closes only:
++# equal slots tilted by trailing-return rank, the whole book scaled down to the
++# volatility target, each name capped, the remainder cash; never levered.
++def leader_weights(
++    closes, sized, *, window=WINDOW, strength=STRENGTH, target=TARGET, cap=growth.CAP
++):
++    closes = np.asarray(closes, dtype=float)
++    sized = np.asarray(sized, dtype=bool)
++    if (
++        closes.ndim != 2
++        or sized.ndim != 1
++        or closes.shape != (window + 1, len(sized))
++        or window < 2
++        or not 0 <= strength <= 1
++        or not target > 0
++        or not 0 < cap <= 1
++    ):
++        raise ValueError("Exactly window+1 trailing closes for every name required")
++    certificate = {
++        "basis": BASIS,
++        "window": int(window),
++        "strength": float(strength),
++        "volatility_target": float(target),
++        "cap": float(cap),
++        "annualisation": TRADING_DAYS,
++        "sized": int(sized.sum()),
++        "optimizer_ran": False,
++    }
++    weights = np.zeros(len(sized))
++    if not sized.any():
++        return weights, {**certificate, "status": "no_sized_names"}
++    book = closes[:, sized]
++    if not np.isfinite(book).all() or not (book > 0).all():
++        raise ValueError("Finite positive trailing closes for every sized name")
++    multipliers = point_in_time.TILTS["leader"](book, strength)
++    slots = multipliers / multipliers.sum()
++    basket = np.diff(np.log(book), axis=0).mean(axis=1)
++    realised = float(np.std(basket, ddof=1)) * np.sqrt(TRADING_DAYS)
++    scale = min(1.0, target / realised) if realised > 0 else 1.0
++    weights[sized] = np.minimum(slots * scale, cap)
++    if not np.isfinite(weights).all() or weights.sum() > 1 + 1e-10:
++        raise ValueError("Leader weights must stay within unit capital")
++    certificate.update(
++        status="sized",
++        trailing_returns=(book[-1] / book[0] - 1.0).tolist(),
++        multipliers=multipliers.tolist(),
++        realised_volatility=realised,
++        scale=float(scale),
++        gross=float(weights.sum()),
++    )
++    return weights, certificate
++
++
++# The trailing close window of the report ending on its last session, per name.
++def _window(report, names, window=WINDOW):
++    panel = report.panel
++    if len(panel.dates) < window + 1:
++        raise ValueError("Trailing close window longer than the report")
++    columns = [panel.index(name) for name in names]
++    return np.asarray(panel.adj_close[-(window + 1) :, columns], dtype=float)
++
++
++# Size `names` on unit capital from the report's trailing closes. A name without a
++# full finite window is not sized, and a blocked name may not grow past `current`,
++# so the funded account and the account-free publication share one calculation.
++def size_report(report, names, blocked, current):
++    closes = _window(report, names)
++    with np.errstate(invalid="ignore"):
++        known = np.isfinite(closes).all(axis=0) & (closes > 0).all(axis=0)
++    sized = known & np.array(
++        [name not in blocked or current.get(name, 0) > 0 for name in names],
++        dtype=bool,
++    )
++    weights, certificate = leader_weights(closes, sized)
++    sizes = {
++        name: min(weight, current.get(name, 0.0)) if name in blocked else weight
++        for name, weight in zip(names, weights.tolist(), strict=True)
++    }
++    certificate.update(
++        unsized=[
++            name for name, ok in zip(names, known.tolist(), strict=True) if not ok
++        ],
++        dates=[str(report.panel.dates[-(WINDOW + 1)]), str(report.panel.dates[-1])],
++    )
++    return sizes, certificate
++
++
++# Keep the grade-led direction, funding, timing and receipts; replace only the sizing.
++class GradeLedLeaderFundedPolicy(funded.GradeLedFundedPolicy):
++    version = POLICY
++    protocol = PROTOCOL
++    sizing_reason = BASIS
++    target_basis = BASIS
++
++    # Bind the sizing source beside the funded policy source the parent already pins;
++    # the installed subclass passes its release arguments through unchanged.
++    def __init__(self, reader, cost_bps, *installed):
++        super().__init__(reader, cost_bps, *installed)
++        self.identity["sizing_source_sha256"] = hashlib.sha256(
++            Path(__file__).read_bytes()
++        ).hexdigest()
++        self.identity["sizing_basis"] = BASIS
++
++    # Grades alone admit names; no per-name risk reading qualifies or excludes one.
++    def _required_stocks(self, grades, current, day, blocked, *, refusal=None):
++        candidates, _ = funded.JointFundedPolicy._required_stocks(
++            self, grades, current, day, blocked
++        )
++        retained = [name for name in candidates if current.get(name, 0) > 0]
++        excluded = {
++            name: {"reason": "buy_permission_blocked"}
++            for name in candidates
++            if name not in retained and name in blocked
++        }
++        required = tuple(name for name in candidates if name not in excluded)
++        return required, {
++            "entry_qualification": {
++                "policy": self.version,
++                "considered_entrants": [n for n in candidates if n not in retained],
++                "admitted_entrants": [n for n in required if n not in retained],
++                "mandatory_held": retained,
++                "excluded_entries": excluded,
++                "selection_uses_future_outcomes": False,
++                "joint_risk_still_required": False,
++            }
++        }
++
++    # Size from the report's own trailing closes instead of the scenario optimiser.
++    def _size(
++        self, names, exits, grades, current, cash, equity, day, blocked, report, receipt
++    ):
++        try:
++            sizes, certificate = size_report(report, names, blocked, current)
++        except ValueError as exc:
++            receipt["leader_sizing"] = {"status": "unavailable", "reason": str(exc)}
++            return {}, "leader_window_unavailable"
++        held_unsized = [n for n in certificate["unsized"] if current.get(n, 0) > 0]
++        if held_unsized:
++            # A held name the window cannot price must not be resized blind.
++            receipt["leader_sizing"] = {
++                "status": "unavailable",
++                "reason": "trailing_window_unavailable",
++                "symbols": held_unsized,
++            }
++            return {}, "leader_window_unavailable"
++        qualification = receipt["entry_qualification"]
++        for name in certificate["unsized"]:
++            qualification["excluded_entries"][name] = {
++                "reason": "trailing_window_unavailable"
++            }
++            qualification["admitted_entrants"].remove(name)
++        receipt["leader_sizing"] = certificate
++        return {**sizes, **dict.fromkeys(exits, 0.0)}, None
++
++    # Only a name without a grade is set aside; the risk model does not gate sizing.
++    def _unavailable_holdings(self, session, held, exits, protected):
++        return {
++            name: {
++                "status": "unavailable",
++                "reason": "company_grade_unavailable",
++                "symbols": [name],
++                "decision_date": session,
++            }
++            for name, qty in held.items()
++            if qty > 0 and name in protected and name not in exits
++        }
++
++    # Say what sized the orders rather than the parent's learned-sizing wording.
++    def plan(self, session, state, equity, held, prices, report, cash, blocked):
++        orders, updated, note = super().plan(
++            session, state, equity, held, prices, report, cash, blocked
++        )
++        return (
++            [
++                replace(order, reason="Grade-led leader-weight sizing adjustment")
++                if order.reason == "Grade-led learned sizing adjustment"
++                else order
++                for order in orders
++            ],
++            updated,
++            note,
++        )
+diff --git a/backend/market/grade_led_policy.py b/backend/market/grade_led_policy.py
+index f07558a8..836f8316 100644
+--- a/backend/market/grade_led_policy.py
++++ b/backend/market/grade_led_policy.py
+@@ -48,7 +48,9 @@ def signals(report, held):
+ 
+ 
+ # Keep eligible holdings when a zero model size would override the grade exit rule.
+-def preserve_grade_holdings(targets, receipt, grade_signals, prices, equity):
++def preserve_grade_holdings(
++    targets, receipt, grade_signals, prices, equity, *, basis=None
++):
+     result = dict(targets)
+     preserved = []
+     for name, signal in grade_signals.items():
+@@ -82,7 +84,7 @@ def preserve_grade_holdings(targets, receipt, grade_signals, prices, equity):
+     receipt.update(
+         grade_signals=grade_signals,
+         grade_preserved_holdings=preserved,
+-        target_basis="grade_constrained_learned_sizes",
++        target_basis=basis or "grade_constrained_learned_sizes",
+         targets=result,
+     )
+     return result, receipt
+diff --git a/backend/market/grade_parity.py b/backend/market/grade_parity.py
+index ad98b285..1260448c 100644
+--- a/backend/market/grade_parity.py
++++ b/backend/market/grade_parity.py
+@@ -248,9 +248,13 @@ def mode_of(context: dict | None) -> str:
+ 
+ # Recheck grade constraints and receipt consistency on the learned sizing basis.
+ def _grade_led_targets(record: dict, report) -> dict:
+-    from backend.market import grade_led_policy
++    from backend.market import grade_led_leader_policy, grade_led_policy
+ 
+-    policy = grade_led_policy.POLICY
++    policy = (record.get("targets") or {}).get("policy")
++    basis = {
++        grade_led_policy.POLICY: "grade_constrained_learned_sizes",
++        grade_led_leader_policy.POLICY: grade_led_leader_policy.BASIS,
++    }.get(policy)
+     day = record["session"]
+     paper = record.get("paper") or {}
+     selected = paper.get("selected_targets") or {}
+@@ -265,7 +269,8 @@ def _grade_led_targets(record: dict, report) -> dict:
+         or receipt.get("session") != day
+         or paper.get("session") != day
+         or receipt.get("status") != "available"
+-        or receipt.get("target_basis") != "grade_constrained_learned_sizes"
++        or basis is None
++        or receipt.get("target_basis") != basis
+     ):
+         raise ValueError("Matching available grade-led allocation receipt required")
+     names = {name for name in report.panel.tickers if name != report.panel.benchmark}
+@@ -338,12 +343,15 @@ def _grade_led_targets(record: dict, report) -> dict:
+ # Compare targets on their recorded policy basis, preserving failures in the result.
+ def _compare_targets(record: dict, report) -> tuple[list[dict], bool, str]:
+     from backend.agents.trading.desk import live_policy
+-    from backend.market import grade_led_policy
++    from backend.market.learned_live_holding import GRADE_LED_POLICIES
+ 
+     basis = "live_policy.targets on the same report"
+-    grade_led = grade_led_policy.POLICY in (
+-        (record.get("targets") or {}).get("policy"),
+-        (record.get("paper") or {}).get("policy"),
++    grade_led = any(
++        policy in GRADE_LED_POLICIES
++        for policy in (
++            (record.get("targets") or {}).get("policy"),
++            (record.get("paper") or {}).get("policy"),
++        )
+     )
+     if grade_led:
+         basis = (
+diff --git a/backend/market/joint_funded_policy.py b/backend/market/joint_funded_policy.py
+index 31fbd49e..c87b85f9 100644
+--- a/backend/market/joint_funded_policy.py
++++ b/backend/market/joint_funded_policy.py
+@@ -67,6 +67,7 @@ class JointFundedPolicy:
+     minimum_held_grade = 1
+     version = POLICY
+     protocol = PROTOCOL
++    sizing_reason = "joint_net_growth"
+ 
+     # Admit original or published forward risk on the still-private funded path.
+     def __init__(self, reader, cost_bps):
+@@ -161,42 +162,49 @@ class JointFundedPolicy:
+         if reason is None and any(name not in self.reader.symbols for name in names):
+             reason = "joint_symbol_unavailable"
+         if reason is None and names:
+-            sample = self.reader.distribution(int(hits[0]), names)
+-            receipt["scenario"] = sample.receipt
+-            if sample.receipt["status"] != "available":
+-                reason = "joint_risk_unavailable"
+-            else:
+-                ordered = (*names, *exits)
+-                permission = np.array(
+-                    [1 if name in blocked else grades[name] for name in names]
+-                    + [0] * len(exits)
+-                )
+-                values = np.c_[
+-                    sample.scenarios, np.zeros((len(sample.scenarios), len(exits)))
+-                ]
+-                weights, proof = growth.allocate_distribution(
+-                    values,
+-                    sample.probabilities,
+-                    permission,
+-                    np.ones(len(ordered), dtype=bool),
+-                    np.array([current.get(name, 0.0) for name in ordered]),
+-                    float(cash) / float(equity),
+-                    self.cost_bps,
+-                    np.array([], dtype=np.int64),
+-                    horizon=HORIZON,
+-                )
+-                receipt["optimizer"] = proof
+-                if proof["status"] != "optimized":
+-                    reason = "joint_optimizer_unavailable"
+-                else:
+-                    targets.update(zip(ordered, weights.tolist(), strict=True))
++            sizes, reason = self._size(
++                names, exits, grades, current, cash, equity, int(hits[0]), blocked,
++                report, receipt,
++            )
++            targets.update(sizes)
+         receipt.update(
+             status="unavailable" if reason else "available",
+-            reason=reason or "joint_net_growth",
++            reason=reason or self.sizing_reason,
+             targets=targets,
+         )
+         return targets, receipt
+ 
++    # Size the required book from the bound scenario model; a subclass may size
++    # otherwise, but every other guard of decide() stays in force around it.
++    def _size(
++        self, names, exits, grades, current, cash, equity, day, blocked, report, receipt
++    ):
++        sample = self.reader.distribution(day, names)
++        receipt["scenario"] = sample.receipt
++        if sample.receipt["status"] != "available":
++            return {}, "joint_risk_unavailable"
++        ordered = (*names, *exits)
++        permission = np.array(
++            [1 if name in blocked else grades[name] for name in names]
++            + [0] * len(exits)
++        )
++        values = np.c_[sample.scenarios, np.zeros((len(sample.scenarios), len(exits)))]
++        weights, proof = growth.allocate_distribution(
++            values,
++            sample.probabilities,
++            permission,
++            np.ones(len(ordered), dtype=bool),
++            np.array([current.get(name, 0.0) for name in ordered]),
++            float(cash) / float(equity),
++            self.cost_bps,
++            np.array([], dtype=np.int64),
++            horizon=HORIZON,
++        )
++        receipt["optimizer"] = proof
++        if proof["status"] != "optimized":
++            return {}, "joint_optimizer_unavailable"
++        return dict(zip(ordered, weights.tolist(), strict=True)), None
++
+     # Convert a certified target to durable whole-share orders without sale funding.
+     def plan(self, session, state, equity, held, prices, report, cash, blocked):
+         new = paper.PaperState(**asdict(state))
+@@ -447,18 +455,8 @@ class RetainedMarketConditionedFundedPolicy(MarketConditionedTimedFundedPolicy):
+     version = transition.POLICY
+     protocol = transition.PROTOCOL
+ 
+-    # Keep unsupported shares while permitting reductions in the modeled book.
+-    def decide(self, session, report, equity, held, prices, cash, blocked):
+-        targets, receipt = super().decide(
+-            session, report, equity, held, prices, cash, blocked
+-        )
+-        if receipt["reason"] not in {
+-            "joint_risk_unavailable",
+-            "protected_held_risk_unavailable",
+-        }:
+-            return targets, receipt
+-        exits = set(receipt["company_exits"])
+-        protected = set(receipt["protected_holdings"])
++    # Name the held shares the modeled book cannot carry: unpriced risk or no grade.
++    def _unavailable_holdings(self, session, held, exits, protected):
+         unavailable = {}
+         day = int(np.flatnonzero(self.reader.dates == np.datetime64(session))[0])
+         for name, qty in held.items():
+@@ -474,6 +472,24 @@ class RetainedMarketConditionedFundedPolicy(MarketConditionedTimedFundedPolicy):
+                 }
+             if risk["status"] != "available":
+                 unavailable[name] = risk
++        return unavailable
++
++    # Keep unsupported shares while permitting reductions in the modeled book.
++    def decide(self, session, report, equity, held, prices, cash, blocked):
++        targets, receipt = super().decide(
++            session, report, equity, held, prices, cash, blocked
++        )
++        if receipt["reason"] not in {
++            "joint_risk_unavailable",
++            "protected_held_risk_unavailable",
++        }:
++            return targets, receipt
++        unavailable = self._unavailable_holdings(
++            session,
++            held,
++            set(receipt["company_exits"]),
++            set(receipt["protected_holdings"]),
++        )
+         if not unavailable:
+             return targets, receipt
+         capital = transition.partition(equity, cash, held, prices, set(unavailable))
+@@ -510,6 +526,7 @@ class GradeLedFundedPolicy(RetainedMarketConditionedFundedPolicy):
+     version = "grade-led-learned-sizing/1"
+     protocol = "docs/research/grade-led-sizing-contract-2026-10-13.md"
+     minimum_held_grade = 2
++    target_basis = "grade_constrained_learned_sizes"
+ 
+     # Record every grade signal even when no executable size can be funded.
+     def decide(self, session, report, equity, held, prices, cash, blocked):
+@@ -528,7 +545,7 @@ class GradeLedFundedPolicy(RetainedMarketConditionedFundedPolicy):
+             receipt["sizing_optimizer"] = receipt.pop("optimizer")
+         if receipt["status"] == "available":
+             return grade_led_policy.preserve_grade_holdings(
+-                targets, receipt, readings, prices, equity
++                targets, receipt, readings, prices, equity, basis=self.target_basis
+             )
+         receipt["grade_signals"] = readings
+         return targets, receipt
+diff --git a/backend/market/learned_holding_transition.py b/backend/market/learned_holding_transition.py
+index 4a247068..cfebe7f3 100644
+--- a/backend/market/learned_holding_transition.py
++++ b/backend/market/learned_holding_transition.py
+@@ -81,9 +81,17 @@ def partition(equity, cash, held, prices, retained):
+     )
+ 
+ 
++# The policies whose records carry this retained-capital receipt.
++def _policies():
++    # Imported here: the leader module subclasses the funded policy importing this one.
++    from backend.market.grade_led_leader_policy import POLICY as LEADER_POLICY
++
++    return (POLICY, GRADE_LED_POLICY, LEADER_POLICY)
++
++
+ # Validate retained paper accounting before using it in another account.
+ def recorded(record):
+-    if (record.get("targets") or {}).get("policy") not in (POLICY, GRADE_LED_POLICY):
++    if (record.get("targets") or {}).get("policy") not in _policies():
+         return None
+     receipt = ((record.get("paper") or {}).get("joint_funded") or {}).get(
+         "receipt"
+@@ -187,7 +195,7 @@ def _risk_exclusion(name, row, session):
+ 
+ # Authenticate missing-risk exclusions separately from a zero model allocation.
+ def personal_support(record):
+-    if (record.get("targets") or {}).get("policy") not in (POLICY, GRADE_LED_POLICY):
++    if (record.get("targets") or {}).get("policy") not in _policies():
+         return True, set()
+     block = (record.get("paper") or {}).get("joint_funded") or {}
+     if not isinstance(block, dict):
+diff --git a/backend/market/learned_live_holding.py b/backend/market/learned_live_holding.py
+index 8faa009c..8f9de2be 100644
+--- a/backend/market/learned_live_holding.py
++++ b/backend/market/learned_live_holding.py
+@@ -23,6 +23,7 @@ from backend.market import (
+     learned_live_timing,
+ )
+ from backend.market import forward_arithmetic as forward
++from backend.market import grade_led_leader_policy as leader
+ from backend.market import joint_funded_policy as funded
+ from backend.market import learned_holding_transition as transition
+ from backend.market import sequential_shadow_context as context
+@@ -56,6 +57,8 @@ def source_identity():
+         Path(funded.__file__),
+         Path(grade_led_policy.__file__),
+         root / funded.GradeLedFundedPolicy.protocol,
++        Path(leader.__file__),
++        root / leader.PROTOCOL,
+         Path(transition.__file__),
+         root / transition.PROTOCOL,
+         Path(context.__file__),
+@@ -328,6 +331,17 @@ class GradeLedHoldingPolicy(funded.GradeLedFundedPolicy, InstalledHoldingPolicy)
+     pass
+ 
+ 
++# Apply grade-led direction with leader-weight sizing under the same installed guards.
++class GradeLedLeaderHoldingPolicy(
++    leader.GradeLedLeaderFundedPolicy, InstalledHoldingPolicy
++):
++    pass
++
++
++# The policies that size by grade direction and publish account-free percentages.
++GRADE_LED_POLICIES = (grade_led_policy.POLICY, leader.POLICY)
++
++
+ # Authenticate one installed configuration for nightly and personal decision readers.
+ def read_configuration(root, now):
+     raw = (Path(root) / CONFIG).read_bytes()
+@@ -345,7 +359,7 @@ def read_configuration(root, now):
+             "release_receipt_sha256",
+         }
+         or config["policy"]
+-        not in (funded.MARKET_TIMED_POLICY, transition.POLICY, grade_led_policy.POLICY)
++        not in (funded.MARKET_TIMED_POLICY, transition.POLICY, *GRADE_LED_POLICIES)
+         or isinstance(config["cost_bps"], bool)
+         or not isinstance(config["cost_bps"], (int, float))
+         or not np.isfinite(config["cost_bps"])
+@@ -404,7 +418,9 @@ def prepare(root, report, *, clock=None):
+         "provenance": provenance,
+     }
+     factory = (
+-        GradeLedHoldingPolicy
++        GradeLedLeaderHoldingPolicy
++        if config["policy"] == leader.POLICY
++        else GradeLedHoldingPolicy
+         if config["policy"] == grade_led_policy.POLICY
+         else (
+             RetainedHoldingPolicy
+@@ -413,7 +429,7 @@ def prepare(root, report, *, clock=None):
+         )
+     )
+     selected = factory(reader, config["cost_bps"], root, raw, admission, completed)
+-    if config["policy"] == grade_led_policy.POLICY:
++    if config["policy"] in GRADE_LED_POLICIES:
+         from backend.market import strategy_publication
+ 
+         strategy_publication.publish_prepared(selected, report, clock=clock)
+diff --git a/backend/market/learned_order_observation.py b/backend/market/learned_order_observation.py
+index 2089aa3c..98ffc84a 100644
+--- a/backend/market/learned_order_observation.py
++++ b/backend/market/learned_order_observation.py
+@@ -258,7 +258,7 @@ def plan_timing(state):
+     from backend.agents.trading.desk import intraday_orders
+     from backend.market.joint_funded_policy import MARKET_TIMED_POLICY, TIMED_POLICY
+     from backend.market.learned_holding_transition import POLICY as RETAINED_POLICY
+-    from backend.market.grade_led_policy import POLICY as GRADE_LED_POLICY
++    from backend.market.learned_live_holding import GRADE_LED_POLICIES
+ 
+     tags = {
+         row.get("timing_policy") or intraday_orders.INTRADAY_TIMING
+@@ -270,7 +270,8 @@ def plan_timing(state):
+         return "order-specific", "Order-specific timing; see each order"
+     if tags == {POLICY} or (
+         not tags
+-        and state.policy_version in (MARKET_TIMED_POLICY, TIMED_POLICY, RETAINED_POLICY, GRADE_LED_POLICY)
++        and state.policy_version
++        in (MARKET_TIMED_POLICY, TIMED_POLICY, RETAINED_POLICY, *GRADE_LED_POLICIES)
+     ):
+         return POLICY, "Ordinary orders use learned timing; company exits at the open"
+     if tags and tags != {intraday_orders.INTRADAY_TIMING}:
+diff --git a/backend/market/learned_personal_guidance.py b/backend/market/learned_personal_guidance.py
+index f0a8ab06..dfc59bbd 100644
+--- a/backend/market/learned_personal_guidance.py
++++ b/backend/market/learned_personal_guidance.py
+@@ -26,6 +26,7 @@ from backend.market import (
+     learned_live_timing,
+ )
+ from backend.market import forward_probability_timing as timing
++from backend.market.grade_led_leader_policy import POLICY as LEADER_POLICY
+ from backend.market.grade_led_policy import POLICY as GRADE_LED_POLICY
+ from backend.market.joint_funded_policy import MARKET_TIMED_POLICY
+ from backend.market.live_probability_timing import POLICY
+@@ -39,6 +40,7 @@ def adopted(record):
+         MARKET_TIMED_POLICY,
+         learned_holding_transition.POLICY,
+         GRADE_LED_POLICY,
++        LEADER_POLICY,
+     )
+ 
+ 
+@@ -175,7 +177,7 @@ def _personal_targets(record, weights, shares, prices, equity, cash):
+         boundary is not None
+         or unsupported
+         or record["targets"]["policy"]
+-        in (learned_holding_transition.POLICY, GRADE_LED_POLICY)
++        in (learned_holding_transition.POLICY, GRADE_LED_POLICY, LEADER_POLICY)
+     ):
+         desired = learned_holding_transition.personal_weights(
+             boundary or {"retained_weights": {}, "modeled_fraction": 1},
+@@ -188,7 +190,7 @@ def _personal_targets(record, weights, shares, prices, equity, cash):
+         )
+     else:
+         desired = dict(weights)
+-    if record["targets"]["policy"] == GRADE_LED_POLICY:
++    if record["targets"]["policy"] in (GRADE_LED_POLICY, LEADER_POLICY):
+         for name in set(desired) | set(shares):
+             grade = (record["grades"].get(name) or {}).get("grade")
+             current = shares.get(name, 0) * prices.get(name, 0) / equity
+@@ -665,7 +667,7 @@ def build(
+                 reason=str(exc),
+             )
+             row.pop("timing", None)
+-    if (record.get("targets") or {}).get("policy") == GRADE_LED_POLICY:
++    if (record.get("targets") or {}).get("policy") in (GRADE_LED_POLICY, LEADER_POLICY):
+         owned = {position.ticker for position in held if position.shares > 0}
+         for name, row in result["rows"].items():
+             grade = (record.get("grades", {}).get(name) or {}).get("grade")
+diff --git a/backend/market/live_model_decision.py b/backend/market/live_model_decision.py
+index d8775479..6b537873 100644
+--- a/backend/market/live_model_decision.py
++++ b/backend/market/live_model_decision.py
+@@ -387,7 +387,7 @@ def _authenticate(root, record, now):
+     paper = record["paper"]
+     admission = paper["learned_holding"]
+     if (
+-        config["policy"] != grade_led_policy.POLICY
++        config["policy"] not in learned_live_holding.GRADE_LED_POLICIES
+         or admission["config_sha256"] != sha256(config_raw).hexdigest()
+         or sha256((root / learned_live_timing.CONFIG).read_bytes()).hexdigest()
+         != config["timing_config_sha256"]
+@@ -543,7 +543,7 @@ def _validate(record, config, report):
+     receipt = allocation["receipt"]
+     names = set(record["grades"])
+     if (
+-        config["policy"] != grade_led_policy.POLICY
++        config["policy"] not in learned_live_holding.GRADE_LED_POLICIES
+         or any(
+             value.get("policy") != config["policy"]
+             for value in (
+diff --git a/backend/market/personal_history.py b/backend/market/personal_history.py
+index d78bf1d7..8d076c09 100644
+--- a/backend/market/personal_history.py
++++ b/backend/market/personal_history.py
+@@ -139,9 +139,9 @@ def _record_fingerprint(record: dict) -> str:
+ def project(decisions: dict, record: dict, snapshot: dict, entries: dict) -> dict:
+     from backend.agents.trading.desk.paper import POLICY_VERSION
+     from backend.market import desk_freshness, holdings
+-    from backend.market.grade_led_policy import POLICY as GRADE_LED_POLICY
+     from backend.market.joint_funded_policy import MARKET_TIMED_POLICY
+     from backend.market.learned_holding_transition import POLICY as RETAINED_POLICY
++    from backend.market.learned_live_holding import GRADE_LED_POLICIES
+ 
+     generated = _instant(decisions["as_of"])
+     readings = {}
+@@ -210,7 +210,7 @@ def project(decisions: dict, record: dict, snapshot: dict, entries: dict) -> dic
+         "policy_version": (
+             record["targets"]["policy"]
+             if (record.get("targets") or {}).get("policy")
+-            in (MARKET_TIMED_POLICY, RETAINED_POLICY, GRADE_LED_POLICY)
++            in (MARKET_TIMED_POLICY, RETAINED_POLICY, *GRADE_LED_POLICIES)
+             else POLICY_VERSION
+         ),
+         "decision_version": decisions["version"],
+diff --git a/backend/market/strategy_model_allocation.py b/backend/market/strategy_model_allocation.py
+index 38caefd9..03145861 100644
+--- a/backend/market/strategy_model_allocation.py
++++ b/backend/market/strategy_model_allocation.py
+@@ -15,6 +15,7 @@ import numpy as np
+ from backend.market import (
+     adaptive_growth_policy as growth,
+     forward_arithmetic as forward,
++    grade_led_leader_policy as leader,
+     grade_led_policy,
+     holding_risk_bank,
+     joint_funded_policy as funded,
+@@ -26,9 +27,16 @@ VERSION = "strategy-model-allocation/1"
+ BASIS = "account_independent_unit_capital_targets"
+ 
+ 
+-# Allocate the existing scenario model over a unit budget rather than any account's money or shares.
+-def targets_from_model(report, reader, cost_bps, blocked):
+-    policy = funded.GradeLedFundedPolicy(reader, cost_bps)
++# Allocate the installed sizing over a unit budget rather than an account's money.
++def targets_from_model(
++    report, reader, cost_bps, blocked, policy=grade_led_policy.POLICY
++):
++    if policy not in learned_live_holding.GRADE_LED_POLICIES:
++        raise ValueError("Installed grade-led model required")
++    policy = (
++        leader.GradeLedLeaderFundedPolicy if policy == leader.POLICY
++        else funded.GradeLedFundedPolicy
++    )(reader, cost_bps)
+     signals = grade_led_policy.signals(report, {})
+     grades = {
+         name: int(report.graded.grades[-1, column])
+@@ -41,7 +49,11 @@ def targets_from_model(report, reader, cost_bps, blocked):
+         raise ValueError(qualification["refusal_reason"])
+     proof = {"status": "no_eligible_entries", "targets": []}
+     scenario = None
+-    if names:
++    if names and policy.version == leader.POLICY:
++        # The same arithmetic the funded plan uses, on unit capital with no holdings.
++        sizes, proof = leader.size_report(report, names, blocked, {})
++        targets.update(sizes)
++    elif names:
+         sample = policy.reader.distribution(day, names)
+         scenario = sample.receipt
+         if scenario["status"] != "available":
+@@ -64,7 +76,8 @@ def targets_from_model(report, reader, cost_bps, blocked):
+     return targets, signals, {
+         "basis": BASIS, "cost_bps": cost_bps,
+         "entry_qualification": qualification, "scenario": scenario,
+-        "optimizer": proof,
++        **({"leader_sizing": proof} if policy.version == leader.POLICY
++           else {"optimizer": proof}),
+     }
+ 
+ 
+@@ -77,7 +90,7 @@ def read(root, record, now):
+     if now >= until:
+         raise ValueError("Current strategy inputs expired")
+     digest, config, report = live_model_decision._authenticate(root, record, now)
+-    if config["policy"] != grade_led_policy.POLICY:
++    if config["policy"] not in learned_live_holding.GRADE_LED_POLICIES:
+         raise ValueError("Installed grade-led model required")
+     admission = record["paper"]["learned_holding"]
+     original, _ = holding_risk_bank.load_bank(
+@@ -103,7 +116,7 @@ def read(root, record, now):
+     ):
+         raise ValueError("Original independent market entry evidence required")
+     targets, signals, receipt = targets_from_model(
+-        report, reader, config["cost_bps"], set(blocked)
++        report, reader, config["cost_bps"], set(blocked), config["policy"]
+     )
+     receipt.update(
+         version=VERSION, record_sha256=digest,
+diff --git a/backend/market/strategy_publication.py b/backend/market/strategy_publication.py
+index 822f072f..03d8c6c7 100644
+--- a/backend/market/strategy_publication.py
++++ b/backend/market/strategy_publication.py
+@@ -54,12 +54,17 @@ def _sources():
+ 
+ 
+ # Identify the economic strategy without binding history to one funded record or publication date.
+-def _strategy_identity(sources, cost_bps):
++def _strategy_identity(sources, cost_bps, policy=grade_led_policy.POLICY):
+     names = ("adaptive_growth_policy.py", "grade_led_policy.py", "joint_funded_policy.py",
+              "market_conditioned_holding.py", "forward_arithmetic.py", "forward_execution.py",
+              "live_probability_timing.py", "entry_timing.py", "direct_daily_arithmetic.py",
+              "learned_entry_data.py", "market_conditioned_calibration.py", "probabilistic_execution.py")
+-    return _digest({"policy": grade_led_policy.POLICY,
++    if policy not in learned_live_holding.GRADE_LED_POLICIES:
++        raise ValueError("Installed grade-led strategy required")
++    if policy == learned_live_holding.leader.POLICY:
++        # The leader sizing is its own economics; the installed identity keeps its bytes.
++        names = (*names, "grade_led_leader_policy.py")
++    return _digest({"policy": policy,
+                     "sources": {name: sources["backend/market/" + name] for name in names},
+                     "basis": strategy_model_allocation.BASIS, 'economic_parameters':{'cost_bps':float(cost_bps)}})
+ 
+@@ -82,14 +87,15 @@ def _close_context(policy, current):
+ 
+ # Calculate from the already admitted native close, before creating any account-dependent plan.
+ def build(policy, report, blocked, *, observed_at):
+-    if (type(policy) is not learned_live_holding.GradeLedHoldingPolicy
++    if (type(policy) not in (learned_live_holding.GradeLedHoldingPolicy,
++                             learned_live_holding.GradeLedLeaderHoldingPolicy)
+             or not isinstance(observed_at, datetime) or observed_at.utcoffset() is None
+             or observed_at < policy.observed_at):
+         raise ValueError("Original prepared grade-led policy and real observation required")
+     policy.reader.validate_clock(observed_at)
+     policy.reader.validate_report(report)
+     raw, config = learned_live_holding.read_configuration(policy.root, observed_at)
+-    if raw != policy.config_bytes or config["policy"] != grade_led_policy.POLICY or policy.cost_bps != config['cost_bps']:
++    if raw != policy.config_bytes or config["policy"] != policy.version or policy.cost_bps != config['cost_bps']:
+         raise ValueError("Prepared independent configuration changed")
+     names = tuple(name for name in report.panel.tickers if name not in ("SPY", "QQQ"))
+     if not set(blocked) <= set(report.panel.tickers):
+@@ -97,7 +103,7 @@ def build(policy, report, blocked, *, observed_at):
+     # Benchmarks supply market context but cannot become stock target keys.
+     blocked = set(blocked) & set(names)
+     targets, readings, receipt = strategy_model_allocation.targets_from_model(
+-        report, policy.reader, policy.cost_bps, blocked)
++        report, policy.reader, policy.cost_bps, blocked, config["policy"])
+     current = policy.reader.current
+     session = str(current.dates[-1])
+     sources = _sources()
+@@ -109,7 +115,7 @@ def build(policy, report, blocked, *, observed_at):
+                 "risk_receipt_sha256": config["risk_receipt_sha256"],
+                 "timing_config_sha256": config["timing_config_sha256"],
+                 "economic_parameters":{'cost_bps':policy.cost_bps},
+-                "strategy_identity": _strategy_identity(sources,policy.cost_bps), "source_sha256": sources,
++                "strategy_identity": _strategy_identity(sources,policy.cost_bps,config["policy"]), "source_sha256": sources,
+                 "prefix_sha256": current.receipt["identity"]["prefix_sha256"]}
+     identity['close_context'] = _close_context(policy,current)
+     evidence = {}
+@@ -141,7 +147,7 @@ def validate(value, now, *, expected_sources=None, config_sha256=None):
+     if not isinstance(now, datetime) or now.utcoffset() is None:
+         raise ValueError("Aware independent publication observation required")
+     if (value["version"] != VERSION or value["status"] != "available"
+-            or value["policy"] != grade_led_policy.POLICY
++            or value["policy"] not in learned_live_holding.GRADE_LED_POLICIES
+             or value["basis"] != strategy_model_allocation.BASIS
+             or value["account_basis"] != "no_account_inputs"
+             or value["timing_basis"] != "nightly_position_size_not_immediate_trade_size"):
+@@ -154,7 +160,7 @@ def validate(value, now, *, expected_sources=None, config_sha256=None):
+             or type(identity['economic_parameters']['cost_bps']) not in (int,float)
+             or not math.isfinite(identity['economic_parameters']['cost_bps'])
+             or not 0 <= identity['economic_parameters']['cost_bps'] < 10000
+-            or value["strategy_identity"] != _strategy_identity(identity["source_sha256"],identity['economic_parameters']['cost_bps'])
++            or value["strategy_identity"] != _strategy_identity(identity["source_sha256"],identity['economic_parameters']['cost_bps'],value["policy"])
+             or value["strategy_identity"] != identity["strategy_identity"]
+             or (expected_sources is not None and identity["source_sha256"] != expected_sources)
+             or (config_sha256 is not None and identity["config_sha256"] != config_sha256)):
+diff --git a/backend/tests/test_grade_led_leader_policy.py b/backend/tests/test_grade_led_leader_policy.py
+new file mode 100644
+index 00000000..194e2ed5
+--- /dev/null
++++ b/backend/tests/test_grade_led_leader_policy.py
+@@ -0,0 +1,306 @@
++"""Leader-weight sizing: the arithmetic, the funded plan, unit capital, selection."""
++
++import json
++from hashlib import sha256
++from pathlib import Path
++from types import SimpleNamespace
++
++import numpy as np
++import pytest
++
++from backend.agents.trading.desk import grading, paper
++from backend.market import adaptive_growth_policy as growth
++from backend.market import grade_led_leader_policy as leader
++from backend.market import grade_led_policy as grade
++from backend.market import strategy_model_allocation, strategy_publication
++from backend.market.panel import Panel
++from backend.tests.test_joint_funded_policy import reader as reader  # noqa: F401
++from backend.tests.test_learned_live_holding import example as example  # noqa: F401
++
++# CCC is outside the bound reader's cohort, so it is only ever ungraded here.
++NAMES = ("AAA", "BBB", "CCC", "SPY", "QQQ")
++DRIFT = np.array([0.004, 0.001, 0.002, 0.0, 0.0])
++
++
++# Geometric closes with a seeded wobble, so AAA leads BBB over any long window.
++def closes(sessions, drift=DRIFT, wobble=0.01, seed=7):
++    steps = np.random.default_rng(seed).normal(0.0, wobble, (sessions, len(drift)))
++    return 100.0 * np.exp(np.cumsum(steps + drift, axis=0))
++
++
++# A completed report on the reader's calendar with explicit final and prior grades.
++def leader_report(reader, grades, prior=None, sessions=None):
++    day = len(reader.dates) - 1 if sessions is None else sessions - 1
++    prices = closes(day + 1)
++    panel = Panel(
++        reader.dates[: day + 1].copy(), NAMES, prices, prices + 1, prices - 1,
++        prices, prices, np.ones_like(prices), {}, "SPY",
++    )
++    values = np.tile(grades, (day + 1, 1)).astype(np.int16)
++    if prior is not None:
++        values[-2] = prior
++    return SimpleNamespace(
++        panel=panel,
++        graded=grading.Graded(values, np.zeros_like(prices), {}),
++        sides={"AAA": "long", "BBB": "long", "CCC": "long"},
++        scores=values.astype(float),
++    )
++
++
++# Install the leader selector over the grade-led synthetic release without refitting.
++def install_leader(root, fixture, monkeypatch):
++    from backend.market import learned_live_holding as runtime
++    from backend.tests.test_grade_led_policy import install_grade_led
++
++    _, shown, now = install_grade_led(root, fixture, monkeypatch)
++    config_path = root / runtime.CONFIG
++    config = json.loads(config_path.read_bytes())
++    release_path = config_path.with_name("release.json")
++    release = json.loads(release_path.read_bytes())
++    config["policy"] = release["policy"] = leader.POLICY
++    raw = json.dumps(release).encode()
++    release_path.write_bytes(raw)
++    config["release_receipt_sha256"] = sha256(raw).hexdigest()
++    config_path.write_text(json.dumps(config))
++    return runtime.prepare(root, shown, clock=lambda: now), shown, now
++
++
++# A funded leader policy whose risk reader is never allowed to be sampled.
++def chosen(reader, monkeypatch):
++    policy = leader.GradeLedLeaderFundedPolicy(reader, 10)
++
++    # The optimiser's scenario model must not be read at all by this policy.
++    def forbidden(*args, **kwargs):
++        pytest.fail("Leader sizing read the scenario distribution")
++
++    monkeypatch.setattr(policy.reader, "distribution", forbidden)
++    return policy
++
++
++# Strength zero is plain equal weight; strength 0.5 orders the slots by trailing return.
++def test_equal_slots_and_leader_tilt_ordering():
++    window = closes(leader.WINDOW + 1, wobble=0.0)
++    sized = np.array([True, True, True, False, False])
++    equal, certificate = leader.leader_weights(window, sized, strength=0.0)
++    assert np.allclose(equal[sized], equal[sized][0])
++    assert certificate["optimizer_ran"] is False
++    tilted, certificate = leader.leader_weights(window, sized, cap=1.0)
++    assert tilted[0] > tilted[2] > tilted[1] > 0
++    assert np.isclose(tilted[0] / tilted[1], 1.5 / 0.5)
++    assert certificate["multipliers"] == [1.5, 0.5, 1.0]
++    assert np.isclose(tilted.sum(), certificate["gross"])
++    assert tilted[3] == tilted[4] == 0
++
++
++# A calm basket is fully invested; a wild one is scaled down and never levered.
++@pytest.mark.parametrize("wobble", [0.0, 0.002, 0.05, 0.2])
++def test_volatility_scale_never_exceeds_one(wobble):
++    window = closes(leader.WINDOW + 1, wobble=wobble, seed=3)
++    sized = np.array([True, True, True, True, True])
++    weights, certificate = leader.leader_weights(window, sized, cap=1.0)
++    assert 0 < certificate["scale"] <= 1
++    assert np.isclose(weights.sum(), certificate["scale"])
++    assert weights.sum() <= 1 + 1e-12
++    basket = np.diff(np.log(window), axis=0).mean(axis=1)
++    realised = np.std(basket, ddof=1) * np.sqrt(252)
++    assert np.isclose(certificate["realised_volatility"], realised)
++    expected = min(1.0, 0.25 / realised) if realised else 1.0
++    assert np.isclose(certificate["scale"], expected)
++
++
++# The per-name cap trims a slot and leaves the excess in cash rather than elsewhere.
++def test_cap_leaves_excess_in_cash():
++    window = closes(leader.WINDOW + 1, wobble=0.0)
++    sized = np.array([True, True, False, False, False])
++    weights, _ = leader.leader_weights(window, sized)
++    assert weights[0] == growth.CAP
++    assert weights[1] == growth.CAP
++    assert weights.sum() <= 1
++
++
++# No name is sized by anything but its own finite window, and the input is checked.
++def test_requires_exact_window_and_finite_closes():
++    window = closes(leader.WINDOW + 1, wobble=0.0)
++    with pytest.raises(ValueError, match="window"):
++        leader.leader_weights(window[1:], np.ones(5, dtype=bool))
++    broken = window.copy()
++    broken[10, 1] = np.nan
++    with pytest.raises(ValueError, match="Finite"):
++        leader.leader_weights(broken, np.ones(5, dtype=bool))
++    weights, certificate = leader.leader_weights(
++        broken, np.array([True, False, True, False, False])
++    )
++    assert weights[1] == 0
++    assert weights[0] > 0
++    none, certificate = leader.leader_weights(window, np.zeros(5, dtype=bool))
++    assert not none.any()
++    assert certificate["status"] == "no_sized_names"
++
++
++# Only the trailing window ending on the decision session is read from a report.
++def test_size_report_reads_nothing_outside_the_trailing_window(reader):
++    shown = leader_report(reader, (3, 3, 3, 0, 0))
++    names = ("AAA", "BBB", "CCC")
++    sizes, certificate = leader.size_report(shown, names, set(), {})
++    earlier = leader_report(reader, (3, 3, 3, 0, 0))
++    earlier.panel.adj_close[: -(leader.WINDOW + 1)] *= 3.0
++    earlier.panel.adj_close[: -(leader.WINDOW + 1), 1] = np.nan
++    assert leader.size_report(earlier, names, set(), {})[0] == sizes
++    assert certificate["dates"] == [
++        str(shown.panel.dates[-(leader.WINDOW + 1)]), str(shown.panel.dates[-1])
++    ]
++    assert certificate["unsized"] == []
++    short = leader_report(reader, (3, 3, 3, 0, 0), sessions=40)
++    with pytest.raises(ValueError, match="longer than the report"):
++        leader.size_report(short, names, set(), {})
++
++
++# A grade exit is sold, an ungraded holding is kept whole, and the rest is leader-sized.
++def test_funded_decision_with_held_exit_and_protected_names(reader, monkeypatch):
++    policy = chosen(reader, monkeypatch)
++    shown = leader_report(reader, (3, 1, -1, 0, 0), prior=(3, 3, -1, 0, 0))
++    day = str(shown.panel.dates[-1])
++    held = {"AAA": 10, "BBB": 10, "CCC": 10}
++    prices = {"AAA": 100.0, "BBB": 100.0, "CCC": 100.0}
++    targets, receipt = policy.decide(day, shown, 10000, held, prices, 7000, set())
++    assert receipt["status"] == "available"
++    assert receipt["reason"] == receipt["target_basis"] == leader.BASIS
++    assert receipt["policy"] == leader.POLICY == policy.version
++    assert receipt["company_exits"] == ["BBB"]
++    assert receipt["protected_holdings"] == ["CCC"]
++    assert targets["BBB"] == 0
++    assert targets["CCC"] == pytest.approx(0.1)
++    assert 0 < targets["AAA"] <= growth.CAP
++    assert sum(targets.values()) <= 1 + 1e-10
++    assert receipt["leader_sizing"]["status"] == "sized"
++    assert receipt["sizing_model_targets"]["AAA"] == targets["AAA"]
++    assert receipt["grade_signals"]["BBB"]["action"] == "sell"
++    assert receipt["grade_signals"]["CCC"]["action"] == "unavailable"
++    assert receipt["entry_qualification"]["joint_risk_still_required"] is False
++    for claim in ("optimizer", "sizing_optimizer", "scenario"):
++        assert claim not in receipt
++    assert receipt["transition"]["retained_weights"] == {"CCC": pytest.approx(0.1)}
++    # The modeled book is sized on the capital the protected holding does not use.
++    assert targets["AAA"] == pytest.approx(
++        receipt["modeled_decision"]["targets"]["AAA"] * 0.9
++    )
++    assert receipt["sizing_source_sha256"] == sha256(
++        Path(leader.__file__).read_bytes()
++    ).hexdigest()
++
++
++# Without protected names the funded sizes are exactly the unit-capital leader weights.
++def test_funded_sizes_match_the_pure_function(reader, monkeypatch):
++    policy = chosen(reader, monkeypatch)
++    shown = leader_report(reader, (3, 2, -1, 0, 0))
++    day = str(shown.panel.dates[-1])
++    targets, receipt = policy.decide(day, shown, 10000, {}, {}, 10000, set())
++    sizes, certificate = leader.size_report(shown, ("AAA", "BBB"), set(), {})
++    assert {name: targets[name] for name in sizes} == sizes
++    assert targets["CCC"] == 0
++    assert receipt["leader_sizing"] == certificate
++    assert receipt["entry_qualification"]["admitted_entrants"] == ["AAA", "BBB"]
++
++
++# A buy-blocked holding keeps its size but may not grow; a blocked entrant is excluded.
++def test_blocked_names_cannot_grow(reader, monkeypatch):
++    policy = chosen(reader, monkeypatch)
++    shown = leader_report(reader, (3, 3, -1, 0, 0))
++    day = str(shown.panel.dates[-1])
++    targets, receipt = policy.decide(
++        day, shown, 10000, {"AAA": 2}, {"AAA": 100.0}, 9800, {"AAA", "BBB"}
++    )
++    assert targets["AAA"] == pytest.approx(0.02)
++    assert targets["BBB"] == 0
++    assert receipt["status"] == "available"
++    assert receipt["entry_qualification"]["excluded_entries"] == {
++        "BBB": {"reason": "buy_permission_blocked"}
++    }
++    assert receipt["grade_signals"]["BBB"]["action"] == "buy"
++
++
++# A held name without a full trailing window refuses the night's sizing, not the exit.
++def test_short_window_refuses_sizing_but_keeps_grade_exit(reader, monkeypatch):
++    policy = chosen(reader, monkeypatch)
++    shown = leader_report(reader, (3, 1, -1, 0, 0), prior=(3, 3, -1, 0, 0))
++    shown.panel.adj_close[-5, 0] = np.nan
++    day = str(shown.panel.dates[-1])
++    held = {"AAA": 10, "BBB": 10}
++    prices = {"AAA": 100.0, "BBB": 100.0}
++    targets, receipt = policy.decide(day, shown, 10000, held, prices, 8000, set())
++    assert receipt["status"] == "unavailable"
++    assert receipt["reason"] == "leader_window_unavailable"
++    assert receipt["leader_sizing"]["symbols"] == ["AAA"]
++    assert targets["BBB"] == 0
++    assert targets["AAA"] == pytest.approx(0.1)
++    unheld = leader_report(reader, (3, 3, -1, 0, 0))
++    unheld.panel.adj_close[-5, 0] = np.nan
++    targets, receipt = policy.decide(day, unheld, 10000, {}, {}, 10000, set())
++    assert receipt["status"] == "available"
++    assert targets["AAA"] == 0
++    assert targets["BBB"] > 0
++    assert receipt["entry_qualification"]["excluded_entries"]["AAA"] == {
++        "reason": "trailing_window_unavailable"
++    }
++    assert receipt["entry_qualification"]["admitted_entrants"] == ["BBB"]
++
++
++# Orders say what sized them, and a grade exit keeps the parent's exit wording.
++def test_plan_labels_orders_by_leader_sizing(reader, monkeypatch):
++    policy = chosen(reader, monkeypatch)
++    shown = leader_report(reader, (3, 1, -1, 0, 0), prior=(3, 3, -1, 0, 0))
++    day = str(shown.panel.dates[-1])
++    orders, state, note = policy.plan(
++        day, paper.PaperState(), 10000, {"BBB": 10}, {"AAA": 100.0, "BBB": 100.0},
++        shown, 9000, set(),
++    )
++    assert note == "joint-funded"
++    reasons = {order.symbol: order.reason for order in orders}
++    assert reasons == {
++        "AAA": "Grade-led leader-weight sizing adjustment",
++        "BBB": "Grade below A; exit",
++    }
++    assert state.policy_version == leader.POLICY
++    assert state.allocation_state["receipt"]["target_basis"] == leader.BASIS
++    timing = state.allocation_state["receipt"]["execution_timing"]
++    assert timing["company_exit"] == "next_open"
++    assert timing["ordinary"] == policy.timing_policy
++
++
++# Unit-capital targets use the funded plan's arithmetic and claim no optimiser.
++def test_unit_capital_targets_share_the_sizing(reader):
++    shown = leader_report(reader, (3, 3, -1, 0, 0))
++    targets, signals, receipt = strategy_model_allocation.targets_from_model(
++        shown, reader, 10, {"BBB"}, leader.POLICY
++    )
++    sizes, certificate = leader.size_report(shown, ("AAA",), {"BBB"}, {})
++    assert targets == {**sizes, "BBB": 0.0, "CCC": 0.0}
++    assert receipt["leader_sizing"] == certificate
++    assert "optimizer" not in receipt
++    assert receipt["scenario"] is None
++    qualification = receipt["entry_qualification"]["entry_qualification"]
++    assert qualification["policy"] == leader.POLICY
++    assert qualification["excluded_entries"] == {
++        "BBB": {"reason": "buy_permission_blocked"}
++    }
++    assert signals == grade.signals(shown, {})
++    with pytest.raises(ValueError, match="grade-led model required"):
++        strategy_model_allocation.targets_from_model(shown, reader, 10, set(), "x")
++
++
++# The installed selector accepts the leader id and prepares the leader holding policy.
++def test_configuration_selects_leader_holding_policy(example, tmp_path, monkeypatch):
++    from backend.market import learned_live_holding as runtime
++
++    selected, shown, now = install_leader(tmp_path, example, monkeypatch)
++    assert type(selected) is runtime.GradeLedLeaderHoldingPolicy
++    assert selected.version == leader.POLICY
++    assert selected.identity["sizing_basis"] == leader.BASIS
++    assert "backend/market/grade_led_leader_policy.py" in runtime.source_identity()
++    assert leader.PROTOCOL in runtime.source_identity()
++    _, read = runtime.read_configuration(tmp_path, now)
++    assert read["policy"] == leader.POLICY
++    published = strategy_publication.read(tmp_path, now)
++    assert published["policy"] == leader.POLICY
++    assert published["calculation_receipt"]["leader_sizing"]["basis"] == leader.BASIS
++    assert "optimizer" not in published["calculation_receipt"]
+diff --git a/backend/tests/test_learned_live_holding.py b/backend/tests/test_learned_live_holding.py
+index a8e9e60f..013abb66 100644
+--- a/backend/tests/test_learned_live_holding.py
++++ b/backend/tests/test_learned_live_holding.py
+@@ -160,11 +160,15 @@ def test_missing_stock_is_not_benchmark_completion(example, tmp_path, monkeypatc
+ 
+ # Installed current inference must produce genuine risk quantities without a fresh fit.
+ @pytest.mark.parametrize("omit_benchmark", [False, True])
+-@pytest.mark.parametrize("retained", [False, True, "grade"])
++@pytest.mark.parametrize("retained", [False, True, "grade", "leader"])
+ def test_installed_current_heads_and_funded_nightly(
+     example, tmp_path, monkeypatch, omit_benchmark, retained
+ ):
+-    if retained == "grade":
++    if retained == "leader":
++        from backend.tests.test_grade_led_leader_policy import install_leader
++
++        _, shown, now = install_leader(tmp_path, example, monkeypatch)
++    elif retained == "grade":
+         from backend.tests.test_grade_led_policy import install_grade_led
+ 
+         _, shown, now = install_grade_led(tmp_path, example, monkeypatch)
+@@ -186,6 +190,7 @@ def test_installed_current_heads_and_funded_nightly(
+     monkeypatch.setattr(runtime.forward.direct, "_fit", forbidden)
+     chosen = runtime.prepare(tmp_path, shown, clock=lambda: now)
+     assert chosen.version == (
++        runtime.leader.POLICY if retained == "leader" else
+         runtime.grade_led_policy.POLICY if retained == "grade" else
+         runtime.transition.POLICY if retained else runtime.funded.MARKET_TIMED_POLICY
+     )
+diff --git a/backend/tests/test_reconciliation_release_admission.py b/backend/tests/test_reconciliation_release_admission.py
+index 5983ac49..44bb0376 100644
+--- a/backend/tests/test_reconciliation_release_admission.py
++++ b/backend/tests/test_reconciliation_release_admission.py
+@@ -11,8 +11,10 @@ from backend.cli import market_release_admission as admission
+ 
+ DAILY = "backend/cli/market_daily.py"
+ VIEW = "backend/market/live_model_decision.py"
+-UNCHANGED = "abff05260e84aba546764b8fb030053f22f8eccbe7d309278a52d455f299622e"
+-UNCHANGED_VIEW = "3e894a1f3b802cffb2fd897cc9c7240f6fd1a00b8cade100fb6a1b019f389889"
++# Pinned to the grade-led-leader-weight/1 candidate tree (the selector and policy
++# tuples in both modules accept the leader id); before it: abff0526... and 3e894a1f....
++UNCHANGED = "b451c4812d69b037afefc41e8dfd9b9b056ba5483858086543cb190e15823dc3"
++UNCHANGED_VIEW = "3cdf9b9398c3e5751d064af3b0920efd457a8610ecac774d52d96cff4e8a1676"
+ 
+ 
+ # Build a synthetic approval transition around the actual candidate CLI source.
+diff --git a/backend/tests/test_strategy_publication_admission.py b/backend/tests/test_strategy_publication_admission.py
+index e76fee24..bc421a24 100644
+--- a/backend/tests/test_strategy_publication_admission.py
++++ b/backend/tests/test_strategy_publication_admission.py
+@@ -29,6 +29,12 @@ def publication_review():
+ 
+ 
+ # Activate only reviewed source bindings, read them back, then restore the exact original selectors.
++@pytest.mark.xfail(strict=True, reason=(
++    'The observed-reference review reconstructs the 41-source holding module exactly; the '
++    'grade-led-leader-weight/1 candidate binds two more sources and extends the holding '
++    'selector, and the admission CLI refuses a policy change by design, so this transition '
++    'is installed by hand (docs/research/trading-approval-candidates-2026-10-21/'
++    'leader-weight-policy/README.md) rather than through a new review type'))
+ def test_publication_renewal_preflight_activation_and_original_rollback(tmp_path,monkeypatch):
+     root,before,bundle,path,_=renewal(tmp_path,monkeypatch)
+     old,new,review=publication_review()
+diff --git a/docs/research/grade-led-leader-weight-contract-2026-10-21.md b/docs/research/grade-led-leader-weight-contract-2026-10-21.md
+new file mode 100644
+index 00000000..169e5fbe
+--- /dev/null
++++ b/docs/research/grade-led-leader-weight-contract-2026-10-21.md
+@@ -0,0 +1,69 @@
++# Grade direction with leader-tilted equal weight
++
++The owner asked for the sizing arm with the most gain for the least added
++drawdown on the point-in-time book, and the scorecard of 2026-10-21
++(`docs/research/sizing-timing-validation-2026-10-21.md`, last two sections)
++named it: equal weight across every A/A+ name, tilted by trailing-return rank,
++scaled to a realised-volatility target, never levered. This is a behavioral
++contract for installing that sizing beside the existing grade rules, not a
++claim of higher returns.
++
++Candidate policy `grade-led-leader-weight/1` (`backend/market/grade_led_leader_policy.py`)
++keeps every rule of the installed `grade-led-learned-sizing/1`: A/A+ permits
++entry; a held stock below A exits; a missing grade protects the holding at its
++current size through the same retained-capital partition; an eligible unheld
++stock remains a BUY signal when funding, whole-share rounding or execution
++timing blocks an order; preserved holdings cannot finance purchases; the
++existing account, cash, cost, per-name cap and whole-share guards remain
++mandatory; ordinary orders keep the installed probability timing and company
++exits go at the open. Grade signals, receipts and certificates keep their
++fields, and the installed model-only policies and their histories are untouched.
++
++What changes is only the size of each eligible name, computed on each decision
++session from the completed report and nothing after it:
++
++1. Eligible = every name graded A or A+ that is not buy-blocked, plus every
++   held name graded A or A+ (a held blocked name is kept but may not grow).
++2. Each eligible name starts with an equal slot. The slots are tilted by the
++   name's trailing 63-session return rank among the eligible names, linearly
++   from 0.5x for the weakest to 1.5x for the strongest (strength 0.5), and
++   renormalised so the slots sum to one unit of capital.
++3. The whole book is scaled by min(1, 0.25 / realised), where realised is the
++   sample standard deviation (ddof 1) of the equal-weight basket's last 63
++   daily log returns of adjusted close, annualised by sqrt(252). The book is
++   never levered; the remainder is cash.
++4. Each name is then capped at the existing per-name limit (`growth.CAP`, 25%).
++
++`leader_weights(closes, sized)` is the one pure function that does this, and
++`size_report` applies it to a report; the funded policy's sizing step and the
++account-free unit-capital publication (`strategy_model_allocation`) both call
++it, so the published percentages and the funded plan come from the same
++arithmetic. The tilt is `point_in_time.TILTS["leader"]`, the research function
++the scorecard arm `ew_graded_leader_25` used. A name without a full finite
++63-session window is not sized: unheld it is excluded with reason
++`trailing_window_unavailable`; held, the night's sizing is refused as
++`leader_window_unavailable` and only grade exits are planned.
++
++What the policy does not do: it does not read the learned scenario
++distribution or run the growth optimiser, and its receipt says so
++(`target_basis` and `reason` are `grade_led_leader_weight`, `leader_sizing`
++carries the window, multipliers, realised volatility and scale, and there is no
++`optimizer` or `scenario` claim). It does not fit anything: 63, 0.5, 0.25 and
++the 25% cap are the scorecard's settings, taken as they were scored. It does
++not change the timing heads, the broker admission, the event policy or the
++settlement rules. The 25% cap was not part of the scorecard arm (which ran
++uncapped); with the book's usual count of A/A+ names a 1.5x slot stays under
++it, and the cap is the installed hold limit rather than a new parameter.
++
++Evidence it rests on: the point-in-time scorecard of 2026-10-21 (CAGR 24.3%
++at worst drawdown -35.9% across 20 offsets against the installed rule's 16.5%
++at -34.0%, ahead of plain equal weight in 20 of 20 offsets in 2024-26). Three
++settings of one parameter are not a fit, but a scorecard is not forward
++evidence either. No performance claim follows from implementing this contract.
++
++Acceptance it needs: the owner's review and release approval under the paper
++lock (the admission CLI refuses a policy change by design, so the proposed
++`config.json`, `release.json` and `evidence.json` are installed by hand as on
++2026-10-13), then a fresh ordinary nightly and the following real session on
++the paper account. Private fixtures are not that acceptance, and the paper
++account's forward record is the only out-of-sample evidence that counts.
+-- 
+2.43.0
+

@@ -1,0 +1,47 @@
+# `learned_live_holding.source_identity()` at fb568d06
+
+| source | sha256 |
+|---|---|
+| `backend/agents/trading/desk/event_execution.py` | `76e49243ffb7fff8bb989df2c384ee1f2f0dcc7885c9421f98a986eda667202f` |
+| `backend/agents/trading/desk/event_risk.py` | `34462a0ad3569022c90a3d7898b8f5a43ba053a38d2b7e44a63bc18e54de8973` |
+| `backend/agents/trading/desk/funded_execution.py` | `6b913621d11ad81b78394c1f3eb9e4aef8e52ed6585b0a0716b3b45a9d6f909c` |
+| `backend/agents/trading/desk/intraday_orders.py` | `ca8c236746441e204f36a263e972104d48d442538ea189fd4cad9d4ccf9f0f1c` |
+| `backend/agents/trading/desk/nightly_plan.py` | `9fe2c223f24086a8a978cf3d373f39f24e3f6dc810a624a5e8773cc3ae91a7ca` |
+| `backend/agents/trading/desk/paper.py` | `1a96dd96c254abb4799c6f14cb99938c65fb2907d6777fbc4b1194bfaa851bc4` |
+| `backend/api/v1/market.py` | `64e8ba220bbc2d1cd8baff0ab36f6fc6193daeab41cf8d3aaaa087c2038a014d` |
+| `backend/cli/market_daily.py` | `5659e6ab0f04b116708c33ebb09d569ca288ac54f8d9a4b443dd3ff729c9dc76` |
+| `backend/market/adaptive_growth_policy.py` | `35a2d6a07276096acee78078886c9aefe02051f2b746a8739442814920114e34` |
+| `backend/market/alpaca_trading.py` | `105c5800d90b7f17b142d1678a781ecbf116ff89575466bec5e3c553eb24c3e2` |
+| `backend/market/decision_view.py` | `8315ec2b8f647dc02a46bec3d2a77a15b2d31b9777baed1ec5aa3aacdea97aca` |
+| `backend/market/entry_timing.py` | `f23d286c0d613d99620ce4a4ea8aa889be88ca224c5fbfc945b4360eae944a88` |
+| `backend/market/forward_arithmetic.py` | `9617f9dc3252d3ce48891eb800de1dfc135383a88cb3f15b377c480d60d8d882` |
+| `backend/market/forward_execution.py` | `62fa03e76d6f186a5084afe7ed1087891ce06f1d4b74040c6491f9c0b32ff295` |
+| `backend/market/forward_market_evidence.py` | `737f14c2ab3b4c12501d8707184871dd7c1f84287d4b43d182e2add0a02490a2` |
+| `backend/market/forward_probability_timing.py` | `0103852d53be711fcf4eeec80f74d707f42ef2ec86599ff72a305376d5632a92` |
+| `backend/market/grade_led_leader_policy.py` | `571af16f33daffd34f8d5a43ae6db00242a9b6bbe32bfad9dad287f5e461586d` |
+| `backend/market/grade_led_policy.py` | `4cc449484a3fdd4eaa5ae28e00fb35864d70c0a8c99d4ca629ab197d7e53b0c4` |
+| `backend/market/holding_risk_bank.py` | `4024753161e21521309e265c5e96a70de94a75e81a8f151a4e59fe659c7f6158` |
+| `backend/market/joint_funded_policy.py` | `e990c6bbc655c31651eafd6fe9e249513a04cb16c0a4425f2b0456f6d3a79517` |
+| `backend/market/learned_holding_transition.py` | `4ee36b6e70e59e18073f7243e6f79fb524c093eb5168f770efdb09b185e2fa3e` |
+| `backend/market/learned_live_holding.py` | `e3676155f8b34734f9ce45553f63de05750b08db3e14f8c684a990bbdacc2de6` |
+| `backend/market/learned_live_timing.py` | `80223f1fe3a6ea81318cbb64a663b3805bfead1e8c2190aa176234ef294ccb7f` |
+| `backend/market/learned_order_observation.py` | `51d866ce11dfe6f18153ef0d7b2e782d82af60a87c52eab8edb9e841208a3287` |
+| `backend/market/learned_personal_guidance.py` | `71394e249dbf87215361ab2056cbe5ba1ac3ed5318473afa0f31288824fdc8d0` |
+| `backend/market/live_model_decision.py` | `55d925010508aa0ee7caf01c9298b232b4b01f5de47243a97f2a9a30b655e4b4` |
+| `backend/market/live_probability_timing.py` | `3fc9da7ae628e3fdd98388bbaa0e08bbaf5b8c36da78fb7c0e0efdcab63c1721` |
+| `backend/market/market_conditioned_holding.py` | `e2de45ca5b79ad1547299b131deb23e898aa7a9c33c13e7ec28bc4210d4950e4` |
+| `backend/market/personal_history.py` | `3707d9ae1e787fa48fffe420aa2154e985552d25274c2b1047ffe0631483ecdd` |
+| `backend/market/sequential_shadow_context.py` | `5af947b74af12de1914b192c41d243494bd89ab90d5329564d86c31ff9c40a92` |
+| `backend/market/strategy_entries.py` | `9c35896f9e0e19bd42e746fc65a0b9f4c46c55e01cd0a28bfee275b8ec9a532e` |
+| `backend/market/strategy_entry_context.py` | `3aade712c9bcdbf5b09759cdb700c25c9f6e8e731cd6a27d4364c4f93ea2176f` |
+| `backend/market/strategy_history_installation.py` | `33c96116cb2c516c9d9e629b5d899e0e5637daba239ad858d8c21bfef1042cda` |
+| `backend/market/strategy_history_publication.py` | `bd3d1cab411863fa0d098df0269e8a10a139fe16e92c42674cfff58a8591d17b` |
+| `backend/market/strategy_model_allocation.py` | `b459fdc5f8696f7b193267e581bec70c7ca11c439b1ba7732565d9371c71dfb4` |
+| `backend/market/strategy_model_history.py` | `7a7bfb2e200a02cdcba61ed2c92d7c14cf6fc8fd7c0de6a3c6c394c0ff0f03a2` |
+| `backend/market/strategy_publication.py` | `3c0bfef55e4c6e771fcb3fa1d619dd07955a7cd802cf7a8d7653b94b8342500a` |
+| `backend/market/strategy_reference_book.py` | `94522bdf61d4e4075e33b831b25664e81e6f6b830c7821b523454715433e3355` |
+| `backend/market/strategy_reference_entries.py` | `522d47016ac934d2c29b5f0801743fb33c8efc66a4b0db22c18f0125ba8dab85` |
+| `backend/market/strategy_reference_transition.py` | `daf1704651cc6058eab147706874e1acdcb4a1df712c58e0c500bbdcc33865f2` |
+| `docs/research/grade-led-leader-weight-contract-2026-10-21.md` | `324e4c52b336955675c21782bf4b9ee68f8e0bd771e790cefba72735c1f7b05a` |
+| `docs/research/grade-led-sizing-contract-2026-10-13.md` | `51e4f718ed73a29188cb134a342615927a48c12f4647b30307cb996efd1393c6` |
+| `docs/research/learned-held-transition-2026-10-07.md` | `f2669e1a40f74f6ccccd3cfdfae6f299a1bd1d416ae916dc622d2fa61837218a` |
