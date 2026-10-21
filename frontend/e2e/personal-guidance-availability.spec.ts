@@ -33,7 +33,7 @@ async function install(page: Page, state: State, baseURL: string) {
   page.on('pageerror', error => state.errors.push(error.message))
   page.on('console', message => {if (message.type() === 'error' || message.type() === 'warning') state.errors.push(message.text())})
   page.on('requestfinished', request => {if (state.requests.has(request)) state.requests.set(request, true)})
-  page.on('requestfailed', request => state.errors.push(`Failed: ${request.method()} ${request.url()}`))
+  page.on('requestfailed', request => request.failure()?.errorText === 'net::ERR_ABORTED' ? undefined : state.errors.push(`Failed: ${request.method()} ${request.url()}`))
   page.on('response', response => {if (response.status() >= 400) state.errors.push(`HTTP ${response.status()} ${response.url()}`)})
   await page.route('**/*', async route => {
     const request = route.request(), url = new URL(request.url()), path = url.pathname

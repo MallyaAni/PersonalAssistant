@@ -1603,10 +1603,17 @@ docker run --rm --ipc=host -v "$PWD":/app -w /app -e CI=1 -e VITE_API_URL= -e PU
 
 `test-results/` comes back root-owned; clear it with the same image
 (`docker run --rm -v "$PWD":/app -w /app node:22-alpine rm -rf test-results`).
-In this harness most specs fail on `main` as well, on the aborted
-`/api/v1/conversations/...` request their `failedRequests` diagnostic
-records (384 of 546 on 2026-10-20), so a change is judged by the
-difference between its failure set and `main`'s, not by the count.
+`chat.spec.ts` (and `theme`, `hash-routing`, `presentations`) route a real
+backend at `localhost:8000` rather than a fixture, so they only pass with
+one running; leave them out here (`$(ls e2e/*.spec.ts | grep -v chat.spec)`).
+On 2026-10-21 the desk specs were brought back from 384 failures of 546 to
+123 of 485 by two harness repairs in the specs themselves: the catch-all
+route of every fixture answers the board's `model-allocation` poll (added
+after those fixtures were written) with an empty 2xx instead of a 418 the
+spec then counted as a console error, and a request cut off by the next
+navigation (`net::ERR_ABORTED`) is no longer a failed request. What remains
+is wording and layout the specs pin that the app has since changed; judge a
+change by the difference between its failure set and `main`'s.
 
 ## Measuring, and keeping the measurement
 

@@ -58,7 +58,7 @@ async function install(page: Page, frontendURL: string) {
   // Fail on exceptions from partially rendered charts.
   page.on('pageerror', error => diagnostics.pageErrors.push(error.message))
   // Record incomplete required requests instead of accepting silent fallbacks.
-  page.on('requestfailed', request => diagnostics.failedRequests.push(request.url()))
+  page.on('requestfailed', request => request.failure()?.errorText === 'net::ERR_ABORTED' ? undefined : diagnostics.failedRequests.push(request.url()))
   // Record unsuccessful responses independently of browser exceptions.
   page.on('response', response => {if (response.status() >= 400) diagnostics.badResponses.push(`${response.status()} ${response.url()}`)})
   await page.clock.install({time: new Date('2026-09-24T14:00:00Z')})

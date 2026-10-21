@@ -38,10 +38,13 @@ async function install(page: Page, state: Scenario, baseURL: string) {
   // Track this request batch through completion, not a previous navigation's network-idle event.
   const finished = (request: Request) => {if (state.pending.delete(request)) state.changed = Date.now()}
   page.on('requestfinished', finished)
-  page.on('requestfailed', request => {finished(request); state.errors.push(`failed: ${request.url()} ${request.failure()?.errorText}`)})
+  page.on('requestfailed', request => { if (request.failure()?.errorText === 'net::ERR_ABORTED') return // a fetch cut off by the next navigation is not a failed request
+finished(request); state.errors.push(`failed: ${request.url()} ${request.failure()?.errorText}`)})
   page.on('response', response => {if (response.status() >= 400) state.errors.push(`HTTP ${response.status()}: ${response.url()}`)})
   // Keep account reads non-recording and fail closed on unrecognized API paths.
   await page.route('**/*', async route => {
+    // Added after this fixture was written: the board polls the model allocation on every desk view. An empty 2xx reads as "no publication" (the older desk record path); a 418 would be a console error and an unexpected request the spec counts.
+    if (route.request().method() === 'GET' && new URL(route.request().url()).pathname.endsWith('/desk/model-allocation')) return route.fulfill({status: 204})
     const request = route.request()
     const url = new URL(request.url())
     if (url.origin !== new URL(baseURL).origin) {state.errors.push(`external: ${request.url()}`); return route.abort('blockedbyclient')}

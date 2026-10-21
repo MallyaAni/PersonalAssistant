@@ -160,7 +160,7 @@ test('Persisted position survives the original trade permission deadline',async 
 async function install(page: Page, baseURL: string, state: ReferenceFixture) {
   page.on('pageerror', error => state.diagnostics.push(error.message))
   page.on('console', message => {if (['error', 'warning'].includes(message.type())) state.diagnostics.push(message.text())})
-  page.on('requestfailed', request => state.diagnostics.push(`Failed ${request.url()}`))
+  page.on('requestfailed', request => request.failure()?.errorText === 'net::ERR_ABORTED' ? undefined : state.diagnostics.push(`Failed ${request.url()}`))
   page.on('response', response => {if (response.status() >= 400) state.diagnostics.push(`HTTP ${response.status()} ${response.url()}`)})
   await page.route('**/*', async route => {
     const request = route.request(), url = new URL(request.url()), path = url.pathname

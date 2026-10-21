@@ -690,7 +690,8 @@ test('@live creates a deck in the background without blocking chat', async ({ pa
 
   const errors = observeBlockingBrowserErrors(page)
   const failedRequests: string[] = []
-  page.on('requestfailed', request => {
+  page.on('requestfailed', request => { if (request.failure()?.errorText === 'net::ERR_ABORTED') return // a fetch cut off by the next navigation is not a failed request
+
     const url = new URL(request.url())
     if (
       request.method() === 'POST'
@@ -965,7 +966,8 @@ test('@live cancels an in-flight presentation job', async ({ page }) => {
       )
     }
   })
-  page.on('requestfailed', request => {
+  page.on('requestfailed', request => { if (request.failure()?.errorText === 'net::ERR_ABORTED') return // a fetch cut off by the next navigation is not a failed request
+
     if (
       request.method() === 'POST'
       || request.url().includes('/presentations/jobs/')

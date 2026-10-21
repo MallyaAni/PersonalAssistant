@@ -33,7 +33,7 @@ async function installScenario(page: Page, frontendURL: string, options: Scenari
   // A partially rendered view must not hide a JavaScript exception.
   page.on('pageerror', error => diagnostics.pageErrors.push(error.message))
   // Every required request must complete successfully.
-  page.on('requestfailed', request => diagnostics.failedRequests.push(`${request.method()} ${request.url()}`))
+  page.on('requestfailed', request => request.failure()?.errorText === 'net::ERR_ABORTED' ? undefined : diagnostics.failedRequests.push(`${request.method()} ${request.url()}`))
   // Record HTTP failures even when the component recovers visually.
   page.on('response', response => {if (response.status() >= 400) diagnostics.badResponses.push(`${response.status()} ${response.url()}`)})
   await page.clock.install({time: new Date(now)})
@@ -41,6 +41,8 @@ async function installScenario(page: Page, frontendURL: string, options: Scenari
   await page.addInitScript(() => localStorage.setItem('anios.theme', 'light'))
   // Every write and every external request is refused.
   await page.route('**/*', async route => {
+    // Added after this fixture was written: the board polls the model allocation on every desk view. An empty 2xx reads as "no publication" (the older desk record path); a 418 would be a console error and an unexpected request the spec counts.
+    if (route.request().method() === 'GET' && new URL(route.request().url()).pathname.endsWith('/desk/model-allocation')) return route.fulfill({status: 204})
     const request = route.request()
     const url = new URL(request.url())
     if (!url.pathname.startsWith('/api/')) {

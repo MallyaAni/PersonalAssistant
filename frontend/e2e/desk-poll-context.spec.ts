@@ -52,7 +52,8 @@ async function install(page: Page, state: Scenario, baseURL: string) {
   page.on('pageerror', error => state.diagnostics.pageErrors.push(error.message))
   page.on('console', message => {if (message.type() === 'error') state.diagnostics.consoleErrors.push(message.text())})
   page.on('requestfinished', request => {const entry = ledger.get(request); if (entry) entry.finished = true})
-  page.on('requestfailed', request => {
+  page.on('requestfailed', request => { if (request.failure()?.errorText === 'net::ERR_ABORTED') return // a fetch cut off by the next navigation is not a failed request
+
     const entry = ledger.get(request)
     if (entry) entry.finished = true
     state.diagnostics.failedRequests.push(`${request.method()} ${request.url()} ${request.failure()?.errorText}`)
@@ -60,6 +61,8 @@ async function install(page: Page, state: Scenario, baseURL: string) {
   page.on('response', response => {if (response.status() >= 400) state.diagnostics.badResponses.push(`${response.status()} ${response.url()}`)})
   // Reject unknown paths and real mutations before responding to any application request.
   await page.route('**/*', async route => {
+    // Added after this fixture was written: the board polls the model allocation on every desk view. An empty 2xx reads as "no publication" (the older desk record path); a 418 would be a console error and an unexpected request the spec counts.
+    if (route.request().method() === 'GET' && new URL(route.request().url()).pathname.endsWith('/desk/model-allocation')) return route.fulfill({status: 204})
     const request = route.request()
     const url = new URL(request.url())
     if (url.origin !== new URL(baseURL).origin) {

@@ -50,7 +50,7 @@ async function setup(page: Page, {orders, held = {}, blocked = []}: {orders: Ret
   const log: string[] = []
   page.on('pageerror', error => errors.push(error.message))
   page.on('console', message => { if (message.type() === 'error') errors.push(message.text()) })
-  page.on('requestfailed', request => errors.push(request.url()))
+  page.on('requestfailed', request => request.failure()?.errorText === 'net::ERR_ABORTED' ? undefined : errors.push(request.url()))
   await page.clock.install({time: new Date(at)})
   const names = [...new Set([...orders.map(o => o.symbol), ...Object.keys(held), ...blocked])]
   const grade = (ticker: string) => orders.find(o => o.symbol === ticker)?.action === 'SELL' ? 'B' : 'A'
@@ -58,6 +58,8 @@ async function setup(page: Page, {orders, held = {}, blocked = []}: {orders: Ret
     opens_at: '2026-09-24T09:30:00-04:00', closes_at: '2026-09-24T16:00:00-04:00'}
   const positions = Object.entries(held).map(([symbol, qty]) => ({symbol, qty, avg_entry_price: 170, current_price: 179, market_value: qty * 179, unrealized_pl: qty * 9}))
   await page.route('**/api/v1/**', async route => {
+    // Added after this fixture was written: the board polls the model allocation on every desk view. An empty 2xx reads as "no publication" (the older desk record path); a 418 would be a console error and an unexpected request the spec counts.
+    if (route.request().method() === 'GET' && new URL(route.request().url()).pathname.endsWith('/desk/model-allocation')) return route.fulfill({status: 204})
     const path = new URL(route.request().url()).pathname
     let json: unknown = {}
     if (path.endsWith('/auth/session')) json = {authentication_required: true, user_id: 'ani.mallya', is_admin: true, desk_write: true}

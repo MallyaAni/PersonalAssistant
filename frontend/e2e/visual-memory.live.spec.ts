@@ -21,6 +21,8 @@ test('@live active uploaded image grounds a style question', async ({ page }) =>
 
   // Send the temporary test token only to AniOS APIs, never third-party assets.
   await page.route('**/api/**', async route => {
+    // Added after this fixture was written: the board polls the model allocation on every desk view. An empty 2xx reads as "no publication" (the older desk record path); a 418 would be a console error and an unexpected request the spec counts.
+    if (route.request().method() === 'GET' && new URL(route.request().url()).pathname.endsWith('/desk/model-allocation')) return route.fulfill({status: 204})
     await route.continue({
       headers: {
         ...route.request().headers(),
@@ -80,6 +82,8 @@ test('@live historical image memory grounds a style question', async ({ page }) 
     }
   })
   await page.route('**/api/**', async route => {
+    // Added after this fixture was written: the board polls the model allocation on every desk view. An empty 2xx reads as "no publication" (the older desk record path); a 418 would be a console error and an unexpected request the spec counts.
+    if (route.request().method() === 'GET' && new URL(route.request().url()).pathname.endsWith('/desk/model-allocation')) return route.fulfill({status: 204})
     await route.continue({
       headers: {
         ...route.request().headers(),
@@ -131,6 +135,8 @@ test('@live Scout schedule confirmation skips visual memory', async ({ page }) =
   })
   page.on('requestfailed', request => failedRequests.push(request.url()))
   await page.route('**/api/**', async route => {
+    // Added after this fixture was written: the board polls the model allocation on every desk view. An empty 2xx reads as "no publication" (the older desk record path); a 418 would be a console error and an unexpected request the spec counts.
+    if (route.request().method() === 'GET' && new URL(route.request().url()).pathname.endsWith('/desk/model-allocation')) return route.fulfill({status: 204})
     await route.continue({
       headers: {
         ...route.request().headers(),

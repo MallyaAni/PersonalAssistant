@@ -21,7 +21,7 @@ async function installScenario(page: Page, frontendURL: string, evidence: Eviden
   // Record exceptions even when React leaves part of the previous view visible.
   page.on('pageerror', error => diagnostics.pageErrors.push(error.message))
   // All required browser requests must finish.
-  page.on('requestfailed', request => diagnostics.failedRequests.push(`${request.method()} ${request.url()}`))
+  page.on('requestfailed', request => request.failure()?.errorText === 'net::ERR_ABORTED' ? undefined : diagnostics.failedRequests.push(`${request.method()} ${request.url()}`))
   // Reject silent HTTP failures behind fallback content.
   page.on('response', response => {if (response.status() >= 400) diagnostics.badResponses.push(`${response.status()} ${response.url()}`)})
   await page.clock.install({time: new Date(NOW)})
@@ -29,6 +29,8 @@ async function installScenario(page: Page, frontendURL: string, evidence: Eviden
   await page.addInitScript(() => localStorage.setItem('anios.theme', 'light'))
   // Intercept every API call and refuse external requests or writes before any transport occurs.
   await page.route('**/*', async route => {
+    // Added after this fixture was written: the board polls the model allocation on every desk view. An empty 2xx reads as "no publication" (the older desk record path); a 418 would be a console error and an unexpected request the spec counts.
+    if (route.request().method() === 'GET' && new URL(route.request().url()).pathname.endsWith('/desk/model-allocation')) return route.fulfill({status: 204})
     const request = route.request()
     const url = new URL(request.url())
     if (!url.pathname.startsWith('/api/')) {

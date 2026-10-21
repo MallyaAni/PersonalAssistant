@@ -40,7 +40,8 @@ async function scenario(page: Page, {now, plan, orders, sessionQuotes = {}, nigh
   const writes: string[] = []
   page.on('pageerror', error => errors.push(error.message))
   page.on('console', message => {if (message.type() === 'error') errors.push(message.text())})
-  page.on('requestfailed', request => {if (request.url().includes('/market/')) errors.push(request.url())})
+  page.on('requestfailed', request => { if (request.failure()?.errorText === 'net::ERR_ABORTED') return // a fetch cut off by the next navigation is not a failed request
+if (request.url().includes('/market/')) errors.push(request.url())})
   await page.clock.install({time: new Date(now)})
   const open = plan === 'thursday'
   const market = {exchange: 'XNYS', as_of: now, session: open ? '2026-10-01' : '2026-09-30', calendar_known: true, is_session: true, open, phase: open ? 'open' : 'post-market', opens_at: open ? '2026-10-01T13:30:00Z' : '2026-09-30T13:30:00Z', closes_at: open ? '2026-10-01T20:00:00Z' : '2026-09-30T20:00:00Z'}
@@ -62,6 +63,8 @@ async function scenario(page: Page, {now, plan, orders, sessionQuotes = {}, nigh
   }
   const paper = {user_id: USER, as_of: now, equity: fixture.equity, cash: fixture.cash, day_pl: 864, day_pl_pct: .0087, pl_pct: .0002, positions: fixture.positions, orders: [], activity: {session: '2026-10-01', complete: true, fills: []}, plan: {...fixture[plan], ...(orders ? {orders} : {}), ...paperPlan}}
   await page.route('**/api/**', async route => {
+    // Added after this fixture was written: the board polls the model allocation on every desk view. An empty 2xx reads as "no publication" (the older desk record path); a 418 would be a console error and an unexpected request the spec counts.
+    if (route.request().method() === 'GET' && new URL(route.request().url()).pathname.endsWith('/desk/model-allocation')) return route.fulfill({status: 204})
     const request = route.request()
     const url = new URL(request.url())
     const base = `/api/v1/market/${USER}/desk`

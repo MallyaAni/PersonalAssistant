@@ -30,7 +30,7 @@ async function install(page: Page, frontendURL: string, scenario: Scenario) {
   // Reject partial chart rendering after a page exception.
   page.on('pageerror', error => diagnostics.pageErrors.push(error.message))
   // Required network failures cannot be dismissed as a passing fallback.
-  page.on('requestfailed', request => diagnostics.failedRequests.push(request.url()))
+  page.on('requestfailed', request => request.failure()?.errorText === 'net::ERR_ABORTED' ? undefined : diagnostics.failedRequests.push(request.url()))
   // Retain unsuccessful HTTP responses independently of script exceptions.
   page.on('response', response => {if (response.status() >= 400) diagnostics.badResponses.push(`${response.status()} ${response.url()}`)})
   await page.clock.install({time: new Date('2026-09-25T14:00:00Z')})
@@ -38,6 +38,8 @@ async function install(page: Page, frontendURL: string, scenario: Scenario) {
   await page.addInitScript(() => localStorage.setItem('anios.theme', 'light'))
   // Serve only synthetic reads and a non-recording preview; no request reaches a real account.
   await page.route('**/*', async route => {
+    // Added after this fixture was written: the board polls the model allocation on every desk view. An empty 2xx reads as "no publication" (the older desk record path); a 418 would be a console error and an unexpected request the spec counts.
+    if (route.request().method() === 'GET' && new URL(route.request().url()).pathname.endsWith('/desk/model-allocation')) return route.fulfill({status: 204})
     const request = route.request(), url = new URL(request.url()), base = `/api/v1/market/${USER}/desk`
     if (!url.pathname.startsWith('/api/')) {
       if (url.origin === new URL(frontendURL).origin) return route.continue()

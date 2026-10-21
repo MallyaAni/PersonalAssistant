@@ -57,6 +57,8 @@ async function install(page: Page, frontendURL: string, scenario: Case) {
   await page.addInitScript(() => localStorage.setItem('anios.theme', 'light'))
   // Serve only named synthetic read boundaries and the explicit non-recording preview.
   await page.route('**/*', async route => {
+    // Added after this fixture was written: the board polls the model allocation on every desk view. An empty 2xx reads as "no publication" (the older desk record path); a 418 would be a console error and an unexpected request the spec counts.
+    if (route.request().method() === 'GET' && new URL(route.request().url()).pathname.endsWith('/desk/model-allocation')) return route.fulfill({status: 204})
     const request = route.request()
     const url = new URL(request.url())
     if (!url.pathname.startsWith('/api/')) {

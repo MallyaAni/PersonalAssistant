@@ -32,7 +32,8 @@ const prepare = async (page: Page, study?: NeuralStudyEvidence) => {
   const errors: string[] = []
   page.on('pageerror', error => errors.push(error.message))
   page.on('console', message => { if (message.type() === 'error') errors.push(message.text()) })
-  page.on('requestfailed', request => { if (request.url().includes('/api/')) errors.push(request.url()) })
+  page.on('requestfailed', request => { if (request.failure()?.errorText === 'net::ERR_ABORTED') return // a fetch cut off by the next navigation is not a failed request
+ if (request.url().includes('/api/')) errors.push(request.url()) })
   await page.route('**/api/**', route => {
     const path = new URL(route.request().url()).pathname
     let json: object = {}

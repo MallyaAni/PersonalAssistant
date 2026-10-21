@@ -59,6 +59,8 @@ async function install(page: Page, stock: Stock, failure = false, current = {don
     }
   })
   await page.route('**/api/v1/**', async route => {
+    // Added after this fixture was written: the board polls the model allocation on every desk view. An empty 2xx reads as "no publication" (the older desk record path); a 418 would be a console error and an unexpected request the spec counts.
+    if (route.request().method() === 'GET' && new URL(route.request().url()).pathname.endsWith('/desk/model-allocation')) return route.fulfill({status: 204})
     const request = route.request(), url = new URL(request.url()), path = url.pathname
     if (request.method() !== 'GET' && !(path.endsWith('/mine') && request.postDataJSON()?.record_history === false)) errors.push(`Unexpected write: ${path}`)
     let json: any = {}

@@ -58,6 +58,8 @@ async function install(page: Page, state: Scenario, baseURL: string) {
   page.on('response', response => {if (response.status() >= 400) state.errors.push(`HTTP ${response.status()}: ${response.url()}`)})
   // Deny unknown reads, real account writes and external access before supplying fixture data.
   await page.route('**/*', async route => {
+    // Added after this fixture was written: the board polls the model allocation on every desk view. An empty 2xx reads as "no publication" (the older desk record path); a 418 would be a console error and an unexpected request the spec counts.
+    if (route.request().method() === 'GET' && new URL(route.request().url()).pathname.endsWith('/desk/model-allocation')) return route.fulfill({status: 204})
     const request = route.request()
     const url = new URL(request.url())
     if (url.origin !== new URL(baseURL).origin) {state.errors.push(`external: ${request.url()}`); return route.abort('blockedbyclient')}

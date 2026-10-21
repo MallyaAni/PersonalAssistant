@@ -14,7 +14,8 @@ async function scenario(page: Page, options: {historyFailure?: boolean; history?
   page.on('pageerror', error => errors.push(error.message))
   page.on('console', message => {if (message.type() === 'error' && !options.historyFailure) errors.push(message.text())})
   // The desk's required requests must succeed; unrelated chat unmount cancellations are out of scope.
-  page.on('requestfailed', request => {if (request.url().includes('/market/')) errors.push(request.url())})
+  page.on('requestfailed', request => { if (request.failure()?.errorText === 'net::ERR_ABORTED') return // a fetch cut off by the next navigation is not a failed request
+if (request.url().includes('/market/')) errors.push(request.url())})
   await page.clock.install({time: new Date(NOW)})
   const market = {exchange: 'XNYS', as_of: NOW, session: '2026-09-29', calendar_known: true, is_session: true, open: true, phase: 'open', opens_at: '2026-09-29T13:30:00Z', closes_at: '2026-09-29T20:00:00Z'}
   const latest = {session: SESSION, written: WRITTEN, provenance: {rule: {inputs: []}, data: {}}, targets: {policy: 'graded-equal-weight/4', weights: {AAOI: .1}},
@@ -29,6 +30,8 @@ async function scenario(page: Page, options: {historyFailure?: boolean; history?
     {session: SESSION, recorded_at: WRITTEN, equity: 99341.51, cash: 9341.51, equity_change: null, equity_change_pct: null, previous_session: '2026-09-25', missing_sessions: 0},
   ].map(row => ({...row, chronology_verified: row.previous_session !== null}))}
   await page.route('**/api/**', async route => {
+    // Added after this fixture was written: the board polls the model allocation on every desk view. An empty 2xx reads as "no publication" (the older desk record path); a 418 would be a console error and an unexpected request the spec counts.
+    if (route.request().method() === 'GET' && new URL(route.request().url()).pathname.endsWith('/desk/model-allocation')) return route.fulfill({status: 204})
     const request = route.request()
     const url = new URL(request.url())
     const base = `/api/v1/market/${USER}/desk`

@@ -15,7 +15,7 @@ test('Stocks and chart details refresh assessments without personal guidance', a
   const old = {grade: 'C', score: -.8, stances: {fundamental: 1, technical: -1, sentiment: -1}, ranks: {fundamental: .9, technical: .1, sentiment: .1}}
   page.on('pageerror', error => errors.push(error.message))
   page.on('console', message => {if (message.type() === 'error') errors.push(message.text())})
-  page.on('requestfailed', request => errors.push(request.url()))
+  page.on('requestfailed', request => request.failure()?.errorText === 'net::ERR_ABORTED' ? undefined : errors.push(request.url()))
   await page.route('**/api/v1/**', async route => {
     const request = route.request(), url = new URL(request.url()), path = url.pathname
     if (request.method() !== 'GET') writes.push(path)

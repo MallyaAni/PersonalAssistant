@@ -11,8 +11,10 @@ test('chart judgments cannot invent funded actions or turn absent orders into HO
   const session = '2026-10-13', names = ['READY', 'HELD', 'EXITED', 'BUYING', 'TRIMMING', 'ZERO']
   page.on('pageerror', error => errors.push(error.message))
   page.on('console', message => {if (['error', 'warning'].includes(message.type())) errors.push(message.text())})
-  page.on('requestfailed', request => errors.push(request.url()))
+  page.on('requestfailed', request => request.failure()?.errorText === 'net::ERR_ABORTED' ? undefined : errors.push(request.url()))
   await page.route('**/api/v1/**', async route => {
+    // Added after this fixture was written: the board polls the model allocation on every desk view. An empty 2xx reads as "no publication" (the older desk record path); a 418 would be a console error and an unexpected request the spec counts.
+    if (route.request().method() === 'GET' && new URL(route.request().url()).pathname.endsWith('/desk/model-allocation')) return route.fulfill({status: 204})
     const request = route.request(), path = new URL(request.url()).pathname
     if (request.method() !== 'GET') writes.push(path)
     let json: any = {}

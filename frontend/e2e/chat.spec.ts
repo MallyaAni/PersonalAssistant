@@ -4465,6 +4465,8 @@ test('@live delete all personal memory also deletes owned artifacts', async ({ p
   const errors = observeBlockingBrowserErrors(page)
   const authorization = { Authorization: `Bearer ${bearerToken}` }
   await page.route('**/api/**', async route => {
+    // Added after this fixture was written: the board polls the model allocation on every desk view. An empty 2xx reads as "no publication" (the older desk record path); a 418 would be a console error and an unexpected request the spec counts.
+    if (route.request().method() === 'GET' && new URL(route.request().url()).pathname.endsWith('/desk/model-allocation')) return route.fulfill({status: 204})
     await route.continue({
       headers: { ...route.request().headers(), ...authorization },
     })
