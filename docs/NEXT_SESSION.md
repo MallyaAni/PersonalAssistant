@@ -1575,15 +1575,14 @@ decision/marker consistency; `probe.mjs TICKER=…` for one chart. 14:17
 ET run: 94/94 dialogs, 0 console errors, board grades/positions equal to
 the API for 94/94.
 
-Fundamentals gap. `desk/asof=2026-10-20/desk.json`: 27 of 94 names have
-no fundamental reads (NBIS, TSM, ASML, AAPL, GOOGL, AMZN, ORCL, INTC,
-SNPS, TXN, …). For foreign filers the EDGAR facts layer holds only
-balance-sheet instants to 2025-12-31 (NBIS/TSM: assets, cash, debt,
-equity, shares; no revenue/gross profit/net income), so the fundamental
-analyst votes 0 by construction; some domestic names with revenue facts
-(AAPL, max end 2026-07-17) also read nothing — check `opine_current`
-withholding. Next build: a second income-statement source for 20-F/6-K
-filers through the point-in-time adapter, re-scored on the scorecard.
+Fundamentals gap. Of the 27 names with no fundamental reads in
+`desk/asof=2026-10-20/desk.json`, 23 have full quarterly statements
+(AAPL through 2026-06-27) and simply sit mid-book, so the analyst has no
+extreme to cite and votes 0 by design. Four have NO revenue facts at all
+in `edgar_facts/asof=2026-10-20`: ASML, NBIS, SIMO, TSM — foreign filers
+(20-F/6-K) whose EDGAR facts hold only balance-sheet instants to
+2025-12-31. Next build: an income-statement source for those filers
+through the point-in-time adapter, re-scored on the scorecard.
 
 Still to do today: 16:02 ET `publish_now.py <root> 2026-10-21` from
 `~/dspark-commit` (release and code already installed/deployed — the
