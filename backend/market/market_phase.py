@@ -21,6 +21,10 @@ from backend.market import calendar
 # "overnight" rather than "after-hours" so the words match what a person sees
 # on their broker.
 AFTER_HOURS_END = time(20, 0)
+# Brokers' pre-market sessions begin at 04:00 New York; before that a session
+# day is still "overnight", so the words match what a person sees on their
+# broker rather than calling 1 a.m. pre-market.
+PRE_MARKET_START = time(4, 0)
 ACTS_IN = "regular_session"
 # The nightly cron publishes on weekdays at 19:30 New York (AGENTS.md,
 # `30 19 * * 1-5`); the board counts down to it.
@@ -64,7 +68,7 @@ def describe(now: datetime) -> dict[str, object]:
     status = calendar.exchange_status(now)
     local = now.astimezone(calendar.NEW_YORK)
     phase = {
-        "pre-market": "pre_market",
+        "pre-market": "pre_market" if local.time() >= PRE_MARKET_START else "overnight",
         "open": "regular",
         "post-market": "after_hours" if local.time() < AFTER_HOURS_END else "overnight",
         "closed": "closed",

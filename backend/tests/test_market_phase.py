@@ -64,3 +64,13 @@ def test_unreviewed_years_fail_closed():
     assert phase["phase"] == "unknown"
     assert phase["next_open_at"] is None
     assert phase["next_action_at"] is None
+
+
+# Before the brokers' 04:00 pre-market open, a session day is still overnight,
+# and the next action is that day's open.
+def test_the_small_hours_of_a_session_day_are_overnight():
+    phase = market_phase.describe(_at("2026-09-24T00:30:00-04:00"))
+    assert phase["phase"] == "overnight"
+    assert phase["is_session"] is True
+    assert phase["next_action_at"] == "2026-09-24T09:30:00-04:00"
+    assert phase["next_publication_at"] == "2026-09-24T19:30:00-04:00"

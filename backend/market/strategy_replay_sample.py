@@ -37,12 +37,16 @@ def sample(row, fit_through=None):
         return None
 
 
-# Stamp one stock's rows and say how its decisions split.
+# Stamp one stock's rows and say how its decisions split. The summary view
+# carries counts under the same keys, not rows, so only lists are stamped.
 def stamp_stock(stock):
     """Add `sample` to each decision, trade and target; return the decision counts."""
     counts = {IN_SAMPLE: 0, OUT_OF_SAMPLE: 0}
     for key in ("decisions", "trades", "targets"):
-        for row in stock.get(key) or []:
+        rows = stock.get(key)
+        if not isinstance(rows, list):
+            continue
+        for row in rows:
             if not isinstance(row, dict):
                 continue
             stamped = sample(row)
@@ -72,6 +76,9 @@ def stamp(value):
         value["provenance"] = {**provenance, "model_fit_through": MODEL_FIT_THROUGH}
     else:
         value["model_fit_through"] = MODEL_FIT_THROUGH
-    value["in_sample_decisions"] = counts[IN_SAMPLE]
-    value["out_of_sample_decisions"] = counts[OUT_OF_SAMPLE]
+    # A view with no rows to stamp (the summary's counts) gets the fit date only;
+    # a zero split there would read as a measurement that was never taken.
+    if isinstance(value.get("decisions"), list) or isinstance(stocks, dict):
+        value["in_sample_decisions"] = counts[IN_SAMPLE]
+        value["out_of_sample_decisions"] = counts[OUT_OF_SAMPLE]
     return value

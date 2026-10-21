@@ -46,3 +46,12 @@ def test_a_served_view_carries_stamps_counts_and_the_fit_date():
         2,
     )
     assert summary["model_fit_through"] == sample.MODEL_FIT_THROUGH
+
+
+# The summary view counts its decisions instead of listing them; it gains the
+# fit date and nothing is stamped or miscounted.
+def test_the_summary_with_counts_is_left_whole():
+    served = sample.stamp({"decisions": 5755, "trades": 0, "provenance": {}})
+    assert served["decisions"] == 5755
+    assert served["provenance"]["model_fit_through"] == sample.MODEL_FIT_THROUGH
+    assert "in_sample_decisions" not in served
