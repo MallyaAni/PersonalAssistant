@@ -534,6 +534,17 @@ const completedCandleTime = (live: DeskLive, allocation?: DeskModelAllocation): 
   return bars.length ? new Date(Math.max(...bars)).toISOString() : null
 }
 
+// The trade size in the owner's own money: the model's percentage applied to
+// the planning equity entered on this page, at the price the board shows.
+// Shares are rounded down to whole ones, as the planner buys them; the
+// percentage stays the authority and this line never replaces it.
+const sizedAmount = (ticker: string, size: number | null, equity: number | undefined, price: number | undefined) => {
+  if (size === null || !equity || !(equity > 0) || !price || !(price > 0)) return null
+  const dollars = size * equity
+  const shares = Math.floor(dollars / price)
+  return <p aria-label={`${ticker} sized amount`} className="text-[10px] text-[#6e6e73]">≈ ${dollars.toLocaleString('en-US', {maximumFractionDigits: 0})} · {shares} sh at ${price.toFixed(2)}</p>
+}
+
 // Show only the clock time in a retained row; the strip above the table carries the date.
 const clockTime = (value: string | null): string => {
   const parsed = Date.parse(value ?? '')
@@ -566,7 +577,7 @@ export const SignalDetail = ({signals}: {signals: Signals}) => <section aria-lab
 </section>
 
 // Keep saved stocks navigable without unavailable advice, and rank covered names independently of accounts, each directional tab restricted to its matching verdict.
-export const SignalBoard = ({latest, live, allocation, now, onOpen, closes, refreshMs = 20_000, refreshedAt}: {latest: DeskRecord; live: DeskLive; allocation?: DeskModelAllocation; now: number; onOpen: (ticker: string) => void; closes?: Record<string, number | null>; refreshMs?: number; refreshedAt?: number}) => {
+export const SignalBoard = ({latest, live, allocation, now, onOpen, closes, refreshMs = 20_000, refreshedAt, planningEquity}: {latest: DeskRecord; live: DeskLive; allocation?: DeskModelAllocation; now: number; onOpen: (ticker: string) => void; closes?: Record<string, number | null>; refreshMs?: number; refreshedAt?: number; planningEquity?: number}) => {
   const [side, setSide] = useState<Side>('all')
   const [query, setQuery] = useState('')
   const [opened, setOpened] = useState<string | null>(null)
@@ -698,7 +709,7 @@ export const SignalBoard = ({latest, live, allocation, now, onOpen, closes, refr
           {view.nextSession && <span className="mt-1 inline-block rounded bg-[#eef1f6] px-1.5 py-0.5 text-[10px] font-medium text-[#3a3a3c]">next session</span>}
           {refreshing && <p className="mt-0.5 text-[10px] text-[#9a6700]">{view.observedAt ? `as of ${clockTime(view.observedAt)} ET, refreshing` : 'refreshing'}</p>}
         </td>
-        {independent && <td className="p-2" aria-label={`${row.ticker} trade size`}>{sizeText(view.size)}</td>}
+        {independent && <td className="p-2"><span aria-label={`${row.ticker} trade size`}>{sizeText(view.size)}</span>{sizedAmount(row.ticker, view.size, planningEquity, displayedBoardPrice(live, row.ticker, now, closes?.[row.ticker], latest.session)?.price)}</td>}
         <td className="p-2"><ModelSize latest={latest} allocation={allocation} ticker={row.ticker} now={now} /></td>
         {showPriority && <td aria-label={`${row.ticker} signal strength`} className="p-2">{selected(row).priority ? selected(row).priority[0].toUpperCase() + selected(row).priority.slice(1) : '—'}</td>}
         <td className="max-w-sm p-2"><button type="button" aria-label={`details for ${row.ticker}`} aria-expanded={opened === row.ticker} className="text-[#0071e3]" onClick={() => setOpened(opened === row.ticker ? null : row.ticker)}>Details</button>{opened === row.ticker && <SignalDetail signals={row} />}</td>
@@ -706,7 +717,7 @@ export const SignalBoard = ({latest, live, allocation, now, onOpen, closes, refr
     </table>
     {recommendationsUnavailable && ranked.length > 0 && <p role="status" className="p-3 text-xs">Current recommendations unavailable. Saved stock charts remain available.</p>}
     {!ranked.length && <p role="status" className="p-3 text-xs">{query.trim() ? 'No matching stocks.' : recommendationsUnavailable ? 'Strategy recommendations unavailable. Refresh to retry.' : awaitingNightly ? allocation?.next_publication_at ? `Awaiting tonight's plan at ${evidenceTime(allocation.next_publication_at)}.` : "Awaiting tonight's plan." : side === 'sell' ? rows.some(row=>row.sell.word==='Wait') ? 'No confirmed sell signals yet.' : 'No sell signals in the current strategy publication.' : side === 'buy' ? rows.some(row=>row.buy.word==='Wait') ? 'No confirmed buy signals yet.' : 'No buy signals in the current strategy publication.' : 'No matching stocks.'}</p>}
-    {independent && <p className="px-3 py-2 text-[11px] text-[#6e6e73]">Size % is the buy or sell amount. Position % is the model’s desired total position. Do nothing means no trade is recommended now. — means no confirmed trade size.</p>}
+    {independent && <p className="px-3 py-2 text-[11px] text-[#6e6e73]">Size % is the buy or sell amount. Position % is the model’s desired total position. Do nothing means no trade is recommended now. — means no confirmed trade size.{planningEquity ? ` The ≈ line applies Size % to the planning equity ($${planningEquity.toLocaleString('en-US', {maximumFractionDigits: 0})}) at the shown price; whole shares, rounded down.` : ''}</p>}
     {ranked.length > visible && <button type="button" className="p-3 text-xs text-[#0071e3]" onClick={() => setVisible(value => value + 25)}>Show more · {visible} of {ranked.length}</button>}
   </section>
 }

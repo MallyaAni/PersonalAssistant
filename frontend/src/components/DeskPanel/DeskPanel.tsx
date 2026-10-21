@@ -1570,7 +1570,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
 
       {strategyView && !research && latest && <div className="flex flex-col sm:max-h-[75vh]">
           <SignalBoard latest={latest} live={live} allocation={modelAllocation} now={now} onOpen={setOpenName} closes={closes}
-            refreshMs={POLL_MS} refreshedAt={polledAt} />
+            refreshMs={POLL_MS} refreshedAt={polledAt} planningEquity={equity} />
       </div>}
       {!strategyView && !research && <>
       {/* On phones, diagnostics use page scrolling instead of a tiny nested viewport. */}
