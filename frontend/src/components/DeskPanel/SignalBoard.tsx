@@ -732,7 +732,7 @@ export const SignalBoard = ({latest, live, allocation, now, onOpen, closes, refr
         const label = view.verdict === 'buy' ? 'Buy' : view.verdict === 'sell' ? 'Sell' : ''
         const tone = row.lastPlan ? 'text-[#6e6e73]' : view.verdict === 'sell' ? 'text-[#b42318]' : view.verdict === 'buy' ? 'text-[#248a3d]' : 'text-[#6e6e73]'
         return <tr key={row.ticker} data-ticker={row.ticker} className={`border-t align-top${row.lastPlan ? ' text-[#6e6e73] opacity-70' : ''}`}>
-        <td className="p-2"><button type="button" className="font-semibold text-[#0071e3]" onClick={() => onOpen(row.ticker)}>{row.ticker}</button>{row.lastPlan && <span className="ml-1 rounded bg-[#eef1f6] px-1 text-[10px] font-medium">last plan</span>}<SessionPrice live={live} ticker={row.ticker} now={now} compact close={closes?.[row.ticker]} closeSession={latest.session} /></td>
+        <td className="p-2"><button type="button" className="font-semibold text-[#0071e3]" onClick={() => onOpen(row.ticker)}>{row.ticker}</button><SessionPrice live={live} ticker={row.ticker} now={now} compact close={closes?.[row.ticker]} closeSession={latest.session} /></td>
         <td aria-label={`${row.ticker} displayed grade`} className="p-2">{row.grade}</td>
         <td aria-label={`${row.ticker} verdict cell`} className="max-w-sm p-2">
           <p aria-label={`${row.ticker} verdict`} className={`font-semibold ${tone}`}>{label}</p>

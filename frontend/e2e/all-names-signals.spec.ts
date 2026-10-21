@@ -110,7 +110,7 @@ test('Awaiting tonight plan keeps the last plan visible without an unavailable m
   await expect(board.getByLabel('BUYHIGH verdict',{exact:true})).toHaveText('')
   await expect(board.getByLabel('BUYHIGH model size',{exact:true})).toHaveText('14.3%')
   await expect(board.locator('tbody tr[data-ticker="BUYHIGH"]')).toHaveClass(/opacity-70/)
-  await expect(board.getByText('last plan',{exact:true})).toHaveCount(3)
+  await expect(board.getByText('last plan',{exact:true})).toHaveCount(0)
   await expect(board.getByLabel('Signal coverage')).toContainText('3 last-plan rows')
   await expect(board.getByLabel('Data as of')).toContainText('Plan 2026-10-19 (last plan)')
   await expect(board).not.toContainText('Strategy recommendations unavailable')
