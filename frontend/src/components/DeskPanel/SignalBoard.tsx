@@ -382,7 +382,8 @@ const signalsForBase = (latest: DeskRecord, live: DeskLive, ticker: string, now:
         if (direction === 'sell')
           return {ticker,grade,setup:null,evidence,nextSession:true,buy:inactive,
             sell:signal('Exit if held',false,'','',1)}
-        if (position > 0)
+        // A target the size column prints as 0.0% buys no shares, so it is no plan.
+        if (position >= 0.0005)
           return {ticker,grade,setup:null,evidence,nextSession:true,size_weight:position,sell:inactive,
             buy:signal('Buy plan',false,'','',1)}
         return {ticker,grade,setup:null,evidence,nextSession:false,sell:inactive,buy:signal('Do nothing',false,'','',2)}
