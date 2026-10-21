@@ -1532,6 +1532,53 @@ The detailed current continuation remains the TOP of the attached
 learned-live-release-20261006 worktree's NEXT_SESSION.md. Keep existing heartbeat
 ACTIVE and quiet unchanged. No question pending; no agents without delegation,
 usage-limited retries/replacements, denied-read bypass or native-pool adoption.
+## 2026-10-21 08:00 ET — DEPLOYED b1f9f4b4 (gated): pre-market rows show the next-open plan; sizing arms scored
+
+Owner, 06:48 ET, watching the live board pre-market: every row said
+"Do nothing · outside regular session". Cause: `signalsForBase` took the
+reference-book path with `side = open ? row.action : null` and returned
+`nextSession:false`, so the WP8 off-session override replaced every row.
+Fix (b023533e, frontend + API): outside the regular session the reference
+branch now returns the plan for the next open — `Buy plan` with
+`size_weight` = the reference target, `Exit if held` where grade_signals
+says sell, `Do nothing` only where the target prints as 0.0% (2aac5504
+sets that threshold at 0.0005). `signalsFor` no longer merges the API's
+live verdict fields over a plan row (they describe the current session),
+`signalsView` falls back to the plan's own size, and the API stops
+annotating `reference_positions` rows (they carry a target and no state,
+so the annotation called TSM at 22% "nothing/no_allocation"). Verified
+on the live data root at 07:48 ET: status available, phase pre_market,
+positive targets ALAB 1.3 / GEV 3.8 / HPE 21.1 / MU 25 / NTAP 25 /
+SNPS 1.8 / TSM 22.0, sell SWKS. e2e all-names-signals + current-assessment
++ simple-actions + desk-history-accuracy 95/95; unit 14/14 touched files;
+deploy11 gated, post-deploy ok (cheap). The stale e2e expectation of an
+"Action" column header (board says "Verdict" since WP6) is corrected.
+
+Owner, 07:05 ET: "minimal wording, no redundant wording for what
+logically already displays". Row reasons that repeated the grade, size,
+position or phase columns are dropped (empty reason, detail line omits
+the separator); the phase line is one line (`Pre-market · opens 09:30 ET`,
+`Regular session · until 16:00 ET`, `After-hours · next session … ·
+tonight's plan …`); the closed-market subtitle is `Next-session actions ·
+<session>` (b2eb55ff). deploy12 (gated, because 661aaf5c touched
+`backend/cli`) carries b2eb55ff + 661aaf5c; 2aac5504 follows on the short
+path. Sweep the chart's explanatory paragraphs next with the same rule.
+
+Sizing arms (owner: "max gains for minimal change in max drawdown"):
+`graded_inverse_volatility_allocator` and
+`graded_volatility_targeted_allocator` in `desk/point_in_time.py`, arms
+`risk_graded_full/20`, `ew_graded_voltarget` (0.30), `_25`, `_20`
+(b1f9f4b4, 661aaf5c). Scorecard through 2026-10-20, 25 bp, results in
+`~/dsv41/pit/pit_<arm>_20261021.json`, table and reading appended to
+`docs/research/sizing-timing-validation-2026-10-21.md`. Pick by the
+owner's rule: equal weight across every A/A+ name at a 0.25 realised-vol
+target — CAGR 22.0% all-window at worst DD -35.0% against the installed
+rule's 16.5% at -34.0%; knee between 0.25 and 0.30. Not installed: it is
+a trading-economics change through the release approval; the owner has
+not asked for the candidate yet. Scheduled self-checks remain:
+09:50 ET live board (`trig_011pDvAvsGziarxcsX6G5Ky6`), 20:15 ET nightly
+briefs (`trig_01MuLpBzcrto3Pg4x77pK2U2`).
+
 ## 2026-10-21 03:20 ET — DEPLOYED bd1babe9 (gated): brief checker final; sized amounts on the board; scorecard re-run
 
 Live: `9f4927c4` (Size % also as ≈ dollars and whole shares against the
