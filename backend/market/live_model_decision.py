@@ -387,7 +387,7 @@ def _authenticate(root, record, now):
     paper = record["paper"]
     admission = paper["learned_holding"]
     if (
-        config["policy"] != grade_led_policy.POLICY
+        config["policy"] not in learned_live_holding.GRADE_LED_POLICIES
         or admission["config_sha256"] != sha256(config_raw).hexdigest()
         or sha256((root / learned_live_timing.CONFIG).read_bytes()).hexdigest()
         != config["timing_config_sha256"]
@@ -543,7 +543,7 @@ def _validate(record, config, report):
     receipt = allocation["receipt"]
     names = set(record["grades"])
     if (
-        config["policy"] != grade_led_policy.POLICY
+        config["policy"] not in learned_live_holding.GRADE_LED_POLICIES
         or any(
             value.get("policy") != config["policy"]
             for value in (

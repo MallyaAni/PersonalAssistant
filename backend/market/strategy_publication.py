@@ -54,12 +54,17 @@ def _sources():
 
 
 # Identify the economic strategy without binding history to one funded record or publication date.
-def _strategy_identity(sources, cost_bps):
+def _strategy_identity(sources, cost_bps, policy=grade_led_policy.POLICY):
     names = ("adaptive_growth_policy.py", "grade_led_policy.py", "joint_funded_policy.py",
              "market_conditioned_holding.py", "forward_arithmetic.py", "forward_execution.py",
              "live_probability_timing.py", "entry_timing.py", "direct_daily_arithmetic.py",
              "learned_entry_data.py", "market_conditioned_calibration.py", "probabilistic_execution.py")
-    return _digest({"policy": grade_led_policy.POLICY,
+    if policy not in learned_live_holding.GRADE_LED_POLICIES:
+        raise ValueError("Installed grade-led strategy required")
+    if policy == learned_live_holding.leader.POLICY:
+        # The leader sizing is its own economics; the installed identity keeps its bytes.
+        names = (*names, "grade_led_leader_policy.py")
+    return _digest({"policy": policy,
                     "sources": {name: sources["backend/market/" + name] for name in names},
                     "basis": strategy_model_allocation.BASIS, 'economic_parameters':{'cost_bps':float(cost_bps)}})
 
@@ -82,14 +87,15 @@ def _close_context(policy, current):
 
 # Calculate from the already admitted native close, before creating any account-dependent plan.
 def build(policy, report, blocked, *, observed_at):
-    if (type(policy) is not learned_live_holding.GradeLedHoldingPolicy
+    if (type(policy) not in (learned_live_holding.GradeLedHoldingPolicy,
+                             learned_live_holding.GradeLedLeaderHoldingPolicy)
             or not isinstance(observed_at, datetime) or observed_at.utcoffset() is None
             or observed_at < policy.observed_at):
         raise ValueError("Original prepared grade-led policy and real observation required")
     policy.reader.validate_clock(observed_at)
     policy.reader.validate_report(report)
     raw, config = learned_live_holding.read_configuration(policy.root, observed_at)
-    if raw != policy.config_bytes or config["policy"] != grade_led_policy.POLICY or policy.cost_bps != config['cost_bps']:
+    if raw != policy.config_bytes or config["policy"] != policy.version or policy.cost_bps != config['cost_bps']:
         raise ValueError("Prepared independent configuration changed")
     names = tuple(name for name in report.panel.tickers if name not in ("SPY", "QQQ"))
     if not set(blocked) <= set(report.panel.tickers):
@@ -97,7 +103,7 @@ def build(policy, report, blocked, *, observed_at):
     # Benchmarks supply market context but cannot become stock target keys.
     blocked = set(blocked) & set(names)
     targets, readings, receipt = strategy_model_allocation.targets_from_model(
-        report, policy.reader, policy.cost_bps, blocked)
+        report, policy.reader, policy.cost_bps, blocked, config["policy"])
     current = policy.reader.current
     session = str(current.dates[-1])
     sources = _sources()
@@ -109,7 +115,7 @@ def build(policy, report, blocked, *, observed_at):
                 "risk_receipt_sha256": config["risk_receipt_sha256"],
                 "timing_config_sha256": config["timing_config_sha256"],
                 "economic_parameters":{'cost_bps':policy.cost_bps},
-                "strategy_identity": _strategy_identity(sources,policy.cost_bps), "source_sha256": sources,
+                "strategy_identity": _strategy_identity(sources,policy.cost_bps,config["policy"]), "source_sha256": sources,
                 "prefix_sha256": current.receipt["identity"]["prefix_sha256"]}
     identity['close_context'] = _close_context(policy,current)
     evidence = {}
@@ -141,7 +147,7 @@ def validate(value, now, *, expected_sources=None, config_sha256=None):
     if not isinstance(now, datetime) or now.utcoffset() is None:
         raise ValueError("Aware independent publication observation required")
     if (value["version"] != VERSION or value["status"] != "available"
-            or value["policy"] != grade_led_policy.POLICY
+            or value["policy"] not in learned_live_holding.GRADE_LED_POLICIES
             or value["basis"] != strategy_model_allocation.BASIS
             or value["account_basis"] != "no_account_inputs"
             or value["timing_basis"] != "nightly_position_size_not_immediate_trade_size"):
@@ -154,7 +160,7 @@ def validate(value, now, *, expected_sources=None, config_sha256=None):
             or type(identity['economic_parameters']['cost_bps']) not in (int,float)
             or not math.isfinite(identity['economic_parameters']['cost_bps'])
             or not 0 <= identity['economic_parameters']['cost_bps'] < 10000
-            or value["strategy_identity"] != _strategy_identity(identity["source_sha256"],identity['economic_parameters']['cost_bps'])
+            or value["strategy_identity"] != _strategy_identity(identity["source_sha256"],identity['economic_parameters']['cost_bps'],value["policy"])
             or value["strategy_identity"] != identity["strategy_identity"]
             or (expected_sources is not None and identity["source_sha256"] != expected_sources)
             or (config_sha256 is not None and identity["config_sha256"] != config_sha256)):

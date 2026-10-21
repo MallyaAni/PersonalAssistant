@@ -67,6 +67,7 @@ class JointFundedPolicy:
     minimum_held_grade = 1
     version = POLICY
     protocol = PROTOCOL
+    sizing_reason = "joint_net_growth"
 
     # Admit original or published forward risk on the still-private funded path.
     def __init__(self, reader, cost_bps):
@@ -161,41 +162,48 @@ class JointFundedPolicy:
         if reason is None and any(name not in self.reader.symbols for name in names):
             reason = "joint_symbol_unavailable"
         if reason is None and names:
-            sample = self.reader.distribution(int(hits[0]), names)
-            receipt["scenario"] = sample.receipt
-            if sample.receipt["status"] != "available":
-                reason = "joint_risk_unavailable"
-            else:
-                ordered = (*names, *exits)
-                permission = np.array(
-                    [1 if name in blocked else grades[name] for name in names]
-                    + [0] * len(exits)
-                )
-                values = np.c_[
-                    sample.scenarios, np.zeros((len(sample.scenarios), len(exits)))
-                ]
-                weights, proof = growth.allocate_distribution(
-                    values,
-                    sample.probabilities,
-                    permission,
-                    np.ones(len(ordered), dtype=bool),
-                    np.array([current.get(name, 0.0) for name in ordered]),
-                    float(cash) / float(equity),
-                    self.cost_bps,
-                    np.array([], dtype=np.int64),
-                    horizon=HORIZON,
-                )
-                receipt["optimizer"] = proof
-                if proof["status"] != "optimized":
-                    reason = "joint_optimizer_unavailable"
-                else:
-                    targets.update(zip(ordered, weights.tolist(), strict=True))
+            sizes, reason = self._size(
+                names, exits, grades, current, cash, equity, int(hits[0]), blocked,
+                report, receipt,
+            )
+            targets.update(sizes)
         receipt.update(
             status="unavailable" if reason else "available",
-            reason=reason or "joint_net_growth",
+            reason=reason or self.sizing_reason,
             targets=targets,
         )
         return targets, receipt
+
+    # Size the required book from the bound scenario model; a subclass may size
+    # otherwise, but every other guard of decide() stays in force around it.
+    def _size(
+        self, names, exits, grades, current, cash, equity, day, blocked, report, receipt
+    ):
+        sample = self.reader.distribution(day, names)
+        receipt["scenario"] = sample.receipt
+        if sample.receipt["status"] != "available":
+            return {}, "joint_risk_unavailable"
+        ordered = (*names, *exits)
+        permission = np.array(
+            [1 if name in blocked else grades[name] for name in names]
+            + [0] * len(exits)
+        )
+        values = np.c_[sample.scenarios, np.zeros((len(sample.scenarios), len(exits)))]
+        weights, proof = growth.allocate_distribution(
+            values,
+            sample.probabilities,
+            permission,
+            np.ones(len(ordered), dtype=bool),
+            np.array([current.get(name, 0.0) for name in ordered]),
+            float(cash) / float(equity),
+            self.cost_bps,
+            np.array([], dtype=np.int64),
+            horizon=HORIZON,
+        )
+        receipt["optimizer"] = proof
+        if proof["status"] != "optimized":
+            return {}, "joint_optimizer_unavailable"
+        return dict(zip(ordered, weights.tolist(), strict=True)), None
 
     # Convert a certified target to durable whole-share orders without sale funding.
     def plan(self, session, state, equity, held, prices, report, cash, blocked):
@@ -447,18 +455,8 @@ class RetainedMarketConditionedFundedPolicy(MarketConditionedTimedFundedPolicy):
     version = transition.POLICY
     protocol = transition.PROTOCOL
 
-    # Keep unsupported shares while permitting reductions in the modeled book.
-    def decide(self, session, report, equity, held, prices, cash, blocked):
-        targets, receipt = super().decide(
-            session, report, equity, held, prices, cash, blocked
-        )
-        if receipt["reason"] not in {
-            "joint_risk_unavailable",
-            "protected_held_risk_unavailable",
-        }:
-            return targets, receipt
-        exits = set(receipt["company_exits"])
-        protected = set(receipt["protected_holdings"])
+    # Name the held shares the modeled book cannot carry: unpriced risk or no grade.
+    def _unavailable_holdings(self, session, held, exits, protected):
         unavailable = {}
         day = int(np.flatnonzero(self.reader.dates == np.datetime64(session))[0])
         for name, qty in held.items():
@@ -474,6 +472,24 @@ class RetainedMarketConditionedFundedPolicy(MarketConditionedTimedFundedPolicy):
                 }
             if risk["status"] != "available":
                 unavailable[name] = risk
+        return unavailable
+
+    # Keep unsupported shares while permitting reductions in the modeled book.
+    def decide(self, session, report, equity, held, prices, cash, blocked):
+        targets, receipt = super().decide(
+            session, report, equity, held, prices, cash, blocked
+        )
+        if receipt["reason"] not in {
+            "joint_risk_unavailable",
+            "protected_held_risk_unavailable",
+        }:
+            return targets, receipt
+        unavailable = self._unavailable_holdings(
+            session,
+            held,
+            set(receipt["company_exits"]),
+            set(receipt["protected_holdings"]),
+        )
         if not unavailable:
             return targets, receipt
         capital = transition.partition(equity, cash, held, prices, set(unavailable))
@@ -510,6 +526,7 @@ class GradeLedFundedPolicy(RetainedMarketConditionedFundedPolicy):
     version = "grade-led-learned-sizing/1"
     protocol = "docs/research/grade-led-sizing-contract-2026-10-13.md"
     minimum_held_grade = 2
+    target_basis = "grade_constrained_learned_sizes"
 
     # Record every grade signal even when no executable size can be funded.
     def decide(self, session, report, equity, held, prices, cash, blocked):
@@ -528,7 +545,7 @@ class GradeLedFundedPolicy(RetainedMarketConditionedFundedPolicy):
             receipt["sizing_optimizer"] = receipt.pop("optimizer")
         if receipt["status"] == "available":
             return grade_led_policy.preserve_grade_holdings(
-                targets, receipt, readings, prices, equity
+                targets, receipt, readings, prices, equity, basis=self.target_basis
             )
         receipt["grade_signals"] = readings
         return targets, receipt

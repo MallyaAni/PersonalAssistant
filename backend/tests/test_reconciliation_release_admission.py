@@ -11,8 +11,10 @@ from backend.cli import market_release_admission as admission
 
 DAILY = "backend/cli/market_daily.py"
 VIEW = "backend/market/live_model_decision.py"
-UNCHANGED = "abff05260e84aba546764b8fb030053f22f8eccbe7d309278a52d455f299622e"
-UNCHANGED_VIEW = "3e894a1f3b802cffb2fd897cc9c7240f6fd1a00b8cade100fb6a1b019f389889"
+# Pinned to the grade-led-leader-weight/1 candidate tree (the selector and policy
+# tuples in both modules accept the leader id); before it: abff0526... and 3e894a1f....
+UNCHANGED = "b451c4812d69b037afefc41e8dfd9b9b056ba5483858086543cb190e15823dc3"
+UNCHANGED_VIEW = "3cdf9b9398c3e5751d064af3b0920efd457a8610ecac774d52d96cff4e8a1676"
 
 
 # Build a synthetic approval transition around the actual candidate CLI source.

@@ -888,15 +888,17 @@ def _holding_broker(policy, client, decision_at):
     if policy is None:
         return
     from backend.market.learned_live_holding import (
+        GradeLedHoldingPolicy,
+        GradeLedLeaderHoldingPolicy,
         InstalledHoldingPolicy,
         RetainedHoldingPolicy,
-        GradeLedHoldingPolicy,
     )
 
     if type(policy) in (
         InstalledHoldingPolicy,
         RetainedHoldingPolicy,
         GradeLedHoldingPolicy,
+        GradeLedLeaderHoldingPolicy,
     ):
         policy.admit_broker(client, decision_at)
         return
@@ -920,15 +922,17 @@ def _holding_prices(policy, prices, positions):
     if policy is None:
         return prices
     from backend.market.learned_live_holding import (
+        GradeLedHoldingPolicy,
+        GradeLedLeaderHoldingPolicy,
         InstalledHoldingPolicy,
         RetainedHoldingPolicy,
-        GradeLedHoldingPolicy,
     )
 
     if type(policy) in (
         InstalledHoldingPolicy,
         RetainedHoldingPolicy,
         GradeLedHoldingPolicy,
+        GradeLedLeaderHoldingPolicy,
     ):
         return {
             **prices,
@@ -1056,9 +1060,9 @@ def _holding_actions(
             stops={},
             why=order.reason if order is not None else "",
         )
-        from backend.market import grade_led_policy
+        from backend.market.learned_live_holding import GRADE_LED_POLICIES
 
-        if policy.version == grade_led_policy.POLICY:
+        if policy.version in GRADE_LED_POLICIES:
             receipt = signal_receipt or {}
             if not event_plan and name in (receipt.get("sizing_model_targets") or {}):
                 row["model_target_weight"] = receipt["sizing_model_targets"][name]
@@ -1620,7 +1624,7 @@ def _record_targets(report, paper_entry):
     from backend.agents.trading.desk import live_policy
     from backend.market import joint_funded_policy as funded
     from backend.market.learned_holding_transition import POLICY as RETAINED_POLICY
-    from backend.market.grade_led_policy import POLICY as GRADE_LED_POLICY
+    from backend.market.learned_live_holding import GRADE_LED_POLICIES
 
     selected = (paper_entry or {}).get("selected_targets")
     if selected is None:
@@ -1636,7 +1640,7 @@ def _record_targets(report, paper_entry):
             funded.TIMED_POLICY,
             funded.MARKET_TIMED_POLICY,
             RETAINED_POLICY,
-            GRADE_LED_POLICY,
+            *GRADE_LED_POLICIES,
         )
         or (paper_entry or {}).get("policy") != selected.get("policy")
         or set(weights) != names

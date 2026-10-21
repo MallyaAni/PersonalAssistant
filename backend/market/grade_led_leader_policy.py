@@ -1,0 +1,211 @@
+"""Grade direction with leader-tilted equal weight at a realised-volatility target.
+
+The candidate keeps every rule of the installed grade-led policy except how an
+eligible name is sized: instead of the learned scenario optimiser, each A/A+
+name takes an equal slot tilted by its trailing-return rank among the sized
+names, the book is scaled down to a realised-volatility target, and each name
+is capped. Nothing after the decision session is read, no model is fitted, and
+the receipt says the optimiser did not run.
+"""
+
+import hashlib
+from dataclasses import replace
+from pathlib import Path
+
+import numpy as np
+
+from backend.agents.trading.desk import point_in_time
+from backend.market import adaptive_growth_policy as growth
+from backend.market import joint_funded_policy as funded
+
+POLICY = "grade-led-leader-weight/1"
+PROTOCOL = "docs/research/grade-led-leader-weight-contract-2026-10-21.md"
+BASIS = "grade_led_leader_weight"
+WINDOW = 63
+STRENGTH = 0.5
+TARGET = 0.25
+TRADING_DAYS = 252.0
+
+
+# Share one unit of capital across the sized names from their trailing closes only:
+# equal slots tilted by trailing-return rank, the whole book scaled down to the
+# volatility target, each name capped, the remainder cash; never levered.
+def leader_weights(
+    closes, sized, *, window=WINDOW, strength=STRENGTH, target=TARGET, cap=growth.CAP
+):
+    closes = np.asarray(closes, dtype=float)
+    sized = np.asarray(sized, dtype=bool)
+    if (
+        closes.ndim != 2
+        or sized.ndim != 1
+        or closes.shape != (window + 1, len(sized))
+        or window < 2
+        or not 0 <= strength <= 1
+        or not target > 0
+        or not 0 < cap <= 1
+    ):
+        raise ValueError("Exactly window+1 trailing closes for every name required")
+    certificate = {
+        "basis": BASIS,
+        "window": int(window),
+        "strength": float(strength),
+        "volatility_target": float(target),
+        "cap": float(cap),
+        "annualisation": TRADING_DAYS,
+        "sized": int(sized.sum()),
+        "optimizer_ran": False,
+    }
+    weights = np.zeros(len(sized))
+    if not sized.any():
+        return weights, {**certificate, "status": "no_sized_names"}
+    book = closes[:, sized]
+    if not np.isfinite(book).all() or not (book > 0).all():
+        raise ValueError("Finite positive trailing closes for every sized name")
+    multipliers = point_in_time.TILTS["leader"](book, strength)
+    slots = multipliers / multipliers.sum()
+    basket = np.diff(np.log(book), axis=0).mean(axis=1)
+    realised = float(np.std(basket, ddof=1)) * np.sqrt(TRADING_DAYS)
+    scale = min(1.0, target / realised) if realised > 0 else 1.0
+    weights[sized] = np.minimum(slots * scale, cap)
+    if not np.isfinite(weights).all() or weights.sum() > 1 + 1e-10:
+        raise ValueError("Leader weights must stay within unit capital")
+    certificate.update(
+        status="sized",
+        trailing_returns=(book[-1] / book[0] - 1.0).tolist(),
+        multipliers=multipliers.tolist(),
+        realised_volatility=realised,
+        scale=float(scale),
+        gross=float(weights.sum()),
+    )
+    return weights, certificate
+
+
+# The trailing close window of the report ending on its last session, per name.
+def _window(report, names, window=WINDOW):
+    panel = report.panel
+    if len(panel.dates) < window + 1:
+        raise ValueError("Trailing close window longer than the report")
+    columns = [panel.index(name) for name in names]
+    return np.asarray(panel.adj_close[-(window + 1) :, columns], dtype=float)
+
+
+# Size `names` on unit capital from the report's trailing closes. A name without a
+# full finite window is not sized, and a blocked name may not grow past `current`,
+# so the funded account and the account-free publication share one calculation.
+def size_report(report, names, blocked, current):
+    closes = _window(report, names)
+    with np.errstate(invalid="ignore"):
+        known = np.isfinite(closes).all(axis=0) & (closes > 0).all(axis=0)
+    sized = known & np.array(
+        [name not in blocked or current.get(name, 0) > 0 for name in names],
+        dtype=bool,
+    )
+    weights, certificate = leader_weights(closes, sized)
+    sizes = {
+        name: min(weight, current.get(name, 0.0)) if name in blocked else weight
+        for name, weight in zip(names, weights.tolist(), strict=True)
+    }
+    certificate.update(
+        unsized=[
+            name for name, ok in zip(names, known.tolist(), strict=True) if not ok
+        ],
+        dates=[str(report.panel.dates[-(WINDOW + 1)]), str(report.panel.dates[-1])],
+    )
+    return sizes, certificate
+
+
+# Keep the grade-led direction, funding, timing and receipts; replace only the sizing.
+class GradeLedLeaderFundedPolicy(funded.GradeLedFundedPolicy):
+    version = POLICY
+    protocol = PROTOCOL
+    sizing_reason = BASIS
+    target_basis = BASIS
+
+    # Bind the sizing source beside the funded policy source the parent already pins;
+    # the installed subclass passes its release arguments through unchanged.
+    def __init__(self, reader, cost_bps, *installed):
+        super().__init__(reader, cost_bps, *installed)
+        self.identity["sizing_source_sha256"] = hashlib.sha256(
+            Path(__file__).read_bytes()
+        ).hexdigest()
+        self.identity["sizing_basis"] = BASIS
+
+    # Grades alone admit names; no per-name risk reading qualifies or excludes one.
+    def _required_stocks(self, grades, current, day, blocked, *, refusal=None):
+        candidates, _ = funded.JointFundedPolicy._required_stocks(
+            self, grades, current, day, blocked
+        )
+        retained = [name for name in candidates if current.get(name, 0) > 0]
+        excluded = {
+            name: {"reason": "buy_permission_blocked"}
+            for name in candidates
+            if name not in retained and name in blocked
+        }
+        required = tuple(name for name in candidates if name not in excluded)
+        return required, {
+            "entry_qualification": {
+                "policy": self.version,
+                "considered_entrants": [n for n in candidates if n not in retained],
+                "admitted_entrants": [n for n in required if n not in retained],
+                "mandatory_held": retained,
+                "excluded_entries": excluded,
+                "selection_uses_future_outcomes": False,
+                "joint_risk_still_required": False,
+            }
+        }
+
+    # Size from the report's own trailing closes instead of the scenario optimiser.
+    def _size(
+        self, names, exits, grades, current, cash, equity, day, blocked, report, receipt
+    ):
+        try:
+            sizes, certificate = size_report(report, names, blocked, current)
+        except ValueError as exc:
+            receipt["leader_sizing"] = {"status": "unavailable", "reason": str(exc)}
+            return {}, "leader_window_unavailable"
+        held_unsized = [n for n in certificate["unsized"] if current.get(n, 0) > 0]
+        if held_unsized:
+            # A held name the window cannot price must not be resized blind.
+            receipt["leader_sizing"] = {
+                "status": "unavailable",
+                "reason": "trailing_window_unavailable",
+                "symbols": held_unsized,
+            }
+            return {}, "leader_window_unavailable"
+        qualification = receipt["entry_qualification"]
+        for name in certificate["unsized"]:
+            qualification["excluded_entries"][name] = {
+                "reason": "trailing_window_unavailable"
+            }
+            qualification["admitted_entrants"].remove(name)
+        receipt["leader_sizing"] = certificate
+        return {**sizes, **dict.fromkeys(exits, 0.0)}, None
+
+    # Only a name without a grade is set aside; the risk model does not gate sizing.
+    def _unavailable_holdings(self, session, held, exits, protected):
+        return {
+            name: {
+                "status": "unavailable",
+                "reason": "company_grade_unavailable",
+                "symbols": [name],
+                "decision_date": session,
+            }
+            for name, qty in held.items()
+            if qty > 0 and name in protected and name not in exits
+        }
+
+    # Say what sized the orders rather than the parent's learned-sizing wording.
+    def plan(self, session, state, equity, held, prices, report, cash, blocked):
+        orders, updated, note = super().plan(
+            session, state, equity, held, prices, report, cash, blocked
+        )
+        return (
+            [
+                replace(order, reason="Grade-led leader-weight sizing adjustment")
+                if order.reason == "Grade-led learned sizing adjustment"
+                else order
+                for order in orders
+            ],
+            updated,
+            note,
+        )

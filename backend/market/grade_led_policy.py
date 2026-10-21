@@ -48,7 +48,9 @@ def signals(report, held):
 
 
 # Keep eligible holdings when a zero model size would override the grade exit rule.
-def preserve_grade_holdings(targets, receipt, grade_signals, prices, equity):
+def preserve_grade_holdings(
+    targets, receipt, grade_signals, prices, equity, *, basis=None
+):
     result = dict(targets)
     preserved = []
     for name, signal in grade_signals.items():
@@ -82,7 +84,7 @@ def preserve_grade_holdings(targets, receipt, grade_signals, prices, equity):
     receipt.update(
         grade_signals=grade_signals,
         grade_preserved_holdings=preserved,
-        target_basis="grade_constrained_learned_sizes",
+        target_basis=basis or "grade_constrained_learned_sizes",
         targets=result,
     )
     return result, receipt

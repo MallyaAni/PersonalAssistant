@@ -160,11 +160,15 @@ def test_missing_stock_is_not_benchmark_completion(example, tmp_path, monkeypatc
 
 # Installed current inference must produce genuine risk quantities without a fresh fit.
 @pytest.mark.parametrize("omit_benchmark", [False, True])
-@pytest.mark.parametrize("retained", [False, True, "grade"])
+@pytest.mark.parametrize("retained", [False, True, "grade", "leader"])
 def test_installed_current_heads_and_funded_nightly(
     example, tmp_path, monkeypatch, omit_benchmark, retained
 ):
-    if retained == "grade":
+    if retained == "leader":
+        from backend.tests.test_grade_led_leader_policy import install_leader
+
+        _, shown, now = install_leader(tmp_path, example, monkeypatch)
+    elif retained == "grade":
         from backend.tests.test_grade_led_policy import install_grade_led
 
         _, shown, now = install_grade_led(tmp_path, example, monkeypatch)
@@ -186,6 +190,7 @@ def test_installed_current_heads_and_funded_nightly(
     monkeypatch.setattr(runtime.forward.direct, "_fit", forbidden)
     chosen = runtime.prepare(tmp_path, shown, clock=lambda: now)
     assert chosen.version == (
+        runtime.leader.POLICY if retained == "leader" else
         runtime.grade_led_policy.POLICY if retained == "grade" else
         runtime.transition.POLICY if retained else runtime.funded.MARKET_TIMED_POLICY
     )

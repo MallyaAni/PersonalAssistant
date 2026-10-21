@@ -81,9 +81,17 @@ def partition(equity, cash, held, prices, retained):
     )
 
 
+# The policies whose records carry this retained-capital receipt.
+def _policies():
+    # Imported here: the leader module subclasses the funded policy importing this one.
+    from backend.market.grade_led_leader_policy import POLICY as LEADER_POLICY
+
+    return (POLICY, GRADE_LED_POLICY, LEADER_POLICY)
+
+
 # Validate retained paper accounting before using it in another account.
 def recorded(record):
-    if (record.get("targets") or {}).get("policy") not in (POLICY, GRADE_LED_POLICY):
+    if (record.get("targets") or {}).get("policy") not in _policies():
         return None
     receipt = ((record.get("paper") or {}).get("joint_funded") or {}).get(
         "receipt"
@@ -187,7 +195,7 @@ def _risk_exclusion(name, row, session):
 
 # Authenticate missing-risk exclusions separately from a zero model allocation.
 def personal_support(record):
-    if (record.get("targets") or {}).get("policy") not in (POLICY, GRADE_LED_POLICY):
+    if (record.get("targets") or {}).get("policy") not in _policies():
         return True, set()
     block = (record.get("paper") or {}).get("joint_funded") or {}
     if not isinstance(block, dict):
