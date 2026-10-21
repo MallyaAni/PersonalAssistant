@@ -169,7 +169,9 @@ def acquire(root, now, *, symbols=(), transport=None, clock=None):
         panel,
         context.grades[:-1],
         context.eligible[:-1],
-        daily_as_of=context.published_at,
+        # The prior record's publication instant is the clock of the daily
+        # grades and membership; the loader returns it beside the history clock.
+        daily_as_of=context.published_at["grades"],
         model_folder=model_folder,
         model_receipt_sha256=config["model_receipt_sha256"],
         residual_month=residual,

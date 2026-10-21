@@ -56,7 +56,13 @@ def context():
         ),
         grades=np.vstack((grades, np.full(len(panel.tickers), -1))),
         eligible=np.vstack((eligible, np.zeros(len(panel.tickers), dtype=bool))),
-        published_at=clocks["daily_as_of"],
+        # The real loader reports one clock per input; the synthetic context
+        # keeps that shape so the runtime's reading of it is what is tested.
+        published_at={
+            "history": clocks["daily_as_of"],
+            "grades": clocks["daily_as_of"],
+            "membership": clocks["daily_as_of"],
+        },
         provenance={"schema": "synthetic_published_context", "sources": {}},
     )
 
