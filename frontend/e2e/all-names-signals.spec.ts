@@ -1233,6 +1233,45 @@ test('Trader audit stale compact prices are visibly dated in both list and chart
   expect(state.diagnostics).toEqual([])
 })
 
+// Preserve authenticated saved stock navigation when the current publication reader withholds its expired rows.
+test('Unavailable publication keeps saved stocks and charts without current sizes or actions',async ({page,baseURL})=>{
+  const state=fixture();Object.assign(state,{publicationV2:true,phase:'closed',installedHistory:true,simulationPolicy:'grade-led-learned-sizing/1'})
+  await install(page,baseURL!,state)
+  // Return the actual unavailable reader shape, which deliberately contains no grades or target rows.
+  await page.route('**/desk/model-allocation',async route=>route.fulfill({json:{
+    version:'strategy-model-allocation/2',status:'unavailable',policy:'grade-led-learned-sizing/1',rows:{},
+    reason:'Independent strategy publication could not be verified',as_of:new Date().toISOString(),valid_until:null,
+  }}))
+  await page.goto('/?deskView=strategy#desk')
+  const board=page.getByRole('region',{name:'All names signals',exact:true})
+  await expect(board.getByRole('heading',{name:`All names · ${names.length}`,exact:true})).toBeVisible()
+  await expect(board).toContainText('Current recommendations unavailable. Saved stock charts remain available.')
+  await expect(board.getByLabel('BUYHIGH action',{exact:true})).toHaveText('Unavailable')
+  await expect(board.getByLabel('BUYHIGH trade size',{exact:true})).toHaveText('—')
+  await expect(board.getByLabel('BUYHIGH model size',{exact:true})).toHaveText('Unavailable')
+  await board.getByRole('button',{name:'BUYHIGH',exact:true}).click()
+  const chart=page.getByRole('dialog',{name:'BUYHIGH history',exact:true})
+  await expect(chart).toBeVisible()
+  await expect(chart).not.toContainText('Position 14.3%')
+  for(const frame of ['D','W','15m']){
+    await chart.getByRole('group',{name:'Chart timeframe',exact:true}).getByRole('button',{name:frame,exact:true}).click()
+    await expect(chart.getByLabel('BUYHIGH current chart target',{exact:true})).toHaveText('Current recommendation unavailable')
+  }
+  await chart.getByRole('group',{name:'Chart timeframe',exact:true}).getByRole('button',{name:'D',exact:true}).click()
+  await chart.getByText('Recommendations',{exact:true}).click()
+  await chart.locator('button[data-recommendation-id="target-buy"]').click()
+  await expect(chart.getByRole('region',{name:'Recommendation details',exact:true})).toContainText('Buy · Size 2.0%')
+  await expect(chart.getByRole('region',{name:'Recommendation details',exact:true})).toContainText('2026-10-08 close')
+  await chart.getByRole('button',{name:'Close',exact:true}).click()
+  await board.getByRole('button',{name:'Best sells',exact:true}).click()
+  await expect(board).not.toContainText('No sell signals in the current strategy publication.')
+  await expect(board.getByLabel('Signal coverage',{exact:true})).toHaveText('Recommendations unavailable')
+  await board.getByRole('button',{name:'All names',exact:true}).click()
+  await page.reload()
+  await expect(board.getByRole('button',{name:'BUYHIGH',exact:true})).toBeVisible()
+  expect(state.diagnostics).toEqual([])
+})
+
 // Distinguish unavailable publication evidence from a verified absence of sell signals.
 test('Trader audit unavailable recommendations never become a no-sell claim',async ({page,baseURL})=>{
   const state=fixture();Object.assign(state,{publicationV2:true,phase:'closed',expired:true})

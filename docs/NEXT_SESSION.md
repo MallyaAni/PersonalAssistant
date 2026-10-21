@@ -1,5 +1,49 @@
 # Next session
 
+## CURRENT — post-close saved-stock navigation fixed in source; NOT DEPLOYED
+
+New atomic display boundary after62fe8f65: actual unavailable v2 publication
+response omits grade_signals/rows. SignalBoard previously used only those keys,
+making all saved stocks/charts inaccessible. It now uses authenticated latest
+desk stock NAMES only when that response is unavailable and has no grade keys.
+Saved session is explicit; current grade/action/Size/Position stay unavailable,
+directional lists make no false no-sells claim. All numerical/publication/source/
+expiry/30squote guards, backend/scripts, model/economics, accounts and providers
+are unchanged. No expired actionable percentage or stale grade is substituted.
+
+New local isolated browser source proof (static built frontend; API fixtures,
+NOT another live feed acquisition): initial expectedRED1FAIL9.389986s retained.
+Initial narrow GREEN1PASS5.316518s. Expanded cohort7PASS1FAIL68.081631s: its
+new historical-details step remained on15m, whose legacy fixture decisions omit
+valid_until. That known review gap is NOT fixed. Test explicitly returns toD
+for original historical details (assertions retained), then1PASS5.524220s.
+8distinct cases across split cohorts =1new+7regressions, NOT one whole8green or
+10new cases. Final case verifies savedlist/filter/reload; current unavailable
+inD/W/15m; original daily Buy2%/Oct8 facts still accessible; diagnostics[].
+TSC --incremental false PASS; Vite8.2.2 build3.11s/existingwarnings;33diagram/page
+sync PASS. Assetindex-Dg9HVMAT.js925949B/SHA7427fcbfc942aea2f5d662fa2b3027a4d028f7df4583a764622703601307619c.
+No old completed cohort/getter/collector replay for docs. Diagram impact: NONE
+— names-only frontend fallback within existing authenticated boundaries.
+
+Proof docs/research/strategy-expired-universe-proof-2026-10-21.json1277448B/SHA
+01680e85bf47fe41cc194621f36c48471e966627dcc48581c2b844264c1bdfb5 retains24fixed
+receipts: allcohorts/configs/failedtraces(embedded original testsource)/finalsource/
+artifact/build/diagrams. One collector/fsync/readback then a prose-only correction
+removed an untested search claim; initial1277455B/e838a2e3 proof remains
+/tmp/strategy-expired-universe-proof-initial-20261021.json. No checks rerun for
+that correction. Every failed original remains retained. Do not claim expanded
+legacy15m failure resolved or replay wholeclosedcohorts for documentation.
+
+GitHub DNS failed once, later recovered; remote main62fe8f65 matched starting
+checkout before this source checkpoint. Production new readonly observation
+stillEF/no canonicaldeploy/gate active. Human's possibleClaude deploy warning
+honored: NO deployment/restart or running-preview checkout edit. This candidate
+needs a coordinated canonical FE-only release from exact production code, never
+historicalmain wholesale, plus deployed acceptance. LIVE remains EFfrontend/
+BFbackend. Existing signed-in public94/natural nightly proof below unchanged.
+Next currentregular15m and fullcash/units rollover remainUNVERIFIED; history is
+retrospective current-model, not PIT-trained/OOS. PaperLAST, ACTIVE quietunchanged.
+
 ## CURRENT — public sign-in resolved; natural nightly94 and selected public chart paths VERIFIED
 
 This TOP supersedes older pending-login/nightly-future instructions. Human

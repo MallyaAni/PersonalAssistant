@@ -1,5 +1,15 @@
 # Changelog
 
+## 2026-10-21 — preserve saved stock navigation when recommendations are unavailable
+
+- Source-only: All names retains authenticated saved stock links when the v2
+  publication reader returns unavailable without rows. Current grades, actions,
+  trade sizes and desired positions remain withheld; saved names are not advice.
+- TSC/build pass; eight distinct browser cases covered across split cohorts
+  (seven regressions plus the corrected expanded new case). The initial red and
+  expanded legacy15m fixture failure remain retained. No model/backend guard
+  change or deployment. See `strategy-expired-universe-proof-2026-10-21.json`.
+
 ## 2026-10-20 — Main review checkout published and branch cleanup completed
 
 Pushed dashboard integration `150e54f6` to main. Retired18local/34remote merged

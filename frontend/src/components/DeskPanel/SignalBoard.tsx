@@ -342,13 +342,15 @@ export const SignalDetail = ({signals}: {signals: Signals}) => <section aria-lab
   {!signals.evidence && <p className="text-[#6e6e73]">Sell review means reassess or reduce an existing holding. Not a short-sale signal. Strength is the model’s qualitative priority, not a return probability or funded size.</p>}
 </section>
 
-// Rank covered names independently of accounts and restrict each directional tab to its matching actions.
+// Keep saved stocks navigable without unavailable advice, and rank verified directional actions independently of accounts.
 export const SignalBoard = ({latest, live, allocation, now, onOpen, closes}: {latest: DeskRecord; live: DeskLive; allocation?: DeskModelAllocation; now: number; onOpen: (ticker: string) => void; closes?: Record<string, number | null>}) => {
   const [side, setSide] = useState<Side>('all')
   const [query, setQuery] = useState('')
   const [opened, setOpened] = useState<string | null>(null)
   const [visible, setVisible] = useState(25)
-  const rows = useMemo(() => Object.keys(allocation?.version === 'strategy-model-allocation/2' ? allocation.grade_signals ?? {} : latest.grades ?? {}).map(ticker => signalsFor(latest, live, ticker, now, allocation)), [latest, live, now, allocation])
+  const savedNamesOnly = allocation?.version === 'strategy-model-allocation/2' && allocation.status === 'unavailable'
+    && !Object.keys(allocation.grade_signals ?? {}).length
+  const rows = useMemo(() => Object.keys(allocation?.version === 'strategy-model-allocation/2' && !savedNamesOnly ? allocation.grade_signals ?? {} : latest.grades ?? {}).map(ticker => signalsFor(latest, live, ticker, now, allocation)), [latest, live, now, allocation, savedNamesOnly])
   const independent = independentAllocation(allocation)
   const recommendationsUnavailable = !rows.length || rows.every(row=>row.buy.word==='Unavailable' && row.sell.word==='Unavailable')
   const showPriority = !independent || rows.some(row => row.setup)
@@ -376,7 +378,7 @@ export const SignalBoard = ({latest, live, allocation, now, onOpen, closes}: {la
     <div className="space-y-2 p-3">
       <h3 className="text-sm font-semibold">All names · {rows.length}</h3>
       <p className="text-xs text-[#6e6e73]">{independent
-        ? `${live.market_status?.phase === 'open' ? allocation?.version === 'strategy-model-allocation/2' && !currentSession ? 'Awaiting 15-minute entries' : '15-minute signals' : 'Regular market closed · Next-session actions'} · ${currentSession ?? allocation?.session ?? latest.session}`
+        ? savedNamesOnly ? `Saved stocks · ${latest.session} · current strategy unavailable` : `${live.market_status?.phase === 'open' ? allocation?.version === 'strategy-model-allocation/2' && !currentSession ? 'Awaiting 15-minute entries' : '15-minute signals' : 'Regular market closed · Next-session actions'} · ${currentSession ?? allocation?.session ?? latest.session}`
         : 'Regular-session signals and published strategy plans · no paper account or portfolio inputs required. Immediate signals first, then waiting, plans and unavailable; High → Medium → Low within each group. Equal priorities sort alphabetically.'}</p>
       <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Signal ranking">
         {(['all', 'buy', 'sell'] as const).map(value => <button key={value} type="button" aria-pressed={side === value} className={`rounded-full border px-3 py-1 text-xs ${side === value ? 'bg-[#e8f2ff] text-[#0071e3]' : ''}`} onClick={() => {setSide(value); setVisible(25)}}>{value === 'all' ? 'All names' : value === 'buy' ? 'Best buys' : 'Best sells'}</button>)}
@@ -402,6 +404,7 @@ export const SignalBoard = ({latest, live, allocation, now, onOpen, closes}: {la
         <td className="max-w-sm p-2">{!independent && <p>{selected(row).reason}</p>}<button type="button" aria-label={`details for ${row.ticker}`} aria-expanded={opened === row.ticker} className="text-[#0071e3]" onClick={() => setOpened(opened === row.ticker ? null : row.ticker)}>Details</button>{opened === row.ticker && <SignalDetail signals={row} />}</td>
       </tr>})}</tbody>
     </table>
+    {recommendationsUnavailable && ranked.length > 0 && <p role="status" className="p-3 text-xs">Current recommendations unavailable. Saved stock charts remain available.</p>}
     {!ranked.length && <p role="status" className="p-3 text-xs">{recommendationsUnavailable ? 'Strategy recommendations unavailable. Refresh to retry.' : query.trim() ? 'No matching stocks.' : side === 'sell' ? rows.some(row=>row.sell.word==='Wait') ? 'No confirmed sell signals yet.' : 'No sell signals in the current strategy publication.' : side === 'buy' ? rows.some(row=>row.buy.word==='Wait') ? 'No confirmed buy signals yet.' : 'No buy signals in the current strategy publication.' : 'No matching stocks.'}</p>}
     {independent && <p className="px-3 py-2 text-[11px] text-[#6e6e73]">Size % is the buy or sell amount. Position % is the model’s desired total position. — means no confirmed trade size.</p>}
     {ranked.length > visible && <button type="button" className="p-3 text-xs text-[#0071e3]" onClick={() => setVisible(value => value + 25)}>Show more · {visible} of {ranked.length}</button>}
