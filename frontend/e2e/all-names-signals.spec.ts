@@ -478,6 +478,49 @@ async function refresh(page: Page, state: Fixture) {
   await expect.poll(() => state.liveReads).toBeGreaterThan(prior)
 }
 
+// Disclose the frozen-model replay beside every chart frame and its original simulated recommendation.
+test('Historical chart discloses current-model replay limits without changing original sizes',async ({page,baseURL})=>{
+  const state=fixture();Object.assign(state,{publicationV2:true,phase:'closed',installedHistory:true,simulationPolicy:'grade-led-learned-sizing/1'})
+  await install(page,baseURL!,state);await page.goto('/?deskView=strategy#desk')
+  await page.getByRole('button',{name:'BUYHIGH',exact:true}).click()
+  const chart=page.getByRole('dialog',{name:'BUYHIGH history',exact:true})
+  for(const frame of ['D','W','15m']){
+    await chart.getByRole('group',{name:'Chart timeframe',exact:true}).getByRole('button',{name:frame,exact:true}).click()
+    const basis=chart.getByLabel('BUYHIGH replay basis',{exact:true})
+    await expect(basis).toBeVisible()
+    await expect(basis).toContainText('Historical replay · current model')
+    await expect(basis).toContainText('Models were not refitted at each past date.')
+    await expect(basis).toContainText('not out-of-sample validation or advice published at that time')
+    await expect(chart.getByLabel('BUYHIGH current chart position',{exact:true})).toHaveText('Position 14.3%')
+  }
+  await chart.getByRole('group',{name:'Chart timeframe',exact:true}).getByRole('button',{name:'D',exact:true}).click()
+  await chart.getByText('Recommendations',{exact:true}).click()
+  await chart.locator('button[data-recommendation-id="target-buy"]').click()
+  const detail=chart.getByRole('region',{name:'Recommendation details',exact:true})
+  await expect(detail).toContainText('Current-model replay; not out-of-sample evidence.')
+  await expect(detail).toContainText('Buy · Size 2.0%')
+  await expect(detail).toContainText('2026-10-08 close')
+  await expect(detail).toContainText('6.20%')
+  expect(state.diagnostics).toEqual([])
+})
+
+// A saved original recommendation must not inherit the simulated replay's training provenance.
+test('Recorded original recommendations are not relabelled as current-model replay',async ({page,baseURL})=>{
+  const state=fixture();Object.assign(state,{publicationV2:true,numerical:'execute',numericalExpired:true,
+    entryAt:Date.now()-100,currentSessionBars:true,recordedMode:'original'})
+  await install(page,baseURL!,state);await page.goto('/?deskView=strategy#desk')
+  await page.getByRole('button',{name:'BUYHIGH',exact:true}).click()
+  const chart=page.getByRole('dialog',{name:'BUYHIGH history',exact:true})
+  await chart.getByText('Recommendations',{exact:true}).click()
+  await chart.locator('button[data-recommendation-id^="recorded:"]').click()
+  const detail=chart.getByRole('region',{name:'Recommendation details',exact:true})
+  await expect(detail).toContainText('Recorded recommendation')
+  await expect(detail).toContainText('Observed IEX midpoint $99.00')
+  await expect(detail).not.toContainText('Current-model replay; not out-of-sample evidence.')
+  await expect(chart.getByLabel('BUYHIGH replay basis',{exact:true})).toHaveCount(0)
+  expect(state.diagnostics).toEqual([])
+})
+
 // Separate the current desired position from trade-sized historical markers and an unconfirmed next-session entry.
 test('Current position and historical trade sizes have distinct labels on every timeframe',async ({page,baseURL})=>{
   const state=fixture()

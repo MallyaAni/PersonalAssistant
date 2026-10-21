@@ -1264,6 +1264,10 @@ export const TickerChart = ({
         {(['15m', 'daily', 'weekly'] as const).map(frame => <button key={frame} type="button" aria-pressed={timeframe === frame} onClick={() => setTimeframe(frame)}>{frame === 'daily' ? 'D' : frame === 'weekly' ? 'W' : '15m'}</button>)}
       </div>
     </div>
+    {simulation && <aside aria-label={`${ticker} replay basis`} className="mb-2 text-xs text-[#6e6e73]">
+      <p className="font-medium">Historical replay · current model · {simulation.start}–{simulation.through}</p>
+      <p>These simulated Buy/Sell sizes apply the current sizing and timing models to past observations. Models were not refitted at each past date. This is not out-of-sample validation or advice published at that time.</p>
+    </aside>}
     {error && <p role="alert" className="text-xs text-[#b42318]">{error}</p>}
     {!error && !data && <p className="text-xs text-[#6e6e73]">Loading…</p>}
     {data && <>
@@ -1287,6 +1291,7 @@ export const TickerChart = ({
           return <article key={item.id} className="mb-3 last:mb-0">
           <h4 title={`Exact action size ${(item.weight * 100).toPrecision(6)}%`} className={`font-semibold ${item.action === 'Buy' ? 'text-[#248a3d]' : 'text-[#b42318]'}`}>{item.action} · Size {sizePercent(item.weight)}%</h4>
           <p className="text-xs text-[#6e6e73]">{item.simulated ? 'Simulation' : original ? 'Recorded recommendation' : 'Model position'} · {recordedTime(item.at)}</p>
+          {item.simulated && <p className="text-xs text-[#6e6e73]">Current-model replay; not out-of-sample evidence.</p>}
           {item.simulated && <p className="mt-2 text-xs text-[#6e6e73]">Trade amount as a percentage of the portfolio at that time, not the total position. Buy and sell percentages from different dates cannot be added as share quantities.</p>}
           {selected.originalRef && !original ? <p role="status" className="mt-2">{read?.status==='failed' ? 'Original recommendation unavailable.' : 'Loading original recommendation…'}</p> : item.evidence ? <>
             <p className="mt-2">{item.evidence.reason}</p>
