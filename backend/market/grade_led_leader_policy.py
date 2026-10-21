@@ -194,18 +194,38 @@ class GradeLedLeaderFundedPolicy(funded.GradeLedFundedPolicy):
             if qty > 0 and name in protected and name not in exits
         }
 
-    # Say what sized the orders rather than the parent's learned-sizing wording.
+    # Fill every leg at the next open. The execution-timing study measured
+    # no fill convention, the learned 15-minute timing included, that beat
+    # buying at the next open (within +-0.2 bp a session, none at t >= 2.5),
+    # and the live timing's quote and clock guards left the paper account's
+    # first timed intents unfilled for a whole session. A market-on-open
+    # order has no such guards: the plan says what and how much, the opening
+    # auction says the price. Exposure, not fill timing, is this policy's
+    # answer to a selling tape.
     def plan(self, session, state, equity, held, prices, report, cash, blocked):
+        from backend.agents.trading.desk import intraday_orders
+
         orders, updated, note = super().plan(
             session, state, equity, held, prices, report, cash, blocked
         )
-        return (
-            [
-                replace(order, reason="Grade-led leader-weight sizing adjustment")
+        routed = [
+            replace(
+                order,
+                execution_timing="next_open"
+                if order.execution_timing == intraday_orders.INTRADAY_TIMING
+                else order.execution_timing,
+                reason="Grade-led leader-weight sizing adjustment"
                 if order.reason == "Grade-led learned sizing adjustment"
-                else order
-                for order in orders
-            ],
-            updated,
-            note,
-        )
+                else order.reason,
+            )
+            for order in orders
+        ]
+        if routed and updated.allocation_state:
+            updated.allocation_state["receipt"]["execution_timing"] = {
+                "ordinary": "next_open",
+                "company_exit": "next_open",
+                "orders": {
+                    order.client_order_id: order.execution_timing for order in routed
+                },
+            }
+        return routed, updated, note

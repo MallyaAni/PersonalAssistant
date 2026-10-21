@@ -334,3 +334,84 @@ def group_capped_allocator(inner, groups: dict, group_cap: float):
         return targets
 
     return allocate
+
+
+# Price-structure gates on top of a sizing arm. The owner's question is
+# whether the desk should act on trend structure, not only grade on it: an
+# exit when a name's own trend breaks, or no new entry while it is under
+# distribution. Each gate reads the name's trailing adjusted closes through
+# the decision session and either removes the name from the sized set every
+# session the structure is broken (an exit gate) or only blocks names not
+# held the session before (an entry gate, which keeps a small amount of
+# state: the previous session's targets, reset whenever the clock does not
+# advance). The levels are the desk's own: the 21- and 50-session averages
+# and a 105-session exponential average standing in for the 21-week one.
+def _ema(values: np.ndarray, span: int) -> np.ndarray:
+    alpha = 2.0 / (span + 1.0)
+    out = np.empty_like(values, dtype=float)
+    out[0] = values[0]
+    for i in range(1, len(values)):
+        out[i] = alpha * values[i] + (1.0 - alpha) * out[i - 1]
+    return out
+
+
+def _structure(panel, t: int, held: np.ndarray, kind: str) -> np.ndarray:
+    """True where the name's structure passes `kind` on session t."""
+    closes = np.asarray(panel.adj_close[: t + 1], dtype=float)[:, held]
+    n = len(closes)
+    ok = np.ones(held.sum(), dtype=bool)
+    with np.errstate(invalid="ignore"):
+        if kind == "daily_trend":
+            if n < 50:
+                return ok
+            ok &= closes[-1] > np.nanmean(closes[-50:], axis=0)
+        elif kind == "weekly_trend":
+            if n < 110:
+                return ok
+            for j in range(closes.shape[1]):
+                series = closes[-260:, j]
+                if not np.isfinite(series).all():
+                    continue
+                ema = _ema(series, 105)
+                ok[j] = series[-1] > ema[-1] and ema[-1] > ema[-6]
+        elif kind == "not_distributing":
+            if n < 30:
+                return ok
+            for j in range(closes.shape[1]):
+                series = closes[-120:, j]
+                if not np.isfinite(series).all():
+                    continue
+                ema = _ema(series, 21)
+                ok[j] = not (series[-1] < ema[-1] and ema[-1] < ema[-6])
+        else:
+            raise ValueError(f"unknown structure gate {kind!r}")
+    return np.where(np.isfinite(closes[-1]), ok, False)
+
+
+def structure_gated_allocator(
+    inner, kind: str, entries_only: bool = False, reshare: bool = False
+):
+    """Return a callable (report, panel, config, t) -> inner weights with a structure gate."""
+    state = {"t": -1, "previous": None}
+
+    def allocate(report, panel, config, t: int) -> np.ndarray:
+        targets = np.array(inner(report, panel, config, t), dtype=float)
+        held = targets > 0
+        if held.any():
+            passing = _structure(panel, t, held, kind)
+            blocked = np.zeros(len(targets), dtype=bool)
+            blocked[np.flatnonzero(held)[~passing]] = True
+            if entries_only and state["previous"] is not None and t > state["t"]:
+                blocked &= ~(state["previous"] > 0)
+            gross = float(targets.sum())
+            targets[blocked] = 0.0
+            kept = float(targets.sum())
+            # By default a gated name's slot goes to cash, so the gate is also
+            # an exposure cut in a selloff; with `reshare` the survivors take
+            # it and the book stays as invested as the inner arm chose.
+            if reshare and kept > 0 and gross > 0:
+                targets *= gross / kept
+        state["t"], state["previous"] = t, targets.copy()
+        return targets
+
+    return allocate

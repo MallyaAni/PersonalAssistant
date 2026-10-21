@@ -210,14 +210,26 @@ def test_installed_current_heads_and_funded_nightly(
         False,
     )
     calls = []
+    sent = []
 
-    # Exercise the actual paper HTTP client against a private, consistently read ledger.
+    # Exercise the actual paper HTTP client against a private, consistently read
+    # ledger. Only the leader policy sends at night: its legs are market-on-open
+    # orders, so the fixture accepts those and nothing else.
     def transport(method, url, headers, body):
-        assert method == "GET"
-        assert body is None
         assert url.startswith(alpaca_trading.PAPER_URL + "/")
         calls.append(url)
         suffix = url.removeprefix(alpaca_trading.PAPER_URL)
+        if method == "POST":
+            assert retained == "leader"
+            assert suffix == "/orders"
+            order = json.loads(body)
+            assert (order["type"], order["time_in_force"]) == ("market", "day")
+            sent.append(order)
+            return 200, json.dumps({**order, "id": f"fixture-{len(sent)}",
+                                    "status": "accepted", "created_at": now.isoformat(),
+                                    "submitted_at": now.isoformat()}).encode()
+        assert method == "GET"
+        assert body is None
         value = (
             broker.clock()
             if suffix == "/clock"
@@ -255,8 +267,18 @@ def test_installed_current_heads_and_funded_nightly(
         for row in state.pending
         if row.get("execution_timing") == "dip_or_close"
     )
+    if retained == "leader":
+        # The leader policy's legs are at the broker as opening-auction orders.
+        assert state.pending
+        assert all(row["execution_timing"] == "next_open" for row in state.pending)
+        assert all("timing_policy" not in row for row in state.pending)
+        assert {order["client_order_id"] for order in sent} == {
+            row["client_order_id"] for row in state.pending
+        }
+    else:
+        assert not sent
     assert entry["learned_holding"]["close_receipt_sha256"]
-    # No submission or ledger mutation is permitted by this HTTP fixture.
+    # The private ledger itself is never mutated by this HTTP fixture.
     assert broker.account().cash == 100000
     assert len(broker.attempt_history) == 0
 

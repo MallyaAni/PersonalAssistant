@@ -262,9 +262,14 @@ def test_plan_labels_orders_by_leader_sizing(reader, monkeypatch):
     }
     assert state.policy_version == leader.POLICY
     assert state.allocation_state["receipt"]["target_basis"] == leader.BASIS
+    # Every leg goes to the opening auction; nothing waits on the learned timing.
     timing = state.allocation_state["receipt"]["execution_timing"]
     assert timing["company_exit"] == "next_open"
-    assert timing["ordinary"] == policy.timing_policy
+    assert timing["ordinary"] == "next_open"
+    assert {order.execution_timing for order in orders} == {"next_open"}
+    assert all(
+        timing["orders"][order.client_order_id] == "next_open" for order in orders
+    )
 
 
 # Unit-capital targets use the funded plan's arithmetic and claim no optimiser.
