@@ -1532,6 +1532,63 @@ The detailed current continuation remains the TOP of the attached
 learned-live-release-20261006 worktree's NEXT_SESSION.md. Keep existing heartbeat
 ACTIVE and quiet unchanged. No question pending; no agents without delegation,
 usage-limited retries/replacements, denied-read bypass or native-pool adoption.
+## 2026-10-21 14:45 ET — Structured board, chart audit, replay restored; fundamentals gap found
+
+Owner, 12:0x–14:1x ET: "for the action i don't want to see unstructured
+text apart from things that make sense like buy (green), sell (red)",
+"same for charts like buy 2%", "i don't want to see do nothing, i'd
+rather see a blank", "are you going to read the dashboard and ensure every
+single thing is user friendly and accurate? including the charts for
+every stock?", "for stocks like nbis i dont see anything", "i'm surprised
+nbis is C when they keep crushing earnings".
+
+Shipped (840a211f … 275f376c, all deployed by 14:41 ET): verdict cell =
+Buy/Sell in colour or blank, one badge at most (pending, next session,
+unavailable, refreshing), reason under Details; chart header and markers
+"Buy 2.0%"/"Sell 13.0%", no newest-candle square for nothing; a plan
+awaiting its entry is named by the board's direction with a pending badge
+(board word `Buy pending`/`Sell pending`, `VerdictView.state`); Sell against
+a known empty position reads as nothing (`strategy_verdict`); clocks
+"13:45 ET" with the date only when not today (`evidenceTime`,
+`recordedTime`); "last plan" once above the table; replay trades under
+0.5% not drawn, counted in the footer (2,411 of 5,742 replay trades were
+under 0.1%).
+
+Replay restored. The leader-weight release changed bound sources, so
+`strategy_history_publication.read` refused the installed history
+(binding pins `_strategy_identity` of the sources) and every chart lost
+its replay. `market_simulation._superseded_history` (aec718f7) re-reads
+the audited bytes with the sealed reader's byte and accounting checks,
+minus the binding, marks `strategy_binding: superseded`,
+`verified_against_installed_strategy: false`; `strategyHistoryMatches`
+accepts that. Proper fix: regenerate and install a history under
+`grade-led-leader-weight/1` (needs `strategy_model_history` and
+`strategy_history_publication.validate_binding` — both bound — to accept
+the new policy, then `market_live_model_history` → audit →
+`strategy_history_install`); a release ceremony of its own.
+
+Audit method: `~/dsv41/audit/audit.mjs` (Playwright, bearer token from
+`issue_user_token` injected on `/api/**`, opens the board and every
+chart dialog, 10 s each, saves text + screenshots under
+`~/dsv41/audit/`), `analyze.py` flags loading/unavailable/NaN and checks
+decision/marker consistency; `probe.mjs TICKER=…` for one chart. 14:17
+ET run: 94/94 dialogs, 0 console errors, board grades/positions equal to
+the API for 94/94.
+
+Fundamentals gap. `desk/asof=2026-10-20/desk.json`: 27 of 94 names have
+no fundamental reads (NBIS, TSM, ASML, AAPL, GOOGL, AMZN, ORCL, INTC,
+SNPS, TXN, …). For foreign filers the EDGAR facts layer holds only
+balance-sheet instants to 2025-12-31 (NBIS/TSM: assets, cash, debt,
+equity, shares; no revenue/gross profit/net income), so the fundamental
+analyst votes 0 by construction; some domestic names with revenue facts
+(AAPL, max end 2026-07-17) also read nothing — check `opine_current`
+withholding. Next build: a second income-statement source for 20-F/6-K
+filers through the point-in-time adapter, re-scored on the scorecard.
+
+Still to do today: 16:02 ET `publish_now.py <root> 2026-10-21` from
+`~/dspark-commit` (release and code already installed/deployed — the
+reminder's text predates that); 20:15 ET nightly check.
+
 ## 2026-10-21 12:25 ET — Leader-weight release INSTALLED and DEPLOYED (ce1254ad); first plan under it due at the close
 
 Owner at 11:4x ET: "can you make all your changes live now as soon as
