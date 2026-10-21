@@ -128,3 +128,56 @@ that goes through the release approval
 the same two things any policy needs: the dashboard showing the
 point-in-time line beside today's-book line, and the paper account's own
 forward record as the only out-of-sample evidence that counts.
+
+## Sizing arms scored by gain against added drawdown (2026-10-21 morning)
+
+The owner asked for the arm with the most gain for the least change in
+worst drawdown, and whether equal weight is the best that can be done.
+Three sizing families were scored on the same point-in-time book, the
+same offsets and 25 bp, all holding every A/A+ name and nothing else:
+equal weight (capped at 20%, and uncapped); equal risk (weights inverse
+to each names trailing 63-session realised volatility, capped, with
+
+## Sizing arms scored by gain against added drawdown (2026-10-21 morning)
+
+The owner asked for the arm with the most gain for the least change in
+worst drawdown, and whether equal weight is the best that can be done.
+Three sizing families were scored on the same point-in-time book, the
+same offsets and 25 bp, all holding every A/A+ name and nothing else:
+equal weight (capped at 20%, and uncapped); equal risk (weights inverse
+to each name's trailing 63-session realised volatility, capped, with
+the excess in cash); and exposure control (the equal-weight book scaled
+to a realised-volatility target of 0.30, 0.25 and 0.20 from the
+basket's own trailing 63 sessions, never levered). The arms are
+registered in `backend/cli/market_pit_scorecard.py`; results sit in
+`~/dsv41/pit/pit_<arm>_20261021.json` on spark1 and are summarised by
+`~/dsv41/pit/arms_summary.py`. "Worst DD" is the worst drawdown across
+the 20 offsets; CAGR is the median.
+
+| arm | CAGR 2016-23 | worst DD 2016-23 | CAGR all | worst DD all | Sharpe 2016-23 | offsets > QQQ |
+|---|---|---|---|---|---|---|
+| installed rule (`frozen rule`) | 14.4% | -34.0% | 16.5% | -34.0% | 0.94 | 0 |
+| `ew_graded_voltarget_20` (vol target 0.20) | 21.2% | -34.1% | 19.5% | -34.1% | 0.99 | 20 |
+| **`ew_graded_voltarget_25` (vol target 0.25)** | **23.3%** | **-35.0%** | **22.0%** | **-35.0%** | 0.96 | 20 |
+| `ew_graded_voltarget` (vol target 0.30) | 24.5% | -39.7% | 23.4% | -39.7% | 0.95 | 20 |
+| `risk_graded_20` (equal risk, 20% cap) | 24.3% | -45.2% | 23.9% | -45.2% | 0.92 | 20 |
+| `risk_graded_full` (equal risk, uncapped) | 26.5% | -47.3% | 25.2% | -47.3% | 0.94 | 20 |
+| `ew_graded_20` (equal weight, 20% cap) | 26.2% | -47.7% | 25.9% | -47.7% | 0.93 | 20 |
+| `ew_graded_full` (equal weight, uncapped) | 27.8% | -48.8% | 27.2% | -48.8% | 0.95 | 20 |
+| QQQ | 18.6% | -35.1% | 18.9% | -35.1% | | |
+
+Read against the installed rule, the gain per point of added drawdown
+has a clear knee at the 0.25 target: 0.20 buys +3.0 points of CAGR
+(all window) for +0.1 of drawdown, 0.25 buys +5.5 for +1.0, 0.30 then
+adds only +1.4 more for +4.7 more drawdown, and the uncapped equal
+weight adds +10.7 for +14.8. Equal risk sizes do not help: the A/A+
+names move together, so inverse-volatility weights only tilt the same
+book and keep its drawdown. By the owner's rule the pick is
+**equal weight across every A/A+ name, scaled to a 0.25 realised
+volatility target**: within one point of the installed rule's worst
+drawdown, a third more CAGR, ahead of QQQ in 20 of 20 offsets, Sharpe
+no worse. Its one weak window is 2024-26, where the installed rule
+(fitted through 2026-08-17, so in-sample there) returns 30.2% at -22.3%
+against the arm's 27.0% at -32.2%; the paper account's forward record
+is the only evidence that settles that. Installing it is a
+trading-economics change through the release approval.
