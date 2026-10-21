@@ -2467,6 +2467,21 @@ export interface DeskMarketStatus {
   opens_at: string | null;
   closes_at: string | null;
 }
+// The reviewed exchange clock carried with every strategy allocation answer.
+// The desk acts only in the regular session, so the next action and the next
+// publication come from the backend rather than a schedule rebuilt here.
+export type DeskMarketPhase = {
+  phase: 'pre_market' | 'regular' | 'after_hours' | 'overnight' | 'closed' | 'unknown';
+  exchange: 'XNYS';
+  calendar_known: boolean;
+  is_session: boolean;
+  opens_at: string | null;
+  closes_at: string | null;
+  acts_in: 'regular_session';
+  next_open_at: string | null;
+  next_action_at: string | null;
+  next_publication_at: string;
+};
 // Options provenance is independent of current stock quotes and cannot establish effective OI time.
 export type DeskOptionsEvidence = {
   checked_at: string;
@@ -2519,7 +2534,7 @@ export interface DeskModelAllocation {
   next_publication_at?: string | null;
   last_session?: string | null;
   last_rows?: Record<string, {target_weight: number; evidence?: DeskStrategyDecision['evidence'] & {timing_state?: string}}>;
-  market_phase?: {phase: string; next_publication_at?: string | null};
+  market_phase?: DeskMarketPhase;
   record_sha256?: string;
   receipt_sha256?: string;
   basis?: string;

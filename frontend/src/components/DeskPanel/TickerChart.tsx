@@ -20,7 +20,7 @@ import { SessionPrice } from './StockBoard'
 import { LEVEL_NAME, percent, shares } from './TradeBoard'
 import {confirmedPaperFills, paperActivitySession, paperFillSession} from './paperFills'
 import type {Signals, StrategyChartTarget} from './SignalBoard'
-import {boardAction, strategyHistoryMatches} from './SignalBoard'
+import {boardAction, marketPhaseLine, strategyHistoryMatches} from './SignalBoard'
 import {StrategyTechnicalEvidence} from './StrategyTechnicalEvidence'
 
 // The picture behind the grade. The board says what the desk concluded; this
@@ -793,6 +793,7 @@ export const TickerChart = ({
   const chartAction = modelTarget?.displayAction ?? (!modelTarget?.entry && !modelTarget?.nextSessionPlan ? 'Wait' : modelTarget?.action ?? 'Avoid')
   const displayedTradeWeight = modelTarget && 'tradeWeight' in modelTarget ? modelTarget.tradeWeight : modelTarget?.weight
   const chartSize = displayedTradeWeight == null || displayedTradeWeight <= 0 ? '—' : `${sizePercent(displayedTradeWeight)}%`
+  const phaseLine = marketPhaseLine(allocation)
   const recordedIdentity = modelTarget?.strategyIdentity ?? (strategyHistoryMatches(simulation, null) ? simulation?.provenance.strategy_identity : undefined)
   const recordedAvailable = strategy && (modelTarget?.recordedHistoryAvailable === true || simulation?.recorded_history_version === 'strategy-recorded-entries/1')
   const recordedScope = JSON.stringify([userId,ticker,recordedIdentity,recordedAvailable])
@@ -1379,6 +1380,7 @@ export const TickerChart = ({
       {simulation?.provenance.model_fit_through && ` · model fit through ${simulation.provenance.model_fit_through}`}
       {allocation?.status === 'awaiting_nightly' && allocation.next_publication_at && ` · next publish ${recordedTime(allocation.next_publication_at)}`}
     </p>
+    {phaseLine && <p aria-label={`${ticker} market phase`} data-market-phase={allocation?.market_phase?.phase} className="mb-2 text-[11px] text-[#6e6e73]">{phaseLine}</p>}
     {error && <p role="alert" className="text-xs text-[#b42318]">{error}</p>}
     {!error && !data && <p className="text-xs text-[#6e6e73]">Loading…</p>}
     {data && <>

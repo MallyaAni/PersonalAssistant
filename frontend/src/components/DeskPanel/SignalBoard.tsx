@@ -205,7 +205,7 @@ export const strategyChartTarget = (latest: DeskRecord, allocation: DeskModelAll
   if (!independentAllocation(allocation) || weight === null || !allocation) return null
   if (allocation.version === 'strategy-model-allocation/2') {
     const action = allocation.grade_signals?.[ticker]?.action
-    const current = live.market_status?.phase === 'open' ? numericalEntry(allocation,ticker,now) : null
+    const current = sessionOpen(live, allocation) ? numericalEntry(allocation,ticker,now) : null
     const displayed = signalsFor(latest,live,ticker,now,allocation)
     const reference = (allocation.reference_positions!==undefined || referenceEntryFormat(allocation.entry_assessment)) && referencePosition(allocation,ticker,now)!==null
     return {ticker, date: current ? allocation.entry_assessment!.session! : allocation.session!, at: current?.at ?? allocation.as_of, validUntil: allocation.valid_until,
@@ -252,10 +252,72 @@ export const ModelSize = ({latest, allocation, ticker, now}: {latest: DeskRecord
 const signal = (word: string, ready: boolean, priority: string, reason: string, tier: number): Signal =>
   ({word, ready, priority, reason, rank: tier * 10 - (PRIORITY[priority] ?? 0)})
 
+// Write an exchange instant in New York time, with the weekday only when the
+// line needs to name a different day.
+const phaseClock = (value: string | null | undefined, withDay: boolean): string | null => {
+  const parsed = Date.parse(value ?? '')
+  if (!Number.isFinite(parsed)) return null
+  const at = new Date(parsed)
+  const clock = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/New_York', hour: '2-digit', minute: '2-digit', hourCycle: 'h23',
+  }).format(at)
+  const day = withDay
+    ? new Intl.DateTimeFormat('en-US', {timeZone: 'America/New_York', weekday: 'short'}).format(at)
+    : null
+  return `${day ? `${day} ` : ''}${clock} ET`
+}
+
+// State which market phase it is and when the desk acts next, using only the
+// clocks the backend supplied. An absent phase keeps the old board behaviour.
+export const marketPhaseLine = (allocation?: DeskModelAllocation): string | null => {
+  const phase = allocation?.market_phase
+  if (!phase) return null
+  if (phase.calendar_known !== true || phase.phase === 'unknown') return 'Exchange calendar not reviewed for this date'
+  const actionClock = phaseClock(phase.next_action_at, false)
+  const actionDay = phaseClock(phase.next_action_at, true)
+  const publicationClock = phaseClock(phase.next_publication_at, false)
+  const publicationDay = phaseClock(phase.next_publication_at, true)
+  switch (phase.phase) {
+    case 'regular': {
+      const close = phaseClock(phase.closes_at, false)
+      return `Regular session${close ? ` · open until ${close}` : ''} · the desk acts on completed 15-minute candles`
+    }
+    case 'pre_market':
+      return `Pre-market · thin · the desk acts in regular hours · ${actionClock ? `next action at ${actionClock}` : 'next action time unavailable'}`
+    case 'after_hours':
+      return `After-hours (to 20:00 ET) · thin · the desk acts in regular hours · ${actionDay ? `next action ${actionDay}` : 'next action time unavailable'}${publicationClock ? ` · tonight's plan at ${publicationClock}` : ''}`
+    case 'overnight':
+      return `Overnight · the desk acts in regular hours · ${actionDay ? `next action ${actionDay}` : 'next action time unavailable'}${publicationDay ? ` · next plan ${publicationDay}` : ''}`
+    case 'closed':
+      return `Market closed (weekend/holiday) · ${actionDay ? `next action ${actionDay}` : 'next action time unavailable'}${publicationDay ? ` · next plan ${publicationDay}` : ''}`
+    default:
+      return 'Exchange calendar not reviewed for this date'
+  }
+}
+
+// Treat a phase the backend did not send as the old behaviour, so an older
+// allocation still uses the live market status rather than inventing a state.
+const outsideRegularSession = (allocation?: DeskModelAllocation): boolean => {
+  const phase = allocation?.market_phase
+  if (!phase) return false
+  return phase.calendar_known !== true || phase.phase !== 'regular'
+}
+
+// Prefer the reviewed phase over the live snapshot's phase when both exist,
+// because only the phase object knows the desk's regular-session rule.
+const sessionOpen = (live: DeskLive, allocation?: DeskModelAllocation): boolean => {
+  const phase = allocation?.market_phase
+  if (phase) return phase.calendar_known === true && phase.phase === 'regular'
+  return live.market_status?.phase === 'open'
+}
+
 // Preserve an authenticated nightly direction outside regular hours without inventing current chart confirmation.
 const publishedPlanFor = (latest: DeskRecord, live: DeskLive, allocation: DeskModelAllocation | undefined, ticker: string, now: number): Signals | null => {
   const v2 = allocation?.version === 'strategy-model-allocation/2'
-  if (!v2 && !['post-market', 'pre-market', 'closed'].includes(live.market_status?.phase ?? '')) return null
+  const outside = allocation?.market_phase
+    ? !sessionOpen(live, allocation)
+    : ['post-market', 'pre-market', 'closed'].includes(live.market_status?.phase ?? '')
+  if (!v2 && !outside) return null
   const weight = modelWeight(latest, allocation, ticker, now)
   const grade = v2 ? allocation.grade_signals?.[ticker]?.grade : latest.grades?.[ticker]?.grade
   const session = v2 ? allocation.session : latest.session
@@ -274,7 +336,7 @@ const publishedPlanFor = (latest: DeskRecord, live: DeskLive, allocation: DeskMo
   const exiting = action.grade_signal === 'sell'
   const hasExit = !eligible && (!independent || exiting)
   if (!eligible && weight > 0) return null
-  const waiting = v2 && live.market_status?.phase === 'open'
+  const waiting = v2 && sessionOpen(live, allocation)
   const timing = v2 ? 'Await the numerical 15-minute entry assessment and a fresh regular-session quote; this is not an immediate action.' : 'Await a fresh regular-session candle and quote; this is not an immediate action.'
   const reason = `${independent ? 'Strategy model' : 'Published'} ${session} grade signal ${action.grade_signal}, grade ${grade}, ${(weight * 100).toFixed(1)}% ${independent ? 'position size' : 'target'}. ${timing}`
   return {
@@ -292,9 +354,10 @@ const publishedPlanFor = (latest: DeskRecord, live: DeskLive, allocation: DeskMo
 const signalsForBase = (latest: DeskRecord, live: DeskLive, ticker: string, now: number, allocation?: DeskModelAllocation): Signals => {
   if (allocation?.version === 'strategy-model-allocation/2') {
     const unavailable = signal('Unavailable', false, '', 'Verified current strategy publication required.', 3)
+    const open = sessionOpen(live, allocation)
     const plan = publishedPlanFor(latest, live, allocation, ticker, now)
-    const entry = publicationValid(allocation,now) && live.market_status?.phase === 'open' ? numericalEntry(allocation,ticker,now) : null
-    if (allocation.reference_positions!==undefined || live.market_status?.phase === 'open' && ['strategy-numerical-entries/2','strategy-numerical-entries/3'].includes(allocation.entry_assessment?.version ?? '')) {
+    const entry = publicationValid(allocation,now) && open ? numericalEntry(allocation,ticker,now) : null
+    if (allocation.reference_positions!==undefined || open && ['strategy-numerical-entries/2','strategy-numerical-entries/3'].includes(allocation.entry_assessment?.version ?? '')) {
       const position = referencePosition(allocation,ticker,now)
       const assessment=allocation.entry_assessment
       const currentReference=referenceEntryFormat(assessment) && assessment?.status==='available'
@@ -310,7 +373,7 @@ const signalsForBase = (latest: DeskRecord, live: DeskLive, ticker: string, now:
       const grade = allocation.grade_signals?.[ticker]?.grade ?? '—'
       if (grade==='—' && position===0) return {ticker,grade,setup:null,buy:unavailable,sell:unavailable,evidence}
       const inactive = signal('—',false,'','',2)
-      const side = live.market_status?.phase==='open' ? row?.action : null
+      const side = open ? row?.action : null
       const ready = entry?.row.state==='execute'
       const reason = side ? `${side} ${(row!.size_weight*100).toFixed(3)}% of model reference capital toward a ${(position*100).toFixed(1)}% position. ${entry?.row.evidence?.timing_reason ?? 'Await a fresh compatible regular-session quote.'} This is a standing model reference, not your holdings or a recorded fill.`
         : !row ? 'The daily model position is retained. Await a current 15-minute assessment and fresh compatible regular-session quote for a trade amount.'
@@ -322,7 +385,7 @@ const signalsForBase = (latest: DeskRecord, live: DeskLive, ticker: string, now:
         current:entry ? {completed:allocation.entry_assessment!.completed_at!,quote:entry.row.quote_at!,until:entry.validUntil} : undefined}
     }
     const quote = displayedBoardPrice(live,ticker,now)
-    if (plan && allocation.grade_signals?.[ticker]?.action === 'sell' && live.market_status?.phase === 'open'
+    if (plan && allocation.grade_signals?.[ticker]?.action === 'sell' && open
         && quote?.current && quote.kind === 'midpoint' && quote.word === 'regular')
       return {...plan,nextSession:false,sell:signal('Sell review now',true,'','The model grade dropped below A: exit an existing position. This is not a short sale; no holding amount is assumed.',0)}
     if (plan && entry) {
@@ -336,7 +399,8 @@ const signalsForBase = (latest: DeskRecord, live: DeskLive, ticker: string, now:
   const setup = currentSetup(live, latest.session, ticker, now)
   const original = live.opportunities?.rows?.[ticker]
   const grade = currentAssessments(live, latest.session, now)[ticker]?.grade_live ?? '—'
-  const missing = live.opportunities?.unavailable?.[ticker] ?? (live.market_status?.phase && live.market_status.phase !== 'open'
+  const open = sessionOpen(live, allocation)
+  const missing = live.opportunities?.unavailable?.[ticker] ?? (!open && live.market_status?.phase
     ? 'Regular-session assessment expired or unavailable. Extended-hours prices do not supply a new strategy assessment.'
     : 'Fresh chart assessment unavailable; no immediate signal is inferred.')
   const unavailable = signal('Unavailable', false, '', missing, 3)
@@ -346,7 +410,6 @@ const signalsForBase = (latest: DeskRecord, live: DeskLive, ticker: string, now:
       || !['high', 'medium', 'low'].includes(setup.exit_priority))
     return publishedPlanFor(latest, live, allocation, ticker, now) ?? {ticker, grade, setup: null, buy: unavailable, sell: unavailable}
   const quote = displayedBoardPrice(live, ticker, now)
-  const open = live.market_status?.phase === 'open'
   const quoted = quote?.current && quote.kind === 'midpoint' && quote.word === 'regular'
   const gate = !open ? 'Wait for the regular session; this is not an immediate action.'
     : !quoted ? 'Wait for a fresh regular-session bid/ask quote.' : null
@@ -373,8 +436,17 @@ const verdictFields = (allocation: DeskModelAllocation | undefined, ticker: stri
 }
 
 // Keep the board's signal wording and the backend's one-word verdict in one object.
-export const signalsFor = (latest: DeskRecord, live: DeskLive, ticker: string, now: number, allocation?: DeskModelAllocation): Signals =>
-  ({...signalsForBase(latest, live, ticker, now, allocation), ...verdictFields(allocation, ticker, now)})
+// Outside the regular session a non-plan row has no action to wait for: the desk
+// acts only in regular hours, so "Wait" would imply a session decision that is
+// not coming. The next-session plan keeps its own wording and badge.
+export const signalsFor = (latest: DeskRecord, live: DeskLive, ticker: string, now: number, allocation?: DeskModelAllocation): Signals => {
+  const signals = {...signalsForBase(latest, live, ticker, now, allocation), ...verdictFields(allocation, ticker, now)}
+  if (outsideRegularSession(allocation) && signals.nextSession !== true && signals.lastPlan !== true)
+    return {ticker: signals.ticker, grade: signals.grade, setup: null, evidence: signals.evidence, nextSession: false,
+      buy: signal('Do nothing', false, '', 'outside regular session', 2),
+      sell: signal('—', false, '', '', 2)}
+  return signals
+}
 
 // Display exact model evidence times in the market's timezone.
 const evidenceTime = (at: string) => new Date(at).toLocaleString('en-US', {timeZone: 'America/New_York', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', second: '2-digit'}) + ' ET'
@@ -434,9 +506,10 @@ const signalsView = (signals: Signals, selected: Signal, allocation: DeskModelAl
 // Carry the expired plan's own rows without presenting them as fresh advice.
 const lastPlanSignals = (allocation: DeskModelAllocation, ticker: string): Signals => {
   const row = allocation.last_rows?.[ticker]
-  const reason = allocation.expired_at && allocation.next_publication_at
-    ? `Last plan expired at ${evidenceTime(allocation.expired_at)}; tonight's plan publishes at ${evidenceTime(allocation.next_publication_at)}.`
-    : 'Last plan expired; awaiting the next publication.'
+  const reason = outsideRegularSession(allocation) ? 'outside regular session'
+    : allocation.expired_at && allocation.next_publication_at
+      ? `Last plan expired at ${evidenceTime(allocation.expired_at)}; tonight's plan publishes at ${evidenceTime(allocation.next_publication_at)}.`
+      : 'Last plan expired; awaiting the next publication.'
   return {ticker, grade: row?.evidence?.grade ?? '—', setup: null, evidence: row?.evidence, lastPlan: true,
     buy: signal('Do nothing', false, '', reason, 2), sell: signal('—', false, '', '', 2)}
 }
@@ -541,7 +614,7 @@ export const SignalBoard = ({latest, live, allocation, now, onOpen, closes, refr
   const displayed = useMemo(() => rows.map(row => {
     const derived = signalsView(row, selected(row), allocation, row.ticker, now)
     if (row.lastPlan) return {row, view: derived, refreshing: false}
-    const open = live.market_status?.phase === 'open'
+    const open = sessionOpen(live, allocation)
     const bound = allocation ? entryEvidence(allocation, row.ticker, now) : null
     const backend = bound ? backendVerdict(bound.row) : null
     const backendView = open && bound && backend ? boundView(bound) : null
@@ -577,13 +650,14 @@ export const SignalBoard = ({latest, live, allocation, now, onOpen, closes, refr
   const candleAt = completedCandleTime(live, allocation)
   const publicationSession = awaitingNightly ? allocation?.last_session ?? allocation?.session ?? latest.session : allocation?.session ?? latest.session
   const refreshIn = refreshedAt === undefined ? null : Math.max(0, Math.ceil((refreshMs - Math.max(0, tick - refreshedAt)) / 1000))
+  const phaseLine = marketPhaseLine(allocation)
   return <section aria-label="All names signals" className="min-h-0 overflow-auto rounded-xl border border-black/[0.08] bg-white">
     <div className="space-y-2 p-3">
       <h3 className="text-sm font-semibold">All names · {rows.length}</h3>
       <p className="text-xs text-[#6e6e73]">{independent
         ? savedNamesOnly ? `Saved stocks · ${latest.session} · current strategy unavailable` : awaitingNightly
           ? `Last plan · awaiting tonight's publication · ${publicationSession ?? 'unavailable'}`
-          : `${live.market_status?.phase === 'open' ? allocation?.version === 'strategy-model-allocation/2' && !currentSession ? 'Awaiting 15-minute entries' : '15-minute signals' : 'Regular market closed · Next-session actions'} · ${currentSession ?? allocation?.session ?? latest.session}`
+          : `${sessionOpen(live, allocation) ? allocation?.version === 'strategy-model-allocation/2' && !currentSession ? 'Awaiting 15-minute entries' : '15-minute signals' : 'Regular market closed · Next-session actions'} · ${currentSession ?? allocation?.session ?? latest.session}`
         : 'Regular-session signals and published strategy plans · no paper account or portfolio inputs required. Immediate signals first, then waiting, plans and unavailable; High → Medium → Low within each group. Equal priorities sort alphabetically.'}</p>
       <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Signal ranking">
         {(['all', 'buy', 'sell'] as const).map(value => <button key={value} type="button" aria-pressed={side === value} className={`rounded-full border px-3 py-1 text-xs ${side === value ? 'bg-[#e8f2ff] text-[#0071e3]' : ''}`} onClick={() => {setSide(value); setVisible(25)}}>{value === 'all' ? 'All names' : value === 'buy' ? 'Best buys' : 'Best sells'}</button>)}
@@ -599,10 +673,11 @@ export const SignalBoard = ({latest, live, allocation, now, onOpen, closes, refr
       </div>}
       <p aria-label="Signal coverage" className="text-xs text-[#6e6e73]">{independent
         ? recommendationsUnavailable ? 'Recommendations unavailable' : awaitingNightly ? `${rows.length} last-plan rows · awaiting tonight's plan` : `${displayed.filter(item => item.view.verdict === 'buy').length} buys · ${displayed.filter(item => item.view.verdict === 'sell').length} sells`
-        : `${rows.filter(row => row.setup).length} of ${rows.length} current assessments · ${rows.filter(row => row.buy.ready).length} buy now · ${rows.filter(row => row.sell.ready).length} sell reviews now · ${rows.filter(row => row.plan).length} published plan rows${live.market_status?.phase !== 'open' ? ' · regular session closed or unavailable' : ''}.`}</p>
+        : `${rows.filter(row => row.setup).length} of ${rows.length} current assessments · ${rows.filter(row => row.buy.ready).length} buy now · ${rows.filter(row => row.sell.ready).length} sell reviews now · ${rows.filter(row => row.plan).length} published plan rows${!sessionOpen(live, allocation) ? ' · regular session closed or unavailable' : ''}.`}</p>
       {!independent && <p className="text-xs text-[#6e6e73]">Model size is the published strategy target percentage, not shares or an instruction to buy that percentage now. Entry and exit reviews use fresh chart assessments; they do not recalculate the model’s allocation.</p>}
     </div>
-    <section aria-label="Data as of" className="flex flex-wrap gap-x-4 gap-y-1 border-t bg-[#f5f5f7] px-3 py-2 text-[11px] text-[#6e6e73]">
+    <section aria-label="Data as of" data-market-phase={allocation?.market_phase?.phase} className="flex flex-wrap gap-x-4 gap-y-1 border-t bg-[#f5f5f7] px-3 py-2 text-[11px] text-[#6e6e73]">
+      {phaseLine && <span aria-label="Market phase">{phaseLine}</span>}
       <span>Quote {quoteAt ? evidenceTime(quoteAt) : 'unavailable'}</span>
       <span>Completed candle {candleAt ? evidenceTime(candleAt) : 'unavailable'}</span>
       <span>Plan {publicationSession ?? 'unavailable'}{awaitingNightly ? ' (last plan)' : ''}</span>
