@@ -611,3 +611,78 @@ def test_structure_gated_allocator(history):
         point_in_time.structure_gated_allocator(equal, "luck")(
             restricted, panel, None, t
         )
+
+
+# A forecast target never scales the book up, reads nothing after the
+# decision session, and the ridge falls back to the trailing figure until it
+# has enough purged examples to fit.
+@pytest.mark.parametrize("forecaster", ["trailing", "ewma", "ridge"])
+def test_forecast_targeted_allocator(history, forecaster):
+    report = _report()
+    restricted, mask = point_in_time.point_in_time(report, history)
+    panel = report.panel
+    slots = point_in_time.graded_equal_weight_allocator(
+        mask, min_grade=0, cap=1.0, gross=1.0
+    )
+    t = T - 1
+    base = slots(restricted, panel, None, t)
+    scaled = point_in_time.forecast_targeted_allocator(
+        slots, forecaster=forecaster, target=1e-6, min_train=5
+    )(restricted, panel, None, t)
+    assert np.array_equal(scaled > 0, base > 0)
+    assert scaled.sum() < base.sum()
+    loose = point_in_time.forecast_targeted_allocator(
+        slots, forecaster=forecaster, target=1e9, min_train=5
+    )(restricted, panel, None, t)
+    assert np.allclose(loose, base)
+    later = panel.adj_close.copy()
+    later[t + 1 :] = 1.0
+    from dataclasses import replace
+
+    again = point_in_time.forecast_targeted_allocator(
+        slots, forecaster=forecaster, target=1e-6, min_train=5
+    )(restricted, replace(panel, adj_close=later), None, t)
+    assert np.allclose(again, scaled)
+    with pytest.raises(ValueError, match="unknown forecaster"):
+        point_in_time.forecast_targeted_allocator(slots, forecaster="luck")
+
+
+# A forecast tilt reshares the slots by the forecasts rank, keeps the gross,
+
+
+# A forecast tilt reshares the slots by the forecast's rank, keeps the gross,
+# and leaves the slots alone on a session without a fitted model.
+def test_forecast_tilted_allocator(history):
+    from types import SimpleNamespace
+
+    report = _report()
+    restricted, mask = point_in_time.point_in_time(report, history)
+    panel = report.panel
+    slots = point_in_time.graded_equal_weight_allocator(
+        mask, min_grade=0, cap=1.0, gross=1.0
+    )
+    t = T - 1
+    base = slots(restricted, panel, None, t)
+    values = np.tile(np.arange(len(panel.tickers), dtype=float), (T, 1))
+    fitted = SimpleNamespace(
+        values=values,
+        fit_session=np.full(T, np.datetime64("2026-01-01")),
+        last_training_label_end=np.full(T, -1),
+    )
+    tilted = point_in_time.forecast_tilted_allocator(slots, fitted, 0.5)(
+        restricted, panel, None, t
+    )
+    held = np.flatnonzero(base > 0)
+    assert tilted.sum() == pytest.approx(base.sum())
+    assert np.array_equal(tilted > 0, base > 0)
+    if len(held) >= 2:
+        assert tilted[held[-1]] > tilted[held[0]]
+    unfitted = SimpleNamespace(
+        values=values,
+        fit_session=np.full(T, np.datetime64("NaT")),
+        last_training_label_end=np.full(T, -1),
+    )
+    assert np.allclose(
+        point_in_time.forecast_tilted_allocator(slots, unfitted)(restricted, panel, None, t),
+        base,
+    )

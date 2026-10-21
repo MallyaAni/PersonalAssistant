@@ -395,6 +395,57 @@ ARMS = {
             reshare=False,
         )
     ),
+    # Leader-tilted slots at a 0.25 target set by a "ridge" forecast of the
+    # next twenty sessions' basket volatility.
+    "ew_graded_leader_forecast_ridge": lambda report, mask: point_in_time.forecast_targeted_allocator(
+        point_in_time.graded_tilted_allocator(
+            mask, min_grade=grading.ORDINAL[grading.A], tilt="leader", strength=0.5,
+            window=63, target=1e9, cap=0.25,
+        ),
+        forecaster="ridge", target=0.25,
+    ),
+    # Leader-tilted slots at a 0.25 target set by a "ewma" forecast of the
+    # next twenty sessions' basket volatility.
+    "ew_graded_leader_forecast_ewma": lambda report, mask: point_in_time.forecast_targeted_allocator(
+        point_in_time.graded_tilted_allocator(
+            mask, min_grade=grading.ORDINAL[grading.A], tilt="leader", strength=0.5,
+            window=63, target=1e9, cap=0.25,
+        ),
+        forecaster="ewma", target=0.25,
+    ),
+    # Leader-tilted slots at a 0.25 target set by a "trailing" forecast of the
+    # next twenty sessions' basket volatility.
+    "ew_graded_leader_forecast_trailing": lambda report, mask: point_in_time.forecast_targeted_allocator(
+        point_in_time.graded_tilted_allocator(
+            mask, min_grade=grading.ORDINAL[grading.A], tilt="leader", strength=0.5,
+            window=63, target=1e9, cap=0.25,
+        ),
+        forecaster="trailing", target=0.25,
+    ),
+    # Equal A/A+ slots tilted by the walk-forward "desk" ranker's forecast rank
+    # instead of trailing return, at the 0.25 trailing-vol target.
+    "ew_graded_hgbtilt_desk_25": lambda report, mask: point_in_time.forecast_targeted_allocator(
+        point_in_time.forecast_tilted_allocator(
+            point_in_time.graded_equal_weight_allocator(
+                mask, min_grade=grading.ORDINAL[grading.A], cap=0.25, gross=1.0
+            ),
+            learned_arm.forecasts(report, mask, "desk"),
+            strength=0.5,
+        ),
+        forecaster="trailing", target=0.25,
+    ),
+    # Equal A/A+ slots tilted by the walk-forward "price" ranker's forecast rank
+    # instead of trailing return, at the 0.25 trailing-vol target.
+    "ew_graded_hgbtilt_price_25": lambda report, mask: point_in_time.forecast_targeted_allocator(
+        point_in_time.forecast_tilted_allocator(
+            point_in_time.graded_equal_weight_allocator(
+                mask, min_grade=grading.ORDINAL[grading.A], cap=0.25, gross=1.0
+            ),
+            learned_arm.forecasts(report, mask, "price"),
+            strength=0.5,
+        ),
+        forecaster="trailing", target=0.25,
+    ),
     # A walk-forward gradient-boosted ranker, top ten members at 10% each.
     # "hgb_rank" trains on price features plus the desk's grade and summed
     # conviction (the baseline every earlier attempt used); "hgb_desk" on

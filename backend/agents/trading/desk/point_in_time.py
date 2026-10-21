@@ -415,3 +415,149 @@ def structure_gated_allocator(
         return targets
 
     return allocate
+
+
+# Exposure from a volatility forecast instead of the trailing realised figure.
+# The deep studies of September found the one thing a model predicted on
+# this book was risk, not return, so the natural place for a learner is the
+# volatility target: scale the book by what the next twenty sessions'
+# basket volatility is forecast to be. The forecast here is a walk-forward
+# ridge on the book's own price features (realised volatility over 5, 20
+# and 63 sessions, the retreat from the 63-session high, cross-sectional
+# dispersion, the benchmark's volatility), refit every `refit` sessions on
+# a purged training set that ends `horizon` sessions before the decision,
+# so the target is never read from the future. An EWMA forecast stands
+# beside it as the naive learner the ridge must beat.
+VOL_HORIZON = 20
+_VOL_WINDOWS = (5, 20, 63)
+
+
+def _basket_log_returns(panel, held: np.ndarray, t: int) -> np.ndarray:
+    closes = np.asarray(panel.adj_close[: t + 1], dtype=float)[:, held]
+    with np.errstate(divide="ignore", invalid="ignore"):
+        returns = np.diff(np.log(closes), axis=0)
+    return np.nanmean(returns, axis=1)
+
+
+def _vol_features(basket: np.ndarray, bench: np.ndarray, closes: np.ndarray, end: int):
+    """Feature row for a decision at index `end` (inclusive) of the return series."""
+    if end < 63:
+        return None
+    row = []
+    for window in _VOL_WINDOWS:
+        piece = basket[end - window + 1 : end + 1]
+        row.append(np.log(np.std(piece, ddof=1) * np.sqrt(252.0) + 1e-6))
+    piece = bench[end - 20 + 1 : end + 1]
+    row.append(np.log(np.std(piece, ddof=1) * np.sqrt(252.0) + 1e-6))
+    level = np.cumsum(basket[: end + 1])
+    row.append(level[-1] - level[-63:].max())
+    row.append(np.log(np.nanmean(np.nanstd(closes[end - 19 : end + 1], axis=0)) + 1e-6))
+    return np.array(row, dtype=float)
+
+
+def _vol_target_value(basket: np.ndarray, end: int, horizon: int) -> float | None:
+    piece = basket[end + 1 : end + 1 + horizon]
+    if len(piece) < horizon:
+        return None
+    return float(np.log(np.std(piece, ddof=1) * np.sqrt(252.0) + 1e-6))
+
+
+def forecast_targeted_allocator(
+    inner,
+    forecaster: str = "ridge",
+    target: float = 0.25,
+    horizon: int = VOL_HORIZON,
+    refit: int = 63,
+    min_train: int = 500,
+    ridge_lambda: float = 1.0,
+    ewma_span: int = 20,
+):
+    """Return a callable (report, panel, config, t) -> inner weights at a forecast-vol target.
+
+    `inner` must return unscaled slots (equal or tilted, cap applied) whose gross is
+    what the book would hold at full exposure; the forecast decides the fraction.
+    """
+    if forecaster not in ("ridge", "ewma", "trailing"):
+        raise ValueError(f"unknown forecaster {forecaster!r}")
+    state = {"fit_at": None, "coef": None, "held_key": None}
+
+    def allocate(report, panel, config, t: int) -> np.ndarray:
+        slots = np.array(inner(report, panel, config, t), dtype=float)
+        held = slots > 0
+        if not held.any() or t < 64:
+            return slots
+        bench = panel.index(panel.benchmark)
+        basket = _basket_log_returns(panel, held, t)
+        if not np.isfinite(basket).all():
+            return slots
+        with np.errstate(divide="ignore", invalid="ignore"):
+            bench_returns = np.diff(np.log(np.asarray(panel.adj_close[: t + 1, bench], dtype=float)))
+        bench_returns = np.nan_to_num(bench_returns)
+        end = len(basket) - 1
+        if forecaster == "trailing":
+            forecast = float(np.std(basket[-63:], ddof=1) * np.sqrt(252.0))
+        elif forecaster == "ewma":
+            alpha = 2.0 / (ewma_span + 1.0)
+            variance = basket[-250:] ** 2
+            weights = (1 - alpha) ** np.arange(len(variance))[::-1]
+            forecast = float(np.sqrt(np.sum(weights * variance) / weights.sum() * 252.0))
+        else:
+            closes = np.asarray(panel.adj_close[: t + 1], dtype=float)[:, held]
+            # Refit on the schedule, on examples whose targets end before the
+            # decision session, so no example contains tomorrow.
+            if state["coef"] is None or t - state["fit_at"] >= refit:
+                rows, targets = [], []
+                for e in range(63, end - horizon):
+                    x = _vol_features(basket, bench_returns, closes, e)
+                    y = _vol_target_value(basket, e, horizon)
+                    if x is not None and y is not None and np.isfinite(x).all():
+                        rows.append(x)
+                        targets.append(y)
+                if len(rows) >= min_train:
+                    X = np.c_[np.ones(len(rows)), np.array(rows)]
+                    y = np.array(targets)
+                    penalty = ridge_lambda * np.eye(X.shape[1])
+                    penalty[0, 0] = 0.0
+                    state["coef"] = np.linalg.solve(X.T @ X + penalty, X.T @ y)
+                    state["fit_at"] = t
+            x = _vol_features(basket, bench_returns, closes, end)
+            if state["coef"] is None or x is None or not np.isfinite(x).all():
+                forecast = float(np.std(basket[-63:], ddof=1) * np.sqrt(252.0))
+            else:
+                forecast = float(np.exp(np.r_[1.0, x] @ state["coef"]))
+        if not forecast > 0:
+            return slots
+        return slots * min(1.0, target / forecast)
+
+    return allocate
+
+
+# A learned tilt. The learned rankers failed as selectors (ten names at 10%
+# concentrated the book and lost to equal weight), but the question the
+# owner asks is narrower: within the graded book, should a name's slot
+# follow a walk-forward forecast of its relative return rather than its
+# trailing-return rank? The tilt reshares the inner slots by the rank of
+# the out-of-sample forecast among the held names, the same 1-strength to
+# 1+strength mapping as the leader tilt, and leaves a name untouched on a
+# session the forecast has no fitted model for.
+def forecast_tilted_allocator(inner, forecast, strength: float = 0.5):
+    """Return a callable (report, panel, config, t) -> inner slots tilted by forecast rank."""
+    if not 0 <= strength <= 1:
+        raise ValueError("need 0 <= strength <= 1")
+
+    def allocate(report, panel, config, t: int) -> np.ndarray:
+        slots = np.array(inner(report, panel, config, t), dtype=float)
+        held = np.flatnonzero(slots > 0)
+        if len(held) < 2 or np.isnat(forecast.fit_session[t]) or forecast.last_training_label_end[t] >= t:
+            return slots
+        scores = np.asarray(forecast.values[t], dtype=float)[held]
+        if not np.isfinite(scores).all():
+            return slots
+        order = np.argsort(np.argsort(scores))
+        multipliers = 1.0 + strength * (2.0 * order / (len(held) - 1) - 1.0)
+        gross = float(slots[held].sum())
+        tilted = slots[held] * multipliers
+        slots[held] = tilted * gross / tilted.sum()
+        return slots
+
+    return allocate
