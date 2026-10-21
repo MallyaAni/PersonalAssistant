@@ -294,52 +294,106 @@ ARMS = {
         )
     ),
     # Structure gate "daily_trend" on the capped leader book (every session).
-    "ew_graded_leader_25_trendexit": lambda report, mask: point_in_time.structure_gated_allocator(
-        point_in_time.graded_tilted_allocator(
-            mask, min_grade=grading.ORDINAL[grading.A], tilt="leader", strength=0.5,
-            window=63, target=0.25, cap=0.25,
-        ),
-        "daily_trend", entries_only=False, reshare=True,
+    "ew_graded_leader_25_trendexit": lambda report, mask: (
+        point_in_time.structure_gated_allocator(
+            point_in_time.graded_tilted_allocator(
+                mask,
+                min_grade=grading.ORDINAL[grading.A],
+                tilt="leader",
+                strength=0.5,
+                window=63,
+                target=0.25,
+                cap=0.25,
+            ),
+            "daily_trend",
+            entries_only=False,
+            reshare=True,
+        )
     ),
     # Structure gate "weekly_trend" on the capped leader book (every session).
-    "ew_graded_leader_25_weeklyexit": lambda report, mask: point_in_time.structure_gated_allocator(
-        point_in_time.graded_tilted_allocator(
-            mask, min_grade=grading.ORDINAL[grading.A], tilt="leader", strength=0.5,
-            window=63, target=0.25, cap=0.25,
-        ),
-        "weekly_trend", entries_only=False, reshare=True,
+    "ew_graded_leader_25_weeklyexit": lambda report, mask: (
+        point_in_time.structure_gated_allocator(
+            point_in_time.graded_tilted_allocator(
+                mask,
+                min_grade=grading.ORDINAL[grading.A],
+                tilt="leader",
+                strength=0.5,
+                window=63,
+                target=0.25,
+                cap=0.25,
+            ),
+            "weekly_trend",
+            entries_only=False,
+            reshare=True,
+        )
     ),
     # Structure gate "not_distributing" on the capped leader book (new entries only).
-    "ew_graded_leader_25_entrygate": lambda report, mask: point_in_time.structure_gated_allocator(
-        point_in_time.graded_tilted_allocator(
-            mask, min_grade=grading.ORDINAL[grading.A], tilt="leader", strength=0.5,
-            window=63, target=0.25, cap=0.25,
-        ),
-        "not_distributing", entries_only=True, reshare=True,
+    "ew_graded_leader_25_entrygate": lambda report, mask: (
+        point_in_time.structure_gated_allocator(
+            point_in_time.graded_tilted_allocator(
+                mask,
+                min_grade=grading.ORDINAL[grading.A],
+                tilt="leader",
+                strength=0.5,
+                window=63,
+                target=0.25,
+                cap=0.25,
+            ),
+            "not_distributing",
+            entries_only=True,
+            reshare=True,
+        )
     ),
     # The same gate with the gated slot kept in cash rather than reshared.
-    "ew_graded_leader_25_trendexit_cash": lambda report, mask: point_in_time.structure_gated_allocator(
-        point_in_time.graded_tilted_allocator(
-            mask, min_grade=grading.ORDINAL[grading.A], tilt="leader", strength=0.5,
-            window=63, target=0.25, cap=0.25,
-        ),
-        "daily_trend", entries_only=False, reshare=False,
+    "ew_graded_leader_25_trendexit_cash": lambda report, mask: (
+        point_in_time.structure_gated_allocator(
+            point_in_time.graded_tilted_allocator(
+                mask,
+                min_grade=grading.ORDINAL[grading.A],
+                tilt="leader",
+                strength=0.5,
+                window=63,
+                target=0.25,
+                cap=0.25,
+            ),
+            "daily_trend",
+            entries_only=False,
+            reshare=False,
+        )
     ),
     # The same gate with the gated slot kept in cash rather than reshared.
-    "ew_graded_leader_25_weeklyexit_cash": lambda report, mask: point_in_time.structure_gated_allocator(
-        point_in_time.graded_tilted_allocator(
-            mask, min_grade=grading.ORDINAL[grading.A], tilt="leader", strength=0.5,
-            window=63, target=0.25, cap=0.25,
-        ),
-        "weekly_trend", entries_only=False, reshare=False,
+    "ew_graded_leader_25_weeklyexit_cash": lambda report, mask: (
+        point_in_time.structure_gated_allocator(
+            point_in_time.graded_tilted_allocator(
+                mask,
+                min_grade=grading.ORDINAL[grading.A],
+                tilt="leader",
+                strength=0.5,
+                window=63,
+                target=0.25,
+                cap=0.25,
+            ),
+            "weekly_trend",
+            entries_only=False,
+            reshare=False,
+        )
     ),
     # The same gate with the gated slot kept in cash rather than reshared.
-    "ew_graded_leader_25_entrygate_cash": lambda report, mask: point_in_time.structure_gated_allocator(
-        point_in_time.graded_tilted_allocator(
-            mask, min_grade=grading.ORDINAL[grading.A], tilt="leader", strength=0.5,
-            window=63, target=0.25, cap=0.25,
-        ),
-        "not_distributing", entries_only=True, reshare=False,
+    "ew_graded_leader_25_entrygate_cash": lambda report, mask: (
+        point_in_time.structure_gated_allocator(
+            point_in_time.graded_tilted_allocator(
+                mask,
+                min_grade=grading.ORDINAL[grading.A],
+                tilt="leader",
+                strength=0.5,
+                window=63,
+                target=0.25,
+                cap=0.25,
+            ),
+            "not_distributing",
+            entries_only=True,
+            reshare=False,
+        )
     ),
     # A walk-forward gradient-boosted ranker, top ten members at 10% each.
     # "hgb_rank" trains on price features plus the desk's grade and summed

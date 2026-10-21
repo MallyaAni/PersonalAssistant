@@ -567,7 +567,9 @@ def test_group_capped_allocator(history):
     )
     t = T - 1
     base = equal(restricted, panel, None, t)
-    held = [name for name, weight in zip(panel.tickers, base, strict=True) if weight > 0]
+    held = [
+        name for name, weight in zip(panel.tickers, base, strict=True) if weight > 0
+    ]
     assert len(held) >= 2
     groups = {name: "one" for name in held[:-1]}
     capped = point_in_time.group_capped_allocator(equal, groups, 0.5)
@@ -580,3 +582,32 @@ def test_group_capped_allocator(history):
     assert np.allclose(loose(restricted, panel, None, t), base)
     with pytest.raises(ValueError, match="group_cap"):
         point_in_time.group_capped_allocator(equal, groups, 0)
+
+
+# A structure gate removes names whose closes fail the rule and, by default,
+# leaves their slots in cash; reshared, the survivors keep the book's gross.
+def test_structure_gated_allocator(history):
+    report = _report()
+    restricted, mask = point_in_time.point_in_time(report, history)
+    panel = report.panel
+    equal = point_in_time.graded_equal_weight_allocator(
+        mask, min_grade=0, cap=1.0, gross=1.0
+    )
+    t = T - 1
+    base = equal(restricted, panel, None, t)
+    for kind in ("daily_trend", "weekly_trend", "not_distributing"):
+        cash = point_in_time.structure_gated_allocator(equal, kind)(
+            restricted, panel, None, t
+        )
+        reshared = point_in_time.structure_gated_allocator(equal, kind, reshare=True)(
+            restricted, panel, None, t
+        )
+        assert cash.sum() <= base.sum() + 1e-12
+        assert np.all((cash > 0) <= (base > 0))
+        if cash.sum() > 0:
+            assert reshared.sum() == pytest.approx(base.sum())
+            assert np.array_equal(reshared > 0, cash > 0)
+    with pytest.raises(ValueError, match="unknown structure gate"):
+        point_in_time.structure_gated_allocator(equal, "luck")(
+            restricted, panel, None, t
+        )

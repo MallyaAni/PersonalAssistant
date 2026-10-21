@@ -252,3 +252,35 @@ names are almost all Information Technology, so a sector cap holds
 nothing else: it only moves the book into cash, which a lower volatility
 target does with one parameter and no classification file. The sector
 cap is not adopted.
+
+## Structure gates, scored rather than cited (2026-10-21, 17:00 ET)
+
+The owner asked for trend structure to act, not only to grade, and asked
+that the repo's earlier verdicts not be taken on trust. Three rules were
+built as arms over the capped leader book (`point_in_time.structure_gated_allocator`)
+and scored twice each: with the gated name's slot reshared among the
+survivors, and with it kept in cash (the version that also cuts exposure
+in a selloff). Daily-trend exit: out any session the close is under its
+50-session average. Weekly-trend exit: out unless the close is above a
+rising 105-session exponential average (the 21-week line). Distribution
+entry gate: no new entry while the close is under a falling 21-session
+average; holdings untouched. Base is `ew_graded_leader_25_cap25`.
+
+| arm | CAGR all | worst DD all | CAGR 2024-26 | worst DD 2024-26 |
+|---|---|---|---|---|
+| base (capped leader, no gate) | 23.0% | -35.0% | 29.7% | -33.2% |
+| daily-trend exit, reshared | 18.6% | -47.9% | 22.7% | -27.9% |
+| daily-trend exit, to cash | 15.7% | -38.2% | 19.8% | -28.1% |
+| weekly-trend exit, reshared | 20.2% | -42.7% | 27.7% | -26.5% |
+| weekly-trend exit, to cash | 19.5% | -36.5% | 26.0% | -27.5% |
+| distribution entry gate, reshared | 23.1% | -36.4% | 29.7% | -31.2% |
+| distribution entry gate, to cash | 21.3% | -34.9% | 25.9% | -26.3% |
+
+None passes the owner's rule on the full window: every exit costs 3-7
+points of CAGR and most add drawdown (whipsaw in 2016-23, and resharing
+concentrates the survivors); the entry gate is neutral reshared and costs
+1.7 points to cash for no drawdown change. The one honest hint is the
+recent regime: in 2024-26 the weekly exit and the cash entry gate cut
+worst drawdown by 6-7 points for 4 points of CAGR. That is a regime
+story, and the vol target already answers it with one parameter and no
+level. No structure gate is adopted; the arms stay registered.
