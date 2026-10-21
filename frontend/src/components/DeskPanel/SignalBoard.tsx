@@ -528,7 +528,7 @@ const signalsView = (signals: Signals, selected: Signal, allocation: DeskModelAl
 // Carry the expired plan's own rows without presenting them as fresh advice.
 const lastPlanSignals = (allocation: DeskModelAllocation, ticker: string): Signals => {
   const row = allocation.last_rows?.[ticker]
-  const reason = outsideRegularSession(allocation) ? ''
+  const reason = outsideRegularSession(allocation) || allocation.superseded_at ? ''
     : allocation.expired_at && allocation.next_publication_at
       ? `Last plan expired at ${evidenceTime(allocation.expired_at)}; tonight's plan publishes at ${evidenceTime(allocation.next_publication_at)}.`
       : 'Last plan expired; awaiting the next publication.'
@@ -697,7 +697,9 @@ export const SignalBoard = ({latest, live, allocation, now, onOpen, closes, refr
         <input aria-label="Find a stock" placeholder="Find a stock" value={query} onChange={event => {setQuery(event.target.value); setVisible(25)}} className="rounded border px-2 py-1 text-xs" />
       </div>
       {awaitingNightly && <div role="status" aria-label="Plan status" className="rounded-xl border border-black/[0.08] bg-[#f5f5f7] px-3 py-2 text-xs text-[#6e6e73]">
-        <p>{allocation?.expired_at && allocation?.next_publication_at
+        <p>{allocation?.superseded_at
+          ? `Sizing policy replaced at ${evidenceTime(allocation.superseded_at)}; the first plan under it publishes ${allocation.next_publication_at ? `at ${evidenceTime(allocation.next_publication_at)}` : 'tonight'}.`
+          : allocation?.expired_at && allocation?.next_publication_at
           ? `Today's plan expired at ${evidenceTime(allocation.expired_at)}; tonight's publishes at ${evidenceTime(allocation.next_publication_at)}.`
           : allocation?.next_publication_at ? `Tonight's plan publishes at ${evidenceTime(allocation.next_publication_at)}.`
             : allocation?.expired_at ? `Today's plan expired at ${evidenceTime(allocation.expired_at)}; tonight's plan is not yet published.`

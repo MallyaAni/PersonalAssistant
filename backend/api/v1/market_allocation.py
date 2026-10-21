@@ -3,6 +3,7 @@
 import asyncio
 import json
 from datetime import UTC, datetime, timedelta
+from hashlib import sha256
 from pathlib import Path
 
 from fastapi import APIRouter, Depends, Response
@@ -11,6 +12,7 @@ from backend.api.v1 import market
 from backend.core.auth import authorize_path_user
 from backend.market import (
     deskrecord,
+    learned_live_holding,
     market_phase,
     model_allocation_view,
     strategy_entries,
@@ -55,6 +57,39 @@ def _expired_snapshot(root, now):
         return strategy_publication.read(root, until - PROBE)
     except (OSError, ValueError, TypeError, KeyError, AttributeError, OverflowError):
         return None
+
+
+# A verified publication whose policy has since been replaced: the installed
+# configuration no longer binds it, so `read` refuses it, but its own
+# identity and clocks still verify. Until the next nightly publishes under
+# the new policy the board shows it as the last plan, with the moment the
+# policy changed, rather than nothing.
+def _superseded_snapshot(root, now):
+    folder = root / strategy_publication.DIRECTORY
+    try:
+        pointer = json.loads((folder / "latest.json").read_bytes())
+        raw = (folder / f"{pointer['snapshot_id']}.json").read_bytes()
+        if sha256(raw).hexdigest() != pointer["bytes_sha256"]:
+            return None
+        stored = json.loads(raw)
+        until = _parse_instant(stored["valid_until"])
+        if until.utcoffset() is None:
+            return None
+        strategy_publication.validate(stored, min(now, until - PROBE))
+        config, installed = learned_live_holding.read_configuration(root, now)
+        if sha256(config).hexdigest() == stored["identity"]["config_sha256"]:
+            return None
+        replaced = datetime.fromtimestamp(
+            (root / learned_live_holding.CONFIG).stat().st_mtime, tz=UTC
+        )
+    except (OSError, ValueError, TypeError, KeyError, AttributeError, OverflowError):
+        return None
+    return {
+        "snapshot": stored,
+        "policy": installed["policy"],
+        "replaced_at": replaced.isoformat(),
+        "expired_at": stored["valid_until"] if now >= until else None,
+    }
 
 
 # The one-word verdict beside each served numerical row. The rows come from
@@ -109,6 +144,22 @@ def allocation(root, now):
                 'market_phase': phase}
         except (OSError, ValueError, TypeError, KeyError, AttributeError, OverflowError):
             expired = _expired_snapshot(root, now)
+            superseded = (
+                None if expired is not None else _superseded_snapshot(root, now)
+            )
+            if superseded is not None:
+                stored = superseded["snapshot"]
+                return {"version": strategy_publication.VERSION,
+                        "status": "awaiting_nightly", "policy": superseded["policy"],
+                        "superseded_policy": stored["policy"],
+                        "superseded_at": superseded["replaced_at"],
+                        "rows": {}, "expired_at": superseded["expired_at"],
+                        "next_publication_at": market_phase.next_publication_at(
+                            now
+                        ).isoformat(),
+                        "last_session": stored["session"], "last_rows": stored["rows"],
+                        "as_of": now.isoformat(), "valid_until": None,
+                        "market_phase": phase}
             if expired is not None:
                 # A verified publication whose window has closed is a plan
                 # waiting for tonight's, not an integrity failure.

@@ -2531,6 +2531,10 @@ export interface DeskModelAllocation {
   as_of: string;
   valid_until: string | null;
   expired_at?: string | null;
+  // Set when the installed policy changed after this plan was published; the
+  // next nightly is the first under the new policy.
+  superseded_at?: string | null;
+  superseded_policy?: string | null;
   next_publication_at?: string | null;
   last_session?: string | null;
   last_rows?: Record<string, {target_weight: number; evidence?: DeskStrategyDecision['evidence'] & {timing_state?: string}}>;

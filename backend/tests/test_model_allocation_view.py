@@ -2,7 +2,7 @@
 
 import json
 from copy import deepcopy
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import pytest
 
@@ -302,3 +302,35 @@ def test_served_rows_carry_a_verdict(monkeypatch, tmp_path):
     reference = result["reference_positions"]["rows"][name]
     assert "verdict" not in reference
     assert reference["reason"] == "No funded model reference change"
+
+
+# A verified snapshot whose policy has since been replaced is the last plan
+# until the nightly publishes under the new one, dated by the replacement.
+def test_replaced_policy_keeps_the_last_plan_until_the_nightly(monkeypatch, tmp_path):
+    value = publish_fixture(tmp_path, monkeypatch)
+    config_path = tmp_path / market_allocation.learned_live_holding.CONFIG
+    config_path.parent.mkdir(parents=True, exist_ok=True)
+    config_path.write_bytes(b'{"policy": "grade-led-leader-weight/1"}')
+    monkeypatch.setattr(
+        publication.learned_live_holding,
+        "read_configuration",
+        lambda root, at: (
+            config_path.read_bytes(),
+            {"cost_bps": 10, "policy": "grade-led-leader-weight/1"},
+        ),
+    )
+    now = PUBLISHED_AT + timedelta(hours=1)
+    result = market_allocation.allocation(tmp_path, now)
+    assert result["status"] == "awaiting_nightly"
+    assert result["policy"] == "grade-led-leader-weight/1"
+    assert result["superseded_policy"] == value["policy"]
+    assert result["expired_at"] is None
+    assert result["last_rows"] == value["rows"]
+    assert result["last_session"] == value["session"]
+    assert datetime.fromisoformat(result["superseded_at"]).utcoffset() is not None
+    # Past its own close the same plan is both expired and superseded.
+    late = datetime.fromisoformat("2026-01-07T17:00:00-05:00")
+    result = market_allocation.allocation(tmp_path, late)
+    assert result["status"] == "awaiting_nightly"
+    assert result["expired_at"] == value["valid_until"]
+    assert result["superseded_policy"] == value["policy"]
