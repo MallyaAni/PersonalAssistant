@@ -21,12 +21,16 @@ CERTIFICATE = None
 
 
 # Check the complete original static input conditions, excluding only the unresolved-outcome branch.
+# `_unique` and `market_daily` are deliberately not imported here: `sources()`
+# below re-binds this function's code object with the private `_requests`
+# module's own globals, so the names resolve there at run time and the gate's
+# linter is told so rather than reporting a defect.
 def _static_request_inputs(prior, orders, observed):
-    _unique(prior.pending)
-    _unique(prior.journal)
+    _unique(prior.pending)  # noqa: F821
+    _unique(prior.journal)  # noqa: F821
     known = {row["client_order_id"] for row in orders}
     if any(
-        (market_daily._acknowledged(row) or row.get("sent"))
+        (market_daily._acknowledged(row) or row.get("sent"))  # noqa: F821
         and row["client_order_id"] not in known
         for row in prior.pending
     ):
