@@ -373,12 +373,18 @@ const replayColor = (action: string, sample: MarkerSample) => action === 'Buy'
   : sample === 'in_sample' ? 'rgba(180,35,24,.45)' : '#b42318'
 
 // Mark replayed simulations and recorded live recommendations as distinct layers across every timeframe.
+// A replayed trade smaller than this is not something a person would act on; more than half of
+// the learned sizing's replay trades were such dust, and drawing them buried the real ones.
+const DUST_WEIGHT = 0.005
+const dustTrades = (simulation: DeskStrategyStock | null | undefined): number =>
+  simulation?.decisions.filter(row => ['BUY', 'SELL', 'TRIM'].includes(row.action) && typeof row.weight === 'number' && row.weight > 0 && row.weight < DUST_WEIGHT).length ?? 0
+
 const strategyTargetMarkers = (simulation: DeskStrategyStock | null | undefined, current: StrategyChartTarget | null | undefined, bars: DeskChartBar[], timeframe: Timeframe, recorded: DeskRecordedStrategyReference[] = [], policy?: string): ChartMarker[] => {
   const targets: (StrategyChartTarget & {decision?: DeskStrategyDecision; recorded?: DeskRecordedStrategyReference; kind: MarkerKind; sample: MarkerSample})[] = []
   if (strategyHistoryMatches(simulation, current) && simulation) {
     for (const row of simulation.decisions) {
       if (row.ticker !== (current?.ticker ?? simulation.ticker) || row.date > (current?.date ?? simulation.through) || !['BUY', 'SELL', 'TRIM'].includes(row.action) || typeof row.weight !== 'number'
-          || !Number.isFinite(row.weight) || row.weight <= 0 || row.weight > 1
+          || !Number.isFinite(row.weight) || row.weight < DUST_WEIGHT || row.weight > 1
           || !recordedInstant(row.at) || recordedSession(row.at) !== row.date) continue
       const at = Date.parse(row.at)
       // A simulation decision without an expiry still occupies its own fifteen-minute interval.
@@ -1402,6 +1408,7 @@ export const TickerChart = ({
       {simulation?.provenance.model_fit_through && ` · model fit through ${simulation.provenance.model_fit_through}`}
       {simulation && typeof simulation.in_sample_decisions === 'number' && typeof simulation.out_of_sample_decisions === 'number'
         && ` · ${simulation.in_sample_decisions} decisions in-sample, ${simulation.out_of_sample_decisions} after the fit date`}
+      {simulation && dustTrades(simulation) > 0 && ` · ${dustTrades(simulation)} trades under 0.5% not drawn`}
       {allocation?.status === 'awaiting_nightly' && allocation.next_publication_at && ` · next publish ${recordedTime(allocation.next_publication_at)}`}
     </p>
     {/* A name the grades reached but the replay never sized is the most puzzling chart on the desk: say so instead of showing arrows with no circles. */}

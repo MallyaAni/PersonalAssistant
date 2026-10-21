@@ -1441,7 +1441,7 @@ test('Historical size details distinguish the trade amount from the model positi
   await install(page,baseURL!,state)
   await page.route('**/strategy-simulation/BUYHIGH',route=>route.fulfill({json:{schema:'latest-strategy-simulation/1',ticker:'BUYHIGH',policy:'grade-led-learned-sizing/1',start:session,through:session,counterfactual:true,real_orders:false,
     provenance:{basis:'account_independent_unit_capital_targets',source_record_sha256:'a'.repeat(64),config_sha256:'1'.repeat(64),strategy_identity:'d'.repeat(64),strategy_contract:{schema:'strategy-history-economics-binding/1',strategy_identity:'d'.repeat(64),history_sha256:'2'.repeat(64),audit_sha256:'3'.repeat(64),source_record_sha256:'a'.repeat(64),config_sha256:'1'.repeat(64)}},
-    targets:[],trades:[],splits:[],decisions:[{id:'small-original',ticker:'BUYHIGH',date:session,at:`${session}T14:15:00Z`,action:'BUY',weight:.0007,target_weight:.25,
+    targets:[],trades:[],splits:[],decisions:[{id:'small-original',ticker:'BUYHIGH',date:session,at:`${session}T14:15:00Z`,action:'BUY',weight:.007,target_weight:.25,
       evidence:{reason:'Grade-permitted model allocation increase',inputs_as_of:'2026-10-12',grade:'A',model_position_size:.25,features:{},observed_price:100}}]}}))
   await page.goto('/?deskView=strategy#desk')
   await page.getByRole('button',{name:'BUYHIGH',exact:true}).click()
@@ -1449,7 +1449,7 @@ test('Historical size details distinguish the trade amount from the model positi
   await dialog.getByText('Recommendations',{exact:true}).click()
   await dialog.locator('button[data-recommendation-id="small-original"]').click()
   const detail=dialog.getByRole('region',{name:'Recommendation details',exact:true})
-  await expect(detail).toContainText('Buy <0.1%')
+  await expect(detail).toContainText('Buy 0.7%')
   await expect(detail).toContainText('Model position size 25.0%')
   await expect(detail).toContainText('Trade amount as a percentage of the portfolio at that time, not the total position.')
   await expect(detail).toContainText('Buy and sell percentages from different dates cannot be added as share quantities.')
