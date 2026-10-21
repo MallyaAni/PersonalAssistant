@@ -1,5 +1,68 @@
 # Next session
 
+## CURRENT — saved-stock fallback DEPLOYED4dfc7ab6; source/deployed8PASS; temporary release branch retired
+
+LIVEfrontend now4dfc7ab62c2b22ddb1858728ee12a93cc60c58f3/tree
+e2a2cf6f398bc472313b5659db9a04c572263307, exact child of previousEF. Only
+SignalBoard.tsx + its e2e test changed; backend/scripts entirebytes unchanged
+from EF/BF. No historical-main wholesale deployment. Human's possibleClaude
+deployment warning was checked: no canonical deploy/gate active, production
+stillEF before launch. ONE new canonical frontend release98307 ENDED0,
+original root scratch/strategy-saved-stocks-release-20261021-v1; canonical
+finished01:41:50.321798Z, post01:41:52Z4dfc7ab6 ok(cheap). Original lock,
+approval/source41 admission, rollback/post checks retained; no skip/clock/bundle
+override, backend or model restart, broker/account/feed request or duplicatejob.
+Backend and ds41-head CID/image/started/restarts plus config/release/evidence
+hashes exactlybeforeafter. Upstream origin/main restored.
+
+Exact production-based candidate eight browsercases PASS22.989686s, then exact
+extracted DEPLOYED gateway eight PASS27.002312s; both0skip/flaky/unexpected/
+diagnostics. Same8distinct=1new+7regressions at2builds, NOT16unique/newcases.
+These NEW source-bound cohorts do not rewrite old main-tree7PASS1FAIL/targeted
+correction or earlier originalRED/legacy15m failure. Legacy no-valid_until
+15m marker issue staysOPEN. All originals/configs/sources preserved; no rerun
+for docs. Actual publicHTTPS JS equals once-extracted gatewaybytes using default
+verifiedTLS: index-vKd8RaKV.js926172B/SHA
+09fd11c833b7515d6a1cf3ffeb32cd14f6f5292872b6a01b15c48553d27269b1.
+
+Real signed-in PUBLIC new-asset workflow: Allnames94, ALABlist/Refresh/D/W/15m
+Position1.3%, HPElist/D/W/15m21.1%; originalOct16 09:45Buy2.5/thenPosition25%/
+GradeA/EMA21−9.44/EMA63+1.50/adjusted56.70/originalreason unchanged. Closed
+Wait/Size— retained; Bestsellstatus no currentpublication sells; Bestbuy no
+confirmed buys. Scopedwarn/error[]. Public tab3 restored IREN/D/Recent/empty
+search/Allnames and deliverable; tab4handoff/Vite33452/tunnel70626 unchanged.
+Screenshot /tmp/strategy-saved-stocks-public-20261021-v1/hpe-original.png plus
+text/summary. Actual expired-window fallback under this deployment remains
+UNVERIFIED (current publication is valid); isolated actual-reader-shape cases
+verify that boundary without fake clocks, expiry extension or invented advice.
+
+Code fix already on main5f457430. Release ancestry merged/pushed5bfdfd23,
+treee7075a8337792fa1680de6c4ad0c812d4a323a67 exactlyunchanged by merge. The new
+temporary branch codex/dashboard-saved-stocks-release-20261021 was merged then
+deleted local+remote; its managed release worktree is ARCHIVED recoverably.
+Do not recreate that branch/release or rerun its original controller. No new
+PR, agent, watcher or cron. Existing mainreview checkout and original preview
+remain intact; unrelated Desktop AGENTS/Wi-Fi edits untouched.
+
+Proof docs/research/strategy-saved-stocks-live-release-proof-2026-10-21.json
+847327B/SHAb46d02647c509687108f2bb09692bbf00608994db4d74bea044b3cee091a05da
+retains22fixed original files/controller/lifecycle/results/source/publicUI/assets,
+collectorONCE/fsync/readback/decodedSHA PASS. One preparation patch-conversion
+refusal before edits was corrected; not a runtime/test failure. Full old
+assistant opt-out post remainsFAILED; this cheap frontend post is not wholeapp
+green. No new model gate needed or claimed for the unchanged backend/math.
+Diagram impact: NONE — existing authenticated names-only navigation boundary.
+
+NEXT small source triage: review's historical current-model vs point-in-time
+trained replay distinction must be explicit in the chart before claiming visual
+validation. No new fit/tuning/universe/provider/history rewrite is authorized;
+retain original labels/technical facts. Legacy missing-valid_until15m markers,
+other review findings, next NATURAL Oct21 regular15m→publicaction and full
+cash/units/wealth rollover remainOPEN/UNVERIFIED; do not infer them from fresh
+nightly94 or new day_id. Original publication expiresOct21 16:00ET; neverextend.
+Existingfeed/paperLAST/noorders/reset/paiddata/model/account/provider/service
+changes/privateguarddetours. Heartbeat ACTIVE/quiet unchanged/no ETA.
+
 ## CURRENT — post-close saved-stock navigation fixed in source; NOT DEPLOYED
 
 New atomic display boundary after62fe8f65: actual unavailable v2 publication

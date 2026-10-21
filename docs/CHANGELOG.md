@@ -1,5 +1,17 @@
 # Changelog
 
+## 2026-10-21 — saved-stock navigation fix deployed
+
+- Canonical frontend-only release `4dfc7ab6` completed with an ok cheap postcheck.
+  Backend/model lifecycle and trading approval hashes stayed unchanged.
+- Eight affected browser cases passed on both the production-based candidate
+  and the extracted deployed gateway build; these are eight distinct cases at
+  two builds. Authenticated public checks confirmed94names, ALAB1.3%/HPE21.1%
+  list/chart parity and original HPE2.5% details. The actual next expired-window
+  observation and historical replay limitations remain unverified/open.
+- Release ancestry merged to main and the temporary branch deleted locally and
+  remotely; release worktree archived. Original full-app opt-out failure retained.
+
 ## 2026-10-21 — preserve saved stock navigation when recommendations are unavailable
 
 - Source-only: All names retains authenticated saved stock links when the v2
