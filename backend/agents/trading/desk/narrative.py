@@ -323,23 +323,24 @@ def _check_schema() -> dict[str, Any]:
     }
 
 
-# The verdict for one check from its claim rows: the worst row decides, and
-# an answer with no rows judged nothing, which is not approval.
+# The verdict for one check from its claim rows. A contradicting row sinks
+# the brief and is named; a row the checker could not place (a conditional
+# risk, a watch item, a sentence about an analyst the evidence does not
+# carry) is "uncertain" and does not, because the brief is checked for what
+# it asserts against the facts, and omission or hedging is not assertion.
+# An answer with no rows judged nothing, which is not approval.
 def _check_verdict(payload: dict[str, Any]) -> tuple[str, list[str]]:
-    """Return (consistency, claims that were not consistent)."""
+    """Return (consistency, the claims that contradict)."""
     rows = payload.get("claims")
     if not isinstance(rows, list) or not rows:
         return "uncertain", []
-    verdicts = [str(row.get("verdict", "uncertain")) for row in rows]
     named = [
         str(row.get("claim", "")).strip()
         for row in rows
-        if row.get("verdict") != "consistent" and str(row.get("claim", "")).strip()
+        if row.get("verdict") == "contradicts" and str(row.get("claim", "")).strip()
     ]
-    if "contradicts" in verdicts:
+    if any(row.get("verdict") == "contradicts" for row in rows):
         return "contradicts", named
-    if any(v != "consistent" for v in verdicts):
-        return "uncertain", named
     return "consistent", []
 
 

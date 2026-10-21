@@ -43,6 +43,7 @@ judge a claim reliably. Do not fill gaps with outside knowledge.
 
 Answer as one row per factual claim in the brief: the claim quoted as
 written, the fact from the list above it was compared with, and the verdict
-for that pair. A claim with no fact to compare against is "uncertain", not
-"contradicts". The brief's overall standing is read from the rows, so grade
-every claim and only the claims.
+for that pair. A claim with no fact to compare against, a conditional risk
+or a watch item is "uncertain", not "contradicts"; only a claim the facts
+state otherwise is "contradicts". The brief's overall standing is read from
+the rows, so grade every claim and only the claims.

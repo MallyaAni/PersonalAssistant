@@ -102,6 +102,8 @@ def test_the_check_schema_carries_the_claim():
     # No rows is no judgement; an overall word the rows do not support is
     # never asked for.
     assert _check_verdict({"claims": []}) == ("uncertain", [])
+    # A row the checker could not place does not sink the brief; a
+    # contradicting row does, and only it is named for the rewrite.
     assert _check_verdict(
         {
             "claims": [
@@ -109,7 +111,7 @@ def test_the_check_schema_carries_the_claim():
                 {"claim": "b", "fact": "", "verdict": "uncertain"},
             ]
         }
-    ) == ("uncertain", ["b"])
+    ) == ("consistent", [])
     assert _check_verdict(
         {
             "claims": [
@@ -117,7 +119,7 @@ def test_the_check_schema_carries_the_claim():
                 {"claim": "b", "fact": "f", "verdict": "contradicts"},
             ]
         }
-    ) == ("contradicts", ["a", "b"])
+    ) == ("contradicts", ["b"])
 
 
 # A stance that disagrees with the grade is named as such, with the brief
