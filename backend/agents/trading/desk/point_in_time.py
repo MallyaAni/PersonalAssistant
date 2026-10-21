@@ -134,3 +134,96 @@ def graded_equal_weight_allocator(
         return targets
 
     return allocate
+
+
+# Equal risk instead of equal weight: every A-or-better name within the
+# book's membership, sized inversely to its own trailing volatility so that a
+# wild name takes less of the book than a quiet one, fully invested (or up
+# to `gross`), each name at most `cap`. The volatility is the standard
+# deviation of the last `window` daily log returns of adjusted close ending
+# on the decision session, so nothing after that session is read. A name
+# without `window` prior returns, or with zero variance, is not sized rather
+# than given a guessed risk. Registered as an arm beside equal weight so the
+# scorecard measures what the risk weighting buys, if anything; the only
+# parameters are the window and the operator's hold limit.
+def graded_inverse_volatility_allocator(
+    mask: np.ndarray,
+    min_grade: int,
+    window: int = 63,
+    cap: float = 1.0,
+    gross: float = 1.0,
+):
+    """Return a callable (report, panel, config, t) -> inverse-volatility weights."""
+    if not 0 < cap <= gross <= 1.0:
+        raise ValueError("need 0 < cap <= gross <= 1")
+    if window < 2:
+        raise ValueError("need at least two returns for a volatility")
+
+    def allocate(report, panel, config, t: int) -> np.ndarray:
+        eligible = mask[t] & (report.graded.grades[t] >= min_grade)
+        eligible[panel.index(panel.benchmark)] = False
+        eligible &= np.isfinite(panel.adj_close[t])
+        targets = np.zeros(len(panel.tickers))
+        if t < window or not eligible.any():
+            return targets
+        closes = np.asarray(panel.adj_close[t - window : t + 1], dtype=float)
+        with np.errstate(divide="ignore", invalid="ignore"):
+            returns = np.diff(np.log(closes), axis=0)
+        volatility = np.nanstd(returns, axis=0, ddof=1)
+        known = (
+            np.isfinite(returns).all(axis=0)
+            & np.isfinite(volatility)
+            & (volatility > 0)
+        )
+        eligible &= known
+        if not eligible.any():
+            return targets
+        inverse = np.where(eligible, 1.0 / volatility, 0.0)
+        weights = gross * inverse / inverse.sum()
+        # A name over the hold limit is trimmed to it; the excess is left in
+        # cash rather than pushed onto the others, so the limit never makes
+        # another name larger than its risk says.
+        targets[eligible] = np.minimum(weights[eligible], cap)
+        return targets
+
+    return allocate
+
+
+# Exposure control without a forecast: the equal-weight A-or-better book,
+# scaled down as a whole when its own recent volatility is high. The basket's
+# realised volatility is the standard deviation of the equal-weight basket's
+# last `window` daily log returns (the names eligible on the decision
+# session, so nothing after it is read), annualised; the book holds
+# min(1, target / realised) of equity and the rest stays in cash. The 0.30
+# target is the one the frozen rule already used, kept rather than tuned.
+def graded_volatility_targeted_allocator(
+    mask: np.ndarray,
+    min_grade: int,
+    window: int = 63,
+    target: float = 0.30,
+    cap: float = 1.0,
+):
+    """Return a callable (report, panel, config, t) -> equal weights at a volatility target."""
+    if not 0 < cap <= 1.0 or not target > 0 or window < 2:
+        raise ValueError(
+            "need 0 < cap <= 1, a positive target and a window of two or more"
+        )
+    equal = graded_equal_weight_allocator(mask, min_grade, cap=cap, gross=1.0)
+
+    def allocate(report, panel, config, t: int) -> np.ndarray:
+        targets = equal(report, panel, config, t)
+        held = targets > 0
+        if t < window or not held.any():
+            return targets
+        closes = np.asarray(panel.adj_close[t - window : t + 1], dtype=float)[:, held]
+        with np.errstate(divide="ignore", invalid="ignore"):
+            returns = np.diff(np.log(closes), axis=0)
+        basket = np.nanmean(returns, axis=1)
+        if not np.isfinite(basket).all() or len(basket) < 2:
+            return targets
+        realised = float(np.std(basket, ddof=1)) * np.sqrt(252.0)
+        if not realised > 0:
+            return targets
+        return targets * min(1.0, target / realised)
+
+    return allocate

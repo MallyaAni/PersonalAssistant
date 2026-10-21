@@ -63,7 +63,9 @@ def _report(seed: int = 0) -> DeskReport:
     state = regime.RegimeState(
         0.0, 0.0, 0.5, 0.0, 0.0, 0.0, "ai", 0.1, 0.0, 1.0, 1.0, (), 0.0, False
     )
-    view = regime.RegimeView([state] * T, Opinion("rotation", np.full((T, n + 1), np.nan)))
+    view = regime.RegimeView(
+        [state] * T, Opinion("rotation", np.full((T, n + 1), np.nan))
+    )
     return DeskReport(
         panel, {t: "ai" for t in NAMES}, {}, view, graded, graded.as_scores(), []
     )
@@ -90,11 +92,11 @@ def test_restriction_masks_by_interval(history):
     dates = report.panel.dates
     switch = int(np.searchsorted(dates, np.datetime64("2023-07-03")))
     eee, fff, spy = 4, 5, 6
-    assert not mask[: switch, eee].any() and mask[switch:, eee].all()
-    assert mask[: switch, fff].all() and not mask[switch:, fff].any()
+    assert not mask[:switch, eee].any() and mask[switch:, eee].all()
+    assert mask[:switch, fff].all() and not mask[switch:, fff].any()
     assert mask[:, :4].all() and not mask[:, spy].any()
-    assert (restricted.graded.grades[: switch, eee] == grading.ORDINAL["C"]).all()
-    assert np.isnan(restricted.scores[: switch, eee]).all()
+    assert (restricted.graded.grades[:switch, eee] == grading.ORDINAL["C"]).all()
+    assert np.isnan(restricted.scores[:switch, eee]).all()
     assert np.isfinite(restricted.scores[switch:, eee]).all()
     assert restricted.panel is report.panel
     # The unrestricted report is untouched.
@@ -151,14 +153,20 @@ def test_scorecard_reports_every_line_per_window(history, monkeypatch):
     report = _report()
 
     def fake_benchmark(store, symbol, sessions, cost_bps=10.0, **kw):
-        idx = np.searchsorted(report.panel.dates, np.asarray(sessions, dtype="datetime64[D]"))
+        idx = np.searchsorted(
+            report.panel.dates, np.asarray(sessions, dtype="datetime64[D]")
+        )
         prices = report.panel.adj_close[idx, 6]
         equity = np.full(len(sessions), np.nan)
         equity[0] = 1.0
         equity[1:] = prices[1:] / prices[1] / (1 + cost_bps / 1e4)
         daily = np.full(len(sessions), np.nan)
-        daily[1:] = equity[1:] / np.where(np.isfinite(equity[:-1]), equity[:-1], 1.0) - 1
-        return benchmarks.BenchmarkSeries(symbol, True, daily, equity, np.asarray(sessions))
+        daily[1:] = (
+            equity[1:] / np.where(np.isfinite(equity[:-1]), equity[:-1], 1.0) - 1
+        )
+        return benchmarks.BenchmarkSeries(
+            symbol, True, daily, equity, np.asarray(sessions)
+        )
 
     monkeypatch.setattr(benchmarks, "load_benchmark", fake_benchmark)
     payload = sc.build(report, object(), offsets=3, costs=(10.0,), history_path=history)
@@ -170,7 +178,11 @@ def test_scorecard_reports_every_line_per_window(history, monkeypatch):
         if row["window"] == "2024-2026":
             assert row["sessions"] > 0
     # The 2016-2023 window here is 2023 only; every line has the same session count.
-    counts = {r["line"]: r["sessions"] for r in payload["rows"] if r["window"] == "2023" or r["window"] == "2016-2023"}
+    counts = {
+        r["line"]: r["sessions"]
+        for r in payload["rows"]
+        if r["window"] == "2023" or r["window"] == "2016-2023"
+    }
     assert len(set(counts.values())) == 1
     assert payload["book"]["names_today"] == 6
     assert payload["book"]["eligible_first_session"] == 5
@@ -364,7 +376,11 @@ def test_graded_equal_weight_allocator(history):
     assert early.sum() == pytest.approx(0.40)
     wide = point_in_time.graded_equal_weight_allocator(mask, min_grade=0, cap=0.5)
     late = wide(demoted, report.panel, None, T - 1)
-    assert late.sum() == pytest.approx(1.0) and late[5] == 0 and late[4] == pytest.approx(0.2)
+    assert (
+        late.sum() == pytest.approx(1.0)
+        and late[5] == 0
+        and late[4] == pytest.approx(0.2)
+    )
     with pytest.raises(ValueError):
         point_in_time.graded_equal_weight_allocator(mask, 0, cap=0.0)
 
@@ -376,7 +392,11 @@ def test_scorecard_arm_replaces_the_rule_lines(history, monkeypatch, tmp_path):
         benchmarks,
         "load_benchmark",
         lambda store, symbol, sessions, cost_bps=10.0, **kw: benchmarks.BenchmarkSeries(
-            symbol, True, np.zeros(len(sessions)), np.ones(len(sessions)), np.asarray(sessions)
+            symbol,
+            True,
+            np.zeros(len(sessions)),
+            np.ones(len(sessions)),
+            np.asarray(sessions),
         ),
     )
     seen = []
@@ -387,7 +407,14 @@ def test_scorecard_arm_replaces_the_rule_lines(history, monkeypatch, tmp_path):
         return real(report_, **kw)
 
     monkeypatch.setattr(sc.simulate, "run", spy)
-    payload = sc.build(report, object(), offsets=1, costs=(10.0,), history_path=history, arm=sc.ARMS["ew_graded"])
+    payload = sc.build(
+        report,
+        object(),
+        offsets=1,
+        costs=(10.0,),
+        history_path=history,
+        arm=sc.ARMS["ew_graded"],
+    )
     # Four simulator runs per offset: two arm lines and two equal-weight controls, all with allocators.
     assert len(seen) == 4 and all(a is not None for a in seen)
     assert {r["line"] for r in payload["rows"]} >= {sc.RULE_TODAY, sc.RULE_PIT}
@@ -410,14 +437,19 @@ def test_graded_arm_and_concentration(history):
     capped = sc.graded_arm(0.10)(demoted, mask)
     registered = sc.ARMS["ew_graded"](demoted, mask)
     for t in (10, T - 1):
-        np.testing.assert_array_equal(capped(demoted, report.panel, None, t), registered(demoted, report.panel, None, t))
+        np.testing.assert_array_equal(
+            capped(demoted, report.panel, None, t),
+            registered(demoted, report.panel, None, t),
+        )
     windows = {"all": (None, None)}
     tight = sc.concentration(demoted, mask, capped, windows)["all"]
     assert tight["sessions"] == T and 0 < tight["invested_share"] <= 1
     assert tight["largest_weight_max"] == pytest.approx(0.10)
     assert tight["cash_max"] >= 0.5
     assert tight["effective_names_min"] == pytest.approx(4.0)
-    loose = sc.concentration(demoted, mask, sc.graded_arm(1.0)(demoted, mask), windows)["all"]
+    loose = sc.concentration(demoted, mask, sc.graded_arm(1.0)(demoted, mask), windows)[
+        "all"
+    ]
     assert loose["cash_max"] == pytest.approx(0.0)
     assert loose["largest_weight_max"] >= tight["largest_weight_max"]
     assert loose["effective_names_min"] >= 1.0
@@ -426,3 +458,69 @@ def test_graded_arm_and_concentration(history):
     # The CLI tag for a cap names the percent.
     assert sc.main.__doc__  # entry point exists; the tag rule is pinned below
     assert f"ew_graded_cap{round(0.15 * 100):02d}" == "ew_graded_cap15"
+
+
+# The equal-risk arm sizes each eligible name inversely to its own trailing
+# volatility, fully invested, reads nothing after the decision session, and
+# leaves a name without a volatility unsized rather than guessed.
+def test_graded_inverse_volatility_allocator(history):
+    report = _report()
+    restricted, mask = point_in_time.point_in_time(report, history)
+    panel = report.panel
+    allocate = point_in_time.graded_inverse_volatility_allocator(
+        mask, min_grade=0, window=5, cap=1.0
+    )
+    assert (
+        allocate(restricted, panel, None, 3).sum() == 0
+    )  # fewer than `window` returns
+    t = T - 1
+    weights = allocate(restricted, panel, None, t)
+    held = weights > 0
+    assert held.any()
+    assert weights.sum() == pytest.approx(1.0)
+    closes = np.asarray(panel.adj_close[t - 5 : t + 1], dtype=float)
+    vol = np.nanstd(np.diff(np.log(closes), axis=0), axis=0, ddof=1)
+    # Quieter names take more: two weights sit in the inverse ratio of the volatilities.
+    names = np.flatnonzero(held)[:2]
+    assert weights[names[0]] / weights[names[1]] == pytest.approx(
+        vol[names[1]] / vol[names[0]]
+    )
+    # A later price cannot change today's size.
+    later = panel.adj_close.copy()
+    later[t + 1 :] = 1.0
+    from dataclasses import replace
+
+    assert np.array_equal(
+        allocate(restricted, replace(panel, adj_close=later), None, t), weights
+    )
+    capped = point_in_time.graded_inverse_volatility_allocator(
+        mask, min_grade=0, window=5, cap=0.2
+    )
+    assert capped(restricted, panel, None, t).max() <= 0.2 + 1e-12
+    with pytest.raises(ValueError, match="two returns"):
+        point_in_time.graded_inverse_volatility_allocator(mask, 0, window=1)
+
+
+# The volatility-targeted arm is the equal-weight book scaled down, never up,
+# by the basket's own trailing volatility against the target.
+def test_graded_volatility_targeted_allocator(history):
+    report = _report()
+    restricted, mask = point_in_time.point_in_time(report, history)
+    panel = report.panel
+    equal = point_in_time.graded_equal_weight_allocator(
+        mask, min_grade=0, cap=1.0, gross=1.0
+    )
+    t = T - 1
+    base = equal(restricted, panel, None, t)
+    loose = point_in_time.graded_volatility_targeted_allocator(
+        mask, min_grade=0, window=5, target=100.0
+    )
+    assert np.allclose(loose(restricted, panel, None, t), base)  # never scaled up
+    tight = point_in_time.graded_volatility_targeted_allocator(
+        mask, min_grade=0, window=5, target=1e-6
+    )
+    scaled = tight(restricted, panel, None, t)
+    assert scaled.sum() < base.sum()
+    assert np.allclose(scaled / scaled.sum(), base / base.sum())
+    with pytest.raises(ValueError, match="positive target"):
+        point_in_time.graded_volatility_targeted_allocator(mask, 0, target=0)

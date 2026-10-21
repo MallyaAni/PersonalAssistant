@@ -126,6 +126,28 @@ ARMS = {
     "ew_graded_20": lambda report, mask: point_in_time.graded_equal_weight_allocator(
         mask, min_grade=grading.ORDINAL[grading.A], cap=0.20, gross=1.0
     ),
+    # Equal risk: the same names sized inversely to their trailing 63-session
+    # volatility, fully invested, and under the 20% hold limit. Two
+    # registered trials (2026-10-21), scored to see whether risk weighting
+    # lowers the drawdown of the equal-weight arm without giving up its gain.
+    "risk_graded_full": lambda report, mask: (
+        point_in_time.graded_inverse_volatility_allocator(
+            mask, min_grade=grading.ORDINAL[grading.A], window=63, cap=1.0, gross=1.0
+        )
+    ),
+    "risk_graded_20": lambda report, mask: (
+        point_in_time.graded_inverse_volatility_allocator(
+            mask, min_grade=grading.ORDINAL[grading.A], window=63, cap=0.20, gross=1.0
+        )
+    ),
+    # Exposure control: the equal-weight book scaled to the frozen rule's 0.30
+    # volatility target from the basket's own trailing 63-session volatility.
+    # One registered trial (2026-10-21).
+    "ew_graded_voltarget": lambda report, mask: (
+        point_in_time.graded_volatility_targeted_allocator(
+            mask, min_grade=grading.ORDINAL[grading.A], window=63, target=0.30, cap=1.0
+        )
+    ),
     # A walk-forward gradient-boosted ranker, top ten members at 10% each.
     # "hgb_rank" trains on price features plus the desk's grade and summed
     # conviction (the baseline every earlier attempt used); "hgb_desk" on
@@ -221,7 +243,12 @@ def window_stats(daily: np.ndarray) -> dict[str, float]:
     r = r[np.isfinite(r)]
     n = len(r)
     if n < 2:
-        return {"cagr": math.nan, "drawdown": math.nan, "sharpe": math.nan, "sessions": n}
+        return {
+            "cagr": math.nan,
+            "drawdown": math.nan,
+            "sharpe": math.nan,
+            "sessions": n,
+        }
     curve = np.concatenate(([1.0], np.cumprod(1.0 + r)))
     cagr = float(curve[-1] ** (252.0 / n) - 1.0)
     peak = np.maximum.accumulate(curve)
@@ -244,7 +271,12 @@ def _live_options(panel) -> dict:
 
 # Price the six lines from one offset at one cost.
 def price_offset(
-    report, restricted, mask: np.ndarray, store, since, cost_bps: float,
+    report,
+    restricted,
+    mask: np.ndarray,
+    store,
+    since,
+    cost_bps: float,
     arm=None,
 ) -> dict[str, Curve]:
     """Return {label: Curve} for every line on this offset.
@@ -264,9 +296,15 @@ def price_offset(
         rule_today = simulate.run(report, since=since, cost_bps=cost_bps, **live)
         rule_pit = simulate.run(restricted, since=since, cost_bps=cost_bps, **live)
     else:
-        plain = dict(use_exits=False, rebalance=paper.REBALANCE_EVERY, cost_bps=cost_bps)
-        rule_today = simulate.run(report, since=since, allocator=arm(report, everyone), **plain)
-        rule_pit = simulate.run(restricted, since=since, allocator=arm(restricted, mask), **plain)
+        plain = dict(
+            use_exits=False, rebalance=paper.REBALANCE_EVERY, cost_bps=cost_bps
+        )
+        rule_today = simulate.run(
+            report, since=since, allocator=arm(report, everyone), **plain
+        )
+        rule_pit = simulate.run(
+            restricted, since=since, allocator=arm(restricted, mask), **plain
+        )
     out[RULE_TODAY] = Curve(RULE_TODAY, rule_today.dates, rule_today.returns)
     out[RULE_PIT] = Curve(RULE_PIT, rule_pit.dates, rule_pit.returns)
     for label, book_mask in ((EW_PIT, mask), (EW_TODAY, everyone)):
@@ -283,7 +321,9 @@ def price_offset(
         series = benchmarks.load_benchmark(
             store, symbol, rule_today.dates, cost_bps=cost_bps
         )
-        daily = series.daily if series.available else np.full(len(rule_today.dates), np.nan)
+        daily = (
+            series.daily if series.available else np.full(len(rule_today.dates), np.nan)
+        )
         out[symbol] = Curve(symbol, rule_today.dates, daily)
     return out
 
@@ -340,7 +380,9 @@ def summarise(
                     ),
                     "offsets_above_ew_pit": int(np.nansum(cagrs > hurdle)),
                     "offsets_above_qqq": int(np.nansum(cagrs > index)),
-                    "sessions": int(np.nanmedian([s["sessions"] for s in per_label[label]])),
+                    "sessions": int(
+                        np.nanmedian([s["sessions"] for s in per_label[label]])
+                    ),
                 }
             )
     return rows
@@ -369,7 +411,12 @@ def paired(priced: list[dict[str, Curve]], cost_bps: float) -> list[dict[str, ob
     base = offset[RULE_TODAY].dates
     for name, (start, end) in WINDOWS.items():
         keep = point_in_time.window(base, start, end)
-        for line, against in ((RULE_PIT, EW_PIT), (RULE_PIT, "QQQ"), (RULE_TODAY, "QQQ"), (EW_PIT, "QQQ")):
+        for line, against in (
+            (RULE_PIT, EW_PIT),
+            (RULE_PIT, "QQQ"),
+            (RULE_TODAY, "QQQ"),
+            (EW_PIT, "QQQ"),
+        ):
             a = _on(base, offset[line])[keep]
             b = _on(base, offset[against])[keep]
             diff = a - b
@@ -382,8 +429,12 @@ def paired(priced: list[dict[str, Curve]], cost_bps: float) -> list[dict[str, ob
                     "line": line,
                     "against": against,
                     "sessions": int(len(diff)),
-                    "mean_daily_bp": float(diff.mean() * 1e4) if len(diff) else math.nan,
-                    "hac_t": candidate_stats.hac_t(diff, 20) if len(diff) > 2 else math.nan,
+                    "mean_daily_bp": float(diff.mean() * 1e4)
+                    if len(diff)
+                    else math.nan,
+                    "hac_t": candidate_stats.hac_t(diff, 20)
+                    if len(diff) > 2
+                    else math.nan,
                     "psr": candidate_stats.probabilistic_sharpe(
                         mom.sharpe, mom.length, mom.skew, mom.kurtosis
                     ),
@@ -489,7 +540,10 @@ def build(
         "asof": str(panel.dates[-1]),
         "offsets": offsets,
         "costs_bps": list(costs),
-        "windows": {k: [str(s) if s else None, str(e) if e else None] for k, (s, e) in WINDOWS.items()},
+        "windows": {
+            k: [str(s) if s else None, str(e) if e else None]
+            for k, (s, e) in WINDOWS.items()
+        },
         "book": {
             "names_today": int(len(panel.tickers) - 1),
             "eligible_first_session": int(members[0]),
@@ -556,8 +610,12 @@ def render(payload: dict) -> str:
     )
     for cost in payload["costs_bps"]:
         for window in WINDOWS:
-            lines.append(f"\n{cost:g} bp, {window}  (median / worst across {payload['offsets']} offsets)")
-            lines.append(f"  {'line':<34}{'CAGR':>8}{'worst':>8}{'maxDD':>8}{'Sharpe':>8}{'>EW-PIT':>9}{'>QQQ':>7}")
+            lines.append(
+                f"\n{cost:g} bp, {window}  (median / worst across {payload['offsets']} offsets)"
+            )
+            lines.append(
+                f"  {'line':<34}{'CAGR':>8}{'worst':>8}{'maxDD':>8}{'Sharpe':>8}{'>EW-PIT':>9}{'>QQQ':>7}"
+            )
             for row in payload["rows"]:
                 if row["cost_bps"] != cost or row["window"] != window:
                     continue
@@ -670,7 +728,9 @@ def main(argv: list[str] | None = None) -> int:
     if args.graded_cap is not None:
         restricted, mask = point_in_time.point_in_time(report, history)
         payload["cap"] = args.graded_cap
-        payload["concentration"] = concentration(restricted, mask, arm(restricted, mask))
+        payload["concentration"] = concentration(
+            restricted, mask, arm(restricted, mask)
+        )
     attach_study_blocks(payload, report, store, history, args)
     tags = [
         t
@@ -790,9 +850,7 @@ def expiry_null(plain, through, store, mode: str) -> dict:
                 equal_nan=True,
             )
         ),
-        "cells_the_arm_would_change": int(
-            tes.changed_cells(plain_tone, weight).sum()
-        ),
+        "cells_the_arm_would_change": int(tes.changed_cells(plain_tone, weight).sum()),
     }
 
 
