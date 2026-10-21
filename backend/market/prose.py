@@ -105,10 +105,10 @@ def _worker(
                 narrator = narrators[index % len(narrators)]
 
                 def brief():
-                    return narrator.brief_sync(item["text"], item["grade"])
+                    return narrator.brief_outcome(item["text"], item["grade"])
 
                 def read():
-                    return narrator.read_sync(item["text"])
+                    return narrator.read_sync(item["text"]), None
 
                 if kind == "brief":
                     _attempt(out, lock, kind, item["ticker"], brief, dataclasses.asdict)
@@ -135,24 +135,35 @@ def _worker(
     stop.set()
 
 
-# One guarded call, its result or its failure written as one line.
+# One guarded call, its result or its failure written as one line. The call
+# returns (value, why): `why` is None on success and otherwise says which
+# gate dropped the item, so a night of checker rejections is not logged in
+# the same words as a night with the runtime switched off. A checker
+# rejection also keeps the claims it named and the last rejected brief, in
+# the results file the run leaves behind, so the failure can be read.
 def _attempt(
     out, lock, kind: str, ticker: str, call: Callable, to_value: Callable
 ) -> None:
     try:
-        result = call()
+        result, why = call()
     except Exception as exc:  # noqa: BLE001 - one item, not the run
         row = {"kind": kind, "ticker": ticker, "error": repr(exc)}
     else:
-        row = (
-            {"kind": kind, "ticker": ticker, "value": to_value(result)}
-            if result
-            else {
-                "kind": kind,
-                "ticker": ticker,
-                "error": f"no {kind} (runtime away, empty, or the answer did not fit)",
-            }
-        )
+        if result:
+            row = {"kind": kind, "ticker": ticker, "value": to_value(result)}
+        else:
+            why = why or {"reason": "runtime away or empty answer"}
+            reason = str(why.get("reason", "")) if isinstance(why, dict) else str(why)
+            detail = why.get("detail") if isinstance(why, dict) else None
+            claims = why.get("claims") if isinstance(why, dict) else None
+            text = f"no {kind}: {reason}"
+            if detail:
+                text += f" ({detail})"
+            if claims:
+                text += " - " + "; ".join(str(c) for c in claims)
+            row = {"kind": kind, "ticker": ticker, "error": text}
+            if isinstance(why, dict) and why.get("rejected"):
+                row["rejected"] = why["rejected"]
     with lock:
         out.write(json.dumps(row) + "\n")
         out.flush()

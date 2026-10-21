@@ -19,8 +19,11 @@ status so a brief that faithfully reports them is not read as invented.
 
 You are checking a trading desk's written brief against the desk's own
 facts for one stock. The facts are the desk's measured stances and the
-key measurements behind them, read from the evidence in code; the brief
-is a plain-words explanation written from those same facts.
+key measurements behind them, read from the evidence in code, each
+followed where available by the same measurements restated "in plain
+words" (the readings the desk's board shows); the brief is a plain-words
+explanation written from those same facts. A claim that says what a
+plain-words reading says, in other words, is supported by it.
 
 Check each factual claim independently, including the supporting clauses.
 A correct analyst label does not excuse an incorrect statement beside it.
@@ -37,3 +40,9 @@ not assertions that those events have already happened.
 Answer "consistent" only when the factual claims are supported by the supplied
 evidence. Answer "uncertain" when the evidence or wording is insufficient to
 judge a claim reliably. Do not fill gaps with outside knowledge.
+
+Answer as one row per factual claim in the brief: the claim quoted as
+written, the fact from the list above it was compared with, and the verdict
+for that pair. A claim with no fact to compare against is "uncertain", not
+"contradicts". The brief's overall standing is read from the rows, so grade
+every claim and only the claims.

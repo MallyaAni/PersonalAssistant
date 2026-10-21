@@ -31,9 +31,7 @@ class _Writer:
     def chat(self, messages, max_tokens, schema, temperature):
         self.calls.append((messages, max_tokens, schema, temperature))
         payload = self.payloads[min(len(self.calls) - 1, len(self.payloads) - 1)]
-        content = (
-            payload if isinstance(payload, str) else json.dumps(payload)
-        )
+        content = payload if isinstance(payload, str) else json.dumps(payload)
         return {"content": content}
 
 
@@ -153,7 +151,18 @@ def test_narrator_round_trip_and_refusals():
         "risks": "Participation is below its two-year median.",
         "watch": "A bearish sentiment stance would drop the grade.",
     }
-    writer = _Writer(payload, {"consistency": "consistent"})
+    writer = _Writer(
+        payload,
+        {
+            "claims": [
+                {
+                    "claim": "Sentiment bullish.",
+                    "fact": "sentiment: bullish",
+                    "verdict": "consistent",
+                }
+            ]
+        },
+    )
     brief = DeskNarrator(writer).brief_sync("evidence", "A+")
     assert brief is not None
     assert brief.stance == OWN
@@ -178,14 +187,24 @@ def test_a_brief_that_contradicts_the_evidence_is_dropped():
         "watch": "A bearish sentiment stance would drop the grade.",
     }
     assert (
-        DeskNarrator(_Writer(payload, {"consistency": "contradicts"})).brief_sync(
-            "evidence", "A+"
-        )
+        DeskNarrator(
+            _Writer(
+                payload,
+                {
+                    "claims": [
+                        {
+                            "claim": "growing revenue",
+                            "fact": "revenue_yoy +1.551",
+                            "verdict": "contradicts",
+                        }
+                    ]
+                },
+            )
+        ).brief_sync("evidence", "A+")
         is None
     )
     assert (
-        DeskNarrator(_Writer(payload, "not json")).brief_sync("evidence", "A+")
-        is None
+        DeskNarrator(_Writer(payload, "not json")).brief_sync("evidence", "A+") is None
     )
 
 

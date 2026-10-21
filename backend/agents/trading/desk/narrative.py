@@ -9,11 +9,13 @@ given. It cannot see a price series, so it cannot forecast one.
 """
 
 import asyncio
+import dataclasses
 import json
 import re
 from dataclasses import dataclass
 from typing import Any
 
+from backend.agents.trading.desk import plainly
 from backend.agents.trading.desk.grading import A_PLUS, A, B
 from backend.core.interfaces import TextWriter
 from backend.core.prompts import render
@@ -53,6 +55,16 @@ _ANALYST_WORDS: dict[str, tuple[str, ...]] = {
 _ANALYST_LINE = re.compile(
     r"^(fundamental|technical|sentiment|value|rotation) analyst: "
     r"stance [+-]?\d+(?: \([^)]*\))?; (.*)$",
+    re.MULTILINE,
+)
+# The same analyst's measurements restated in the desk's plain words (the
+# readings the board already shows), on the line under the raw figures.
+# The writer is told never to copy a field name, so without this line the
+# checker had to translate "the 200-day average" back to `ema200_distance`
+# on its own and rejected true sentences it could not map.
+_PLAIN_LINE = re.compile(
+    r"^  (fundamental|technical|sentiment|value|rotation) analyst in plain words: "
+    r"(.*)$",
     re.MULTILINE,
 )
 
@@ -114,10 +126,19 @@ def _check_facts(text: str) -> str:
             if int(stance) < 0
             else "neutral"
         )
+        # The rank is given to the writer, so a brief that says "ranks near
+        # the top of the book" is citing a fact; a checker that never saw
+        # the rank called that invented.
+        rank = re.search(r"\(rank ([0-9.]+) among the book", match.group(0))
+        placed = f", rank {rank.group(1)} among the book (1.00 is best)" if rank else ""
         if cited.strip() in ("no data for this name",):
-            lines.append(f"{analyst}: {word} (no data)")
+            lines.append(f"{analyst}: {word}{placed} (no data)")
         else:
-            lines.append(f"{analyst}: {word} ({cited.strip()})")
+            lines.append(f"{analyst}: {word}{placed} ({cited.strip()})")
+    # The plain-word readings are the vocabulary the brief was written in,
+    # so the checker compares like with like instead of translating.
+    for match in _PLAIN_LINE.finditer(text):
+        lines.append(f"{match.group(1)}, in plain words: {match.group(2).strip()}")
     # The regime lines and the book status are facts too; a brief that
     # faithfully reports them must not look invented because the contract
     # left them out.
@@ -166,6 +187,7 @@ def brief_text(report, ticker: str) -> str:
         f"Name: {ticker} ({view['side']} side). Session: {panel.dates[-1]}.",
         f"Grade: {view['grade']}. Votes: {view['votes']:+.1f}.",
     ]
+    plain = _plain_readings(report, view)
     for analyst in ("fundamental", "technical", "sentiment", "value", "rotation"):
         stance = view["stances"].get(analyst)
         if stance is None:
@@ -182,6 +204,10 @@ def brief_text(report, ticker: str) -> str:
             else ""
         )
         lines.append(f"{analyst} analyst: stance {stance:+d}{where}; {evidence}.")
+        if plain.get(analyst):
+            lines.append(
+                f"  {analyst} analyst in plain words: " + "; ".join(plain[analyst])
+            )
     lines.append(
         "Regime: AI participation percentile "
         f"{state.participation_percentile:.2f}, AI-vs-software correlation "
@@ -198,6 +224,18 @@ def brief_text(report, ticker: str) -> str:
     else:
         lines.append("Not in today's book.")
     return "\n".join(lines)
+
+
+# The board's plain-word readings for one name, keyed by analyst, or nothing
+# where the report cannot be scaled (a bare report in a test has no book to
+# compare against). The brief must read the same as the board, so these are
+# the board's own words, not a second translation.
+def _plain_readings(report, view: dict) -> dict[str, list[str]]:
+    """Return {analyst: [reading, ...]} in the desk's plain words."""
+    try:
+        return plainly.reads(view, plainly.spreads(report))
+    except (AttributeError, KeyError, TypeError, ValueError):
+        return {}
 
 
 # Text held within `limit` characters, cut at the last sentence end inside
@@ -254,14 +292,67 @@ def _check_schema() -> dict[str, Any]:
         "title": "DeskBriefCheck",
         "type": "object",
         "additionalProperties": False,
-        "required": ["consistency"],
+        "required": ["claims"],
         "properties": {
-            "consistency": {
-                "type": "string",
-                "enum": ["consistent", "contradicts", "uncertain"],
+            # One row per factual claim in the brief: the claim as written,
+            # the fact it was compared with, and the verdict for that pair.
+            # Grading claim by claim, with the fact quoted, is what makes the
+            # checker look the measurement up instead of judging the whole
+            # brief on an impression; the overall verdict is derived in code
+            # from these rows, never asked for separately, because the model
+            # would sometimes answer "contradicts" over rows it had all
+            # marked consistent.
+            "claims": {
+                "type": "array",
+                "maxItems": 16,
+                "items": {
+                    "type": "object",
+                    "additionalProperties": False,
+                    "required": ["claim", "fact", "verdict"],
+                    "properties": {
+                        "claim": {"type": "string", "maxLength": 240},
+                        "fact": {"type": "string", "maxLength": 240},
+                        "verdict": {
+                            "type": "string",
+                            "enum": ["consistent", "contradicts", "uncertain"],
+                        },
+                    },
+                },
             },
         },
     }
+
+
+# The verdict for one check from its claim rows: the worst row decides, and
+# an answer with no rows judged nothing, which is not approval.
+def _check_verdict(payload: dict[str, Any]) -> tuple[str, list[str]]:
+    """Return (consistency, claims that were not consistent)."""
+    rows = payload.get("claims")
+    if not isinstance(rows, list) or not rows:
+        return "uncertain", []
+    verdicts = [str(row.get("verdict", "uncertain")) for row in rows]
+    named = [
+        str(row.get("claim", "")).strip()
+        for row in rows
+        if row.get("verdict") != "consistent" and str(row.get("claim", "")).strip()
+    ]
+    if "contradicts" in verdicts:
+        return "contradicts", named
+    if any(v != "consistent" for v in verdicts):
+        return "uncertain", named
+    return "consistent", []
+
+
+# Why a brief was not written, in the words the nightly log and the prose
+# block carry. Each value names the gate that dropped it; the earlier wording
+# ("runtime away, empty, or the answer did not fit") lumped four different
+# failures into one sentence, so a night of checker rejections read exactly
+# like a night with the model switched off.
+NO_RUNTIME = "no runtime"
+NO_ANSWER = "the runtime returned no answer"
+BAD_SHAPE = "the answer did not fit the brief schema"
+WRONG_STANCE = "the stance disagreed with the grade"
+CONTRADICTED = "the checker rejected every attempt"
 
 
 class DeskNarrator:
@@ -290,43 +381,88 @@ class DeskNarrator:
     # The synchronous form, from the evidence text and the grade it states.
     def brief_sync(self, text: str, grade: str) -> DeskBrief | None:
         """Return the DeskBrief for an evidence text, or None."""
-        if self.writer is None or not text.strip():
-            return None
+        return self.brief_outcome(text, grade)[0]
+
+    # The brief with the reason it was dropped when it was: (brief, None) on
+    # success, (None, reason) otherwise. The reason names the gate, and for a
+    # checker rejection carries the claims the checker named and the last
+    # rejected brief, so a failed night can be read without re-running it.
+    def brief_outcome(
+        self, text: str, grade: str
+    ) -> tuple[DeskBrief | None, dict[str, Any] | None]:
+        """Return (brief, None) or (None, {"reason", "claims", "rejected"})."""
+        if self.writer is None:
+            return None, {"reason": NO_RUNTIME}
+        if not text.strip():
+            return None, {"reason": NO_ANSWER}
         # A brief is written and checked, and a slip the checker catches is
         # rewritten and re-checked, up to a bound. The engine is not
         # strictly deterministic at temperature 0, so one bad sentence in a
         # field can trip the checker on an otherwise good brief; a bounded
-        # rewrite fixes it while a genuinely wrong brief keeps contradicting
-        # and is dropped.
+        # rewrite that is told which claim was rejected fixes it while a
+        # genuinely wrong brief keeps contradicting and is dropped.
+        claims: list[str] = []
+        rejected: DeskBrief | None = None
         for attempt in range(3):
-            brief = self._write_brief(text, retry=attempt > 0)
-            if brief is None or brief.stance != stance_for(grade):
-                return None
-            if not self._contradicts(text, brief):
-                return brief
-        return None
+            brief, failure = self._write_brief(text, claims if attempt else None)
+            if brief is None:
+                return None, {"reason": failure or BAD_SHAPE}
+            if brief.stance != stance_for(grade):
+                return None, {
+                    "reason": WRONG_STANCE,
+                    "detail": f"{brief.stance} for grade {grade}",
+                    "rejected": dataclasses.asdict(brief),
+                }
+            named = self._check(text, brief)
+            if named is None:
+                return brief, None
+            claims.extend(c for c in named if c and c not in claims)
+            rejected = brief
+        return None, {
+            "reason": CONTRADICTED,
+            "claims": claims,
+            "rejected": dataclasses.asdict(rejected) if rejected else None,
+        }
 
-    # One write of the brief from the evidence, or None when the runtime is
-    # away or the answer does not fit the schema. A retry asks the model to
-    # stick strictly to the evidence and name the average or trend it means
-    # rather than generalising, because the contradictions the checker
-    # catches are a summary sentence that overstated one measurement.
-    def _write_brief(self, text: str, retry: bool = False) -> DeskBrief | None:
-        """Return the DeskBrief for an evidence text, or None."""
-        if self.writer is None or not text.strip():
-            return None
-        user = (
-            f"{text}\n\nThe previous brief was dropped because it stated "
-            "something the evidence disagrees with. The desk's own fact "
-            "contract, which every sentence of the brief must agree with, "
-            f"is:\n{_check_facts(text)}\n\nRewrite the brief so every "
-            "direction, comparison and claim comes straight from those "
-            "facts. State each measurement's direction as the facts give "
-            "it, and never write one blanket direction for the whole price "
-            "action that a specific measurement contradicts."
-            if retry
-            else text
-        )
+    # One write of the brief from the evidence: (brief, None), or (None,
+    # reason) when the runtime is away or the answer does not fit the schema.
+    # A retry (`rejected` is a list, possibly empty) asks the model to stick
+    # strictly to the evidence and name the average or trend it means rather
+    # than generalising, because the contradictions the checker catches are
+    # a summary sentence that overstated one measurement; when the checker
+    # named the claims, the retry quotes them, since a rewrite that is told
+    # only "something disagreed" tends to reproduce the same sentence.
+    def _write_brief(
+        self, text: str, rejected: list[str] | None = None
+    ) -> tuple[DeskBrief | None, str | None]:
+        """Return (DeskBrief, None) for an evidence text, or (None, reason)."""
+        if self.writer is None:
+            return None, NO_RUNTIME
+        if not text.strip():
+            return None, NO_ANSWER
+        if rejected is None:
+            user = text
+        else:
+            named = (
+                "The checker named these claims as the ones the evidence "
+                "disagrees with:\n"
+                + "\n".join(f"- {claim}" for claim in rejected)
+                + "\n\n"
+                if rejected
+                else ""
+            )
+            user = (
+                f"{text}\n\nThe previous brief was dropped because it stated "
+                f"something the evidence disagrees with. {named}The desk's own "
+                "fact contract, which every sentence of the brief must agree "
+                f"with, is:\n{_check_facts(text)}\n\nRewrite the brief so "
+                "every direction, comparison and claim comes straight from "
+                "those facts. State each measurement's direction as the facts "
+                "give it, make no relative claim (rank, high or low among the "
+                "book) the facts do not state, and never write one blanket "
+                "direction for the whole price action that a specific "
+                "measurement contradicts."
+            )
         try:
             result = self.writer.chat(
                 [
@@ -338,16 +474,20 @@ class DeskNarrator:
                 # Greedy: the same evidence must read the same every time.
                 0.0,
             )
+        except Exception as exc:  # noqa: BLE001 - the reason is the evidence
+            return None, f"{NO_ANSWER} ({type(exc).__name__})"
+        try:
             payload = json.loads(result["content"])
-            return DeskBrief(
+            brief = DeskBrief(
                 stance=str(payload["stance"]),
                 verdict=_cut(str(payload["verdict"]), 200),
                 reasoning=_cut(str(payload["reasoning"]), 700),
                 risks=_cut(str(payload["risks"]), 300),
                 watch=_cut(str(payload["watch"]), 240),
             )
-        except Exception:
-            return None
+        except Exception as exc:  # noqa: BLE001 - the reason is the evidence
+            return None, f"{BAD_SHAPE} ({type(exc).__name__})"
+        return brief, None
 
     # Whether the brief contradicts the facts the desk measured. A
     # judgement, so it is a model decision into a two-value schema. Publication
@@ -360,8 +500,15 @@ class DeskNarrator:
     # not proof that the model cannot be wrong.
     def _contradicts(self, text: str, brief: DeskBrief) -> bool:
         """Return whether the brief lacks majority approval against its evidence."""
+        return self._check(text, brief) is not None
+
+    # The check itself: None when the brief has majority approval, otherwise
+    # the claims the dissenting checks named (possibly empty, when the
+    # checker gave no claim or the check could not run).
+    def _check(self, text: str, brief: DeskBrief) -> list[str] | None:
+        """Return None for an approved brief, else the claims that were named."""
         if self.writer is None:
-            return True
+            return []
         brief_lines = (
             f"stance: {brief.stance}\n"
             f"verdict: {brief.verdict}\n"
@@ -370,6 +517,7 @@ class DeskNarrator:
             f"watch: {brief.watch}"
         )
         consistent = 0
+        claims: list[str] = []
         for _ in range(3):
             try:
                 result = self.writer.chat(
@@ -382,16 +530,20 @@ class DeskNarrator:
                             ),
                         },
                     ],
-                    32,
+                    # Room for one row per claim in a four-field brief.
+                    1200,
                     _check_schema(),
                     0.0,
                 )
-                payload = json.loads(result["content"])
-                if payload.get("consistency") == "consistent":
+                verdict, named = _check_verdict(json.loads(result["content"]))
+                if verdict == "consistent":
                     consistent += 1
+                for claim in named:
+                    if claim not in claims:
+                        claims.append(claim)
             except Exception:
                 continue
-        return consistent < 2
+        return None if consistent >= 2 else claims
 
     # Write the read for a name in a report, or None when the runtime is
     # away or the answer comes back empty.
