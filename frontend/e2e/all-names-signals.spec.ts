@@ -1087,15 +1087,20 @@ test('All names withdraws closed-session plan directions when allocation authori
   await page.goto('/?deskView=strategy#desk')
   const buy = page.getByLabel('BUYHIGH verdict', {exact: true})
   await expect(buy).toHaveText('Buy')
-  await expect(buy).toHaveText('Unavailable', {timeout: 10000})
+  // The board promises one of three words, so a lost authority reads as Do nothing with the reason beside it.
+  await expect(buy).toHaveText('Do nothing', {timeout: 10000})
+  const cell = page.getByLabel('BUYHIGH verdict cell', {exact: true})
+  await expect(cell).toContainText(/unavailable|publication required/i)
   state.allocationUntil = new Date(Date.now() + 120000).toISOString()
   state.allocationWrong = true
   await refresh(page, state)
-  await expect(buy).toHaveText('Unavailable')
+  await expect(buy).toHaveText('Do nothing')
+  await expect(cell).toContainText(/unavailable|publication required/i)
   state.allocationWrong = false
   state.phase = 'open'
   await refresh(page, state)
-  await expect(buy).toHaveText('Unavailable')
+  await expect(buy).toHaveText('Do nothing')
+  await expect(cell).toContainText(/unavailable|publication required/i)
   expect(state.diagnostics).toEqual([])
 })
 
@@ -1107,7 +1112,8 @@ test('All names expires its own signal receipt without a network update', async 
   await page.goto('/?deskView=strategy#desk')
   const buy = page.getByLabel('BUYHIGH verdict', {exact: true})
   await expect(buy).toContainText('Buy')
-  await expect(buy).toContainText('Unavailable', {timeout: 10000})
+  await expect(buy).toContainText('Do nothing', {timeout: 10000})
+  await expect(page.getByLabel('BUYHIGH verdict cell', {exact: true})).toContainText(/unavailable|publication required/i)
   await expect(page.getByLabel('BUYHIGH displayed grade', {exact: true})).toHaveText('A')
   expect(state.diagnostics).toEqual([])
 })
@@ -1547,7 +1553,8 @@ for (const width of [1280, 390]) {
     expect(spans.every(span=>span.left>=6 && span.right<=plotWidth-6)).toBe(true)
     for (const [index,span] of spans.entries()) for (const other of spans.slice(index+1))
       if (other.position===span.position) expect(span.right+7<=other.left || other.right+7<=span.left).toBe(true)
-    await dialog.locator('[data-marker-edge-id]').first().click()
+    // The current call's square has nothing to inspect; every replayed decision does.
+    await dialog.locator('[data-marker-edge-id]:not([data-marker-kind="current"])').first().click()
     await expect(dialog.getByRole('region',{name:'Recommendation details',exact:true})).toContainText('Original dense-fixture recommendation')
     await dialog.getByRole('button',{name:'Close recommendation details',exact:true}).click()
     await dialog.getByText('Recommendations',{exact:true}).click()

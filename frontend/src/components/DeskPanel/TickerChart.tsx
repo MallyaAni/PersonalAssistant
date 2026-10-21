@@ -343,7 +343,7 @@ type ChartMarker = {
   time: UTCTimestamp
   position: 'aboveBar' | 'belowBar'
   color: string
-  shape: 'arrowUp' | 'arrowDown' | 'circle'
+  shape: 'arrowUp' | 'arrowDown' | 'circle' | 'square'
   text: string
   size: number
   kind?: MarkerKind
@@ -367,7 +367,7 @@ const replayColor = (action: string, sample: MarkerSample) => action === 'Buy'
 
 // Mark replayed simulations and recorded live recommendations as distinct layers across every timeframe.
 const strategyTargetMarkers = (simulation: DeskStrategyStock | null | undefined, current: StrategyChartTarget | null | undefined, bars: DeskChartBar[], timeframe: Timeframe, recorded: DeskRecordedStrategyReference[] = [], policy?: string): ChartMarker[] => {
-  const targets: (StrategyChartTarget & {decision?: DeskStrategyDecision; recorded?: DeskRecordedStrategyReference; kind: 'replay' | 'recorded'; sample: MarkerSample})[] = []
+  const targets: (StrategyChartTarget & {decision?: DeskStrategyDecision; recorded?: DeskRecordedStrategyReference; kind: MarkerKind; sample: MarkerSample})[] = []
   if (strategyHistoryMatches(simulation, current) && simulation) {
     for (const row of simulation.decisions) {
       if (row.ticker !== (current?.ticker ?? simulation.ticker) || row.date > (current?.date ?? simulation.through) || !['BUY', 'SELL', 'TRIM'].includes(row.action) || typeof row.weight !== 'number'
@@ -389,6 +389,14 @@ const strategyTargetMarkers = (simulation: DeskStrategyStock | null | undefined,
       weight:original.size_weight,record:original.snapshot_id,strategyIdentity:original.strategy_identity,
       entry:{at:original.at,validUntil:original.valid_until},recorded:original,kind:'recorded',sample:'live'})
   }
+  // The confirmed current entry sits on the candle it was assessed in, with its own recommendation,
+  // so the operator can open the original numerical call; a recorded copy of the same entry is drawn once.
+  const currentAlreadyRecorded = current && recorded.some(original=>original.snapshot_id===current.record
+    && original.completed_at===current.evidence?.completed_candle_at)
+  if (current?.action === 'Buy' && current.weight > 0 && current.entry && !currentAlreadyRecorded) {
+    const entrySession = recordedSession(current.entry.at)
+    if (entrySession) targets.push({...current, date:entrySession, at:current.entry.at, validUntil:current.entry.validUntil, kind:'current', sample:'live'})
+  }
   const markers = new Map<string, ChartMarker>()
   for (const target of targets.sort((a, b) => Date.parse(a.at) - Date.parse(b.at))) {
     if (!target.action) continue
@@ -403,19 +411,21 @@ const strategyTargetMarkers = (simulation: DeskStrategyStock | null | undefined,
     const time = barStamp(candle, timeframe)
     const key = `${target.kind}:${time}:${target.action}`
     const originalRef = target.recorded ? {snapshot:target.recorded.snapshot_id,completed:target.recorded.completed_at,
-      strategy:target.recorded.strategy_identity,at:target.recorded.at,bytesSha:target.recorded.original_bytes_sha256} : undefined
-    const recommendation = {id: target.decision?.id ?? (target.recorded ? `recorded:${target.recorded.id}` : `replay:${target.ticker}:${target.at}`),
+      strategy:target.recorded.strategy_identity,at:target.recorded.at,bytesSha:target.recorded.original_bytes_sha256}
+      : !target.decision && target.entry && target.strategyIdentity && recordedInstant(target.evidence?.completed_candle_at)
+      ? {snapshot:target.record,completed:target.evidence!.completed_candle_at!,strategy:target.strategyIdentity} : undefined
+    const recommendation = {id: target.decision?.id ?? (target.recorded ? `recorded:${target.recorded.id}` : `current:${target.ticker}:${target.at}`),
       at: target.at, action: target.action, weight: target.weight, evidence: target.decision?.evidence ?? target.evidence,
       simulated: Boolean(target.decision), originalRef}
     markers.set(key, {id: `strategy:${key}`, time, recommendations: [...(markers.get(key)?.recommendations ?? []), recommendation],
       position: target.action === 'Buy' ? 'belowBar' : 'aboveBar',
-      color: replayColor(target.action, target.sample), shape: 'circle',
+      color: replayColor(target.action, target.sample), shape: target.kind === 'current' ? 'square' : 'circle',
       text: targetLabel(target), size: 1, kind: target.kind, sample: target.sample, policy})
   }
   return [...markers.values()]
 }
 
-// Draw one current call at the newest candle, even when no simulation or recorded row exists.
+// Draw one current call at the newest candle when no confirmed entry marks it, even when no simulation or recorded row exists.
 const currentTargetMarker = (signal: Signals | null | undefined, current: StrategyChartTarget | null | undefined, bars: DeskChartBar[], timeframe: Timeframe, tradeWeight: number | null | undefined, policy?: string): ChartMarker | null => {
   if (!bars.length) return null
   const last = bars[bars.length - 1]
@@ -428,11 +438,11 @@ const currentTargetMarker = (signal: Signals | null | undefined, current: Strate
   const size = typeof rawSize === 'number' && Number.isFinite(rawSize) ? rawSize : null
   const action = verdict === 'buy' ? 'Buy' : verdict === 'sell' ? 'Sell' : 'Do nothing'
   return {id: 'current', time, position: verdict === 'sell' ? 'aboveBar' : verdict === 'buy' ? 'belowBar' : 'aboveBar',
-    color: verdict === 'buy' ? '#248a3d' : verdict === 'sell' ? '#b42318' : '#6e6e73', shape: 'circle',
+    color: verdict === 'buy' ? '#248a3d' : verdict === 'sell' ? '#b42318' : '#6e6e73', shape: 'square',
     text: `${action} · Size ${size === null ? '—' : `${sizePercent(size)}%`}`, size: 1, kind: 'current', sample: 'live', policy}
 }
 
-// A recorded or current marker drawn over the canvas so it can be hollow or diamond-shaped.
+// A recorded marker drawn over the canvas so it can be hollow; the kind and shape fields stay general for the rare current fallback.
 type OverlayMarker = {
   key: string
   kind: 'recorded' | 'current'
@@ -836,7 +846,7 @@ export const TickerChart = ({
     void loadRecorded()
     return()=>{recordedRequest.current++}
   },[loadRecorded,modelTarget?.record,modelTarget?.evidence?.completed_candle_at,Boolean(modelTarget?.entry)])
-  const [edgeLabels, setEdgeLabels] = useState<{key: string; text: string; left: number; top: number; color: string; recommendations: ChartMarker['recommendations']}[]>([])
+  const [edgeLabels, setEdgeLabels] = useState<{key: string; text: string; left: number; top: number; color: string; kind?: MarkerKind; recommendations: ChartMarker['recommendations']}[]>([])
   const holder = useRef<HTMLDivElement | null>(null)
   const chartRef = useRef<IChartApi | null>(null)
   const savedView = useRef<{scope: string; first: number; range: {from: number; to: number} | null} | null>(null)
@@ -1001,8 +1011,13 @@ export const TickerChart = ({
   const livePolicy = currentPolicy ?? allocation?.policy
   const replayHidden = !strategy && Boolean(history?.policy) && Boolean(livePolicy) && history!.policy !== livePolicy
   const targetMarkers = useMemo(() => strategyTargetMarkers(simulation, modelTarget, merged.bars, timeframe, recordedRows, livePolicy), [simulation, modelTarget, merged, timeframe, recordedRows, livePolicy])
-  const currentMarker = useMemo(() => strategy ? currentTargetMarker(boardSignal, modelTarget, merged.bars, timeframe, displayedTradeWeight, livePolicy) : null,
-    [strategy, boardSignal, modelTarget, merged, timeframe, displayedTradeWeight, livePolicy])
+  // The confirmed entry already shows the current call on its own candle; the newest-candle square
+  // speaks only when there is no such entry, so one call is never drawn twice.
+  const currentMarker = useMemo(() => strategy && !targetMarkers.some(marker => marker.kind === 'current')
+    ? currentTargetMarker(boardSignal, modelTarget, merged.bars, timeframe, displayedTradeWeight, livePolicy) : null,
+    [strategy, boardSignal, modelTarget, merged, timeframe, displayedTradeWeight, livePolicy, targetMarkers])
+  // The one current call the chart states, wherever it is drawn.
+  const currentCall = currentMarker ?? targetMarkers.find(marker => marker.kind === 'current') ?? null
 
   // Clear an inspected recommendation when its ticker or source changes.
   useEffect(() => {setSelectedRecommendations([])}, [ticker, simulation, modelTarget?.record])
@@ -1186,13 +1201,11 @@ export const TickerChart = ({
       ...(personalHistory && showRecommendations && !strategy ? actionMarkers : []),
       ...(showSignals ? changes : []),
       ...(!strategy && showDecisions && !replayHidden ? [...decisions, ...timedDecisions] : []),
-      ...(showFills ? strategy ? targetMarkers.filter(marker => marker.kind === 'replay') : [...fillMarks, ...timedFills] : []),
+      ...(showFills ? strategy ? [...targetMarkers.filter(marker => marker.kind !== 'recorded'), ...(currentMarker ? [currentMarker] : [])] : [...fillMarks, ...timedFills] : []),
     ].filter(marker => Number.isFinite(marker.time)).sort((a, b) => Number(a.time) - Number(b.time))
-    // Recorded live recommendations and the current call are drawn over the canvas:
-    // the series marker API has no hollow or diamond shape.
-    const overlays = showFills && strategy
-      ? [...targetMarkers.filter(marker => marker.kind === 'recorded'), ...(currentMarker ? [currentMarker] : [])]
-      : []
+    // Recorded live recommendations are drawn over the canvas as hollow circles: the series
+    // marker API has no hollow shape. Replay (circle) and the current call (square) stay on the canvas.
+    const overlays = showFills && strategy ? targetMarkers.filter(marker => marker.kind === 'recorded') : []
     const chart = chartRef.current, plugin = markersRef.current, element = holder.current
     if (!chart || !plugin || !element) return
     if (!strategy) {
@@ -1226,17 +1239,15 @@ export const TickerChart = ({
         const width = textWidth(marker.text)
         const side = shapeX + width + 16 > plotWidth ? 'left' : 'right'
         const labelLeft = Math.max(6, Math.min(side === 'right' ? shapeX + 10 : shapeX - width - 10, plotWidth - width - 6))
-        let labelTop = Math.max(4, Math.min(marker.position === 'aboveBar' ? y - 18 : y + 8, element.clientHeight - 24))
-        const spanLeft = side === 'right' ? shapeX : labelLeft
-        const spanRight = side === 'right' ? labelLeft + width : Math.max(shapeX + 7, labelLeft + width)
-        // Move a label down until it clears another overlay rather than drawing two calls on top of each other.
-        for (let shift = 0; shift < 6 && occupied.some(other => other.position === marker.position && spanLeft < other.right+8 && spanRight > other.left-8); shift += 1)
-          labelTop = Math.min(element.clientHeight - 24, labelTop + 14)
-        occupied.push({left: spanLeft, right: spanRight, position: marker.position})
+        const labelTop = Math.max(4, Math.min(marker.position === 'aboveBar' ? y - 18 : y + 8, element.clientHeight - 24))
+        const span = {left: labelLeft, right: labelLeft + width, position: marker.position}
+        // Two labels never share one stretch of a side: the shape stays clickable, the later label is dropped.
+        const fits = width <= plotWidth - 12 && !occupied.some(other => other.position === span.position && span.left < other.right+8 && span.right > other.left-8)
+        if (fits) occupied.push(span)
         overlay.push({key: marker.id ?? `${marker.kind}:${marker.time}`, kind: marker.kind === 'current' ? 'current' : 'recorded',
           sample: marker.sample ?? 'unknown', shape: marker.kind === 'current' ? 'diamond' : 'circle', color: marker.color,
           left: shapeX, top: Math.max(4, Math.min(y, element.clientHeight - 4)), labelLeft, labelTop,
-          text: marker.text, policy: marker.policy, time: marker.time, recommendations: marker.recommendations})
+          text: fits ? marker.text : '', policy: marker.policy, time: marker.time, recommendations: marker.recommendations})
       }
       // Retain the selected action label before choosing other nearby labels.
       const priority = (marker: ChartMarker) => marker.recommendations?.some(item => selected.has(item.id)) ? 0 : marker.recommendations ? 2 : 1
@@ -1255,23 +1266,23 @@ export const TickerChart = ({
         const y = typeof price==='number' ? candlesRef.current?.priceToCoordinate(price) : null
         if (y != null) edges.push({key:marker.id ?? `${marker.time}:${marker.position}`,text:marker.text,left,
           top:Math.max(4,Math.min(y+(marker.position==='aboveBar' ? -30 : 12),element.clientHeight-44)),
-          color:marker.color,recommendations:marker.recommendations})
+          color:marker.color,kind:marker.kind,recommendations:marker.recommendations})
       }
       plugin.setMarkers(markers.map(marker => labelled.has(marker) ? marker : {...marker,text:''}))
       setEdgeLabels(previous=>JSON.stringify(previous)===JSON.stringify(edges) ? previous : edges)
       setMarkerOverlays(previous=>JSON.stringify(previous)===JSON.stringify(overlay) ? previous : overlay)
       element.dataset.markerCount = String(markers.length)
-      element.dataset.markerLabelCount = String(labelled.size+edges.length+overlay.length)
+      element.dataset.markerLabelCount = String(labelled.size+edges.length+overlay.filter(marker => marker.text).length)
       element.dataset.markerLabelSpans = JSON.stringify(occupied)
       element.dataset.overlayMarkerCount = String(overlay.length)
-      element.dataset.currentMarker = currentMarker?.text ?? ''
+      element.dataset.currentMarker = currentCall?.text ?? ''
     }
     paint()
     chart.timeScale().subscribeVisibleLogicalRangeChange(paint)
     const observer = new ResizeObserver(paint)
     observer.observe(element)
     return () => {observer.disconnect();chart.timeScale().unsubscribeVisibleLogicalRangeChange(paint)}
-  }, [data, merged, timeframe, fullHistory, showSignals, showRecommendations, showDecisions, showFills, showPaperFills, actionMarkers, changes, decisions, fillMarks, timedDecisions, timedFills, personalHistory, strategy, targetMarkers, currentMarker, replayHidden, selectedRecommendations])
+  }, [data, merged, timeframe, fullHistory, showSignals, showRecommendations, showDecisions, showFills, showPaperFills, actionMarkers, changes, decisions, fillMarks, timedDecisions, timedFills, personalHistory, strategy, targetMarkers, currentMarker, currentCall, replayHidden, selectedRecommendations])
 
   // Open the original evidence behind a clicked marker or its corresponding candle.
   useEffect(() => {
@@ -1386,7 +1397,7 @@ export const TickerChart = ({
     {data && <>
       <div className="relative">
         <div ref={holder} title="Click a Buy or Sell marker to inspect the evidence from that decision." className={`w-full ${drawFailed ? 'hidden' : tall ? 'h-[62vh] min-h-80' : 'h-72'}`} data-testid="ticker-chart-canvas" data-chart-timeframe={data.timeframe} data-bar-count={merged.bars.length} />
-        {strategy && !drawFailed && edgeLabels.map(label=><button key={label.key} data-marker-edge-id={label.key} type="button" className="absolute z-10 whitespace-nowrap border-0 bg-transparent p-0 text-[11px]" style={{left:label.left+6,top:label.top,color:label.color,fontFamily:'Arial, sans-serif'}} onClick={()=>setSelectedRecommendations(label.recommendations ?? [])}>{label.text}</button>)}
+        {strategy && !drawFailed && edgeLabels.map(label=><button key={label.key} data-marker-edge-id={label.key} data-marker-kind={label.kind} type="button" className="absolute z-10 whitespace-nowrap border-0 bg-transparent p-0 text-[11px]" style={{left:label.left+6,top:label.top,color:label.color,fontFamily:'Arial, sans-serif'}} onClick={()=>setSelectedRecommendations(label.recommendations ?? [])}>{label.text}</button>)}
         {strategy && !drawFailed && markerOverlays.map(marker => <div key={marker.key} className="pointer-events-none absolute inset-0 z-10">
           <button type="button" data-marker-kind={marker.kind} data-marker-sample={marker.sample} data-marker-policy={marker.policy}
             data-marker-time={marker.time} data-marker-shape={marker.shape} data-marker-overlay-id={marker.key}
@@ -1399,11 +1410,11 @@ export const TickerChart = ({
                 : <circle cx="7" cy="7" r="5" fill="none" stroke={marker.color} strokeWidth="2" />}
             </svg>
           </button>
-          <button type="button" data-marker-kind={marker.kind} data-marker-sample={marker.sample} data-marker-policy={marker.policy}
+          {marker.text && <button type="button" data-marker-kind={marker.kind} data-marker-sample={marker.sample} data-marker-policy={marker.policy}
             data-marker-time={marker.time} data-marker-label={marker.text} aria-label={`${ticker} ${marker.kind} marker label ${marker.text}`}
             className="pointer-events-auto absolute whitespace-nowrap border-0 bg-transparent p-0 text-[11px]"
             style={{left:marker.labelLeft,top:marker.labelTop,color:marker.color,fontFamily:'Arial, sans-serif'}}
-            onClick={()=>setSelectedRecommendations(marker.recommendations ?? [])}>{marker.text}</button>
+            onClick={()=>setSelectedRecommendations(marker.recommendations ?? [])}>{marker.text}</button>}
         </div>)}
       </div>
       {drawFailed && <p role="alert" className="text-xs text-[#b42318]">Chart unavailable</p>}
@@ -1411,7 +1422,7 @@ export const TickerChart = ({
       {data.data_status && data.data_status !== 'complete' && <p role="status" className="text-xs text-[#9a6700]">Price history {data.data_status}</p>}
       {simulationError && <p role="status" className="text-xs text-[#6e6e73]" title={simulationError}>Size history unavailable</p>}
       {showFills && <p className="sr-only" aria-label={`${ticker} target chart markers`} data-marker-times={targetMarkers.map(marker => marker.time).join(',')}>{targetMarkers.map(marker => marker.text).join(' · ')}</p>}
-      {showFills && currentMarker && <p className="sr-only" aria-label={`${ticker} current chart marker`} data-current-marker-time={currentMarker.time} data-current-marker-label={currentMarker.text}>{currentMarker.text}</p>}
+      {showFills && currentCall && <p className="sr-only" aria-label={`${ticker} current chart marker`} data-current-marker-time={currentCall.time} data-current-marker-label={currentCall.text}>{currentCall.text}</p>}
       {showSignals && <p className="sr-only" aria-label={`${ticker} grade signals`}>{changes.length} grade changes marked.</p>}
       {selectedRecommendations.length > 0 && <section aria-label="Recommendation details" className="mt-3 rounded-lg border border-black/10 p-3 text-sm">
         <button type="button" aria-label="Close recommendation details" className="float-right text-[#6e6e73]" onClick={() => setSelectedRecommendations([])}>×</button>
@@ -1574,7 +1585,7 @@ export const TickerChart = ({
           <details className="mt-1 text-[11px] text-[#6e6e73]" aria-label="Chart legend">
             <summary className="cursor-pointer">Chart key</summary>
             <p>
-            {strategy ? showPaperFills ? 'Circles: confirmed actual paper executions. Original fills and prices are listed below.' : 'Filled circles: replayed BUY/SELL/TRIM sizes, muted when in-sample. Hollow circles: recorded live recommendations. Diamond: the current call. Arrows: grade changes, not additional trades.' : `Circles: shares filled per ${timeframe === 'weekly' ? 'week' : timeframe === 'daily' ? 'day' : '15-minute bar'}. Individual fills and prices below (unadjusted).`}{showSignals ? ' Grade readings are labelled Saved or Recalculated when known.' : ''}{!strategy && showDecisions && !replayHidden ? ' Signal and RESET labels: policy replay, not trades.' : ''}{!strategy && personalHistory && showRecommendations ? ' Saved Buy/Sell labels: recommendations, not fills.' : ''}
+            {strategy ? showPaperFills ? 'Circles: confirmed actual paper executions. Original fills and prices are listed below.' : 'Filled circles: replayed BUY/SELL/TRIM sizes, muted when in-sample. Hollow circles: recorded live recommendations. Square: the current call. Arrows: grade changes, not additional trades.' : `Circles: shares filled per ${timeframe === 'weekly' ? 'week' : timeframe === 'daily' ? 'day' : '15-minute bar'}. Individual fills and prices below (unadjusted).`}{showSignals ? ' Grade readings are labelled Saved or Recalculated when known.' : ''}{!strategy && showDecisions && !replayHidden ? ' Signal and RESET labels: policy replay, not trades.' : ''}{!strategy && personalHistory && showRecommendations ? ' Saved Buy/Sell labels: recommendations, not fills.' : ''}
             </p>
           </details>
           {!strategy && timeframe === '15m' && fills.some(fill => !recordedInstant(fill.filled_at)) && <p aria-label="Fill timing" className="mt-1 text-[11px] text-[#6e6e73]">Some fills have no recorded time; listed below, not marked on 15m.</p>}

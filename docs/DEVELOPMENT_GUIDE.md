@@ -1583,6 +1583,31 @@ Do not run the host Vite and the `frontend` container at the same time; they bot
 
 Starting Vite successfully is only a startup check. Open the application in a browser and inspect both the Console and Network panels before reporting frontend behavior verified.
 
+### Playwright end-to-end suite without a host Node
+
+On a machine whose `frontend/node_modules` is not usable from the shell (the
+Sparks: it is root-owned by the container that built it), run the suite in the
+Playwright image against a copy of `frontend/`. Two settings matter and both
+are silent when missing: `VITE_API_URL=` (empty) so the dev server calls the
+API on its own origin - the specs' request filter aborts anything cross-origin,
+and a bare run then shows the sign-in page in every test - and
+`PUPPETEER_SKIP_DOWNLOAD=1` for the install, since the image has no `unzip`.
+
+```bash
+rm -rf /tmp/e2e && mkdir -p /tmp/e2e && cp -r frontend /tmp/e2e/ && rm -rf /tmp/e2e/frontend/node_modules
+cd /tmp/e2e/frontend
+docker run --rm --ipc=host -v "$PWD":/app -w /app -e CI=1 -e VITE_API_URL= -e PUPPETEER_SKIP_DOWNLOAD=1 \
+  mcr.microsoft.com/playwright:v1.61.1-noble sh -c \
+  "npm install --no-audit --no-fund --loglevel=error && npx playwright test --grep-invert @live --reporter=line --workers=2"
+```
+
+`test-results/` comes back root-owned; clear it with the same image
+(`docker run --rm -v "$PWD":/app -w /app node:22-alpine rm -rf test-results`).
+In this harness most specs fail on `main` as well, on the aborted
+`/api/v1/conversations/...` request their `failedRequests` diagnostic
+records (384 of 546 on 2026-10-20), so a change is judged by the
+difference between its failure set and `main`'s, not by the count.
+
 ## Measuring, and keeping the measurement
 
 **Runs are kept.** `backend/core/evaluation_log.py` writes one JSON file per
