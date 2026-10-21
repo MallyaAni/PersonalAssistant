@@ -2499,16 +2499,27 @@ export type DeskOptionsEvidence = {
   reason: string;
 });
 
+export type DeskEntryVerdict = 'buy' | 'sell' | 'nothing';
+export type DeskEntryReasonCode = 'execute_now' | 'waiting_better_price' | 'at_target' | 'no_allocation'
+  | 'grade_below_a' | 'awaiting_candle' | 'publication_expired' | 'quote_stale' | 'price_unavailable';
+
 export interface DeskModelAllocation {
   version: 'published-model-allocation/1' | 'strategy-model-allocation/1' | 'strategy-model-allocation/2';
   recorded_history_version?: 'strategy-recorded-entries/1';
-  status: 'available' | 'stale' | 'unavailable';
+  // `awaiting_nightly` is a verified publication whose own clock has expired,
+  // not an integrity failure: the last plan is carried in `last_rows`.
+  status: 'available' | 'stale' | 'unavailable' | 'awaiting_nightly';
   reason?: string | null;
   policy: string;
   session: string | null;
   observed_at: string | null;
   as_of: string;
   valid_until: string | null;
+  expired_at?: string | null;
+  next_publication_at?: string | null;
+  last_session?: string | null;
+  last_rows?: Record<string, {target_weight: number; evidence?: DeskStrategyDecision['evidence'] & {timing_state?: string}}>;
+  market_phase?: {phase: string; next_publication_at?: string | null};
   record_sha256?: string;
   receipt_sha256?: string;
   basis?: string;
@@ -2523,7 +2534,9 @@ export interface DeskModelAllocation {
     snapshot_id: string; publication_receipt_sha256: string; strategy_identity: string; session: string;
     valid_until: string; day_id?: string; book_sha256?: string; generation?: number; trade_session?: string;
     reader_sha256: string; receipt_sha256: string;
-    rows: Record<string, {target_weight: number; evidence: DeskStrategyDecision['evidence']}>;
+    rows: Record<string, {target_weight: number; evidence: DeskStrategyDecision['evidence'];
+      verdict?: DeskEntryVerdict; reason_code?: DeskEntryReasonCode; reason?: string; verdict_reason?: string;
+      size_weight?: number; trade_weight?: number; model_position_weight?: number; reference_position_weight?: number}>;
   };
   entry_assessment?: {
     version: 'strategy-numerical-entries/1' | 'strategy-numerical-entries/2' | 'strategy-numerical-entries/3'; status: string; snapshot_id?: string;
@@ -2532,8 +2545,10 @@ export interface DeskModelAllocation {
     sizing_basis?: string; feed?: string; account_inputs?: boolean; reference_progression?: string; recommendation_not_fill?: boolean;
     day_id?: string; book_sha256?: string; execution_basis?: string;
     rows: Record<string, {state: string; action: 'Buy' | 'Sell' | null; size_weight: number; model_position_weight?: number;
+      reference_position_weight?: number; trade_weight?: number; verdict_reason?: string;
       reference_units?: number; proposed_units?: number; quote_at: string | null;
       attempt_resolved?: boolean; objective_pending?: boolean;
+      verdict?: DeskEntryVerdict; reason_code?: DeskEntryReasonCode; reason?: string;
       original_intent?: {id: string; completed_at: string; at: string; size_weight: number; action: 'Buy' | 'Sell'; receipt_sha256: string};
       valid_until: string; evidence: DeskStrategyDecision['evidence']}>;
   };
@@ -3465,6 +3480,8 @@ export interface DeskStrategyDecision {
   executed_qty: number;
   state: 'executed' | 'partial' | 'not_executed';
   valid_until?: string;
+  // Optional provenance for the replay layer; absent data is never guessed.
+  sample?: 'in_sample' | 'out_of_sample';
   evidence?: {
     reason?: string; inputs_as_of?: string; grade?: string | null;
     features?: Record<string, number>; band_blocked?: boolean;
@@ -3486,6 +3503,7 @@ export interface DeskStrategyTrade {
   weight: number;
   decision_at: string;
   decision_date: string;
+  sample?: 'in_sample' | 'out_of_sample';
 }
 
 export interface DeskStrategySimulation {
@@ -3496,7 +3514,9 @@ export interface DeskStrategySimulation {
   counterfactual: true;
   real_orders: false;
   provenance: {cost_bps: number; account_sha256: string; config_sha256: string; basis: string; source_record_sha256?: string;
-    strategy_identity?: string; verified_against_installed_strategy?: boolean; strategy_contract?: {schema: string; strategy_identity: string; history_sha256: string; audit_sha256: string; source_record_sha256: string; config_sha256: string}};
+    strategy_identity?: string; verified_against_installed_strategy?: boolean; sample?: 'in_sample' | 'out_of_sample';
+    model_fit_through?: string;
+    strategy_contract?: {schema: string; strategy_identity: string; history_sha256: string; audit_sha256: string; source_record_sha256: string; config_sha256: string}};
 }
 
 export interface DeskStrategyStock extends DeskStrategySimulation {

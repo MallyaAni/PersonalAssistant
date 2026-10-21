@@ -1110,6 +1110,9 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
   const [gradeContext, setGradeContext] = useState<{session?: string | null; until: Record<string, string>}>({until: {}})
   const [mineError, setMineError] = useState('')
   const [now, setNow] = useState(Date.now)
+  // The last whole-board poll start, so the Stocks strip can count down to the
+  // next refresh instead of leaving the poll interval implicit.
+  const [polledAt, setPolledAt] = useState(Date.now)
   const [intraday, setIntraday] = useState<DeskIntraday | null>(null)
   // The confirmed personal account figures the board is computed against.
   // Equity starts from the per-browser convenience value (legacy default
@@ -1251,6 +1254,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
     // An obsolete poll must neither publish data nor start another private guidance capture.
     const current = () => active() && gen === accountGen.current && request === pollRequestSeq.current
     setNow(Date.now())
+    setPolledAt(Date.now())
     // Read published percentages independently of paper access and personal inputs.
     void getDeskModelAllocation(userId).then(value => {
       if (!current()) return
@@ -1565,7 +1569,8 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
       {!strategyView && latest && <RegimeBanner regime={latest.regime} session={latest.session} />}
 
       {strategyView && !research && latest && <div className="flex flex-col sm:max-h-[75vh]">
-          <SignalBoard latest={latest} live={live} allocation={modelAllocation} now={now} onOpen={setOpenName} closes={closes} />
+          <SignalBoard latest={latest} live={live} allocation={modelAllocation} now={now} onOpen={setOpenName} closes={closes}
+            refreshMs={POLL_MS} refreshedAt={polledAt} />
       </div>}
       {!strategyView && !research && <>
       {/* On phones, diagnostics use page scrolling instead of a tiny nested viewport. */}
@@ -2919,6 +2924,7 @@ const NameDetail = ({
   const matchingSimulationError = simulation && !matchingSimulation
     ? 'Size history does not match this strategy model and original evidence.'
     : simulationError
+  const boardSignal = strategy ? signalsFor(latest, live, ticker, now, allocation) : null
   const currentStances = row
     ? row.grade_source === 'intraday' ? row.stances_live ?? liveGrades[ticker]?.stances_live : undefined
     : liveGrades[ticker]?.stances_live
@@ -2962,7 +2968,7 @@ const NameDetail = ({
             so it leads on a phone and holds the right two-fifths of a wide
             window, staying in place while the reasoning scrolls beside it. */}
         <div className={strategy ? 'mb-4 w-full' : 'mb-4 lg:sticky lg:top-0 lg:w-[40vw] lg:max-w-[54rem] lg:shrink-0'}>
-          <TickerChart key={`${userId}:${ticker}:${personalHistory}:${historyGeneration}`} userId={userId} ticker={ticker} history={history ?? undefined} currentPolicy={latest.targets?.policy} paperActivity={paperActivity} paperRecordedFills={paperRecordedFills} paperRecordedFillsReason={paperRecordedFillsReason} paperAccountUnavailable={paperAccountUnavailable} quote={live.quotes[ticker]} live={live} now={now} personalHistory={personalHistory} personalReceiptId={personalReceiptId} tall close={lastClose ?? row?.last_close} closeSession={latest.session} suggestion={liveSuggestion} levels={live.structure?.[ticker] ?? null} modelTarget={strategy ? strategyChartTarget(latest, allocation, ticker, now, live) : null} strategy={strategy} simulation={strategy ? matchingSimulation : simulation} simulationError={strategy ? matchingSimulationError : simulationError} />
+          <TickerChart key={`${userId}:${ticker}:${personalHistory}:${historyGeneration}`} userId={userId} ticker={ticker} history={history ?? undefined} currentPolicy={latest.targets?.policy} paperActivity={paperActivity} paperRecordedFills={paperRecordedFills} paperRecordedFillsReason={paperRecordedFillsReason} paperAccountUnavailable={paperAccountUnavailable} quote={live.quotes[ticker]} live={live} now={now} personalHistory={personalHistory} personalReceiptId={personalReceiptId} tall close={lastClose ?? row?.last_close} closeSession={latest.session} suggestion={liveSuggestion} levels={live.structure?.[ticker] ?? null} modelTarget={strategy ? strategyChartTarget(latest, allocation, ticker, now, live) : null} strategy={strategy} simulation={strategy ? matchingSimulation : simulation} simulationError={strategy ? matchingSimulationError : simulationError} allocation={allocation} boardSignal={boardSignal} />
         </div>
         <div className="lg:min-w-0 lg:flex-1">
         {order && <PaperOrderCard ticker={ticker} row={order} session={latest.session} />}
