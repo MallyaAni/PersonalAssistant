@@ -141,7 +141,9 @@ const newYorkClock = (seconds: number, withDay: boolean) => new Intl.DateTimeFor
 
 // The axis tick labels on 15m: a day boundary names the day, a tick within
 // the day names the New York clock. The library would otherwise write UTC.
-const newYorkTick = (time: Time, kind: TickMarkType) => {
+// Zoomed out past a few sessions, a clock on a tick means nothing (the
+// library picks them by UTC hour), so every tick names its day instead.
+const newYorkTick = (time: Time, kind: TickMarkType, wide = false) => {
   if (typeof time !== 'number') return null
   const day = new Date(time * 1000)
   const zoned = (options: Intl.DateTimeFormatOptions) => new Intl.DateTimeFormat('en-US', {timeZone: 'America/New_York', ...options}).format(day)
@@ -149,9 +151,12 @@ const newYorkTick = (time: Time, kind: TickMarkType) => {
     case TickMarkType.Year: return zoned({year: 'numeric'})
     case TickMarkType.Month: return zoned({month: 'short'})
     case TickMarkType.DayOfMonth: return zoned({month: 'short', day: 'numeric'})
-    default: return newYorkClock(time, false)
+    default: return wide ? zoned({month: 'short', day: 'numeric'}) : newYorkClock(time, false)
   }
 }
+
+// More than about three sessions of fifteen-minute bars on screen.
+const WIDE_INTRADAY_BARS = 3 * 27
 
 // The chart library throws on a series that is unsorted or repeats a
 // timestamp, and an exception here would take the whole ticker panel down
@@ -867,6 +872,8 @@ export const TickerChart = ({
   const holder = useRef<HTMLDivElement | null>(null)
   const chartRef = useRef<IChartApi | null>(null)
   const savedView = useRef<{scope: string; first: number; range: {from: number; to: number} | null} | null>(null)
+  // Whether the 15m axis currently shows more sessions than a clock label can serve.
+  const wideIntraday = useRef(false)
   const markersRef = useRef<ISeriesMarkersPluginApi<Time> | null>(null)
   // The candle series of the current chart, so the board's level lines can be
   // replaced in place when a candle moves them, without redrawing the chart.
@@ -1055,7 +1062,7 @@ export const TickerChart = ({
         // On 15m the axis shows the clock, in New York time: the library
         // would otherwise write the bar starts as UTC.
         timeScale: timeframe === '15m'
-          ? { borderColor: 'rgba(0,0,0,0.1)', rightOffset: 4, minBarSpacing: strategy ? .01 : .5, fixLeftEdge: strategy, fixRightEdge: strategy, timeVisible: true, secondsVisible: false, tickMarkFormatter: newYorkTick }
+          ? { borderColor: 'rgba(0,0,0,0.1)', rightOffset: 4, minBarSpacing: strategy ? .01 : .5, fixLeftEdge: strategy, fixRightEdge: strategy, timeVisible: true, secondsVisible: false, tickMarkFormatter: (time: Time, kind: TickMarkType) => newYorkTick(time, kind, wideIntraday.current) }
           : { borderColor: 'rgba(0,0,0,0.1)', rightOffset: 4, minBarSpacing: strategy ? .01 : .5, fixLeftEdge: strategy, fixRightEdge: strategy },
         crosshair: { mode: CrosshairMode.Normal },
         // The chart library otherwise trusts navigator.language, which can
@@ -1133,7 +1140,9 @@ export const TickerChart = ({
     markersRef.current = createSeriesMarkers(candles, [], {autoScale: !strategy})
     candlesRef.current = candles
     // Leave room for edge labels while keeping recent candles readable.
-    // On 15m a session is 27 bars, so the recent view holds about two sessions.
+    // The recent window is the same on every name: on 15m about two to three
+    // sessions (27 bars each), daily about three months, weekly about a year,
+    // narrowing only as far as a phone's width forces.
     const frameView = () => {
       const width = Math.max(100, (holder.current?.clientWidth ?? 390) - 65)
       const margin = Math.min(90, width * .3)
@@ -1142,9 +1151,9 @@ export const TickerChart = ({
         chart.timeScale().setVisibleLogicalRange({from: -padding, to: merged.bars.length - 1 + padding})
       } else {
         const count = timeframe === '15m'
-          ? Math.max(27, Math.min(108, Math.floor((width - margin) / 8)))
-          : timeframe === 'weekly' ? Math.max(3, Math.min(16, Math.floor((width - margin) / 72)))
-          : Math.max(12, Math.min(40, Math.floor((width - margin) / 22)))
+          ? Math.max(54, Math.min(81, Math.floor((width - margin) / 9)))
+          : timeframe === 'weekly' ? Math.max(30, Math.min(60, Math.floor((width - margin) / 12)))
+          : Math.max(45, Math.min(80, Math.floor((width - margin) / 9)))
         const padding = Math.min(count, merged.bars.length) * margin / (width - margin)
         chart.timeScale().setVisibleLogicalRange({from: merged.bars.length <= count ? -padding : merged.bars.length - count - padding, to: merged.bars.length - 1 + padding})
       }
@@ -1159,6 +1168,7 @@ export const TickerChart = ({
     const observeRange = (range: LogicalRange | null) => {
       if (!range || !holder.current) return
       savedView.current = {scope, first: Number(barStamp(merged.bars[0], timeframe)), range: {...range}}
+      wideIntraday.current = range.to - range.from > WIDE_INTRADAY_BARS
       holder.current.dataset.chartFrom = String(range.from)
       holder.current.dataset.chartVisibleBars = String(range.to - range.from)
       if (strategy && timeframe === '15m' && !fullHistory && range.from <= 2
@@ -1371,6 +1381,12 @@ export const TickerChart = ({
     scale.setVisibleLogicalRange({from: start, to: start + span})
   }
 
+  // A replay of a policy the desk has since replaced is history, not the desk's
+  // present reasoning: its trades start hidden, and the toggle says whose they are.
+  const replayStale = !!(simulation && livePolicy && simulation.policy !== livePolicy)
+  useEffect(() => {if (replayStale) setShowFills(false)}, [replayStale])
+  // The pressed timeframe and range read like the board's filter chips.
+  const chip = (on: boolean) => `rounded border px-2 py-0.5 text-xs ${on ? 'border-[#0071e3] bg-[#e8f2ff] font-medium text-[#0071e3]' : 'border-black/[0.08] text-[#6e6e73]'}`
   if (strategy) return <section className="mb-4" aria-label={`${ticker} price chart`}>
     {live && <div className="mb-2 text-xs"><SessionPrice live={live} ticker={ticker} now={now} close={close} closeSession={closeSession} compact /></div>}
     <div className="mb-2 flex flex-wrap items-center justify-between gap-2 text-xs">
@@ -1382,35 +1398,36 @@ export const TickerChart = ({
         {modelTarget.positionWeight != null && <span className="text-[#6e6e73]" aria-label={`${ticker} current chart position`}>Position {sizePercent(modelTarget.positionWeight)}%</span>}
         {modelTarget.nextSessionPlan && <span className="text-[#6e6e73]" aria-label={`${ticker} chart plan timing`}>Next session</span>}
       </div> : null) : <span className="text-[#6e6e73]" aria-label={`${ticker} current chart target`}></span>}
-      <div role="group" aria-label="Chart range" className="flex gap-2">
-        <button type="button" aria-pressed={!fullHistory} onClick={() => resetRange(false)}>Recent</button>
-        <button type="button" aria-pressed={fullHistory} onClick={() => resetRange(true)}>{timeframe === '15m' ? '60 sessions' : 'Full history'}</button>
+      <div role="group" aria-label="Chart timeframe" className="flex gap-1">
+        {(['15m', 'daily', 'weekly'] as const).map(frame => <button key={frame} type="button" aria-pressed={timeframe === frame} className={chip(timeframe === frame)} onClick={() => setTimeframe(frame)}>{frame === 'daily' ? 'D' : frame === 'weekly' ? 'W' : '15m'}</button>)}
       </div>
-      <div role="group" aria-label="Chart zoom" className="flex gap-2">
-        <button type="button" aria-label="Zoom in" title="Zoom in" onClick={() => zoomRange(2 / 3)}>+</button>
-        <button type="button" aria-label="Zoom out" title="Zoom out" onClick={() => zoomRange(1.5)}>−</button>
+      <div role="group" aria-label="Chart range" className="flex gap-1">
+        <button type="button" aria-pressed={!fullHistory} className={chip(!fullHistory)} onClick={() => resetRange(false)}>Recent</button>
+        <button type="button" aria-pressed={fullHistory} className={chip(fullHistory)} onClick={() => resetRange(true)}>{timeframe === '15m' ? '60 sessions' : 'Full history'}</button>
       </div>
-      <label className="flex items-center gap-1"><input type="checkbox" checked={showFills} onChange={event => setShowFills(event.target.checked)} />Buy / Sell sizes</label>
-      <label className="flex items-center gap-1"><input type="checkbox" checked={showSignals} onChange={event => setShowSignals(event.target.checked)} />Grade changes</label>
-      <div role="group" aria-label="Chart timeframe" className="flex gap-2">
-        {(['15m', 'daily', 'weekly'] as const).map(frame => <button key={frame} type="button" aria-pressed={timeframe === frame} onClick={() => setTimeframe(frame)}>{frame === 'daily' ? 'D' : frame === 'weekly' ? 'W' : '15m'}</button>)}
+      <div role="group" aria-label="Chart zoom" className="flex gap-1">
+        <button type="button" aria-label="Zoom in" title="Zoom in" className={chip(false)} onClick={() => zoomRange(2 / 3)}>+</button>
+        <button type="button" aria-label="Zoom out" title="Zoom out" className={chip(false)} onClick={() => zoomRange(1.5)}>−</button>
       </div>
+      <label className="flex items-center gap-1"><input type="checkbox" checked={showFills} onChange={event => setShowFills(event.target.checked)} />{replayStale ? 'Buy / Sell · previous policy' : 'Buy / Sell'}</label>
+      <label className="flex items-center gap-1"><input type="checkbox" checked={showSignals} onChange={event => setShowSignals(event.target.checked)} />Grades</label>
     </div>
-    {simulation && <aside aria-label={`${ticker} replay basis`} className="mb-2 text-xs text-[#6e6e73]">
-      <p>Historical replay · current model · models were not refitted at each past date · not out-of-sample validation or advice published at that time</p>
-    </aside>}
-    {/* The chart's window and provenance stay visible even when the simulation or chart is unavailable. */}
-    <p aria-label={`${ticker} strategy chart window`} data-strategy-policy={simulation?.policy ?? livePolicy ?? ''}
+    {/* One line names the replay, and says when it is a policy the desk has since replaced; the
+        method and its limits stay a click away. The window stays even when the replay is unavailable. */}
+    <div aria-label={`${ticker} strategy chart window`} data-strategy-policy={simulation?.policy ?? livePolicy ?? ''}
       data-model-fit-through={simulation?.provenance.model_fit_through ?? ''}
       data-next-publication={allocation?.status === 'awaiting_nightly' ? allocation.next_publication_at ?? '' : ''}
-      className="mb-2 text-[11px] text-[#6e6e73]">
-      {simulation ? `Policy ${simulation.policy} · ${simulation.start} → ${simulation.through}` : `Policy ${livePolicy ?? 'unavailable'} · simulation unavailable`}
-      {simulation?.provenance.model_fit_through && ` · model fit through ${simulation.provenance.model_fit_through}`}
-      {simulation && typeof simulation.in_sample_decisions === 'number' && typeof simulation.out_of_sample_decisions === 'number'
-        && ` · ${simulation.in_sample_decisions} decisions in-sample, ${simulation.out_of_sample_decisions} after the fit date`}
-      {simulation && dustTrades(simulation) > 0 && ` · ${dustTrades(simulation)} trades under 0.5% not drawn`}
-      {allocation?.status === 'awaiting_nightly' && allocation.next_publication_at && ` · next publish ${recordedTime(allocation.next_publication_at)}`}
-    </p>
+      className="mb-2 flex flex-wrap items-center gap-x-2 text-[11px] text-[#6e6e73]">
+      <span>{simulation
+        ? livePolicy && simulation.policy !== livePolicy ? `Replay · previous policy ${simulation.policy}` : `Replay · ${simulation.policy}`
+        : `Policy ${livePolicy ?? 'unavailable'} · replay unavailable`}{simulation?.provenance.model_fit_through && ` · fit through ${simulation.provenance.model_fit_through}`}</span>
+      {simulation && <details aria-label={`${ticker} replay basis`} className="inline">
+        <summary className="cursor-pointer text-[#0071e3]">about</summary>
+        <span className="block">Historical replay of {simulation.policy}{livePolicy && simulation.policy !== livePolicy ? `, replaced by ${livePolicy}` : ''} · {simulation.start} → {simulation.through} · models were not refitted at each past date · not out-of-sample validation or advice published at that time.</span>
+        {typeof simulation.in_sample_decisions === 'number' && typeof simulation.out_of_sample_decisions === 'number'
+          && <span className="block">{simulation.in_sample_decisions} decisions in-sample, {simulation.out_of_sample_decisions} after the fit date{dustTrades(simulation) > 0 ? ` · ${dustTrades(simulation)} trades under 0.5% not drawn` : ''}.</span>}
+      </details>}
+    </div>
     {/* A name the grades reached but the replay never sized is the most puzzling chart on the desk: say so instead of showing arrows with no circles. */}
     {strategy && simulation && simulation.decisions.length === 0 && <p aria-label={`${ticker} replay without trades`} className="mb-2 text-[11px] text-[#6e6e73]">
       {!simulation.grade_rows?.some(row => row.grade === 'A' || row.grade === 'A+')

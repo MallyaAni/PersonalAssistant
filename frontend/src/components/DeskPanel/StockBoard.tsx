@@ -51,8 +51,15 @@ const quoteTime = (observed: number, now: number): string | null => {
     === current.toLocaleDateString('en-CA', {timeZone: 'America/New_York'})
   const sameYear = observation.toLocaleDateString('en-US', {timeZone: 'America/New_York', year: 'numeric'})
     === current.toLocaleDateString('en-US', {timeZone: 'America/New_York', year: 'numeric'})
-  return observation.toLocaleString('en-US', {timeZone: 'America/New_York', hour: 'numeric', minute: '2-digit', second: '2-digit',
+  // Seconds matter to nobody reading a board; the day appears only when it is not today.
+  return observation.toLocaleString('en-US', {timeZone: 'America/New_York', hour: '2-digit', minute: '2-digit', hour12: false,
     ...(!sameDay ? {month: 'short', day: 'numeric', ...(!sameYear ? {year: 'numeric'} : {})} as const : {})})
+}
+
+// Whether a regular-session print is the day's last candle, the close a trader quotes after the bell.
+const regularClosePrint = (at: number): boolean => {
+  const clock = new Date(at).toLocaleTimeString('en-US', {timeZone: 'America/New_York', hour: '2-digit', minute: '2-digit', hour12: false})
+  return clock === '16:00' || clock === '13:00'
 }
 
 // The UTC instant of a New York wall-clock hour on a given session day
@@ -123,7 +130,7 @@ export const SessionPrice = ({live, ticker, now, compact = false, close, closeSe
     {compact
       // Fresh quotes stay compact; an old observation always exposes its own time rather than just today's session label.
       ? state === 'fresh' ? <><span className="font-medium">${quote!.price!.toFixed(2)}</span><span className="ml-1">{" "}{(session ?? "quote").toLowerCase()}</span><ChangeMark last={quote!.price!} close={close} session={closeSession} /></>
-        : fallback?.kind === 'regular' ? <><span className={regularCurrent ? 'font-medium' : 'text-[#9a6700]'}>${fallback.price.toFixed(2)}</span><span className={`ml-1 ${regularCurrent ? '' : 'text-[#9a6700]'}`}>{" "}{regularCurrent ? 'regular' : `last regular · ${quoteTime(fallback.at, now)} ET`}</span><ChangeMark last={fallback.price} close={close} session={closeSession} /></>
+        : fallback?.kind === 'regular' ? <><span className={regularCurrent ? 'font-medium' : 'text-[#9a6700]'}>${fallback.price.toFixed(2)}</span><span className={`ml-1 ${regularCurrent ? '' : 'text-[#9a6700]'}`}>{" "}{regularCurrent ? 'regular' : `${regularClosePrint(fallback.at) ? 'close' : 'last'} ${quoteTime(fallback.at, now)} ET`}</span><ChangeMark last={fallback.price} close={close} session={closeSession} /></>
         : <span className="text-[#9a6700]">{fallback ? `$${fallback.price.toFixed(2)} last ${fallback.word} · ${quoteTime(fallback.at, now) ? `${quoteTime(fallback.at, now)} ET` : closeSession ?? 'time unavailable'}` : 'No price to display'}</span>
       : state === 'fresh' ? <><span className="font-medium">${quote!.price!.toFixed(2)}</span><span className="ml-1">{session ?? 'Quote'} · {source} · {at} ET{qualification}</span></>
       : <span className="text-[#9a6700]">{fallback

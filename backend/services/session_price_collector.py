@@ -4,8 +4,8 @@ import asyncio
 import logging
 import math
 import time
-from datetime import UTC, datetime
 from contextlib import suppress
+from datetime import UTC, datetime
 from pathlib import Path
 
 from backend.market import alpaca, deskrecord, session_price_snapshot
@@ -39,15 +39,23 @@ class SessionPriceCollector:
             logger.info("Display-price snapshot publication recovered")
             self._last_failure = None
 
-    # Prefer the independent published universe, then ask the shared quote writer for one due pass.
+    # Prefer the independent published universe. A publication that cannot be
+    # read right now (expired after the close, or replaced by a release that is
+    # waiting for its first nightly plan) still has the same names on the board,
+    # so the desk record's graded universe keeps the display prices flowing
+    # rather than freezing every quote until the next publication.
     def _collect_once(self):
         from backend.market import strategy_publication
-        if (self._root/strategy_publication.DIRECTORY).exists():
+
+        symbols = None
+        if (self._root / strategy_publication.DIRECTORY).exists():
             try:
-                symbols=list(strategy_publication.read(self._root,datetime.now(UTC))['rows'])
-            except (OSError,ValueError,TypeError,KeyError):
-                return {'status':'unavailable'}
-        else:
+                symbols = list(
+                    strategy_publication.read(self._root, datetime.now(UTC))["rows"]
+                )
+            except (OSError, ValueError, TypeError, KeyError):
+                symbols = None
+        if not symbols:
             latest, _ = deskrecord.latest_pair(self._root)
             symbols = list((latest or {}).get("grades") or {})
         return self._collect(self._root, symbols, interval_seconds=self._interval)

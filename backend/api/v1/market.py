@@ -1561,6 +1561,9 @@ async def desk_chart(
             "high": quote.get("high"),
             "low": quote.get("low"),
         }
+    # Today's daily candle needs the session's open, high, low and last, which
+    # a grid with holes still carries; only the full grid also dates completion.
+    session_bars = current["bars"] or current.get("partial_bars") or []
     built = await asyncio.to_thread(
         ticker_chart.payload,
         MarketStore(_root()),
@@ -1569,20 +1572,20 @@ async def desk_chart(
         timeframe,
         {
             "session": current["session"],
-            "bar": current["bars"][-1].start.isoformat(),
-            "open": current["bars"][0].open,
-            "high": max(bar.high for bar in current["bars"]),
-            "low": min(bar.low for bar in current["bars"]),
-            "last": current["bars"][-1].close,
+            "bar": session_bars[-1].start.isoformat(),
+            "open": session_bars[0].open,
+            "high": max(bar.high for bar in session_bars),
+            "low": min(bar.low for bar in session_bars),
+            "last": session_bars[-1].close,
         }
-        if current["bars"]
+        if session_bars
         else live_bar,
     )
     if built is None:
         raise HTTPException(status_code=404, detail="no price history for that name")
     built["live_as_of"] = current["as_of"]
     built["live_reason"] = current["reason"]
-    built["live_feed"] = "iex" if current["bars"] and built.get("quote_bar") else None
+    built["live_feed"] = "iex" if session_bars and built.get("quote_bar") else None
     if current["bars"] and built.get("quote_bar"):
         built["last_bar_complete"] = current["complete"]
     return {"user_id": user_id, **built}

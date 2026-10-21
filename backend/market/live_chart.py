@@ -44,6 +44,40 @@ def qualify(bars, now: datetime, status: dict) -> list:
     return ordered
 
 
+# The validated session candles in order, holes allowed: the raw material of
+# a daily candle when the fifteen-minute grid is not complete.
+def partial(bars, now: datetime, status: dict) -> list:
+    _aware(now)
+    if not status.get("calendar_known") or not status.get("is_session"):
+        return []
+    opening = datetime.fromisoformat(status["opens_at"])
+    closing = datetime.fromisoformat(status["closes_at"])
+    found = {}
+    for bar in bars:
+        _aware(bar.start)
+        if not opening <= bar.start < closing or bar.start > now:
+            continue
+        _validate_bar(bar, opening)
+        found.setdefault(bar.start, bar)
+    return sorted(found.values(), key=lambda bar: bar.start)
+
+
+# The qualified grid, or, when a thin name printed no IEX trade in some slots,
+# the slots that did print: a daily candle can be drawn from those, while the
+# fifteen-minute view, which needs every slot, gets none.
+def _session_candles(bars, observed: datetime, status: dict) -> dict:
+    try:
+        return {"bars": qualify(bars, observed, status)}
+    except ValueError as exc:
+        if str(exc) != "Incomplete live chart grid":
+            raise
+        return {
+            "bars": [],
+            "partial_bars": partial(bars, observed, status),
+            "reason": "Current IEX candles have gaps",
+        }
+
+
 # Require explicit time zones for both the observation clock and provider bars.
 def _aware(instant: datetime) -> None:
     if instant.tzinfo is None:
@@ -123,10 +157,10 @@ def read(ticker: str, now: datetime | None = None) -> dict:
         )
         observed = now if supplied_clock else datetime.now(UTC)
         out["as_of"] = observed.isoformat()
-        out["bars"] = qualify(bars, observed, status)
-        if not out["bars"]:
+        out.update(_session_candles(bars, observed, status))
+        if not out["bars"] and not out.get("partial_bars"):
             out["reason"] = "Current IEX candles unavailable"
-        else:
+        elif out["bars"]:
             out["complete"] = observed >= datetime.fromisoformat(status["closes_at"])
             out["last_bar_complete"] = (
                 out["bars"][-1].start + timedelta(minutes=15) <= observed

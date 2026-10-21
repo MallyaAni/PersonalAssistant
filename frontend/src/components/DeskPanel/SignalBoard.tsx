@@ -704,24 +704,23 @@ export const SignalBoard = ({latest, live, allocation, now, onOpen, closes, refr
       <h3 className="text-sm font-semibold">All names · {rows.length}</h3>
       <p className="text-xs text-[#6e6e73]">{independent
         ? savedNamesOnly ? `Saved stocks · ${latest.session} · current strategy unavailable` : awaitingNightly
-          ? `Last plan · ${publicationSession ?? 'unavailable'}`
+          ? `Last plan · ${publicationSession ?? 'unavailable'} · next plan ${allocation?.next_publication_at ? evidenceTime(allocation.next_publication_at) : 'not yet scheduled'}`
           : `${sessionOpen(live, allocation) ? allocation?.version === 'strategy-model-allocation/2' && !currentSession ? 'Awaiting 15-minute entries' : '15-minute signals' : 'Next-session actions'} · ${currentSession ?? allocation?.session ?? latest.session}`
         : 'Regular-session signals and published strategy plans · no paper account or portfolio inputs required. Immediate signals first, then waiting, plans and unavailable; High → Medium → Low within each group. Equal priorities sort alphabetically.'}</p>
       <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Signal ranking">
         {(['all', 'buy', 'sell'] as const).map(value => <button key={value} type="button" aria-pressed={side === value} className={`rounded-full border px-3 py-1 text-xs ${side === value ? 'bg-[#e8f2ff] text-[#0071e3]' : ''}`} onClick={() => {setSide(value); setVisible(25)}}>{value === 'all' ? 'All names' : value === 'buy' ? 'Best buys' : 'Best sells'}</button>)}
         <input aria-label="Find a stock" placeholder="Find a stock" value={query} onChange={event => {setQuery(event.target.value); setVisible(25)}} className="rounded border px-2 py-1 text-xs" />
       </div>
-      {awaitingNightly && <p role="status" aria-label="Plan status" className="text-xs text-[#6e6e73]">Last plan · next plan {allocation?.next_publication_at ? evidenceTime(allocation.next_publication_at) : 'not yet scheduled'}</p>}
-      <p aria-label="Signal coverage" className="text-xs text-[#6e6e73]">{independent
-        ? recommendationsUnavailable ? 'Recommendations unavailable' : awaitingNightly ? `${rows.length} last-plan rows` : `${displayed.filter(item => item.view.verdict === 'buy').length} buys · ${displayed.filter(item => item.view.verdict === 'sell').length} sells`
-        : `${rows.filter(row => row.setup).length} of ${rows.length} current assessments · ${rows.filter(row => row.buy.ready).length} buy now · ${rows.filter(row => row.sell.ready).length} sell reviews now · ${rows.filter(row => row.plan).length} published plan rows${!sessionOpen(live, allocation) ? ' · regular session closed or unavailable' : ''}.`}</p>
+      {!(independent && awaitingNightly && !recommendationsUnavailable) && <p aria-label="Signal coverage" className="text-xs text-[#6e6e73]">{independent
+        ? recommendationsUnavailable ? 'Recommendations unavailable' : `${displayed.filter(item => item.view.verdict === 'buy').length} buys · ${displayed.filter(item => item.view.verdict === 'sell').length} sells`
+        : `${rows.filter(row => row.setup).length} of ${rows.length} current assessments · ${rows.filter(row => row.buy.ready).length} buy now · ${rows.filter(row => row.sell.ready).length} sell reviews now · ${rows.filter(row => row.plan).length} published plan rows${!sessionOpen(live, allocation) ? ' · regular session closed or unavailable' : ''}.`}</p>}
       {!independent && <p className="text-xs text-[#6e6e73]">Model size is the published strategy target percentage, not shares or an instruction to buy that percentage now. Entry and exit reviews use fresh chart assessments; they do not recalculate the model’s allocation.</p>}
     </div>
     <section aria-label="Data as of" data-market-phase={allocation?.market_phase?.phase} className="flex flex-wrap gap-x-4 gap-y-1 border-t bg-[#f5f5f7] px-3 py-2 text-[11px] text-[#6e6e73]">
       {phaseLine && <span aria-label="Market phase">{phaseLine}</span>}
       <span>Quote {quoteAt ? evidenceTime(quoteAt) : 'unavailable'}</span>
       <span>Completed candle {candleAt ? evidenceTime(candleAt) : 'unavailable'}</span>
-      <span>Plan {publicationSession ?? 'unavailable'}{awaitingNightly ? ' (last plan)' : ''}</span>
+      <span>Plan {publicationSession ?? 'unavailable'}</span>
       <span>{refreshIn === null ? `Refreshes every ${Math.round(refreshMs / 1000)}s` : refreshIn > 0 ? `Refreshing in ${refreshIn}s` : 'Refreshing now'}</span>
     </section>
     <table aria-label="Ranked stock signals" className="w-full text-left text-xs">
@@ -747,7 +746,7 @@ export const SignalBoard = ({latest, live, allocation, now, onOpen, closes, refr
     </table>
     {recommendationsUnavailable && ranked.length > 0 && <p role="status" className="p-3 text-xs">Current recommendations unavailable. Saved stock charts remain available.</p>}
     {!ranked.length && <p role="status" className="p-3 text-xs">{query.trim() ? 'No matching stocks.' : recommendationsUnavailable ? 'Strategy recommendations unavailable. Refresh to retry.' : awaitingNightly ? allocation?.next_publication_at ? `Awaiting tonight's plan at ${evidenceTime(allocation.next_publication_at)}.` : "Awaiting tonight's plan." : side === 'sell' ? rows.some(row=>row.sell.word==='Wait') ? 'No confirmed sell signals yet.' : 'No sell signals in the current strategy publication.' : side === 'buy' ? rows.some(row=>row.buy.word==='Wait') ? 'No confirmed buy signals yet.' : 'No buy signals in the current strategy publication.' : 'No matching stocks.'}</p>}
-    {independent && <p className="px-3 py-2 text-[11px] text-[#6e6e73]">Size % is the buy or sell amount. Position % is the model’s desired total position. Do nothing means no trade is recommended now. — means no confirmed trade size.{planningEquity ? ` The ≈ line applies Size % to the planning equity ($${planningEquity.toLocaleString('en-US', {maximumFractionDigits: 0})}) at the shown price; whole shares, rounded down.` : ''}</p>}
+    {independent && <p className="px-3 py-2 text-[11px] text-[#6e6e73]">Size % · the trade. Position % · the model’s target. — · no confirmed size.{planningEquity ? ` ≈ shares on $${planningEquity.toLocaleString('en-US', {maximumFractionDigits: 0})} at the shown price.` : ''}</p>}
     {ranked.length > visible && <button type="button" className="p-3 text-xs text-[#0071e3]" onClick={() => setVisible(value => value + 25)}>Show more · {visible} of {ranked.length}</button>}
   </section>
 }

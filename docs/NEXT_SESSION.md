@@ -1532,6 +1532,58 @@ The detailed current continuation remains the TOP of the attached
 learned-live-release-20261006 worktree's NEXT_SESSION.md. Keep existing heartbeat
 ACTIVE and quiet unchanged. No question pending; no agents without delegation,
 usage-limited retries/replacements, denied-read bypass or native-pool adoption.
+## 2026-10-21 19:10 ET — Trader's read of the live dashboard; display fixes in source, NOT DEPLOYED
+
+Owner: "think from a traders perspective when using browser"; "every
+single thing must be checked"; "also check zoom of charts consistency
+and timeframes". The owner signed the built-in browser into
+deep-matter.com; the board and the MU/paper views were read there.
+
+Found and fixed (unbound sources only; no release needed):
+- Display-price collector froze at 11:53 ET: `_collect_once` returned
+  `unavailable` whenever `strategy_publication.read` raised, which it does
+  from a policy install until the next nightly. Falls back to the desk
+  record's graded universe (`session_price_collector.py`, test).
+- Thin IEX names (FN, SIMO) lost today's daily candle after the close:
+  `live_chart.qualify` rejects a grid with holes. `read` now keeps the
+  printed slots as `partial_bars` ("Current IEX candles have gaps"); the
+  daily/weekly endpoint draws the day from them, 15m still needs the full
+  grid (`live_chart.py`, `api/v1/market.py`, test).
+- 15m "Price history incomplete" on every name: Oct 15 had the
+  13:00–13:45 ET slots missing in `bars_15m_sip` and the nightly append
+  keeps incomplete sessions. Re-fetched with `--include-incomplete` (all
+  98 complete now) and added that flag to `~/desk_sip.sh`.
+- Board after hours: "last plan" said four times and "Do nothing" in the
+  footnote. One header line ("Last plan · date · next plan HH:MM ET"), no
+  coverage line, no "(last plan)" suffix, footnote without "Do nothing".
+- Price line: "last regular · 4:00:00 PM ET" → "close 16:00 ET" (24h,
+  no seconds; "last HH:MM ET" for an intraday last print); paper board
+  drops "as of 4:00 PM, 2 h ago" for the closing print.
+- Chart: 15m/D/W and Recent/Full buttons now show which is pressed;
+  default windows the same on every name (15m 54–81 bars, D 45–80, W
+  30–60 by width; weekly was 8 bars); the three disclaimer lines became
+  one "Replay · <policy>" line with an "about" disclosure; a replay of a
+  replaced policy says "previous policy" and its trades start hidden
+  ("Buy / Sell · previous policy"); 15m axis past three sessions labels
+  days, not "1:00 PM".
+- e2e expectations updated (all-names-signals, session-price specs
+  converted to 24h clocks). Baseline comparison: identical 19 pre-existing
+  failures before and after in the chart/session-price specs; no new.
+
+Data audit of 94 names × 3 timeframes (`~/dsv41/audit2/data_audit.py`):
+all 94 have daily/weekly/15m bars; one inconsistent daily bar (TYL
+2026-10-20, low > open, from the source); opening-bar spikes on Oct 16
+(software names) and Oct 21 (MU, NBIS, SNDK) are real prints.
+
+Deploy after the 19:30 nightly and the 20:15 check, together with the
+EWMA release (e22e9a25 identity). Then re-read the live board and charts
+in the browser and run `~/dsv41/audit2/frames.mjs` (every name, three
+frames, screenshots in `~/dsv41/audit2/shots`).
+
+Still open: history regeneration under the leader policy (the replay on
+every chart is still grade-led-learned-sizing/1); hgb-tilt arms still
+running; income statements for ASML/NBIS/SIMO/TSM.
+
 ## 2026-10-21 17:20 ET — Open fills INSTALLED (1fa135f9); structure gates scored and declined
 
 Owner, 16:1x–16:4x ET: "do the implementation you feel is the best rather

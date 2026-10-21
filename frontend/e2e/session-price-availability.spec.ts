@@ -152,7 +152,7 @@ async function expectReading(page: Page, text: Reading, price = true) {
 // A same-schedule fresh quote is the baseline control for the broader availability checks.
 test('current postmarket midpoint retains its exact source and observation time', async ({page, scenario: state}) => {
   await openDesk(page, state)
-  await expectReading(page, {chart: 'post-market · IEX · 6:00:00 PM ET', board: row('$102.00', 'post-market'), title: provenance('6:00:00 PM')})
+  await expectReading(page, {chart: 'post-market · IEX · 18:00 ET', board: row('$102.00', 'post-market'), title: provenance('18:00')})
 })
 
 // A stale open-status snapshot is not authority to suppress a newer independent quote.
@@ -161,7 +161,7 @@ test('newer independent quote survives stale regular-session open status', async
   state.marketPhase = 'open'
   state.marketStamp = '2026-09-24T19:00:00Z'
   await openDesk(page, state)
-  await expectReading(page, {chart: 'post-market · IEX · 6:00:00 PM ET', board: row('$102.00', 'post-market'), title: provenance('6:00:00 PM')})
+  await expectReading(page, {chart: 'post-market · IEX · 18:00 ET', board: row('$102.00', 'post-market'), title: provenance('18:00')})
 })
 
 // Fresh session-price evidence is displayable during regular hours without enabling execution.
@@ -172,7 +172,7 @@ test('regular schedule does not suppress its fresh display-only midpoint', async
   state.marketPhase = 'open'
   state.quote = quote(state.stamp, 'regular')
   await openDesk(page, state)
-  await expectReading(page, {chart: 'regular · IEX · 10:00:00 AM ET', board: row('$102.00', 'regular'), title: provenance('10:00:00 AM')})
+  await expectReading(page, {chart: 'regular · IEX · 10:00 ET', board: row('$102.00', 'regular'), title: provenance('10:00')})
 })
 
 for (const schedule of ['closed', 'unknown'] as const) {
@@ -182,7 +182,7 @@ for (const schedule of ['closed', 'unknown'] as const) {
     state.marketPhase = schedule
     state.quote = quote(INITIAL, schedule)
     await openDesk(page, state)
-    await expectReading(page, {chart: 'Quote · IEX · 6:00:00 PM ET', board: row('$102.00', 'quote'), title: provenance('6:00:00 PM')})
+    await expectReading(page, {chart: 'Quote · IEX · 18:00 ET', board: row('$102.00', 'quote'), title: provenance('18:00')})
     const reading = page.getByRole('table', {name: 'Ranked stocks and cash'}).getByLabel('AAPL session price')
     await expect(reading).not.toContainText('closed')
     await expect(reading).toHaveAttribute('title', /Expected schedule.*not.*venue/i)
@@ -200,14 +200,14 @@ for (const legacy of [false, true]) {
     state.quote = quote('2026-09-25T13:29:45Z', 'pre-market')
     if (legacy) delete state.quote.session
     await openDesk(page, state)
-    await expectReading(page, {chart: 'pre-market · IEX · 9:29:45 AM ET', board: row('$102.00', 'pre-market'), title: provenance('9:29:45 AM')})
+    await expectReading(page, {chart: 'pre-market · IEX · 09:29 ET', board: row('$102.00', 'pre-market'), title: provenance('09:29')})
     // The chart qualifies the observation in words; the board row keeps the observed session word
     // against the regular schedule its hover text expects, and never relabels it regular.
     await expect(page.getByRole('region', {name: 'AAPL price chart'}).getByLabel('AAPL session price')).toContainText('previous-session observation')
     await expect(page.getByRole('table', {name: 'Ranked stocks and cash'}).getByLabel('AAPL session price')).toHaveText(/^\$102\.00\s?pre-market/)
     for (const reading of await page.getByLabel('AAPL session price', {exact: true}).all()) {
       await expect(reading).not.toContainText('regular · IEX')
-      await expect(reading).not.toContainText('9:30:10 AM')
+      await expect(reading).not.toContainText('09:30')
       await expect(reading).toHaveAttribute('title', /2026-09-25T13:29:45Z/)
       await expect(reading).toHaveAttribute('title', /Expected schedule: regular/)
     }
@@ -223,7 +223,7 @@ test('legacy regular envelope leaves the quote session unrecorded', async ({page
   state.quote = quote('2026-09-25T13:29:45Z')
   delete state.quote.session
   await openDesk(page, state)
-  await expectReading(page, {chart: 'Quote · IEX · 9:29:45 AM ET', board: row('$102.00', 'quote'), title: provenance('9:29:45 AM')})
+  await expectReading(page, {chart: 'Quote · IEX · 09:29 ET', board: row('$102.00', 'quote'), title: provenance('09:29')})
   await expect(page.getByRole('region', {name: 'AAPL price chart'}).getByLabel('AAPL session price')).toContainText('session unrecorded')
   // The board row names no session for it: the neutral word, never the regular schedule the envelope carried.
   const board = page.getByRole('table', {name: 'Ranked stocks and cash'}).getByLabel('AAPL session price')
@@ -254,15 +254,15 @@ for (const oldDay of [false, true]) {
   test(`${oldDay ? 'previous-day' : 'same-day'} stale evidence shows its last price with dated source, never as current`, async ({page, scenario: state}) => {
     state.quote = {...quote(oldDay ? '2026-09-23T22:00:00Z' : '2026-09-24T21:58:00Z'), status: 'stale', reason: 'Quote expired'}
     await openDesk(page, state)
-    await expectReading(page, {chart: oldDay ? '$102.00 last post-market · IEX · Sep 23, 6:00:00 PM ET' : '$102.00 last post-market · IEX · 5:58:00 PM ET',
+    await expectReading(page, {chart: oldDay ? '$102.00 last post-market · IEX · Sep 23, 18:00 ET' : '$102.00 last post-market · IEX · 17:58 ET',
       // A previous-day midpoint is older than the latest regular bar, so the board row shows the bar.
       board: oldDay ? row('$100.00', 'regular') : row('$102.00', 'post-market'), boardPrice: !oldDay,
-      title: provenance(oldDay ? 'Sep 23, 6:00:00 PM' : '5:58:00 PM')})
+      title: provenance(oldDay ? 'Sep 23, 18:00' : '17:58')})
     for (const reading of await page.getByLabel('AAPL session price', {exact: true}).all()) {
       await expect(reading).not.toContainText('No recent quote')
       await expect(reading).not.toContainText('fresh')
-      // The current time (6:00:00 PM today) never appears beside a stale price.
-      if (!oldDay) await expect(reading).not.toContainText('6:00:00 PM')
+      // The current time (18:00 today) never appears beside a stale price.
+      if (!oldDay) await expect(reading).not.toContainText('18:00')
       await expect(reading.locator('span').first()).not.toHaveClass(/font-medium/)
       await expect(reading.locator('span').first()).toHaveClass(/text-\[#9a6700\]/)
       await expect(reading).toHaveAttribute('title', new RegExp(state.quote!.at!))
@@ -288,7 +288,7 @@ for (const knownClose of [false, true]) {
 test('old after-hours quote uses plain wording on the board and chart', async ({page, scenario: state}, info) => {
   state.quote = {...quote('2026-09-24T20:00:05Z'), status: 'stale', reason: 'Quote expired'}
   await openDesk(page, state)
-  await expectReading(page, {chart: '$102.00 last post-market · IEX · 4:00:05 PM ET', board: row('$102.00', 'post-market'), title: provenance('4:00:05 PM')})
+  await expectReading(page, {chart: '$102.00 last post-market · IEX · 16:00 ET', board: row('$102.00', 'post-market'), title: provenance('16:00')})
   for (const reading of await page.getByLabel('AAPL session price', {exact: true}).all()) {
     await expect(reading).not.toContainText('stale')
     await expect(reading).not.toContainText('snapshot')
@@ -302,7 +302,7 @@ test('old after-hours quote uses plain wording on the board and chart', async ({
 
 // A closed market still shows the last observed price, dated by its own session and time.
 test('shows the last observed price with its session and time when the market is closed', async ({page, scenario: state}) => {
-  // Saturday 11:00 ET; the collector last ran moments ago and still holds Friday's 4:59:58 PM ET post-market IEX quote.
+  // Saturday 11:00 ET; the collector last ran moments ago and still holds Friday's 16:59 ET post-market IEX quote.
   state.stamp = state.marketStamp = '2026-09-26T15:00:00Z'
   state.captured = '2026-09-26T14:59:50Z'
   state.schedule = 'closed'
@@ -318,15 +318,15 @@ test('shows the last observed price with its session and time when the market is
     if (surface === chart) {
       await expect.soft(reading).toContainText('last post-market')
       await expect.soft(reading).toContainText('IEX')
-      await expect.soft(reading).toContainText('Sep 25, 4:59:58 PM ET')
+      await expect.soft(reading).toContainText('Sep 25, 16:59 ET')
     } else {
       // The board row: the price and its session word; the source and date are its hover text.
       await expect.soft(reading).toContainText(row('$336.13', 'post-market'))
-      await expect.soft(reading).toHaveAttribute('title', provenance('Sep 25, 4:59:58 PM'))
+      await expect.soft(reading).toHaveAttribute('title', provenance('Sep 25, 16:59'))
     }
     await expect.soft(reading).not.toContainText('No recent quote')
     await expect.soft(reading).not.toContainText('fresh')
-    await expect.soft(reading).not.toContainText('11:00:00 AM')
+    await expect.soft(reading).not.toContainText('11:00')
     await expect.soft(reading.locator('span').first()).not.toHaveClass(/font-medium/)
     await expect.soft(reading).toHaveAttribute('title', /Midpoint is not a trade or guaranteed fill/)
     await expect.soft(reading).toHaveAttribute('title', /Last observed price; not a current quote\./)
@@ -370,7 +370,7 @@ test('unknown current schedule does not claim a previous-session observation', a
   state.marketPhase = 'unknown'
   state.quote = quote(state.stamp, 'regular')
   await openDesk(page, state)
-  await expectReading(page, {chart: 'regular · IEX · 10:00:00 AM ET', board: row('$102.00', 'regular'), title: provenance('10:00:00 AM')})
+  await expectReading(page, {chart: 'regular · IEX · 10:00 ET', board: row('$102.00', 'regular'), title: provenance('10:00')})
   for (const reading of await page.getByLabel('AAPL session price', {exact: true}).all()) {
     await expect.soft(reading).not.toContainText('previous-session observation')
     await expect(reading).toHaveAttribute('title', /Expected schedule: unknown/)
@@ -386,8 +386,8 @@ for (const earlyMorning of [false, true]) {
     state.marketPhase = earlyMorning ? 'pre-market' : 'post-market'
     state.quote = {...quote(state.captured, 'overnight'), feed: 'overnight', indicative: true}
     await openDesk(page, state)
-    await expectReading(page, {chart: `overnight · Indicative · OVERNIGHT · ${earlyMorning ? '3:00:00 AM' : '9:00:00 PM'} ET`,
-      board: row('$102.00', 'overnight'), title: provenance(earlyMorning ? '3:00:00 AM' : '9:00:00 PM', 'Indicative · OVERNIGHT')})
+    await expectReading(page, {chart: `overnight · Indicative · OVERNIGHT · ${earlyMorning ? '03:00' : '21:00'} ET`,
+      board: row('$102.00', 'overnight'), title: provenance(earlyMorning ? '03:00' : '21:00', 'Indicative · OVERNIGHT')})
     for (const reading of await page.getByLabel('AAPL session price', {exact: true}).all()) {
       await expect.soft(reading).not.toContainText('previous-session observation')
       await expect.soft(reading).toHaveAttribute('title', /Expected schedule: overnight/)

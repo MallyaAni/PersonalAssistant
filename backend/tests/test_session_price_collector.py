@@ -240,3 +240,33 @@ async def test_unsupported_locking_skips_collection_and_credentials(
     collector.start()
     await collector.stop()
     assert list(tmp_path.iterdir()) == []
+
+
+# A publication folder whose contents cannot be read as a current publication
+# (expired after the close, or replaced by a release awaiting its first nightly
+# plan) must not freeze the display prices: the graded universe still names
+# the board.
+@pytest.mark.asyncio
+async def test_unreadable_publication_falls_back_to_the_graded_universe(tmp_path):
+    from backend.market import strategy_publication
+
+    root = graded_root(tmp_path)
+    (root / strategy_publication.DIRECTORY).mkdir(parents=True)
+    (root / strategy_publication.DIRECTORY / "latest.json").write_text("{}")
+    calls = []
+
+    def fetch(symbols):
+        calls.append(tuple(symbols))
+        return envelope(symbols, datetime.now(UTC))
+
+    collector = SessionPriceCollector(
+        root,
+        interval_seconds=0.05,
+        collect=partial(session_price_snapshot.collect, fetch=fetch),
+    )
+    collector.start()
+    try:
+        await eventually(lambda: len(calls) >= 1)
+    finally:
+        await collector.stop()
+    assert calls[0] == ("AAA", "BBB")

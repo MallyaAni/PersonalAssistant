@@ -190,6 +190,9 @@ export const levelFlag = (structure: DeskStructure | undefined): string | null =
 export const priceAge = (structure: DeskStructure | undefined, now: number): string | null => {
   const at = Date.parse(structure?.price_as_of ?? '')
   if (!Number.isFinite(at)) return null
+  // The closing print is the close, which the price line already says; its age tells a trader nothing.
+  const wall = new Date(at).toLocaleTimeString('en-US', {timeZone: 'America/New_York', hour: '2-digit', minute: '2-digit', hour12: false})
+  if (wall === '16:00' || wall === '13:00') return null
   const clock = new Date(at).toLocaleTimeString('en-US', {timeZone: 'America/New_York', hour: 'numeric', minute: '2-digit'})
   const minutes = Math.max(0, Math.round((now - at) / 60_000))
   const ago = minutes < 1 ? 'under a minute ago' : minutes < 60 ? `${minutes} min ago` : `${Math.floor(minutes / 60)} h ${minutes % 60} min ago`

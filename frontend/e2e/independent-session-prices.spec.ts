@@ -214,7 +214,7 @@ const literal = (text: string) => text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 // is neither held nor traded by the paper account, so its action is a dash with no size.
 // The chart reading spells the source and time out; the board row shows the price and its session word
 // and carries the same provenance in its hover text, whose whole content is pinned here.
-async function expectPrice(page: Page, state: Scenario, price = state.price, time = '6:00:00 PM') {
+async function expectPrice(page: Page, state: Scenario, price = state.price, time = '18:00') {
   const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
   const chart = page.getByRole('region', {name: 'AAPL price chart'})
   const source = state.session === 'overnight' ? 'Indicative · OVERNIGHT' : 'IEX'
@@ -257,7 +257,7 @@ for (const outcome of ['healthy', 'network failure', 'invalid JSON'] as const) {
     await page.clock.fastForward(61_000)
     await expect.poll(() => state.requests.slice(before).some(entry => entry.path === `${DESK}/session-prices` && entry.completed)).toBe(true)
     await settle(page, state)
-    await expectPrice(page, state, 103, '6:01:01 PM')
+    await expectPrice(page, state, 103, '18:01')
     if (outcome !== 'healthy') {
       await expect(page.getByLabel('Plan status')).toContainText(REGULAR_FAILURE)
       expect(state.diagnostics.failedRequests).toHaveLength(outcome === 'network failure' ? 1 : 0)
@@ -370,7 +370,7 @@ for (const session of ['pre-market', 'overnight'] as const) {
     state.stamp = session === 'pre-market' ? '2026-09-25T12:00:00Z' : '2026-09-25T01:00:00Z'
     await page.clock.setFixedTime(new Date(state.stamp))
     await openDesk(page, state)
-    await expectPrice(page, state, 102, session === 'pre-market' ? '8:00:00 AM' : '9:00:00 PM')
+    await expectPrice(page, state, 102, session === 'pre-market' ? '08:00' : '21:00')
   })
 }
 
@@ -383,7 +383,7 @@ test('expired midpoint becomes stale without changing the regular signal price',
   const board = page.getByRole('table', {name: 'Ranked stocks and cash'})
   const chart = page.getByRole('region', {name: 'AAPL price chart'})
   // The chart dates the last price in its text; the board row shows it with its session word and dates it in the hover text.
-  await expect(chart.getByLabel('AAPL session price')).toContainText('$102.00 last post-market · IEX · 6:00:00 PM ET')
+  await expect(chart.getByLabel('AAPL session price')).toContainText('$102.00 last post-market · IEX · 18:00 ET')
   await expect(board.getByLabel('AAPL session price')).toContainText(/^\$102\.00\s?post-market/)
   await expect(board.getByLabel('AAPL session price')).toHaveAttribute('title', /^Last observed 6:00:00\sPM ET\. IEX\. /)
   for (const surface of [board, chart]) {

@@ -203,3 +203,17 @@ def test_provider_pagination_has_a_fixed_bound(monkeypatch):
     assert len(calls) == 2
     assert out["bars"] == []
     assert "unavailable" in out["reason"]
+
+
+# A thin name's IEX grid has holes where no trade printed; the candles that did
+# print still describe the session for a daily candle, while the fifteen-minute
+# view, which needs every slot, gets no bars.
+def test_grid_with_holes_keeps_the_session_range_as_partial_bars(monkeypatch):
+    bars = _bars(count=6)
+    del bars[2]
+    monkeypatch.setattr(live_chart.alpaca, "fetch_bars", lambda *a, **k: bars)
+    out = live_chart.read("FN", datetime.fromisoformat("2026-10-02T11:00:30-04:00"))
+    assert out["bars"] == []
+    assert out["reason"] == "Current IEX candles have gaps"
+    assert [bar.start for bar in out["partial_bars"]] == [bar.start for bar in bars]
+    assert not out["complete"]
