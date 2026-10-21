@@ -1344,7 +1344,7 @@ test('Unavailable publication keeps saved stocks and charts without current size
   await expect(chart).not.toContainText('Position 14.3%')
   for(const frame of ['D','W','15m']){
     await chart.getByRole('group',{name:'Chart timeframe',exact:true}).getByRole('button',{name:frame,exact:true}).click()
-    await expect(chart.getByLabel('BUYHIGH current chart target',{exact:true})).toHaveText('Current recommendation unavailable')
+    await expect(chart.getByLabel('BUYHIGH current chart target',{exact:true})).toHaveText('')
   }
   await chart.getByRole('group',{name:'Chart timeframe',exact:true}).getByRole('button',{name:'D',exact:true}).click()
   await chart.getByText('Recommendations',{exact:true}).click()

@@ -1375,7 +1375,7 @@ export const TickerChart = ({
         {chartAction === 'Wait' && headerWord && <span className="rounded bg-[#eef1f6] px-1.5 py-0.5 text-[10px] font-medium text-[#3a3a3c]" aria-label={`${ticker} chart entry state`}>pending</span>}
         {modelTarget.positionWeight != null && <span className="text-[#6e6e73]" aria-label={`${ticker} current chart position`}>Position {sizePercent(modelTarget.positionWeight)}%</span>}
         {modelTarget.nextSessionPlan && <span className="text-[#6e6e73]" aria-label={`${ticker} chart plan timing`}>Next session</span>}
-      </div> : null) : <span className="text-[#6e6e73]" aria-label={`${ticker} current chart target`}>Current recommendation unavailable</span>}
+      </div> : null) : <span className="text-[#6e6e73]" aria-label={`${ticker} current chart target`}></span>}
       <div role="group" aria-label="Chart range" className="flex gap-2">
         <button type="button" aria-pressed={!fullHistory} onClick={() => resetRange(false)}>Recent</button>
         <button type="button" aria-pressed={fullHistory} onClick={() => resetRange(true)}>{timeframe === '15m' ? '60 sessions' : 'Full history'}</button>
