@@ -24,6 +24,7 @@ const REASON_WORDS: Record<DeskEntryReasonCode, string> = {
   publication_expired: 'The published assessment has expired',
   quote_stale: 'A fresh compatible quote is required',
   price_unavailable: 'No compatible execution price is available',
+  entry_pending: 'Entry price not yet confirmed this candle',
 }
 
 type VerdictView = {verdict: DeskEntryVerdict; reason: string; size: number | null; nextSession: boolean; lastPlan: boolean; observedAt: string | null; validUntil: number; sourceAt: number}
@@ -496,8 +497,10 @@ const backendVerdict = (row: EntryEvidence['row']): DeskEntryVerdict | null =>
 // backend's own reason and trade size rather than reinterpreting its state.
 const boundView = (bound: EntryEvidence): VerdictView => {
   const raw = backendVerdict(bound.row) ?? 'nothing'
+  // While the engine's price is pending its own size is a placeholder; the plan's trade is the size.
+  const sized = bound.row.reason_code === 'entry_pending' ? bound.row.plan_weight : bound.row.size_weight
   const size = raw === 'nothing' ? null
-    : typeof bound.row.size_weight === 'number' && Number.isFinite(bound.row.size_weight) && bound.row.size_weight > 0 ? bound.row.size_weight : null
+    : typeof sized === 'number' && Number.isFinite(sized) && sized > 0 ? sized : null
   // A Buy with no positive trade amount is not a buy the person can act on.
   const verdict = raw === 'buy' && size === null ? 'nothing' : raw
   const reason = typeof bound.row.reason === 'string' && bound.row.reason.trim() ? bound.row.reason

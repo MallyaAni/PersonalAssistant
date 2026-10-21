@@ -240,6 +240,17 @@ def test_served_rows_carry_a_verdict(monkeypatch, tmp_path):
             "evidence": {},
             "reason": "Fresh compatible IEX quote required",
         },
+        "WWW": {
+            "state": "unavailable",
+            "action": "Buy",
+            "size_weight": 1e-5,
+            "model_position_weight": 0.22,
+            "reference_position_weight": 0.0,
+            "quote_at": None,
+            "valid_until": "x",
+            "evidence": {},
+            "reason": "Fresh compatible IEX quote required",
+        },
     }
     monkeypatch.setattr(
         market_allocation.strategy_entries,
@@ -277,6 +288,14 @@ def test_served_rows_carry_a_verdict(monkeypatch, tmp_path):
         "nothing",
         "quote_stale",
     )
+    # A planned buy whose price is not yet confirmed keeps its direction and
+    # shows the plan's trade, not the engine's placeholder size.
+    assert (served["WWW"]["verdict"], served["WWW"]["reason_code"]) == (
+        "buy",
+        "entry_pending",
+    )
+    assert served["WWW"]["plan_weight"] == pytest.approx(0.22)
+    assert served["WWW"]["size_weight"] == 1e-5
     assert served[name]["reason"] == "Act now at the current price"
     # Reference rows are served as written: a target for the next session is
     # the plan, not a verdict about this one.

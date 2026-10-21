@@ -17,6 +17,7 @@ REASON_CODES = (
     "publication_expired",
     "quote_stale",
     "price_unavailable",
+    "entry_pending",
 )
 REASONS = {
     "execute_now": "Act now at the current price",
@@ -28,6 +29,7 @@ REASONS = {
     "publication_expired": "The published assessment has expired",
     "quote_stale": "A fresh compatible quote is required",
     "price_unavailable": "No compatible execution price is available",
+    "entry_pending": "Entry price not yet confirmed this candle",
 }
 
 
@@ -68,6 +70,14 @@ def _idle_code(action, timing_reason, target_weight, held_weight, resolved):
     return "no_allocation" if action is None else "at_target"
 
 
+# The size of the trade the plan still calls for in the row's direction.
+def _planned(action, target_weight, held_weight):
+    if target_weight is None:
+        return None
+    held = held_weight or 0.0
+    return target_weight - held if action == "Buy" else held - target_weight
+
+
 # Map existing row evidence to one verdict and one closed reason code.
 def classify(
     *,
@@ -93,9 +103,15 @@ def classify(
     if state == "wait":
         return "nothing", "waiting_better_price"
     if state == "unavailable":
-        return "nothing", _unavailable_code(
-            reason, quote_available, distribution_available
-        )
+        code = _unavailable_code(reason, quote_available, distribution_available)
+        # A planned trade whose price the engine has not yet confirmed is still
+        # the plan: the board says the direction and that the price is pending,
+        # not "nothing", which read as "the model wants nothing here".
+        if code in ("quote_stale", "price_unavailable") and action in ("Buy", "Sell"):
+            planned = _planned(action, target_weight, held_weight)
+            if planned is None or planned > 0:
+                return action.lower(), "entry_pending"
+        return "nothing", code
     return "nothing", _idle_code(action, reason, target_weight, held_weight, resolved)
 
 
@@ -132,4 +148,17 @@ def annotate(
         mandatory=mandatory,
         resolved=resolved,
     )
-    return {**row, "verdict": verdict, "reason_code": code, reason_key: REASONS[code]}
+    served = {**row, "verdict": verdict, "reason_code": code, reason_key: REASONS[code]}
+    if code == "entry_pending":
+        # The engine's own size is a placeholder until its objective resolves;
+        # the plan's remaining trade is what the person can read now.
+        target = row.get("model_position_weight")
+        held = row.get("reference_position_weight")
+        planned = _planned(
+            row.get("action"),
+            target_weight if target_weight is not None else target,
+            held_weight if held_weight is not None else held,
+        )
+        if planned is not None:
+            served["plan_weight"] = max(0.0, float(planned))
+    return served

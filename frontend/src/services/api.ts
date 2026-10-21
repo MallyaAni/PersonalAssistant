@@ -2516,7 +2516,7 @@ export type DeskOptionsEvidence = {
 
 export type DeskEntryVerdict = 'buy' | 'sell' | 'nothing';
 export type DeskEntryReasonCode = 'execute_now' | 'waiting_better_price' | 'at_target' | 'no_allocation'
-  | 'grade_below_a' | 'awaiting_candle' | 'publication_expired' | 'quote_stale' | 'price_unavailable';
+  | 'grade_below_a' | 'awaiting_candle' | 'publication_expired' | 'quote_stale' | 'price_unavailable' | 'entry_pending';
 
 export interface DeskModelAllocation {
   version: 'published-model-allocation/1' | 'strategy-model-allocation/1' | 'strategy-model-allocation/2';
@@ -2563,7 +2563,7 @@ export interface DeskModelAllocation {
       reference_position_weight?: number; trade_weight?: number; verdict_reason?: string;
       reference_units?: number; proposed_units?: number; quote_at: string | null;
       attempt_resolved?: boolean; objective_pending?: boolean;
-      verdict?: DeskEntryVerdict; reason_code?: DeskEntryReasonCode; reason?: string;
+      verdict?: DeskEntryVerdict; reason_code?: DeskEntryReasonCode; reason?: string; plan_weight?: number;
       original_intent?: {id: string; completed_at: string; at: string; size_weight: number; action: 'Buy' | 'Sell'; receipt_sha256: string};
       valid_until: string; evidence: DeskStrategyDecision['evidence']}>;
   };

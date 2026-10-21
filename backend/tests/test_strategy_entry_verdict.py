@@ -74,7 +74,7 @@ class StrategyVerdictTests(unittest.TestCase):
             (
                 dict(
                     state="unavailable",
-                    action="Buy",
+                    action=None,
                     timing_reason="Fresh compatible IEX quote required",
                     quote_available=False,
                 ),
@@ -84,9 +84,41 @@ class StrategyVerdictTests(unittest.TestCase):
                 dict(
                     state="unavailable",
                     action="Buy",
+                    timing_reason="Fresh compatible IEX quote required",
+                    quote_available=False,
+                    target_weight=0.22,
+                    held_weight=0.0,
+                ),
+                ("buy", "entry_pending"),
+            ),
+            (
+                dict(
+                    state="unavailable",
+                    action="Buy",
+                    timing_reason="Fresh compatible IEX quote required",
+                    quote_available=False,
+                    target_weight=0.1,
+                    held_weight=0.1,
+                ),
+                ("nothing", "quote_stale"),
+            ),
+            (
+                dict(
+                    state="unavailable",
+                    action=None,
                     timing_reason="invalid moments, funding or cost",
                 ),
                 ("nothing", "price_unavailable"),
+            ),
+            (
+                dict(
+                    state="unavailable",
+                    action="Sell",
+                    timing_reason="invalid moments, funding or cost",
+                    target_weight=0.0,
+                    held_weight=0.2,
+                ),
+                ("sell", "entry_pending"),
             ),
         )
         for arguments, expected in cases:
