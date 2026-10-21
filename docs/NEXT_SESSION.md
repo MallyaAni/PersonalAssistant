@@ -1532,6 +1532,29 @@ The detailed current continuation remains the TOP of the attached
 learned-live-release-20261006 worktree's NEXT_SESSION.md. Keep existing heartbeat
 ACTIVE and quiet unchanged. No question pending; no agents without delegation,
 usage-limited retries/replacements, denied-read bypass or native-pool adoption.
+## 2026-10-21 03:20 ET — DEPLOYED bd1babe9 (gated): brief checker final; sized amounts on the board; scorecard re-run
+
+Live: `9f4927c4` (Size % also as ≈ dollars and whole shares against the
+page's planning equity) and `bd1babe9` (the per-claim brief checker lets an
+"uncertain" row pass - conditional risks, watch items - and only a
+contradicting row sinks a brief; the five functional brief behaviours in
+`backend/tests/functional/test_desk_brief_behaviour.py` pass against the
+live V4.1 model with `MAIN_LLM_STRUCTURED_OUTPUT=1 MAIN_LLM_BASE_URL=http://127.0.0.1:8000`
+`MAIN_LLM_MODEL=deepseek-v4-flash` in the functional image; the 2026-10-20
+book writes 9/9 briefs with the final checker). Both deploys gated: unit
+suite 11,527 / 0 failed, routing gate passed, admission ADMITTED.
+
+Point-in-time scorecard re-run through 2026-10-20 (`docs/research/pit-scorecard-2026-10-21/`,
+summarised in `sizing-timing-validation-2026-10-21.md`): the desk's sizing
+layer 14.4%/yr on the point-in-time book (2016-2023, 25 bp), below QQQ
+(t -0.80) and equal weight (t -2.36); `ew_graded_full` 27.8%, ahead of QQQ
+20/20 offsets (t +2.25), level with equal weight (t +0.67), worst DD -45.8%.
+The owner was told; the sizing policy decision is theirs and goes through
+`market_release_admission`.
+
+Scheduled in this Claude session: a live check at 09:50 ET (first intraday
+run under the new code) and 20:15 ET (tonight's briefs and publication).
+
 ## 2026-10-21 02:20 ET — First fully GATED deploy since 10-17 (b0324da6); e2e harness repaired
 
 `scripts/deploy.sh` with the gate on: unit suite 11,527 passed / 0 failed,
