@@ -3528,6 +3528,9 @@ export interface DeskStrategySimulation {
   through: string;
   counterfactual: true;
   real_orders: false;
+  // How the replayed decisions split around the frozen fit date; stamped where the history is served.
+  in_sample_decisions?: number;
+  out_of_sample_decisions?: number;
   provenance: {cost_bps: number; account_sha256: string; config_sha256: string; basis: string; source_record_sha256?: string;
     strategy_identity?: string; verified_against_installed_strategy?: boolean; sample?: 'in_sample' | 'out_of_sample';
     model_fit_through?: string;

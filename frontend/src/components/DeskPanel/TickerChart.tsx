@@ -1389,6 +1389,8 @@ export const TickerChart = ({
       className="mb-2 text-[11px] text-[#6e6e73]">
       {simulation ? `Policy ${simulation.policy} · ${simulation.start} → ${simulation.through}` : `Policy ${livePolicy ?? 'unavailable'} · simulation unavailable`}
       {simulation?.provenance.model_fit_through && ` · model fit through ${simulation.provenance.model_fit_through}`}
+      {simulation && typeof simulation.in_sample_decisions === 'number' && typeof simulation.out_of_sample_decisions === 'number'
+        && ` · ${simulation.in_sample_decisions} decisions in-sample, ${simulation.out_of_sample_decisions} after the fit date`}
       {allocation?.status === 'awaiting_nightly' && allocation.next_publication_at && ` · next publish ${recordedTime(allocation.next_publication_at)}`}
     </p>
     {/* A name the grades reached but the replay never sized is the most puzzling chart on the desk: say so instead of showing arrows with no circles. */}
