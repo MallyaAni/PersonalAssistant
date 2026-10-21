@@ -183,6 +183,18 @@ ARMS = {
         mask, min_grade=grading.ORDINAL[grading.A], tilt="leader", strength=0.5,
         window=63, target=0.25, cap=1.0
     ),
+    # The leader tilt at another strength, so the scorecard shows whether the
+    # gain moves with the tilt or sits at one lucky setting.
+    "ew_graded_leader_25_s25": lambda report, mask: point_in_time.graded_tilted_allocator(
+        mask, min_grade=grading.ORDINAL[grading.A], tilt="leader", strength=0.25,
+        window=63, target=0.25, cap=1.0
+    ),
+    # The leader tilt at another strength, so the scorecard shows whether the
+    # gain moves with the tilt or sits at one lucky setting.
+    "ew_graded_leader_25_s100": lambda report, mask: point_in_time.graded_tilted_allocator(
+        mask, min_grade=grading.ORDINAL[grading.A], tilt="leader", strength=1.0,
+        window=63, target=0.25, cap=1.0
+    ),
     # A walk-forward gradient-boosted ranker, top ten members at 10% each.
     # "hgb_rank" trains on price features plus the desk's grade and summed
     # conviction (the baseline every earlier attempt used); "hgb_desk" on

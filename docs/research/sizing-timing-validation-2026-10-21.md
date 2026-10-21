@@ -181,3 +181,49 @@ no worse. Its one weak window is 2024-26, where the installed rule
 against the arm's 27.0% at -32.2%; the paper account's forward record
 is the only evidence that settles that. Installing it is a
 trading-economics change through the release approval.
+
+## Per-name price tilts on the chosen book (2026-10-21, 09:00 ET)
+
+The owner asked whether a name should be bought more or less according
+to where its price is. Three tilts were scored on the 0.25-target
+equal-weight book (`point_in_time.graded_tilted_allocator`, arms
+`ew_graded_<tilt>_25`): each reads the name's own last 63 sessions of
+adjusted closes, turns that into a multiplier on the name's equal slot,
+and the slots are renormalised, so the tilt reshares the book and
+leaves the exposure to the volatility target. Pullback: up to 1.5x at a
+full retreat from the window high. Trend: full slot above the window's
+mean close, half below. Leader: the trailing-return rank among the held
+names, from 1-strength for the weakest to 1+strength for the strongest.
+Same scorecard, 25 bp, worst drawdown across 20 offsets.
+
+| arm | CAGR 2016-23 | worst DD 2016-23 | CAGR all | worst DD all | Sharpe 2016-23 | 2024-26 CAGR | offsets > EW 2024-26 |
+|---|---|---|---|---|---|---|---|
+| `ew_graded_voltarget_25` (no tilt) | 23.3% | -35.0% | 22.0% | -35.0% | 0.96 | 27.0% | 13 |
+| `ew_graded_pullback_25` | 23.4% | -35.0% | 22.1% | -35.0% | 0.96 | 27.3% | 13 |
+| `ew_graded_trend_25` | 22.9% | -35.2% | 21.9% | -35.2% | 0.95 | 27.2% | 13 |
+| `ew_graded_leader_25_s25` (strength 0.25) | 23.9% | -35.0% | 23.0% | -35.0% | 0.97 | 30.7% | 19 |
+| **`ew_graded_leader_25` (strength 0.5)** | **24.5%** | **-35.9%** | **24.3%** | **-35.9%** | 0.98 | 31.8% | 20 |
+| `ew_graded_leader_25_s100` (strength 1.0) | 24.9% | -42.1% | 24.8% | -42.1% | 0.96 | 37.0% | 20 |
+| installed rule | 14.4% | -34.0% | 16.5% | -34.0% | 0.94 | 30.2% | |
+
+Buying more on a pullback or only in an uptrend changes nothing at the
+book level: the A/A+ names move together and the tilts wash out. Sizing
+the relative leaders does not wash out, and the gain moves with the
+strength (22.0 -> 23.0 -> 24.3 -> 24.8 CAGR) while the worst drawdown
+stays at the untilted book's level until strength 0.5 and then jumps to
+-42.1% at 1.0, where the weakest name gets nothing and the strongest
+twice its slot. The knee is at 0.5. By the owner's rule the candidate
+is therefore **equal weight across every A/A+ name, tilted 0.5x-1.5x by
+trailing 63-session return rank, scaled to a 0.25 realised-volatility
+target, never levered**: CAGR 24.3% at worst drawdown -35.9% against
+the installed rule's 16.5% at -34.0%, ahead of plain equal weight in
+20 of 20 offsets in 2024-26 and of the installed rule in that window
+(31.8% vs 30.2%) where the installed rule is in-sample. Three settings
+of one parameter are not a fit, but they are not forward evidence
+either; the paper account's record after installation is.
+
+Installing it: the admission CLI refuses a policy change by design and
+the approval files are owner-written under the paper lock, so the
+candidate is prepared as a reviewed patch set with the proposed
+config/release/evidence text, for the owner to install by hand as on
+2026-10-13.
