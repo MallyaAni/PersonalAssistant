@@ -27,7 +27,8 @@ const REASON_WORDS: Record<DeskEntryReasonCode, string> = {
   entry_pending: 'Entry price not yet confirmed this candle',
 }
 
-type VerdictView = {verdict: DeskEntryVerdict; reason: string; size: number | null; nextSession: boolean; lastPlan: boolean; observedAt: string | null; validUntil: number; sourceAt: number}
+// `state` is the one structured qualifier the verdict cell shows beside the word.
+type VerdictView = {verdict: DeskEntryVerdict; reason: string; size: number | null; nextSession: boolean; lastPlan: boolean; observedAt: string | null; validUntil: number; sourceAt: number; state?: 'pending' | 'unavailable'}
 
 export type StrategyChartTarget = {ticker: string; date: string; at: string; validUntil: string | null; action: 'Buy' | 'Sell' | null; weight: number; record: string; strategyIdentity?: string; evidence?: DeskStrategyDecision['evidence']; entry?: {at: string; validUntil: string}; entryReason?: string; recordedHistoryAvailable?: boolean; nextSessionPlan?: boolean; displayAction?: string; referenceTransition?: boolean; positionWeight?: number; tradeWeight?: number | null}
 
@@ -396,7 +397,7 @@ const signalsForBase = (latest: DeskRecord, live: DeskLive, ticker: string, now:
           : row.attempt_resolved ? 'The original daily hypothetical attempt is resolved. No repeated trade is recommended; view its saved recommendation for the original evidence.'
           : row.objective_pending ? 'The original daily cash budget cannot fund another model purchase.'
             : position>0 ? grade==='—' ? 'Grade unavailable; preserve the existing model reference without initiating a new trade.' : 'The reference position already meets the model objective; no additional trade is recommended.' : 'The model has no position to sell and no new allocation.'
-      const selected = signal(side ? ready ? side==='Buy' ? 'Buy now' : 'Sell review now' : 'Wait' : !row || row.attempt_resolved || row.objective_pending ? 'Wait' : position>0 ? 'Hold' : 'Avoid',ready,'',reason,ready?0:1)
+      const selected = signal(side ? ready ? side==='Buy' ? 'Buy now' : 'Sell review now' : side==='Buy' ? 'Buy pending' : 'Sell pending' : !row || row.attempt_resolved || row.objective_pending ? 'Wait' : position>0 ? 'Hold' : 'Avoid',ready,'',reason,ready?0:1)
       return {ticker,grade,setup:null,buy:side==='Sell'?inactive:selected,sell:side==='Sell'?selected:inactive,evidence,nextSession:false,
         current:entry ? {completed:allocation.entry_assessment!.completed_at!,quote:entry.row.quote_at!,until:entry.validUntil} : undefined}
     }
@@ -474,8 +475,8 @@ const evidenceTime = (at: string) => new Date(at).toLocaleString('en-US', {timeZ
 const actionFor = (row: Signals): Signal => row.sell.ready || row.sell.rank < row.buy.rank ? row.sell : row.buy
 
 // Use direct trading labels while keeping confirmation and timing requirements in the supporting details.
-const actionLabel = (word: string): string => ['Buy now', 'Buy plan', 'Buy setup'].includes(word) ? 'Buy'
-  : ['Sell review now', 'Exit if held', 'Exit'].includes(word) ? 'Sell' : word
+const actionLabel = (word: string): string => ['Buy now', 'Buy plan', 'Buy setup', 'Buy pending'].includes(word) ? 'Buy'
+  : ['Sell review now', 'Exit if held', 'Exit', 'Sell pending'].includes(word) ? 'Sell' : word
 
 // Collapse every waiting, avoided and unavailable path into the one word the
 // board promises, while leaving the original detail as the supporting reason.
@@ -507,7 +508,8 @@ const boundView = (bound: EntryEvidence): VerdictView => {
     : bound.row.reason_code ? REASON_WORDS[bound.row.reason_code] : ''
   const sourceAt = Number.isFinite(bound.quoted) ? bound.quoted : bound.generated
   return {verdict, reason, size, nextSession:false, lastPlan:false,
-    observedAt: bound.row.quote_at ?? bound.entry.generated_at ?? null, validUntil: bound.until, sourceAt}
+    observedAt: bound.row.quote_at ?? bound.entry.generated_at ?? null, validUntil: bound.until, sourceAt,
+    state: bound.row.reason_code === 'entry_pending' && verdict !== 'nothing' ? 'pending' : undefined}
 }
 
 // Derive the same verdict from the board's existing signal words when an older
@@ -522,7 +524,8 @@ const signalsView = (signals: Signals, selected: Signal, allocation: DeskModelAl
   const until = Date.parse(signals.current?.until ?? entry?.validUntil ?? '')
   const sourceAt = Date.parse(observedAt ?? '') || Date.parse(signals.plan?.published ?? '') || now
   return {verdict, reason: selected.reason, size, nextSession: signals.nextSession === true && verdict !== 'nothing',
-    lastPlan: signals.lastPlan === true, observedAt, validUntil: Number.isFinite(until) ? until : 0, sourceAt}
+    lastPlan: signals.lastPlan === true, observedAt, validUntil: Number.isFinite(until) ? until : 0, sourceAt,
+    state: selected.word === 'Unavailable' ? 'unavailable' : selected.word.endsWith(' pending') && verdict !== 'nothing' ? 'pending' : undefined}
 }
 
 // Carry the expired plan's own rows without presenting them as fresh advice.
@@ -588,6 +591,7 @@ export const boardAction = (row: Signals): {word: string; action: 'Buy' | 'Sell'
 export const SignalDetail = ({signals}: {signals: Signals}) => <section aria-label={`${signals.ticker} signal details`} className="space-y-1 text-xs">
   {signals.buy.word!=='—' && <p><b>{actionLabel(signals.buy.word)}</b>{signals.buy.reason && ` · ${signals.buy.reason}`}</p>}
   {signals.sell.word !== '—' && <p><b>{actionLabel(signals.sell.word)}</b>{signals.sell.reason && ` · ${signals.sell.reason}`}</p>}
+  {signals.verdict_reason && <p>{signals.verdict_reason}</p>}
   {signals.setup && <>
     <p>{confirmationText(signals.setup)} {invalidationText(signals.setup)}</p>
     <p>Completed candle {evidenceTime(signals.setup.bar)} · assessed {evidenceTime(signals.setup.generated_at)} · Valid until {evidenceTime(signals.setup.valid_until)}.</p>
@@ -713,16 +717,16 @@ export const SignalBoard = ({latest, live, allocation, now, onOpen, closes, refr
       <thead className="border-y bg-[#f5f5f7]"><tr><th className="p-2">Stock / price</th><th className="p-2">Grade</th><th className="p-2">Verdict</th>{independent && <th className="p-2" title="Buy or sell amount as a percentage of model capital">Size %</th>}<th className="p-2" title="Model position size as a percentage of portfolio capital">{independent ? 'Position %' : 'Position size %'}</th>{showPriority && <th className="p-2">Strength</th>}<th className="p-2">Details</th></tr></thead>
       <tbody>{ranked.slice(0, visible).map(row => {
         const {view, refreshing} = views.get(row.ticker)!
-        const label = view.verdict === 'buy' ? 'Buy' : view.verdict === 'sell' ? 'Sell' : 'Do nothing'
+        // Only an action is a word; a name with nothing to do shows an empty cell.
+        const label = view.verdict === 'buy' ? 'Buy' : view.verdict === 'sell' ? 'Sell' : ''
         const tone = row.lastPlan ? 'text-[#6e6e73]' : view.verdict === 'sell' ? 'text-[#b42318]' : view.verdict === 'buy' ? 'text-[#248a3d]' : 'text-[#6e6e73]'
         return <tr key={row.ticker} data-ticker={row.ticker} className={`border-t align-top${row.lastPlan ? ' text-[#6e6e73] opacity-70' : ''}`}>
         <td className="p-2"><button type="button" className="font-semibold text-[#0071e3]" onClick={() => onOpen(row.ticker)}>{row.ticker}</button>{row.lastPlan && <span className="ml-1 rounded bg-[#eef1f6] px-1 text-[10px] font-medium">last plan</span>}<SessionPrice live={live} ticker={row.ticker} now={now} compact close={closes?.[row.ticker]} closeSession={latest.session} /></td>
         <td aria-label={`${row.ticker} displayed grade`} className="p-2">{row.grade}</td>
         <td aria-label={`${row.ticker} verdict cell`} className="max-w-sm p-2">
           <p aria-label={`${row.ticker} verdict`} className={`font-semibold ${tone}`}>{label}</p>
-          {view.reason && <p className="mt-0.5 text-[11px] text-[#6e6e73]">{view.reason}</p>}
-          {view.nextSession && <span className="mt-1 inline-block rounded bg-[#eef1f6] px-1.5 py-0.5 text-[10px] font-medium text-[#3a3a3c]">next session</span>}
-          {refreshing && <p className="mt-0.5 text-[10px] text-[#9a6700]">{view.observedAt ? `as of ${clockTime(view.observedAt)} ET, refreshing` : 'refreshing'}</p>}
+          {(view.nextSession || view.state) && <span className="mt-1 inline-block rounded bg-[#eef1f6] px-1.5 py-0.5 text-[10px] font-medium text-[#3a3a3c]">{view.nextSession ? 'next session' : view.state}</span>}
+          {refreshing && <span className="mt-1 ml-1 inline-block rounded bg-[#fff4d6] px-1.5 py-0.5 text-[10px] font-medium text-[#9a6700]">refreshing</span>}
         </td>
         {independent && <td className="p-2"><span aria-label={`${row.ticker} trade size`}>{sizeText(view.size)}</span>{sizedAmount(row.ticker, view.size, planningEquity, displayedBoardPrice(live, row.ticker, now, closes?.[row.ticker], latest.session)?.price)}</td>}
         <td className="p-2"><ModelSize latest={latest} allocation={allocation} ticker={row.ticker} now={now} /></td>

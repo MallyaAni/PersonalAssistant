@@ -130,6 +130,10 @@ class StrategyVerdictTests(unittest.TestCase):
                 ),
                 ("sell", "entry_pending"),
             ),
+            (
+                dict(state="execute", action="Sell", target_weight=0.0, held_weight=0.0),
+                ("nothing", "no_allocation"),
+            ),
         )
         for arguments, expected in cases:
             with self.subTest(expected=expected):

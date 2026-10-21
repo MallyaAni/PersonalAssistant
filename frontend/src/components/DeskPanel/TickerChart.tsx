@@ -352,7 +352,7 @@ type ChartMarker = {
 }
 
 // Label the model's actual action size separately from a profit or remaining-position target.
-const targetLabel = (target: Pick<StrategyChartTarget, 'action' | 'weight'>): string => `${target.action} · Size ${sizePercent(target.weight)}%`
+const targetLabel = (target: Pick<StrategyChartTarget, 'action' | 'weight'>): string => `${target.action} ${sizePercent(target.weight)}%`
 
 // Retain a positive model adjustment without rounding its displayed action to zero.
 const sizePercent = (weight: number): string => weight > 0 && weight < .001 ? '<0.1' : (weight * 100).toFixed(1)
@@ -436,10 +436,11 @@ const currentTargetMarker = (signal: Signals | null | undefined, current: Strate
   const rawSize = verdict === 'nothing' ? null
     : signal?.size_weight ?? (verdict === 'buy' ? tradeWeight : current?.weight)
   const size = typeof rawSize === 'number' && Number.isFinite(rawSize) ? rawSize : null
-  const action = verdict === 'buy' ? 'Buy' : verdict === 'sell' ? 'Sell' : 'Do nothing'
+  if (verdict === 'nothing') return null
+  const action = verdict === 'buy' ? 'Buy' : 'Sell'
   return {id: 'current', time, position: verdict === 'sell' ? 'aboveBar' : verdict === 'buy' ? 'belowBar' : 'aboveBar',
     color: verdict === 'buy' ? '#248a3d' : verdict === 'sell' ? '#b42318' : '#6e6e73', shape: 'square',
-    text: `${action} · Size ${size === null ? '—' : `${sizePercent(size)}%`}`, size: 1, kind: 'current', sample: 'live', policy}
+    text: size === null ? action : `${action} ${sizePercent(size)}%`, size: 1, kind: 'current', sample: 'live', policy}
 }
 
 // A recorded marker drawn over the canvas so it can be hollow; the kind and shape fields stay general for the rare current fallback.
@@ -803,6 +804,9 @@ export const TickerChart = ({
   const chartAction = modelTarget?.displayAction ?? (!modelTarget?.entry && !modelTarget?.nextSessionPlan ? 'Wait' : modelTarget?.action ?? 'Avoid')
   const displayedTradeWeight = modelTarget && 'tradeWeight' in modelTarget ? modelTarget.tradeWeight : modelTarget?.weight
   const chartSize = displayedTradeWeight == null || displayedTradeWeight <= 0 ? '—' : `${sizePercent(displayedTradeWeight)}%`
+  // A plan still waiting for its entry is named by the direction the board shows for it, so the
+  // chart header and the row never disagree; "pending" is the badge, not a word.
+  const headerWord = chartAction === 'Wait' ? (boardSignal ? boardAction(boardSignal).action ?? '' : '') : chartAction
   const phaseLine = marketPhaseLine(allocation)
   const recordedIdentity = modelTarget?.strategyIdentity ?? (strategyHistoryMatches(simulation, null) ? simulation?.provenance.strategy_identity : undefined)
   const recordedAvailable = strategy && (modelTarget?.recordedHistoryAvailable === true || simulation?.recorded_history_version === 'strategy-recorded-entries/1')
@@ -1358,9 +1362,10 @@ export const TickerChart = ({
     {live && <div className="mb-2 text-xs"><SessionPrice live={live} ticker={ticker} now={now} close={close} closeSession={closeSession} compact /></div>}
     <div className="mb-2 flex flex-wrap items-center justify-between gap-2 text-xs">
       {modelTarget ? (modelTarget.action === 'Buy' || modelTarget.displayAction ? <div className="flex items-center gap-2">
-        <span title={modelTarget.entry ? `${recordedTime(modelTarget.entry.at)} · Confirmed entry; ${recordedTime(modelTarget.entry.validUntil)} expiry` : modelTarget.entryReason} className={`font-semibold ${chartAction === 'Sell' ? 'text-[#b42318]' : chartAction === 'Buy' ? 'text-[#248a3d]' : 'text-[#6e6e73]'}`} aria-label={`${ticker} current chart target`}>
-          {chartAction} · Size {chartSize}
+        <span title={modelTarget.entry ? `${recordedTime(modelTarget.entry.at)} · Confirmed entry; ${recordedTime(modelTarget.entry.validUntil)} expiry` : modelTarget.entryReason} className={`font-semibold ${headerWord === 'Sell' ? 'text-[#b42318]' : headerWord === 'Buy' ? 'text-[#248a3d]' : 'text-[#6e6e73]'}`} aria-label={`${ticker} current chart target`}>
+          {headerWord === 'Buy' || headerWord === 'Sell' ? chartSize === '—' ? headerWord : `${headerWord} ${chartSize}` : ''}
         </span>
+        {chartAction === 'Wait' && headerWord && <span className="rounded bg-[#eef1f6] px-1.5 py-0.5 text-[10px] font-medium text-[#3a3a3c]" aria-label={`${ticker} chart entry state`}>pending</span>}
         {modelTarget.positionWeight != null && <span className="text-[#6e6e73]" aria-label={`${ticker} current chart position`}>Position {sizePercent(modelTarget.positionWeight)}%</span>}
         {modelTarget.nextSessionPlan && <span className="text-[#6e6e73]" aria-label={`${ticker} chart plan timing`}>Next session</span>}
       </div> : null) : <span className="text-[#6e6e73]" aria-label={`${ticker} current chart target`}>Current recommendation unavailable</span>}
@@ -1441,7 +1446,7 @@ export const TickerChart = ({
           const original=selected.originalRef && read?.status==='ready' ? read.value?.original : undefined
           const item=original ? {...selected,at:original.at,weight:original.size_weight,evidence:original.evidence} : selected
           return <article key={item.id} className="mb-3 last:mb-0">
-          <h4 title={`Exact action size ${(item.weight * 100).toPrecision(6)}%`} className={`font-semibold ${item.action === 'Buy' ? 'text-[#248a3d]' : 'text-[#b42318]'}`}>{item.action} · Size {sizePercent(item.weight)}%</h4>
+          <h4 title={`Exact action size ${(item.weight * 100).toPrecision(6)}%`} className={`font-semibold ${item.action === 'Buy' ? 'text-[#248a3d]' : 'text-[#b42318]'}`}>{item.action} {sizePercent(item.weight)}%</h4>
           <p className="text-xs text-[#6e6e73]">{item.simulated ? 'Simulation' : original ? 'Recorded recommendation' : 'Model position'} · {recordedTime(item.at)}</p>
           {item.simulated && <p className="text-xs text-[#6e6e73]">Current-model replay; not out-of-sample evidence.</p>}
           {item.simulated && <p className="mt-2 text-xs text-[#6e6e73]">Trade amount as a percentage of the portfolio at that time, not the total position. Buy and sell percentages from different dates cannot be added as share quantities.</p>}
@@ -1458,7 +1463,7 @@ export const TickerChart = ({
       {showFills && (targetMarkers.length > 0 || recordedAvailable) && <details className="mt-2 text-xs">
         <summary className="cursor-pointer text-[#0071e3]">Recommendations</summary>
         {simulation && <p className="pt-2 text-[#6e6e73]">Simulation · {simulation.start}–{simulation.through}</p>}
-        <div className="flex flex-wrap gap-2 pt-2">{targetMarkers.flatMap(marker => marker.recommendations ?? []).map(item => <button type="button" key={item.id} data-recommendation-id={item.id} title={`Exact action size ${(item.weight * 100).toPrecision(6)}%`} className="rounded border border-black/10 px-2 py-1" onClick={() => inspectRecommendation(item)}>{item.action} · Size {sizePercent(item.weight)}% · {recordedTime(item.at)}</button>)}</div>
+        <div className="flex flex-wrap gap-2 pt-2">{targetMarkers.flatMap(marker => marker.recommendations ?? []).map(item => <button type="button" key={item.id} data-recommendation-id={item.id} title={`Exact action size ${(item.weight * 100).toPrecision(6)}%`} className="rounded border border-black/10 px-2 py-1" onClick={() => inspectRecommendation(item)}>{item.action} {sizePercent(item.weight)}% · {recordedTime(item.at)}</button>)}</div>
         {recordedHistory.scope===recordedScope && recordedHistory.error && <p role="status" className="pt-2">{recordedHistory.error} <button type="button" className="text-[#0071e3]" disabled={recordedHistory.busy} onClick={()=>void loadRecorded()}>Retry</button></p>}
         {recordedHistory.scope===recordedScope && recordedHistory.cursor && <button type="button" className="pt-2 text-[#0071e3]" disabled={recordedHistory.busy} onClick={()=>void loadRecorded(recordedHistory.cursor!)}>Earlier recorded recommendations</button>}
       </details>}

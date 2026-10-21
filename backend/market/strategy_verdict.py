@@ -93,6 +93,10 @@ def classify(
     resolved=False,
 ):
     reason = timing_reason or ""
+    # A sale needs something held: a Sell row against a known empty reference
+    # position is nothing to do, whatever the engine's state says.
+    if action == "Sell" and held_weight is not None and not held_weight > 0:
+        return "nothing", "no_allocation"
     if state == "execute":
         if mandatory or reason == "mandatory_grade_exit":
             return "sell", "grade_below_a"
