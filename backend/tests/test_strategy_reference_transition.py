@@ -153,16 +153,15 @@ class ReferenceTransitionTests(unittest.TestCase):
     def test_original_replay_still_a_trim_matches(self):
         dates = np.array(['2026-01-05', '2026-01-06', '2026-01-07'], dtype='datetime64[D]')
         panel = SimpleNamespace(dates=dates, tickers=('AAA', 'SPY'),
-            adj_close=np.full((3, 2), 100.0), open=np.full((3, 2), 100.0), close=np.full((3, 2), 100.0))
+            adj_close=np.full((3, 2), 100.0), open=np.full((3, 2), 100.0))
         grades = np.array([[2, -1], [2, -1], [2, -1]])
         allocations = np.array([[.2, 0], [.1, 0], [.1, 0]])
         observations = np.full((3, 25, 2), 100.0)
         # The first session buys immediately; the next session sells immediately using native utility.
         def provider(day, clock, stock):
             return distribution(-.02 if day == 1 else .02)
-        # The synthetic panel has no membership history; every name is eligible.
         result = history.replay(SimpleNamespace(cost_bps=10.0, timing_policy=timing.POLICY), panel,
-            grades, np.zeros((3, 2), dtype=bool), np.ones((3, 2), dtype=bool), observations, observations.copy(), provider,
+            grades, np.zeros((3, 2), dtype=bool), observations, observations.copy(), provider,
             first=1, allocations=allocations, provenance={'explicit_synthetic_test': True}, generated_at=NOW)
         buy, sell = result['stocks']['AAA']['decisions']
         self.assertEqual((buy['action'], sell['action']), ('BUY', 'SELL'))

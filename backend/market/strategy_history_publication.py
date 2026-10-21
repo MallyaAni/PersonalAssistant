@@ -12,9 +12,7 @@ import os
 from pathlib import Path
 from uuid import uuid4
 
-from backend.market import calendar, learned_live_holding
-from backend.market import strategy_publication as publication
-from backend.market.strategy_model_history import MODEL_FIT_THROUGH
+from backend.market import calendar, learned_live_holding, strategy_publication as publication
 
 DIRECTORY = 'desk/strategy-model-history'
 MAX_FILE = 1048576
@@ -108,20 +106,6 @@ def import_original(root, source, binding, *, manifest_sha256, audit_path, audit
     return pointer
 
 
-# Mark each dated row against the frozen model boundary after its bytes were verified.
-def _sample(row, fit_through):
-    day=row.get('at') or row.get('date')
-    if not isinstance(day,str) or len(day)<10:
-        raise ValueError('Dated original history row required')
-    return 'in_sample' if date.fromisoformat(day[:10])<=fit_through else 'out_of_sample'
-
-
-# Stamp every decision, trade and target without changing the sealed artifact bytes.
-def _stamp(rows, fit_through):
-    for row in rows:
-        row['sample']=_sample(row,fit_through)
-
-
 # Project only original stock data after source/configuration admission, even if today's position quote has expired.
 def read(root,ticker,now):
     config_raw,config=learned_live_holding.read_configuration(root,now)
@@ -136,29 +120,21 @@ def read(root,ticker,now):
         raise ValueError('Original selected history publication differs')
     manifest,audit,binding=json.loads(manifest_raw),json.loads(audit_raw),json.loads(binding_raw)
     validate_binding(binding,manifest,audit,current_sources=publication._sources(),cost_bps=config['cost_bps'])
-    fit_through=date.fromisoformat(MODEL_FIT_THROUGH)
     if ticker is None:
         overview,held,targets,latest={},{},{},[]
-        samples={'in_sample':0,'out_of_sample':0}
         for name,expected in manifest['files'].items():
             stock_raw=_read(folder/(name+'.json'))
             if sha256(stock_raw).hexdigest()!=expected['sha256']:
                 raise ValueError('Original summary stock bytes differ')
             stock=json.loads(stock_raw)
-            for key in ('decisions','trades','targets'):
-                _stamp(stock.get(key,[]),fit_through)
             held[name]=stock['latest_holding'];targets[name]=stock['latest_target']
             overview[name]={'holding':held[name],'target':targets[name],
                 'last_trade':stock['trades'][-1] if stock['trades'] else None,'trades':len(stock['trades'])}
             latest.extend(stock['decisions'][-20:])
-            for row in stock['decisions']:
-                samples[row['sample']]+=1
         final=manifest['curve'][-1]
         return {'schema':manifest['schema'],'policy':manifest['policy'],'start':manifest['start'],'through':manifest['through'],
-            'counterfactual':True,'real_orders':False,
-            'provenance':{**manifest['provenance'],'model_fit_through':MODEL_FIT_THROUGH},'tickers':sorted(manifest['files']),
+            'counterfactual':True,'real_orders':False,'provenance':manifest['provenance'],'tickers':sorted(manifest['files']),
             'curve':manifest['curve'],'decisions':manifest['counters']['decisions'],
-            'in_sample_decisions':samples['in_sample'],'out_of_sample_decisions':samples['out_of_sample'],
             'initial_cash':1.0,'starting_equity':1.0,'starting_holdings':{},'starting_basis':'original_fresh_fractional_unit_capital_simulation',
             'ending_equity':final['equity'],'ending_cash':final['cash'],'ending_holdings':held,'latest_targets':targets,
             'latest_decisions':sorted(latest,key=lambda row:row['at'])[-20:],'stock_overview':overview,
@@ -173,11 +149,8 @@ def read(root,ticker,now):
             or value['provenance']['config_sha256']!=binding['config_sha256']
             or value['provenance']['source_record_sha256']!=binding['source_record_sha256']):
         raise ValueError('Original stock provenance differs')
-    for key in ('decisions','trades','targets'):
-        _stamp(value.get(key,[]),fit_through)
     value['provenance']={**value['provenance'],'strategy_identity':binding['strategy_identity'],
         'strategy_contract':binding,'verified_against_installed_strategy':True,
-        'grade_clock_basis':'original_simulated_close_grade_available_at_next_reviewed_open',
-        'model_fit_through':MODEL_FIT_THROUGH}
+        'grade_clock_basis':'original_simulated_close_grade_available_at_next_reviewed_open'}
     value['grade_rows']=[{**row,'at':next_open(row['date'])} for row in value.get('grade_rows',[])]
     return value

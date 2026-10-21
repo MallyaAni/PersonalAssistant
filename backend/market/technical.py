@@ -39,7 +39,7 @@ its own; each is a claim a trader makes, made measurable.
 
 import numpy as np
 
-from backend.market import calendar
+from backend.market import session_weeks
 from backend.market.alpha import _rolling_extreme
 from backend.market.panel import Panel
 
@@ -181,7 +181,7 @@ def _weekly_ema(panel: Panel, close: np.ndarray, span: int) -> np.ndarray:
     friday = (dates.astype(int) + 3) % 7 == 4
     ends = np.zeros(rows, dtype=bool)
     for t in range(rows):
-        known = calendar.ends_week(dates[t])
+        known = session_weeks.ends_week(dates[t])
         if known is None:
             ends[t] = bool(friday[t]) or (
                 t + 1 < rows and weeks[t + 1] != weeks[t]

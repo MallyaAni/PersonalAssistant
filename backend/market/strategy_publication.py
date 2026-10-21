@@ -10,7 +10,7 @@ an immediate trade amount or an intraday reoptimization.
 import json
 import math
 import os
-from datetime import datetime, time, timedelta
+from datetime import datetime
 from hashlib import sha256
 from pathlib import Path
 from uuid import uuid4
@@ -18,7 +18,6 @@ from uuid import uuid4
 import numpy as np
 
 from backend.market import adaptive_growth_policy as growth
-from backend.market import calendar
 from backend.market import grade_led_policy, learned_live_holding, live_model_decision
 from backend.market import direct_daily_arithmetic, learned_entry_data, market_conditioned_calibration, probabilistic_execution
 from backend.market import strategy_model_allocation
@@ -28,25 +27,6 @@ VERSION = "strategy-model-allocation/2"
 SCHEMA = "strategy-recommendation-publication/1"
 DIRECTORY = "desk/strategy-recommendations"
 MAX_BYTES = 262144
-# The nightly cron publishes on weekdays at 19:30 New York (AGENTS.md, `30 19 * * 1-5`).
-NIGHTLY_PUBLICATION = time(19, 30)
-
-
-# A verified snapshot whose original validity window has closed, carried for display.
-class ExpiredError(ValueError):
-    # Carry the verified snapshot so the caller can show its last plan.
-    def __init__(self, value):
-        super().__init__("Original independent publication clock expired or differs")
-        self.value = value
-
-
-# Return the next scheduled nightly publish strictly after `now`, in New York time.
-def next_publication_at(now):
-    local = now.astimezone(calendar.NEW_YORK)
-    candidate = datetime.combine(local.date(), NIGHTLY_PUBLICATION, calendar.NEW_YORK)
-    while candidate < local or candidate.weekday() >= 5:
-        candidate += timedelta(days=1)
-    return candidate
 
 
 # Hash exact finite public evidence independently of its later consumer or account.
@@ -181,7 +161,7 @@ def validate(value, now, *, expected_sources=None, config_sha256=None):
         raise ValueError("Original independent source or receipt identity differs")
     observed, calculated, published, until = (datetime.fromisoformat(value[key]) for key in ("observed_at", "as_of", "published_at", "valid_until"))
     if (any(clock.utcoffset() is None for clock in (observed, calculated, published, until))
-            or not observed <= calculated == published <= now
+            or not observed <= calculated == published <= now < until
             or until != live_model_decision._valid_until(value["session"])):
         raise ValueError("Original independent publication clock expired or differs")
     if set(value["rows"]) != set(value["grade_signals"]) or not value["rows"]:
@@ -203,9 +183,6 @@ def validate(value, now, *, expected_sources=None, config_sha256=None):
         weights.append(weight)
     if sum(weights) > 1 + 1e-10:
         raise ValueError("Independent percentages exceed unit capital")
-    # The receipt and every row have verified; only the display window has closed.
-    if now >= until:
-        raise ExpiredError(value)
     return value
 
 
@@ -275,16 +252,9 @@ def read(root, now):
         raise ValueError("Original independent publication bytes differ")
     value = json.loads(raw)
     config, installed = learned_live_holding.read_configuration(root, now)
-    expired = None
-    try:
-        validate(value, now, expected_sources=_sources(), config_sha256=sha256(config).hexdigest())
-    except ExpiredError as exception:
-        expired = exception
-    # Costs and selection stay authoritative before an expired snapshot may wait.
+    validate(value, now, expected_sources=_sources(), config_sha256=sha256(config).hexdigest())
     if value['identity']['economic_parameters']['cost_bps'] != installed['cost_bps']:
         raise ValueError('Original independent publication costs differ from installed configuration')
     if any(pointer[key] != value[key] for key in ("snapshot_id", "receipt_sha256", "session")):
         raise ValueError("Selected independent publication differs")
-    if expired is not None:
-        raise expired
     return value

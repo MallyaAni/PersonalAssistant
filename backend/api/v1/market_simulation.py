@@ -9,7 +9,7 @@ from fastapi import Path as PathParam
 from backend.api.v1.market import _operator_only
 from backend.config.settings import settings
 from backend.core.auth import authorize_path_user
-from backend.market import strategy_research, strategy_history_publication, strategy_entry_history
+from backend.market import strategy_research, strategy_history_publication, strategy_entry_history, strategy_replay_sample
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -34,7 +34,9 @@ async def view(user_id, response, ticker=None):
         raise HTTPException(
             status_code=503, detail="Latest-strategy simulation unavailable."
         ) from exc
-    return {"user_id": user_id, **value, 'recorded_history_version':strategy_entry_history.PAGE_SCHEMA}
+    # The frozen-model boundary is stamped on the served rows, not in the sealed
+    # artefact, so the chart can mute what the models had already seen.
+    return {"user_id": user_id, **strategy_replay_sample.stamp(value), 'recorded_history_version':strategy_entry_history.PAGE_SCHEMA}
 
 
 # Return the simulated portfolio and dated coverage independently of the paper account.

@@ -25,7 +25,6 @@ from backend.market import forward_probability_timing as inference
 from backend.market import learned_live_timing, probabilistic_execution as probability
 from backend.market import strategy_entry_context, strategy_publication as publication
 from backend.market import strategy_reference_entries as reference_entries
-from backend.market import strategy_verdict as verdicts
 
 VERSION = 'strategy-numerical-entries/1'
 DIRECTORY = 'desk/strategy-entries'
@@ -37,9 +36,7 @@ FORECAST_PART_BYTES = 262144
 # Bind the adapter and unchanged numerical/market input mechanisms in each observation.
 def sources():
     result = inference._inference_sources()
-    for module in (market, learned_live_timing, strategy_entry_context, verdicts,
-                   reference_entries, reference_entries.transition,
-                   reference_entries.reference_book):
+    for module in (market, learned_live_timing, strategy_entry_context, reference_entries, reference_entries.transition,reference_entries.reference_book):
         result['backend/market/' + Path(module.__file__).name] = sha256(Path(module.__file__).read_bytes()).hexdigest()
     result['backend/market/strategy_entries.py'] = sha256(Path(__file__).read_bytes()).hexdigest()
     return result
@@ -191,15 +188,7 @@ def project(snapshot, cache, quotes, now):
         if shifted is not None:
             evidence['waiting_advantage_mean'] = shifted.mean
             evidence['waiting_advantage_quantiles'] = probability.weighted_quantiles(shifted.mean+shifted.scale*shifted.residuals, shifted.weights).tolist()
-        action = 'Buy' if weight > 0 else None
-        verdict, reason_code = verdicts.classify(state=choice.state, action=action,
-            timing_reason=choice.reason, target_weight=weight, held_weight=0,
-            quote_available=pair is not None,
-            distribution_available=distribution is not None)
-        size = weight if verdict == 'buy' else 0
-        rows[name] = {'state':choice.state, 'action':action, 'size_weight':size,
-            'model_position_weight':size, 'verdict':verdict,
-            'reason_code':reason_code, 'reason':verdicts.REASONS[reason_code],
+        rows[name] = {'state':choice.state, 'action':'Buy' if weight > 0 else None, 'size_weight':weight,
             'quote_at':quote.get('as_of') if pair else None,
             'valid_until':min(completed+timedelta(minutes=15), datetime.fromisoformat(quote['as_of'])+timedelta(seconds=execution_quotes.MAX_AGE_SECONDS)).isoformat() if pair else now.isoformat(),
             'evidence':evidence}
@@ -299,28 +288,8 @@ def read(root, snapshot, now):
             reference_entries.validate(value, snapshot, json.loads(forecast_raw))
             return value
         for name, row in value['rows'].items():
-            target = snapshot['rows'][name]['target_weight']
-            if row['state'] not in ('execute','wait','unavailable','no_trade'):
-                raise ValueError('Numerical entry state differs from original model')
-            if 'verdict' in row:
-                expected = target if row['verdict'] == 'buy' else 0
-                if (row['verdict'] not in verdicts.VERDICTS
-                        or row['reason_code'] not in verdicts.REASON_CODES
-                        or not isinstance(row['reason'],str)
-                        or row['size_weight'] != expected
-                        or row.get('model_position_weight') != expected
-                        or row['verdict'] == 'buy' and row['action'] != 'Buy'
-                        or (row['verdict'] == 'nothing'
-                            and row['state'] == 'execute'
-                            and row['action'] is not None)
-                        or (row['verdict'] in ('buy','sell')
-                            and row['state'] != 'execute')
-                        or (row['verdict'] in ('buy','sell')
-                            and not row['size_weight'] > 0)
-                        or row['verdict'] == 'sell'):
-                    raise ValueError(
-                        'Numerical entry verdict differs from original model')
-            elif (row['size_weight'] != target
+            if (row['size_weight'] != snapshot['rows'][name]['target_weight']
+                    or row['state'] not in ('execute','wait','unavailable','no_trade')
                     or row['state'] == 'execute' and not row['size_weight'] > 0):
                 raise ValueError('Numerical entry size differs from original model')
         return value

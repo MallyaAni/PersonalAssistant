@@ -18,12 +18,11 @@ from backend.market.strategy_model_extension import InitialBook, rebase_units
 def run_case(last, first=1, initial_book=None):
     dates = np.array(['2026-09-29','2026-09-30','2026-10-01'],dtype='datetime64[D]')[:last]
     prices = np.full((last,2),100.0)
-    panel = SimpleNamespace(dates=dates,tickers=('AAA','SPY'),adj_close=prices,open=prices.copy(),close=prices.copy())
+    panel = SimpleNamespace(dates=dates,tickers=('AAA','SPY'),adj_close=prices,open=prices.copy())
     grades = np.array([[2,-1],[1,-1],[1,-1]])[:last]
     weights = np.array([[.2,0],[0,0],[0,0]])[:last]
     quote = np.full((last,25,2),100.0,dtype=np.float32)
-    # These synthetic panels have no membership history; every name is eligible.
-    return replay(SimpleNamespace(cost_bps=10.0,timing_policy=probability.POLICY),panel,grades,np.zeros_like(grades,dtype=bool),np.ones_like(grades,dtype=bool),quote,quote.copy(),lambda *args:None,first=first,provenance={},generated_at=datetime.now(UTC),allocations=weights,initial_book=initial_book)
+    return replay(SimpleNamespace(cost_bps=10.0,timing_policy=probability.POLICY),panel,grades,np.zeros_like(grades,dtype=bool),quote,quote.copy(),lambda *args:None,first=first,provenance={},generated_at=datetime.now(UTC),allocations=weights,initial_book=initial_book)
 
 
 # Bind the prior numerical output without accepting paper account state or a new unit budget.

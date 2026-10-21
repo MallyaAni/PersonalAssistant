@@ -1,17 +1,18 @@
 """Release assets preserve original audited history without simulation or account access."""
-from copy import deepcopy
-from datetime import UTC,datetime
 import gzip
-from hashlib import sha256
 import json
-from pathlib import Path
 import subprocess
-from tempfile import TemporaryDirectory
 import unittest
+from copy import deepcopy
+from datetime import UTC, datetime
+from hashlib import sha256
+from pathlib import Path
+from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
 from backend.market import strategy_history_installation as installation
 from backend.market import strategy_history_publication as history
+from backend.market import strategy_replay_sample
 from backend.tests.test_strategy_history_publication import original
 
 
@@ -22,7 +23,7 @@ def assets(root):
     (source/'AAA.json.gz').write_bytes(compressed)
     audit=(root/'audit.json').read_bytes();(source/'audit.json').write_bytes(audit)
     binding_raw=json.dumps(binding,sort_keys=True).encode();(source/'binding.json').write_bytes(binding_raw)
-    review={'schema':'strategy-history-install-review/1','counterfactual':True,'real_orders':False,'stocks':1,'recommendations':manifest['counters']['decisions'],
+    review={'schema':'strategy-history-install-review/1','counterfactual':True,'real_orders':False,'stocks':1,'recommendations':1,
         'history_sha256':binding['history_sha256'],'audit_sha256':binding['audit_sha256'],'binding_sha256':sha256(binding_raw).hexdigest(),
         'raw_stock_bytes':manifest['files']['AAA']['bytes'],'compressed_files':{'AAA':{'bytes':len(compressed),'sha256':sha256(compressed).hexdigest()}}}
     return source,review,stock
@@ -38,13 +39,7 @@ class HistoryInstallationTests(unittest.TestCase):
             with patch.object(history.learned_live_holding,'read_configuration',return_value=(b'approved',{'cost_bps':10})):
                 receipt=installation.install(root,prepared,root/'archives')
                 value=history.read(root,'AAA',datetime.now(UTC))
-                self.assertEqual(
-                    [{k:v for k,v in row.items() if k!='sample'}
-                     for row in value['decisions']],
-                    stock['decisions'])
-                self.assertEqual(
-                    [row['sample'] for row in value['decisions']],
-                    ['in_sample','out_of_sample'])
+                self.assertEqual(value['decisions'],stock['decisions'])
                 self.assertEqual(value['grade_rows'][-1]['at'],'2026-10-20T09:30:00-04:00')
                 folder=root/history.DIRECTORY/review['history_sha256']
                 bodies={path.name:path.read_bytes() for path in folder.iterdir()}
@@ -110,7 +105,7 @@ class HistoryInstallationTests(unittest.TestCase):
             config=root/history.learned_live_holding.CONFIG;config.parent.mkdir(parents=True,exist_ok=True);config.write_text('{"cost_bps":10}')
             with patch.object(cli,'__file__',str(code/'backend/cli/strategy_history_install.py')):
                 self.assertEqual(len(cli.reviewed(root,relative,sha256(raw).hexdigest(),revision)['files']),1)
-                changed={**review,'recommendations':review['recommendations']+1};altered=json.dumps(changed).encode();path.write_bytes(altered)
+                changed={**review,'recommendations':2};altered=json.dumps(changed).encode();path.write_bytes(altered)
                 with self.assertRaisesRegex(ValueError,'committed original'):cli.reviewed(root,relative,sha256(altered).hexdigest(),revision)
 
 
@@ -119,7 +114,8 @@ class HistoryInstallationHTTPTests(unittest.IsolatedAsyncioTestCase):
     # Only the owner sees original actions and evidence; no funded record, simulator or model is consulted.
     async def test_installed_original_history_over_owner_http(self):
         from fastapi import FastAPI
-        from httpx import ASGITransport,AsyncClient
+        from httpx import ASGITransport, AsyncClient
+
         from backend.api.v1 import market_simulation as route
         from backend.config.settings import settings
         from backend.core.auth import issue_user_token
@@ -134,10 +130,11 @@ class HistoryInstallationHTTPTests(unittest.IsolatedAsyncioTestCase):
                     response=await client.get(url,headers=owner)
                     self.assertEqual(response.status_code,200,response.text)
                     self.assertEqual(response.headers['cache-control'],'private, no-store')
-                    self.assertEqual(
-                        [{k:v for k,v in row.items() if k!='sample'}
-                         for row in response.json()['decisions']],
-                        stock['decisions'])
+                    # The route stamps each row's sample against the frozen fit date; the sealed bytes carry no stamp.
+                    served=response.json()
+                    self.assertEqual([{k:v for k,v in row.items() if k!='sample'} for row in served['decisions']],stock['decisions'])
+                    self.assertTrue(all(row['sample'] in ('in_sample','out_of_sample') for row in served['decisions']))
+                    self.assertEqual(served['provenance']['model_fit_through'],strategy_replay_sample.MODEL_FIT_THROUGH)
                     self.assertTrue(response.json()['provenance']['verified_against_installed_strategy'])
                     self.assertEqual((await client.get(url)).status_code,401)
                     foreign={'Authorization':'Bearer '+issue_user_token('other_user',scopes=['memory:read'])}

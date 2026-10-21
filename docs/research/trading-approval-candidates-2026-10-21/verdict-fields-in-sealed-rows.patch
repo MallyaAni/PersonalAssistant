@@ -1,0 +1,213 @@
+diff --git a/backend/market/strategy_entries.py b/backend/market/strategy_entries.py
+index 0d44826a..b0b2a19b 100644
+--- a/backend/market/strategy_entries.py
++++ b/backend/market/strategy_entries.py
+@@ -25,6 +25,7 @@ from backend.market import forward_probability_timing as inference
+ from backend.market import learned_live_timing, probabilistic_execution as probability
+ from backend.market import strategy_entry_context, strategy_publication as publication
+ from backend.market import strategy_reference_entries as reference_entries
++from backend.market import strategy_verdict as verdicts
+ 
+ VERSION = 'strategy-numerical-entries/1'
+ DIRECTORY = 'desk/strategy-entries'
+@@ -36,7 +37,9 @@ FORECAST_PART_BYTES = 262144
+ # Bind the adapter and unchanged numerical/market input mechanisms in each observation.
+ def sources():
+     result = inference._inference_sources()
+-    for module in (market, learned_live_timing, strategy_entry_context, reference_entries, reference_entries.transition,reference_entries.reference_book):
++    for module in (market, learned_live_timing, strategy_entry_context, verdicts,
++                   reference_entries, reference_entries.transition,
++                   reference_entries.reference_book):
+         result['backend/market/' + Path(module.__file__).name] = sha256(Path(module.__file__).read_bytes()).hexdigest()
+     result['backend/market/strategy_entries.py'] = sha256(Path(__file__).read_bytes()).hexdigest()
+     return result
+@@ -188,7 +191,15 @@ def project(snapshot, cache, quotes, now):
+         if shifted is not None:
+             evidence['waiting_advantage_mean'] = shifted.mean
+             evidence['waiting_advantage_quantiles'] = probability.weighted_quantiles(shifted.mean+shifted.scale*shifted.residuals, shifted.weights).tolist()
+-        rows[name] = {'state':choice.state, 'action':'Buy' if weight > 0 else None, 'size_weight':weight,
++        action = 'Buy' if weight > 0 else None
++        verdict, reason_code = verdicts.classify(state=choice.state, action=action,
++            timing_reason=choice.reason, target_weight=weight, held_weight=0,
++            quote_available=pair is not None,
++            distribution_available=distribution is not None)
++        size = weight if verdict == 'buy' else 0
++        rows[name] = {'state':choice.state, 'action':action, 'size_weight':size,
++            'model_position_weight':size, 'verdict':verdict,
++            'reason_code':reason_code, 'reason':verdicts.REASONS[reason_code],
+             'quote_at':quote.get('as_of') if pair else None,
+             'valid_until':min(completed+timedelta(minutes=15), datetime.fromisoformat(quote['as_of'])+timedelta(seconds=execution_quotes.MAX_AGE_SECONDS)).isoformat() if pair else now.isoformat(),
+             'evidence':evidence}
+@@ -288,8 +299,28 @@ def read(root, snapshot, now):
+             reference_entries.validate(value, snapshot, json.loads(forecast_raw))
+             return value
+         for name, row in value['rows'].items():
+-            if (row['size_weight'] != snapshot['rows'][name]['target_weight']
+-                    or row['state'] not in ('execute','wait','unavailable','no_trade')
++            target = snapshot['rows'][name]['target_weight']
++            if row['state'] not in ('execute','wait','unavailable','no_trade'):
++                raise ValueError('Numerical entry state differs from original model')
++            if 'verdict' in row:
++                expected = target if row['verdict'] == 'buy' else 0
++                if (row['verdict'] not in verdicts.VERDICTS
++                        or row['reason_code'] not in verdicts.REASON_CODES
++                        or not isinstance(row['reason'],str)
++                        or row['size_weight'] != expected
++                        or row.get('model_position_weight') != expected
++                        or row['verdict'] == 'buy' and row['action'] != 'Buy'
++                        or (row['verdict'] == 'nothing'
++                            and row['state'] == 'execute'
++                            and row['action'] is not None)
++                        or (row['verdict'] in ('buy','sell')
++                            and row['state'] != 'execute')
++                        or (row['verdict'] in ('buy','sell')
++                            and not row['size_weight'] > 0)
++                        or row['verdict'] == 'sell'):
++                    raise ValueError(
++                        'Numerical entry verdict differs from original model')
++            elif (row['size_weight'] != target
+                     or row['state'] == 'execute' and not row['size_weight'] > 0):
+                 raise ValueError('Numerical entry size differs from original model')
+         return value
+diff --git a/backend/market/strategy_reference_book.py b/backend/market/strategy_reference_book.py
+index a3579140..83628282 100644
+--- a/backend/market/strategy_reference_book.py
++++ b/backend/market/strategy_reference_book.py
+@@ -19,6 +19,7 @@ from uuid import uuid4
+ from backend.market import calendar, execution_quotes, forward_market_evidence as market
+ from backend.market import strategy_publication as publication
+ from backend.market import strategy_reference_transition as transition
++from backend.market import strategy_verdict as verdicts
+ 
+ VERSION = 'strategy-observed-hypothetical-book/1'
+ EXECUTION_BASIS = 'later_observed_IEX_bid_ask_proxy_not_actual_fill'
+@@ -124,6 +125,13 @@ def project(book, marks, distributions, *, evidence_sha256, terminal=False):
+                 else transition.timing.decision(distributions.get(name),'buy',weight,reference.cost_bps,horizon=transition.timing.HORIZON))
+             row.update(action='Buy' if amount>0 else None,proposed_units=amount,trade_weight=weight,state=choice.state,
+                 reason=choice.reason,waiting_log_utility=choice.expected_log_utility)
++        row.update(verdicts.annotate(row,reason_key='verdict_reason',
++            target_weight=row['model_position_weight'],
++            held_weight=row['reference_position_weight'],
++            distribution_available=distributions.get(name) is not None,
++            resolved=name in resolved))
++        row['size_weight']=(row['trade_weight'] if row['verdict'] in ('buy','sell')
++            else 0.0)
+     value.update(version=VERSION,calculation_basis='derived_daily_cash_budget_over_native_reference_projection',
+         native_projection_sha256=native_receipt,buy_funding_factor=funded,original_daily_buy_budget=book.buy_budget,
+         day_id=book.day_id(),book_sha256=book.receipt_sha256(),book_source_sha256=dict(book.source_sha256))
+diff --git a/backend/market/strategy_reference_entries.py b/backend/market/strategy_reference_entries.py
+index 8582a727..e5272bb2 100644
+--- a/backend/market/strategy_reference_entries.py
++++ b/backend/market/strategy_reference_entries.py
+@@ -25,6 +25,7 @@ from backend.market import strategy_publication as publication
+ from backend.market import strategy_reference_transition as transition
+ from backend.market import strategy_history_publication as history
+ from backend.market import strategy_reference_book as reference_book
++from backend.market import strategy_verdict as verdicts
+ 
+ VERSION = 'strategy-numerical-entries/2'
+ BASIS = 'standing_counterfactual_reference_transition_not_viewer_order'
+@@ -203,10 +204,26 @@ def project(snapshot, cache, quotes, now):
+             evidence.update(waiting_advantage_mean=distribution.mean,
+                 waiting_advantage_quantiles=probability.weighted_quantiles(
+                     distribution.mean+distribution.scale*distribution.residuals, distribution.weights).tolist())
++        verdict, reason_code = verdicts.classify(
++            state=state, action=row['action'],
++            timing_reason=evidence['timing_reason'],
++            target_weight=row['model_position_weight'],
++            held_weight=row['reference_position_weight'],
++            quote_available=pair is not None,
++            distribution_available=forecast.distributions.get(name) is not None,
++            mandatory=row['reason'] == 'mandatory_grade_exit',
++            resolved=progressing and name in dict(book.resolved))
++        size_weight = row['trade_weight'] if verdict in ('buy','sell') else 0.0
++        evidence['trade_size'] = size_weight
+         quoted = used[name]['as_of'] if pair else None
+         until = min(completed+timedelta(minutes=15), datetime.fromisoformat(quoted)+timedelta(seconds=execution_quotes.MAX_AGE_SECONDS)) if pair else now
+-        rows[name] = {'action': row['action'], 'state': state, 'size_weight': row['trade_weight'],
+-                      'model_position_weight': row['model_position_weight'], 'reference_units': row['reference_units'],
++        rows[name] = {'action': row['action'], 'state': state,
++                      'size_weight': size_weight,
++                      'model_position_weight': row['model_position_weight'],
++                      'verdict': verdict,
++                      'reason_code': reason_code,
++                      'reason': verdicts.REASONS[reason_code],
++                      'reference_units': row['reference_units'],
+                       'proposed_units': row['proposed_units'], 'quote_at': quoted, 'valid_until': until.isoformat(),
+                       'intent_id': publication._digest({'day_id':book.day_id(),'ticker':name}) if progressing else publication._digest({'snapshot_id': plan.snapshot_id, 'reference': plan.reference.evidence_sha256, 'ticker': name}),
+                       **({'attempt_resolved':name in dict(book.resolved),
+@@ -277,9 +294,21 @@ def validate(value, snapshot, forecast=None):
+         quoted = json.loads(body)['quotes']
+     for name, row in value['rows'].items():
+         saved = calculation['rows'][name]
++        expected_size = (saved['trade_weight']
++            if 'verdict' not in row or row['verdict'] in ('buy', 'sell') else 0)
++        if 'verdict' in row and (row['verdict'] not in verdicts.VERDICTS
++                or row['reason_code'] not in verdicts.REASON_CODES
++                or not isinstance(row['reason'], str)
++                or row['verdict'] in ('buy', 'sell') and row['state'] != 'execute'
++                or row['verdict'] == 'nothing' and row['state'] == 'execute'
++                or row['verdict'] == 'buy' and row['action'] != 'Buy'
++                or row['verdict'] == 'sell' and row['action'] != 'Sell'
++                or row['verdict'] == 'nothing' and row['size_weight'] != 0):
++            raise ValueError('Original reference verdict differs')
+         if (row['action'] not in ('Buy', 'Sell', None) or row['state'] not in ('execute', 'wait', 'unavailable', 'no_trade')
+                 or type(row['size_weight']) not in (int, float) or not math.isfinite(row['size_weight']) or not 0 <= row['size_weight'] <= 1
+-                or row['size_weight'] != saved['trade_weight'] or row['action'] != saved['action']
++                or row['size_weight'] != expected_size
++                or row['action'] != saved['action']
+                 or row['model_position_weight'] != original[name][3] or row['model_position_weight'] != saved['model_position_weight']
+                 or row['proposed_units'] != saved['proposed_units'] or row['reference_units'] != saved['reference_units']
+                 or (row['action'] == 'Sell' and not 0 < row['proposed_units'] <= row['reference_units'])
+diff --git a/backend/market/strategy_reference_transition.py b/backend/market/strategy_reference_transition.py
+index bee7706f..691b4d63 100644
+--- a/backend/market/strategy_reference_transition.py
++++ b/backend/market/strategy_reference_transition.py
+@@ -19,6 +19,7 @@ from backend.market import probabilistic_execution as timing
+ from backend.market import strategy_model_history as history
+ from backend.market import strategy_publication as publication
+ from backend.market import strategy_entry_context, strategy_history_installation
++from backend.market import strategy_verdict as verdicts
+ 
+ VERSION = "strategy-reference-transition/1"
+ BASIS = "counterfactual_model_reference_not_viewer_holdings"
+@@ -28,8 +29,9 @@ PRICE_BASIS = "adjusted_total_return"
+ # Bind the exact numerical adapter and the unchanged rules it actually calls.
+ def sources():
+     return {Path(module.__file__).name: sha256(Path(module.__file__).read_bytes()).hexdigest()
+-            for module in (history, timing, publication, inference, strategy_entry_context,
+-                           strategy_history_installation, strategy_history_installation.history)} | {
++            for module in (history, timing, publication, inference,
++                           strategy_entry_context, strategy_history_installation,
++                           strategy_history_installation.history, verdicts)} | {
+                 Path(__file__).name: sha256(Path(__file__).read_bytes()).hexdigest()}
+ 
+ 
+@@ -175,11 +177,22 @@ def project(plan, marks, distributions, *, evidence_sha256, price_basis, termina
+         else:
+             choice = timing.decision(distributions.get(name), "buy" if buying else "sell",
+                                      size, plan.reference.cost_bps, horizon=timing.HORIZON)
+-        rows[name] = {"action": ("Sell" if mandatory or delta < 0 else "Buy") if amount > 0 else None,
+-                      "state": choice.state, "trade_weight": size, "reference_units": units,
+-                      "proposed_units": amount, "model_position_weight": target,
+-                      "reference_position_weight": units * marks[name] / nav if units > 0 else 0.0,
+-                      "reason": choice.reason, "waiting_log_utility": choice.expected_log_utility}
++        action = ("Sell" if mandatory or delta < 0 else "Buy") if amount > 0 else None
++        held = units * marks[name] / nav if units > 0 else 0.0
++        verdict, reason_code = verdicts.classify(
++            state=choice.state, action=action, timing_reason=choice.reason,
++            target_weight=target, held_weight=held,
++            distribution_available=distributions.get(name) is not None,
++            mandatory=mandatory)
++        rows[name] = {"action": action, "state": choice.state, "trade_weight": size,
++                      "size_weight": size if verdict in ("buy", "sell") else 0.0,
++                      "reference_units": units, "proposed_units": amount,
++                      "model_position_weight": target,
++                      "reference_position_weight": held,
++                      "reason": choice.reason, "verdict": verdict,
++                      "reason_code": reason_code,
++                      "verdict_reason": verdicts.REASONS[reason_code],
++                      "waiting_log_utility": choice.expected_log_utility}
+     value = {"version": VERSION, "basis": BASIS, "price_basis": price_basis,
+              "snapshot_id": plan.snapshot_id, "publication_receipt_sha256": plan.publication_receipt_sha256,
+              "strategy_identity": plan.reference.strategy_identity, "reference_evidence_sha256": plan.reference.evidence_sha256,

@@ -40,7 +40,7 @@ def test_original_percentages_are_account_independent(monkeypatch):
         for name, value in record["targets"]["weights"].items()
     }
     assert result["rows"]["DDD"]["target_weight"] == 0
-    assert result["rows"]["BBB"]["target_weight"] == .25
+    assert result["rows"]["BBB"]["target_weight"] == 0.25
     assert record == before
 
 
@@ -64,8 +64,14 @@ def test_expired_plan_has_no_current_sizes(monkeypatch):
 # Preserve original-receipt validation for every displayed numeric target.
 @pytest.mark.parametrize(
     ("field", "value"),
-    [("weight", True), ("weight", float("nan")), ("weight", -0.1),
-     ("weight", 1.1), ("policy", "other"), ("source", "0" * 64)],
+    [
+        ("weight", True),
+        ("weight", float("nan")),
+        ("weight", -0.1),
+        ("weight", 1.1),
+        ("policy", "other"),
+        ("source", "0" * 64),
+    ],
 )
 def test_corrupt_saved_allocation_is_unavailable(monkeypatch, field, value):
     record, _, _, _ = admitted(monkeypatch)
@@ -192,12 +198,8 @@ async def test_allocation_http_owner_and_account_independence(monkeypatch, tmp_p
     async with AsyncClient(
         transport=ASGITransport(app=app), base_url="http://test"
     ) as client:
-        accepted = await client.get(
-            url, headers={"Authorization": f"Bearer {owner}"}
-        )
-        foreign = await client.get(
-            url, headers={"Authorization": f"Bearer {other}"}
-        )
+        accepted = await client.get(url, headers={"Authorization": f"Bearer {owner}"})
+        foreign = await client.get(url, headers={"Authorization": f"Bearer {other}"})
         anonymous = await client.get(url)
     assert accepted.status_code == 200
     assert accepted.json() == result
@@ -205,3 +207,79 @@ async def test_allocation_http_owner_and_account_independence(monkeypatch, tmp_p
     assert foreign.status_code == 403
     assert anonymous.status_code == 401
     assert calls == ["project"]
+
+
+# The served numerical rows carry one verdict each, added from the evidence
+# the sealed engines already wrote, so the board never derives it twice.
+def test_served_rows_carry_a_verdict(monkeypatch, tmp_path):
+    value = publish_fixture(tmp_path, monkeypatch)
+    name = next(iter(value["rows"]))
+    rows = {
+        name: {
+            "state": "execute",
+            "action": "Buy",
+            "size_weight": 0.1,
+            "quote_at": "2026-01-06T15:00:00-05:00",
+            "valid_until": "x",
+            "evidence": {},
+        },
+        "ZZZ": {
+            "state": "wait",
+            "action": "Buy",
+            "size_weight": 0.0,
+            "quote_at": "2026-01-06T15:00:00-05:00",
+            "valid_until": "x",
+            "evidence": {},
+        },
+        "YYY": {
+            "state": "unavailable",
+            "action": None,
+            "size_weight": 0.0,
+            "quote_at": None,
+            "valid_until": "x",
+            "evidence": {},
+            "reason": "Fresh compatible IEX quote required",
+        },
+    }
+    monkeypatch.setattr(
+        market_allocation.strategy_entries,
+        "read",
+        lambda root, snapshot, now: {"status": "available", "rows": rows},
+    )
+    monkeypatch.setattr(
+        market_allocation.strategy_position_view,
+        "read",
+        lambda root, snapshot, now: {
+            "status": "available",
+            "rows": {
+                name: {
+                    "state": "no_trade",
+                    "action": None,
+                    "trade_weight": 0.0,
+                    "model_position_weight": 0.1,
+                    "reference_position_weight": 0.1,
+                    "reason": "No funded model reference change",
+                }
+            },
+        },
+    )
+    result = market_allocation.allocation(tmp_path, PUBLISHED_AT)
+    served = result["entry_assessment"]["rows"]
+    assert (served[name]["verdict"], served[name]["reason_code"]) == (
+        "buy",
+        "execute_now",
+    )
+    assert (served["ZZZ"]["verdict"], served["ZZZ"]["reason_code"]) == (
+        "nothing",
+        "waiting_better_price",
+    )
+    assert (served["YYY"]["verdict"], served["YYY"]["reason_code"]) == (
+        "nothing",
+        "quote_stale",
+    )
+    assert served[name]["reason"] == "Act now at the current price"
+    reference = result["reference_positions"]["rows"][name]
+    assert (reference["verdict"], reference["reason_code"]) == ("nothing", "at_target")
+    # The engine's own timing reason is kept beside the verdict's words.
+    assert reference["reason"] == "No funded model reference change"
+    assert reference["verdict_reason"] == "The model position is already at target"

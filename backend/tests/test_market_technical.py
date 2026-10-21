@@ -5,7 +5,7 @@ from datetime import UTC, date, datetime, timedelta
 import numpy as np
 import pytest
 
-from backend.market import calendar, technical
+from backend.market import calendar, session_weeks, technical
 from backend.market.panel import Panel, panel_from_histories
 from backend.market.yahoo import DailyBar, TickerHistory
 
@@ -133,7 +133,7 @@ def test_weekly_ema_is_carried_between_week_ends():
             changes += 1
             # The weekly bar is known at a Friday close, or at the last
             # session of a week whose Friday is a holiday.
-            assert calendar.ends_week(dates[t]) is True
+            assert session_weeks.ends_week(dates[t]) is True
     assert changes >= 10
 
 
@@ -143,7 +143,7 @@ def test_weekly_ema_is_carried_between_week_ends():
 def test_thursday_before_a_friday_holiday_closes_the_week_live():
     days = _sessions_through("2024-03-28")
     assert days[-1] == np.datetime64("2024-03-28")
-    assert calendar.ends_week(days[-1]) is True
+    assert session_weeks.ends_week(days[-1]) is True
     close = np.linspace(100.0, 130.0, len(days))
     panel = _panel(days, close)
     live = technical._weekly_ema(panel, panel.adj_close, 3)
@@ -161,7 +161,7 @@ def test_thursday_before_a_friday_holiday_closes_the_week_live():
 def test_a_normal_thursday_does_not_close_the_week():
     days = _sessions_through("2024-03-21")
     assert days[-1] == np.datetime64("2024-03-21")
-    assert calendar.ends_week(days[-1]) is False
+    assert session_weeks.ends_week(days[-1]) is False
     close = np.linspace(100.0, 130.0, len(days))
     panel = _panel(days, close)
     live = technical._weekly_ema(panel, panel.adj_close, 3)

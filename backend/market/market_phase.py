@@ -11,17 +11,30 @@ desk acts next, and when tonight's plan arrives. One function, read from the
 reviewed XNYS calendar, so every panel shows the same clock.
 """
 
-from datetime import datetime, time
+from datetime import datetime, time, timedelta
 
 import numpy as np
 
-from backend.market import calendar, strategy_publication
+from backend.market import calendar
 
 # Brokers' after-hours sessions end at 20:00 New York; past that the night is
 # "overnight" rather than "after-hours" so the words match what a person sees
 # on their broker.
 AFTER_HOURS_END = time(20, 0)
 ACTS_IN = "regular_session"
+# The nightly cron publishes on weekdays at 19:30 New York (AGENTS.md,
+# `30 19 * * 1-5`); the board counts down to it.
+NIGHTLY_PUBLICATION = time(19, 30)
+
+
+# Return the next scheduled nightly publish strictly after `now`, New York time.
+def next_publication_at(now: datetime) -> datetime:
+    """Return the next weekday 19:30 New York at or after `now`."""
+    local = now.astimezone(calendar.NEW_YORK)
+    candidate = datetime.combine(local.date(), NIGHTLY_PUBLICATION, calendar.NEW_YORK)
+    while candidate < local or candidate.weekday() >= 5:
+        candidate += timedelta(days=1)
+    return candidate
 
 
 # The next reviewed regular open strictly after `now`, or None outside the
@@ -76,7 +89,5 @@ def describe(now: datetime) -> dict[str, object]:
             if phase == "regular"
             else (opens_next.isoformat() if opens_next else None)
         ),
-        "next_publication_at": strategy_publication.next_publication_at(
-            now
-        ).isoformat(),
+        "next_publication_at": next_publication_at(now).isoformat(),
     }

@@ -19,7 +19,6 @@ from uuid import uuid4
 from backend.market import calendar, execution_quotes, forward_market_evidence as market
 from backend.market import strategy_publication as publication
 from backend.market import strategy_reference_transition as transition
-from backend.market import strategy_verdict as verdicts
 
 VERSION = 'strategy-observed-hypothetical-book/1'
 EXECUTION_BASIS = 'later_observed_IEX_bid_ask_proxy_not_actual_fill'
@@ -125,13 +124,6 @@ def project(book, marks, distributions, *, evidence_sha256, terminal=False):
                 else transition.timing.decision(distributions.get(name),'buy',weight,reference.cost_bps,horizon=transition.timing.HORIZON))
             row.update(action='Buy' if amount>0 else None,proposed_units=amount,trade_weight=weight,state=choice.state,
                 reason=choice.reason,waiting_log_utility=choice.expected_log_utility)
-        row.update(verdicts.annotate(row,reason_key='verdict_reason',
-            target_weight=row['model_position_weight'],
-            held_weight=row['reference_position_weight'],
-            distribution_available=distributions.get(name) is not None,
-            resolved=name in resolved))
-        row['size_weight']=(row['trade_weight'] if row['verdict'] in ('buy','sell')
-            else 0.0)
     value.update(version=VERSION,calculation_basis='derived_daily_cash_budget_over_native_reference_projection',
         native_projection_sha256=native_receipt,buy_funding_factor=funded,original_daily_buy_budget=book.buy_budget,
         day_id=book.day_id(),book_sha256=book.receipt_sha256(),book_source_sha256=dict(book.source_sha256))

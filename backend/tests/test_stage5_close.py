@@ -59,7 +59,13 @@ from backend.agents.trading.desk import (
 from backend.agents.trading.desk import exit as exit_analyst
 from backend.agents.trading.desk.opinions import Opinion, stances_from_ranks
 from backend.cli import market_stage5_close as cli
-from backend.market import calendar, challenger, fill_timing, language, profit_taking
+from backend.market import (
+    challenger,
+    fill_timing,
+    language,
+    profit_taking,
+    session_weeks,
+)
 from backend.market import stage3_io as sio
 from backend.market import stage4_orders as so
 from backend.market import stage5_close as s5
@@ -263,7 +269,7 @@ def test_ema_states_week_ends_and_runs_mirror_the_desk():
     np.testing.assert_array_equal(f.w21[rows], weekly)
     for t in rows[:-1]:
         # A Friday, or the last session before a holiday-short week ends.
-        assert calendar.ends_week(f.dates[t]) is True
+        assert session_weeks.ends_week(f.dates[t]) is True
     raw = np.array([[1, 0], [1, 0], [1, 1], [0, 1], [0, 1]])
     resets = np.zeros(raw.shape, dtype=bool)
     resets[2, 0] = True

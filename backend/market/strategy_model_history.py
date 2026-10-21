@@ -14,15 +14,11 @@ from types import SimpleNamespace
 import numpy as np
 
 from backend.market import calendar, grade_led_policy
-from backend.market import daily_arithmetic_bridge as reference
 from backend.market import probabilistic_execution as timing
 
 SCHEMA = "latest-strategy-simulation/1"
 VERSION = "strategy-model-history/1"
 BASIS = "account_independent_unit_capital_targets"
-# The sizing and timing heads were fitted through the later of their frozen
-# boundaries; decisions at or before it are in-sample for the owner's replay check.
-MODEL_FIT_THROUGH = str(max(reference.FREEZE, timing.FREEZE))
 
 
 # Preserve eligible zero-sized holdings without imposing an account's integer lot size.
@@ -58,35 +54,19 @@ def action_row(name, at, side, size, remaining, sequence):
 
 
 # Walk one new fractional-capital book, keeping future execution prices out of selection.
-def replay(policy, panel, grades, blocked, eligible, observations, execution_opens,
-           provider, *, first, provenance, generated_at, allocations=None,
-           daily_evidence=None, initial_book=None):
+def replay(policy, panel, grades, blocked, observations, execution_opens, provider, *, first, provenance, generated_at, allocations=None, daily_evidence=None, initial_book=None):
     names, dates = tuple(panel.tickers), panel.dates
     shape = (len(dates), len(names))
-    close = getattr(panel, 'close', None)
-    if close is None:
-        raise ValueError(
-            "Panel close is required to align open and intraday prices "
-            "to adjusted close")
-    close = np.asarray(close)
-    eligible = np.asarray(eligible)
-    if (grades.shape != shape or blocked.shape != shape or eligible.shape != shape
-            or eligible.dtype.kind != 'b'
+    if (grades.shape != shape or blocked.shape != shape
             or observations.shape != (len(dates), 25, len(names))
             or execution_opens.shape != observations.shape
             or panel.adj_close.shape != shape or panel.open.shape != shape
-            or close.shape != shape
             or not 1 <= first < len(dates) or not callable(provider)
             or generated_at.utcoffset() is None
             or not np.isin(grades, (-1, 0, 1, 2, 3)).all()
             or np.any(dates[1:] <= dates[:-1])
             or (allocations is not None and allocations.shape != shape)):
         raise ValueError("Aligned original simulation inputs required")
-    # The book marks in adjusted close; scale every raw open and intraday price
-    # by the same factor so a split cannot misprice one leg of a trade.
-    with np.errstate(divide='ignore', invalid='ignore'):
-        adjustment = np.where(
-            np.isfinite(close) & (close > 0), panel.adj_close / close, np.nan)
     stocks = [i for i, name in enumerate(names) if name not in ("SPY", "QQQ")]
     projections = {names[i]: {"ticker": names[i], "decisions": [], "trades": [], "targets": [], "grade_rows": [], "splits": []} for i in stocks}
     shares, cash, fees, sequence = np.zeros(len(names)), 1.0, 0.0, 0
@@ -118,11 +98,6 @@ def replay(policy, panel, grades, blocked, eligible, observations, execution_ope
         else:
             counters["sizing_unavailable"] += 1
             weights = {name: weight if codes.get(name, -1) < 0 or codes[name] >= 2 else 0.0 for name, weight in current.items()}
-        # Membership is dated: a name outside the book on the decision session
-        # cannot be selected, sized or bought, whatever its current grade says.
-        for i in stocks:
-            if not eligible[day - 1, i]:
-                weights[names[i]] = 0.0
         wanted = shares.copy()
         for i in stocks:
             if np.isfinite(prior[i]) and prior[i] > 0:
@@ -136,25 +111,14 @@ def replay(policy, panel, grades, blocked, eligible, observations, execution_ope
                 grade_rows.append({"date": str(dates[day - 1]), "grade": grade, "said": False})
         pending = np.abs(wanted - shares) > 1e-12
         budget = cash
-        # A grade or membership exit is already decided before the open; it never
-        # waits for a timing forecast, and both sell on the next adjusted open.
+        # A grade exit is already decided before the open; it never waits for a timing forecast.
         for i in stocks:
-            member = bool(eligible[day - 1, i])
-            grade_exit = 0 <= codes[names[i]] < 2
-            if shares[i] <= 0 or (member and not grade_exit):
+            if shares[i] <= 0 or not 0 <= codes[names[i]] < 2:
                 continue
             sequence += 1
-            timing_reason = 'mandatory_grade_exit' if member else 'universe_exit'
-            reason = (
-                'Grade below A; exit the simulated position' if member
-                else 'Not in the point-in-time universe; exit the simulated position')
             row = action_row(names[i], instant(dates[day], 0), "sell", shares[i] * prior[i] / nav, 0.0, sequence)
-            row['evidence'] = {
-                **(daily_evidence(day - 1, i) if daily_evidence else {}),
-                'grade': grade_led_policy.LETTERS[codes[names[i]]],
-                'reason': reason,
-                'timing_reason': timing_reason}
-            price = panel.open[day, i] * adjustment[day, i]
+            row['evidence'] = {**(daily_evidence(day - 1, i) if daily_evidence else {}), 'grade': grade_led_policy.LETTERS[codes[names[i]]], 'reason': 'Grade below A; exit the simulated position', 'timing_reason': 'mandatory_grade_exit'}
+            price = panel.open[day, i]
             if np.isfinite(price) and price > 0:
                 amount = shares[i] * price
                 cash += amount * (1 - cost)
@@ -167,7 +131,7 @@ def replay(policy, panel, grades, blocked, eligible, observations, execution_ope
             pending[i] = False
             projections[names[i]]["decisions"].append(row)
         for clock in range(25):
-            observed = observations[day, clock] * adjustment[day]
+            observed = observations[day, clock]
             if np.any((shares > 0) & (~np.isfinite(observed) | (observed <= 0))):
                 counters["unpriced_book"] += 1
                 continue
@@ -193,7 +157,7 @@ def replay(policy, panel, grades, blocked, eligible, observations, execution_ope
                 row = action_row(names[i], instant(dates[day], 15 * (clock + 1)), "buy" if buying else "sell", weight, weights.get(names[i], 0.0), sequence)
                 row["timing"] = policy.timing_policy
                 row['evidence'] = {**(daily_evidence(day - 1, i) if daily_evidence else {}), 'grade': grade_led_policy.LETTERS[codes[names[i]]], 'reason': 'Grade-permitted model allocation increase' if buying else 'Model allocation reduction', 'observed_price': float(observed[i]), 'timing_reason': choice.reason, 'waiting_log_utility': choice.expected_log_utility, 'completed_candle_at': row['at']}
-                price = float(execution_opens[day, clock, i] * adjustment[day, i])
+                price = float(execution_opens[day, clock, i])
                 pending[i] = False
                 if np.isfinite(price) and price > 0:
                     qty = min(change * funded, max(0.0, min(cash, budget)) / (price * (1 + cost))) if buying else min(-change, shares[i])

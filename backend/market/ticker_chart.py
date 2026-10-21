@@ -44,7 +44,7 @@ from zoneinfo import ZoneInfo
 
 import numpy as np
 
-from backend.market import bands, calendar, levels
+from backend.market import bands, calendar, levels, session_weeks
 from backend.market.store import MarketStore
 from backend.market.technical import ema, sma
 
@@ -170,7 +170,7 @@ def _week_ends(dates: np.ndarray) -> np.ndarray:
     rows = len(days)
     ends = np.zeros(rows, dtype=bool)
     for t in range(rows):
-        known = calendar.ends_week(days[t])
+        known = session_weeks.ends_week(days[t])
         if known is None:
             ends[t] = bool(friday[t]) or (
                 t + 1 < rows and weeks[t + 1] != weeks[t]
