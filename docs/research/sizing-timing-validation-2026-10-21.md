@@ -1,0 +1,109 @@
+# Does the sizing-and-timing layer earn its place? What the installed artefacts already say
+
+Asked by the owner on 2026-10-21 ("do you need to backtest the sizing and
+action model to ensure its a good and reliable system?"). Measured on spark1
+from the installed history artefact
+`data/market/desk/strategy-model-history/cc490399…` (policy
+`grade-led-learned-sizing/1`, replayed 2018-02-01 → 2026-10-19 with the
+holding head published 2026-10-04 and the timing heads frozen through
+2026-08-17), the store's adjusted closes and `benchmarks.load_benchmark`
+(QQQ, SPY, 10 bp). Scripts: `~/dsv41/brief/curve_vs_bench.py`,
+`~/dsv41/brief/ew_baseline.py` on spark1; results in
+`~/dsv41/brief/curve_vs_bench.json`.
+
+## What was compared
+
+* **policy** - the artefact's own portfolio curve (`manifest.curve`): the
+  current grade direction, the learned holding size, the probabilistic
+  timing, costs and funding rules, replayed over the past.
+* **EW A/A+** - the same grades (the artefact's `grade_rows`, forward-filled),
+  no learned layer at all: equal weight across every name graded A or A+ at
+  the prior close, rebalanced daily, 10 bp a side on turnover, fully
+  invested when any name is eligible. This is the hurdle the sizing and
+  timing layers must clear, because it is what the desk would do with the
+  grades and nothing else.
+* **QQQ, SPY** - funded the way the ledger funds, on the same sessions.
+
+All three use today's 94-name book. That universe was chosen with hindsight;
+the point-in-time scorecard of 2026-09-26 put the rule's whole lead over QQQ
+down to that choice (rule / point-in-time ≈ QQQ, t -0.28; see
+`pit-scorecard-2026-09-26.md`). So the absolute levels below are not
+achievable returns; only the *differences between lines on the same
+universe* say anything about the layers being tested.
+
+## Result
+
+| window | policy | EW A/A+ | QQQ | SPY |
+|---|---|---|---|---|
+| 2019-03-04 (first trade) → 2026-10-19 | CAGR 49.6% · DD -48.6% · Sharpe 1.16 | CAGR 47.0% · DD -43.3% · Sharpe 1.24 | 21.2% · -35.1% · 0.92 | 15.9% · -33.7% · 0.86 |
+| 2024-01-01 → | 96.6% · -47.9% · 1.55 | 90.3% · -41.9% · 1.70 | 23.8% · -22.8% · 1.13 | 20.4% · -18.8% · 1.28 |
+| in-sample, ≤ 2026-08-17 | 45.6% · -48.6% · 1.15 | 48.5% · -43.3% · 1.30 | 19.6% · -35.1% · 0.87 | 14.4% · -33.7% · 0.80 |
+| out-of-sample, 2026-08-17 → 2026-10-19 (45 sessions) | total -12.2% · DD -15.2% | total -14.8% · DD -19.2% | -1.5% · -6.6% | -0.6% · -2.5% |
+
+Read plainly:
+
+1. **The learned sizing and timing add nothing measurable over equal weight,
+   even on the data they were fitted on.** In-sample the equal-weight line
+   has the higher CAGR (48.5% vs 45.6%), the shallower drawdown and the
+   higher Sharpe (1.30 vs 1.15). The layers' one visible effect is a deeper
+   drawdown. A model that cannot beat equal weight in-sample will not do so
+   out of sample.
+2. **The only out-of-sample window is 45 sessions and negative for both
+   lines** (-12.2% sized, -14.8% equal weight, QQQ -1.5%). The sized line
+   lost less than equal weight over those weeks, which is the one point in
+   its favour, and it is far too short to mean anything: it is the names the
+   grades picked that fell, not the sizing.
+3. **The direction rule is the thing that has not been shown to work.** On a
+   point-in-time universe the grade rule earns what QQQ earns and trails the
+   equal-weight book of the names it could have held by about 7 CAGR points
+   a year (2026-09-26 scorecard). Everything above that on the dashboard is
+   the hindsight choice of the 94 names.
+
+## What this means for the owner
+
+The system is not yet shown to be good or reliable. The chart replay
+validates the plumbing (the same code, no future prices) and now says so
+in-sample; it does not validate the models, and the numbers that look
+spectacular come from the universe, not from the sizing or the timing. The
+honest expectation for the live account is "about QQQ, with more drawdown",
+until a test on a point-in-time universe with the models refitted only on
+past data says otherwise.
+
+## This agrees with what was already measured on the point-in-time book
+
+`pit-arms-2026-09-26.md` scored the same question on the universe the desk
+could actually have held (2016-2023, 25 bp, 20 offsets): equal weight across
+every A/A+ name, fully invested (`ew_graded_full`), made 29.9% a year and was
+ahead of equal weight of every member in 19 of 20 offsets (t +1.5); the rule
+with its sizing layer made 14.4%; QQQ 18.6%. The conclusion there was the
+same as here from the other direction: the grade selects a little, the
+sizing built on top of it loses, and the learned rankers lose more. The
+learned holding and timing heads installed since (October) were not in that
+scorecard; the table above is the first look at them, and they do not change
+the picture.
+
+## What a real test of the new heads would be, and why it was not run tonight
+
+A walk-forward test refits the holding head and the timing heads at each
+month-end on data before that date, trades the next month with those heads,
+and rolls - on the point-in-time universe, with the existing funded ledger,
+costs and calendar. The timing heads were designed for exactly this
+(monthly heads, 504-756 training sessions, ten-session maturity:
+`joint-probability-timing-plan-2026-10-05.md`); the holding head's training
+path (`market_adaptive_timing_sizing`, the v3 calibrated holding policy)
+needs the same treatment. It is a multi-day job on these machines and it
+belongs under the research protocol's registration rules
+(`ml-forward-evaluation-spec.md`), not in a night. The two measurements
+above already say what it would most likely find.
+
+## Recommendation
+
+Validate the direction, not the sizing. The one arm that has passed its
+gate on the point-in-time book is `ew_graded_full`: own every A/A+ name at
+equal weight, fully invested, with the operator's hold limit as the only
+parameter. Making it the installed sizing is a trading-economics change
+that goes through the release approval
+(`backend/cli/market_release_admission.py`), and it should be followed by
+the same two things any policy needs: the dashboard showing the
+point-in-time line beside today's-book line, and the paper account's own
+forward record as the only out-of-sample evidence that counts.

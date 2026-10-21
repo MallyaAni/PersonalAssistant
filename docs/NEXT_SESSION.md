@@ -1532,6 +1532,48 @@ The detailed current continuation remains the TOP of the attached
 learned-live-release-20261006 worktree's NEXT_SESSION.md. Keep existing heartbeat
 ACTIVE and quiet unchanged. No question pending; no agents without delegation,
 usage-limited retries/replacements, denied-read bypass or native-pool adoption.
+## 2026-10-21 00:40 ET — DEPLOYED 968be8cf (+ d39774c9 hotfix); reply effort in code; shaper retired
+
+`scripts/deploy.sh --skip-gate` shipped the dashboard review fixes, the
+brief-writer repair and the market phase (gate state unchanged: Codex's
+fixture-bound tests, F821 in historical_static_request_admission.py, the
+41-vs-31 binding pin). Trading-source admission at deploy: ADMITTED - every
+one of the 41 bound sources is byte-identical to the live release approval,
+because the review's backend changes were moved off those files first
+(`968be8cf`; the held-back producer-side changes are patches under
+`docs/research/trading-approval-candidates-2026-10-21/`). `.env`:
+`MAIN_LLM_BASE_URL=http://animallya-spark1.local:8000`,
+`REPLY_LLM_REASONING_EFFORT=high`, MAIN effort stays `none`; verified inside
+the container (`get_reply_llm_client().reasoning_effort == high`,
+`get_llm_client()` none); `benchmark_inference` 5/5; `systemctl --user
+disable --now reply-effort-shaper` done (unit file kept at
+`~/.config/systemd/user/`, repo copy in `deploy/spark/`). Post-deploy cheap
+check: ok. Live API at 00:30 ET: allocation `available`, session
+2026-10-20, 94 rows / 94 grade signals, `market_phase` present,
+reference_positions 94 rows all `nothing` (pre-open), entry_assessment
+unavailable (no candles yet). The simulation summary route answered 500
+(the summary's `decisions` is a count, not a list) - fixed in `d39774c9`,
+deployed right after; the same commit calls 00:00-04:00 on a session day
+"overnight" rather than pre-market.
+
+**Deploy trap found tonight:** `backup-db.sh` mirrors the 38 GB WAL archive
+to every `BACKUP_MIRROR_HOST` with rsync inside the deploy, and the Mac
+(172.16.8.2) takes it at about one 16 MB segment a minute, so a deploy
+sat for 40 minutes on a non-fatal step. I killed that rsync by PID (the
+script treats a mirror failure as a warning; the dump itself had already
+been copied) and the deploy went on. Fix proposed below; until it lands,
+expect the backup step to take long on the first deploy after a day away.
+
+**Sizing/timing validation** (`docs/research/sizing-timing-validation-2026-10-21.md`):
+on the installed history artefact, equal weight across the A/A+ names beats
+the learned sizing+timing even in-sample (Sharpe 1.30 vs 1.15, CAGR 48.5% vs
+45.6%, 2018-2026, today's book); the only out-of-sample window is 45
+sessions and negative for both; on the point-in-time book the 2026-09-26
+arms already showed `ew_graded_full` passing its gate and the sizing layer
+losing. Recommendation to the owner: adopt equal-weight A/A+ sizing through
+the release approval; the direction rule is what still needs forward
+evidence.
+
 ## 2026-10-20 23:30 ET — Dashboard review fixes and the brief writer, landed on main (deploy follows)
 
 The review in `docs/research/trading-dashboard-review-2026-10-20.md` is
