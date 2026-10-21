@@ -227,3 +227,28 @@ the approval files are owner-written under the paper lock, so the
 candidate is prepared as a reviewed patch set with the proposed
 config/release/evidence text, for the owner to install by hand as on
 2026-10-13.
+
+## The candidate under its own cap, and a sector cap (2026-10-21, 10:50 ET)
+
+Two more arms answer two questions the candidate raised. First, the
+leader-tilted book under the installed 25% per-name cap
+(`ew_graded_leader_25_cap25`), which is what `grade-led-leader-weight/1`
+would actually run: CAGR 23.0% at worst drawdown -35.0% (all window),
+2016-23 23.6% at -35.0%, 2024-26 29.7% at -33.2%, Sharpe 0.98, ahead of
+QQQ in 20 of 20 offsets. The cap costs 1.3 points of CAGR against the
+uncapped arm and gives back 0.9 of drawdown. Those are the numbers the
+release evidence cites.
+
+Second, the owner asked whether the approach knows that names in one
+sector move together. It does not model sectors; the only places
+co-movement enters are the basket's realised volatility (the vol target
+cuts the whole book when the names move together) and the leader rank,
+which is relative within the book. A GICS sector cap was therefore
+scored (`point_in_time.group_capped_allocator`, labels from the
+constituent file with overlay names mapped to their theme's sector):
+half of the book per sector gives 12.2% at -19.6%, a third gives 8.5% at
+-14.1%, both at Sharpe 0.96-0.98, the same as the uncapped book. The A/A+
+names are almost all Information Technology, so a sector cap holds
+nothing else: it only moves the book into cash, which a lower volatility
+target does with one parameter and no classification file. The sector
+cap is not adopted.

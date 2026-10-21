@@ -1,6 +1,6 @@
 {
   "authorization": "<owner writes this: who approved replacing the learned sizing with leader-weight sizing, and when>",
-  "comparative_performance": "point-in-time scorecard, not forward evidence: ew_graded_leader_25 (strength 0.5) CAGR 24.3% at worst drawdown -35.9% across 20 offsets, 2016-23 CAGR 24.5% at -35.9%, Sharpe 0.98, 2024-26 CAGR 31.8% and ahead of plain equal weight in 20 of 20 offsets; installed rule 16.5% at -34.0% (2024-26 30.2%, in-sample there); QQQ 18.9% at -35.1%. docs/research/sizing-timing-validation-2026-10-21.md, last two sections.",
+  "comparative_performance": "point-in-time scorecard, not forward evidence: ew_graded_leader_25_cap25 (strength 0.5, 25% per-name cap as installed) CAGR 23.0% at worst drawdown -35.0% across 20 offsets (all window), 2016-23 23.6% at -35.0%, Sharpe 0.98, 2024-26 29.7% at -33.2%, ahead of QQQ in 20 of 20 offsets; installed rule 16.5% at -34.0% (2024-26 30.2%, in-sample there); QQQ 18.9% at -35.1%. docs/research/sizing-timing-validation-2026-10-21.md, last four sections.",
   "contract": "grade-led-leader-weight/1",
   "fresh_ordinary_paper_acceptance": "UNVERIFIED; required after installation",
   "model_publications_unchanged": true,
