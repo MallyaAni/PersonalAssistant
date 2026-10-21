@@ -1532,6 +1532,47 @@ The detailed current continuation remains the TOP of the attached
 learned-live-release-20261006 worktree's NEXT_SESSION.md. Keep existing heartbeat
 ACTIVE and quiet unchanged. No question pending; no agents without delegation,
 usage-limited retries/replacements, denied-read bypass or native-pool adoption.
+## 2026-10-21 12:25 ET — Leader-weight release INSTALLED and DEPLOYED (ce1254ad); first plan under it due at the close
+
+Owner at 11:4x ET: "can you make all your changes live now as soon as
+possible when you're done"; at 12:0x: "stop showing unnecessary wording
+like that on the dashboard"; at 12:1x: "do whatever you need to do to get
+the recommendations for your new changes immediately showing".
+
+Done. 11:53 ET: `install_leader_release.py` wrote evidence/release/config
+for `grade-led-leader-weight/1` (identity for 21a6e674/ce1254ad, 43
+sources; archive `data/trading-approval-archives/20261021T155323-leader-*`;
+owner authorisation quoted in `evidence.json`). deploy18 gated ce1254ad,
+trading preflight passed on the new files, `check-trading-admission.sh`
+ADMITTED host==container, deployed 12:20 ET; deploy19 (frontend-only)
+06fed709 at 12:21. The board during the session serves today's plan as the
+last plan: `market_allocation._superseded_snapshot` (ce1254ad) re-reads a
+verified snapshot whose config binding the new policy broke and answers
+`awaiting_nightly` with `superseded_policy`/`superseded_at`; the notice is
+one line ("Last plan · next plan 19:30 ET"). The replay aside on the chart
+is one line; the awaiting subtitle and coverage line lost their repeats.
+
+Why nothing shows under the new sizing yet: the planner computes on a
+completed close (`forward_arithmetic._close_window`), so the first
+leader-weight plan is produced after 16:00 ET. Owner told, agreed it is by
+design (daily grades, 63-close tilt and vol target; the 15-minute engine
+times fills, including dips, but never re-sizes intraday). At 16:02 ET run
+`publish_now.py <root> 2026-10-21` from `~/dspark-commit` (reminder
+trig_016cADWrt6uzoeLxh3kqmBiJ carries an older text that also says
+install/deploy — those are DONE; only the publish and the verification
+remain). The 19:30 nightly then writes the first learned-timed intents
+that can execute (timing clock fix in the same release); the 20:15 ET check
+(trig_01MuLpBzcrto3Pg4x77pK2U2) verifies.
+
+Open, not blocking: (1) the 10:44 post-deploy journey sweep failed
+"stop checking in on me" (route=None; the reply claimed to stop check-ins
+without the tool; passed on 10-14) — LLM routing miss, operator alert sent;
+(2) chart paper-view e2e specs (chart-decision-history, recorded-chart,
+chart-human-labels) fail in the local harness on main before any change
+today — `strategy && showPaperFills` gates the fills list to the strategy
+view; needs a look at the harness vs the paper view, not urgent for the
+strategy board the owner uses.
+
 ## 2026-10-21 11:10 ET — Entry prices pending on the board; learned timing bug found; leader-weight release staged for 16:02 ET
 
 Owner at 10:3x ET: "right now live dashboard shows do nothing for
