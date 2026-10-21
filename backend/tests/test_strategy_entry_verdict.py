@@ -120,6 +120,16 @@ class StrategyVerdictTests(unittest.TestCase):
                 ),
                 ("sell", "entry_pending"),
             ),
+            (
+                dict(
+                    state="unavailable",
+                    action="Sell",
+                    timing_reason="Fresh compatible IEX quote required",
+                    quote_available=False,
+                    target_weight=0.25,
+                ),
+                ("sell", "entry_pending"),
+            ),
         )
         for arguments, expected in cases:
             with self.subTest(expected=expected):

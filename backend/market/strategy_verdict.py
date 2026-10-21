@@ -70,9 +70,10 @@ def _idle_code(action, timing_reason, target_weight, held_weight, resolved):
     return "no_allocation" if action is None else "at_target"
 
 
-# The size of the trade the plan still calls for in the row's direction.
+# The size of the trade the plan still calls for in the row's direction; None
+# when the row does not say enough to know it (a sale needs the holding).
 def _planned(action, target_weight, held_weight):
-    if target_weight is None:
+    if target_weight is None or (action == "Sell" and held_weight is None):
         return None
     held = held_weight or 0.0
     return target_weight - held if action == "Buy" else held - target_weight
