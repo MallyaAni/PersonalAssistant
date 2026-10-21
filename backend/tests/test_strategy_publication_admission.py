@@ -14,6 +14,14 @@ ADDED={f'backend/market/{name}.py' for name in (
     'strategy_reference_transition','strategy_reference_entries','strategy_reference_book',
     'strategy_model_history','strategy_history_installation','strategy_history_publication')}
 HOLDING='backend/market/learned_live_holding.py'
+# The observed-reference review reconstructs the 41-source holding module exactly. The
+# grade-led-leader-weight/1 candidate binds two more sources and extends the holding
+# selector, and the admission CLI refuses a policy change by design, so that transition
+# is installed by hand (docs/research/trading-approval-candidates-2026-10-21/
+# leader-weight-policy/README.md) rather than through a new review type; the tests that
+# replay the earlier review against the current tree are expected to fail until one is.
+LEADER_SUPERSEDES=pytest.mark.xfail(strict=True,reason=(
+    'grade-led-leader-weight/1 candidate supersedes the observed-reference review state'))
 
 
 # Exercise the separately reviewed current ten-component closure against the original deployed predecessor.
@@ -29,12 +37,7 @@ def publication_review():
 
 
 # Activate only reviewed source bindings, read them back, then restore the exact original selectors.
-@pytest.mark.xfail(strict=True, reason=(
-    'The observed-reference review reconstructs the 41-source holding module exactly; the '
-    'grade-led-leader-weight/1 candidate binds two more sources and extends the holding '
-    'selector, and the admission CLI refuses a policy change by design, so this transition '
-    'is installed by hand (docs/research/trading-approval-candidates-2026-10-21/'
-    'leader-weight-policy/README.md) rather than through a new review type'))
+@LEADER_SUPERSEDES
 def test_publication_renewal_preflight_activation_and_original_rollback(tmp_path,monkeypatch):
     root,before,bundle,path,_=renewal(tmp_path,monkeypatch)
     old,new,review=publication_review()
