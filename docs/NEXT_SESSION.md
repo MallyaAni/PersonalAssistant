@@ -1,5 +1,70 @@
 # Next session
 
+## CURRENT — public sign-in resolved; natural nightly94 and selected public chart paths VERIFIED
+
+This TOP supersedes older pending-login/nightly-future instructions. Human
+explicitly confirmed sign-in on deep-matter.com. Do not ask again. Public tab3
+is authenticated. Human also warned Claude might deploy; no overlapping code
+edit/deployment was performed. Main advanced independently to46275488, including
+docs/research/trading-dashboard-review-2026-10-20.md; that review is preserved.
+The review checkout fast-forwarded from43f6b7f6 to46275488 before this docs-only
+checkpoint. Desktop AGENTS/Wi-Fi work remains untouched. Merged feature branches
+stay retired; never recreate them or deploy historical main wholesale.
+
+NEW natural observation2026-10-21T00:59Z (Oct20 eveningET), ONCE: ordinary nightly
+completed original Oct20 publication/history94; grade parity OK94. Deployed HEAD
+still efc649a0, no active deploy/gate at that observation. Normal read-only owner
+API publication available94/positions available94, published19:46:59.964077ET,
+expiresOct21 16:00ET; snapshot43f38bda2aaeeac8ceeba4e42a2044436b8eeb238bca6c85fea639f2bbd70344,
+day066a870615650e1a5ea1d5f2dda37524732f7496cd6401b2d75a57cb270ff7df.
+Consumer3sourceSHA match prior deployed source. Entry unavailable/0 while closed;
+no job replay, new collector/provider/account request, order or fake clock.
+Old Oct14–16 failures in the bounded original log remain historical failures,
+not failures attributed to this new Oct20 publication.
+
+PUBLIC authenticated browser01:00:55–01:05:56Z used deployed index-D9GaJYMW.js:
+All names94; ALAB Position1.3% list/D/W/15m and Refresh; HPE Position21.1%
+list/D/W/15m; IREN Position0.0% allframes/zoom stable. Actual HPE chart marker
+Buy Size2.5% was clicked: originalOct16 09:45/GradeA/priorOct15/thenPosition25%,
+EMA21−9.44%/EMA63+1.50%/adjustedcandle56.70/original numerical reason retained.
+60sessions15m loaded with Sept8 A+→A grade change and explicit missing-price
+warning. Best buys “No confirmed buy signals yet.” Best sells “No sell signals
+in the current strategy publication.” Closed-session Size—/Wait, not a live
+executable claim. Scoped warn/error logs[]. Public tab3 restored IREN/searchire/
+D/Recent/Allnames and marked deliverable; localhosttab4 handoff retained.
+This covers selected real workflows, not every94chart or future regular entry.
+
+Permanent proof docs/research/strategy-public-nightly-acceptance-proof-2026-10-20.json
+299393B/SHAa8158f01865d0e1eacd67b7cf635ec96c56ae7a05cdd75e3f020a8d86784b4a5
+retains19fixed original receipts, including screenshots/log/control and EARLIER
+authenticated zero-name failure. Written/fsynced/readback/decodedSHA PASS once;
+no completed tests/getters/collectors rerun. Originals /tmp/strategy-public-
+nightly-acceptance-20261020-v1 and /tmp/strategy-natural-nightly-observation-
+20261020-v1{,-control}.json. Main merge/18local34remote cleanup already DONE.
+
+OPEN first observed UI boundary: expired publication made the public universe0
+before nightly. Fresh publication restores94, NOT a fix for that blackout.
+Expiry explanation inferred from source/clocks; original authenticated error
+body was not captured. Next small source task is source-bound triage of that
+display boundary with a failing expired-publication browser case, after checking
+concurrent deployment ownership. Retain universe/history while withholding
+expired action permission; NEVER extend quote/publication clocks or reuse an
+expired executable row. Do not silently treat review suggestion5 as permission
+to weaken the30s quote guard. Review account-sizing suggestions do not override
+the human's explicit independent/no-account requirement.
+
+Historical chart is retrospective CURRENT-model simulation, NOT what a model
+fitted at each past instant knew, NOT out-of-sample/profitability evidence.
+Review's fitting/PIT/price-basis/marker findings need separate source-bound
+reproduction; no new fit/tuning/provider/history rewrite performed or authorized
+by this evidence. Do not label the complete user goal finished from UI parity.
+Whole next-day cash/units/wealth rollover and naturally current next regular15m
+feed→publicaction remain UNVERIFIED; persisted new day_id alone is insufficient.
+Original deployed check-ins opt-out fullpost remains FAILED; main's separate
+fix is not a retroactive deployed pass. Existingfeed/paperLAST/noorders/reset/
+paiddata/model/provider/servicechanges/privateguarddetours; heartbeat ACTIVE,
+quiet unchanged. Diagram impact: NONE — evidence/handoff only.
+
 ## CURRENT — main published for review; merged branches retired
 
 The authorized merge is pushed to GitHub main at
