@@ -102,8 +102,13 @@ def test_volatility_scale_never_exceeds_one(wobble):
     assert np.isclose(weights.sum(), certificate["scale"])
     assert weights.sum() <= 1 + 1e-12
     basket = np.diff(np.log(window), axis=0).mean(axis=1)
-    realised = np.std(basket, ddof=1) * np.sqrt(252)
+    realised = leader.forecast_volatility(basket)
+    alpha = 2 / (leader.EWMA_SPAN + 1)
+    weights = (1 - alpha) ** np.arange(len(basket))[::-1]
+    expected_vol = np.sqrt(np.sum(weights * basket**2) / weights.sum() * 252)
+    assert np.isclose(realised, expected_vol)
     assert np.isclose(certificate["realised_volatility"], realised)
+    assert certificate["volatility_estimator"] == f"ewma_span_{leader.EWMA_SPAN}"
     expected = min(1.0, 0.25 / realised) if realised else 1.0
     assert np.isclose(certificate["scale"], expected)
 
