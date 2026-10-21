@@ -96,6 +96,27 @@ belongs under the research protocol's registration rules
 (`ml-forward-evaluation-spec.md`), not in a night. The two measurements
 above already say what it would most likely find.
 
+## The point-in-time scorecard, re-run tonight on data through 2026-10-20
+
+`python -m backend.cli.market_pit_scorecard --root ~/deploy/anios/data/market`
+for the frozen rule and with `--arm ew_graded_full`; payloads in
+`docs/research/pit-scorecard-2026-10-21/`. Point-in-time book, 25 bp,
+medians across 20 offsets, Newey-West t at the median offset:
+
+| line | 2016-2023 CAGR | vs EW-PIT (t) | vs QQQ (t) | 2024-2026 | all | worst DD (all) |
+|---|---|---|---|---|---|---|
+| QQQ, funded | 18.6% | | | 22.9% | 18.9% | -35.1% |
+| equal weight, every member (EW-PIT) | 27.7% | — | +3.4 bp/d (+2.72) | 25.9% | 24.8% | -37.9% |
+| frozen rule (the desk's sizing layer) | 14.4% | -4.9 bp/d (-2.36) | -1.6 bp/d (-0.80) | 30.2% | 16.5% | -24.6% |
+| **A/A+ equal weight, fully invested (`ew_graded_full`)** | **27.8%** | +0.9 bp/d (+0.67) | +4.3 bp/d (+2.25) | 36.0% | 27.2% | -45.8% |
+
+Same shape as 2026-09-26 with three more weeks of data: the sizing layer
+loses to the names it is allowed to hold (t -2.36) and does not beat QQQ;
+owning every A/A+ name at equal weight is level with the whole book
+(t +0.67, not distinguishable) and ahead of QQQ in 20 of 20 offsets
+(t +2.25). The one thing the arm costs is drawdown (-45.8% at its worst
+against QQQ's -35.1%): it is fully invested in a concentrated sector book.
+
 ## Recommendation
 
 Validate the direction, not the sizing. The one arm that has passed its
