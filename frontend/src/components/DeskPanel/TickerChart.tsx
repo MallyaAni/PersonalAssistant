@@ -237,7 +237,14 @@ const recordedGroups = (history: DeskHistory | undefined, bars: DeskChartBar[], 
 // Date the original publication and reference observation independently in readable exchange time.
 const recordedTime = (value: unknown) => {
   const instant = recordedInstant(value)
-  return instant ? new Intl.DateTimeFormat('en-US', {timeZone: 'America/New_York', year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', second: '2-digit', timeZoneName: 'short'}).format(instant) : 'Not recorded'
+  if (!instant) return 'Not recorded'
+  // The day is named only when it is not today in New York; the year only when it differs.
+  const zone = {timeZone: 'America/New_York'}
+  const today = new Date()
+  const sameDay = instant.toLocaleDateString('en-CA', zone) === today.toLocaleDateString('en-CA', zone)
+  const sameYear = instant.toLocaleDateString('en-US', {...zone, year: 'numeric'}).endsWith(today.toLocaleDateString('en-US', {...zone, year: 'numeric'}).slice(-4))
+  const day = sameDay ? '' : instant.toLocaleDateString('en-US', {...zone, month: 'short', day: 'numeric', ...(sameYear ? {} : {year: 'numeric'})}) + ' '
+  return day + instant.toLocaleTimeString('en-US', {...zone, hour12: false, hour: '2-digit', minute: '2-digit'}) + ' ET'
 }
 
 // Plot actual saved personal actions once per transition, independently of fills or research setups.

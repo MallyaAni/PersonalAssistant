@@ -473,7 +473,14 @@ export const signalsFor = (latest: DeskRecord, live: DeskLive, ticker: string, n
 }
 
 // Display exact model evidence times in the market's timezone.
-const evidenceTime = (at: string) => new Date(at).toLocaleString('en-US', {timeZone: 'America/New_York', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit', second: '2-digit'}) + ' ET'
+// A clock the reader can take in at a glance: the time alone when it is today in New York, the day before it otherwise.
+const evidenceTime = (at: string) => {
+  const instant = new Date(at)
+  if (!Number.isFinite(instant.getTime())) return 'unknown time'
+  const day = (value: Date) => value.toLocaleDateString('en-CA', {timeZone: 'America/New_York'})
+  const clock = instant.toLocaleTimeString('en-US', {timeZone: 'America/New_York', hour12: false, hour: '2-digit', minute: '2-digit'})
+  return (day(instant) === day(new Date()) ? '' : instant.toLocaleDateString('en-US', {timeZone: 'America/New_York', month: 'short', day: 'numeric'}) + ' ') + clock + ' ET'
+}
 
 // Show the strongest supported action, preferring a downside review when both directions are immediately ready.
 const actionFor = (row: Signals): Signal => row.sell.ready || row.sell.rank < row.buy.rank ? row.sell : row.buy
