@@ -1391,6 +1391,14 @@ export const TickerChart = ({
       {simulation?.provenance.model_fit_through && ` · model fit through ${simulation.provenance.model_fit_through}`}
       {allocation?.status === 'awaiting_nightly' && allocation.next_publication_at && ` · next publish ${recordedTime(allocation.next_publication_at)}`}
     </p>
+    {/* A name the grades reached but the replay never sized is the most puzzling chart on the desk: say so instead of showing arrows with no circles. */}
+    {strategy && simulation && simulation.decisions.length === 0 && <p aria-label={`${ticker} replay without trades`} className="mb-2 text-[11px] text-[#6e6e73]">
+      {!simulation.grade_rows?.some(row => row.grade === 'A' || row.grade === 'A+')
+        ? `The replay never bought ${ticker}: it never graded A or A+ in this window, so there was no trade to draw.`
+        : simulation.targets.some(row => typeof row.weight === 'number' && row.weight > 0)
+          ? `The replay never bought ${ticker}: the sizing model set a target while it graded A or A+, but no trade could be priced or executed in the replay. The grade arrows above are the direction; there was no trade to draw.`
+          : `The replay never bought ${ticker}: on every session it graded A or A+, the sizing model's target stayed at zero. The grade arrows above are the direction; there was no sized trade to draw.`}
+    </p>}
     {phaseLine && <p aria-label={`${ticker} market phase`} data-market-phase={allocation?.market_phase?.phase} className="mb-2 text-[11px] text-[#6e6e73]">{phaseLine}</p>}
     {error && <p role="alert" className="text-xs text-[#b42318]">{error}</p>}
     {!error && !data && <p className="text-xs text-[#6e6e73]">Loading…</p>}
