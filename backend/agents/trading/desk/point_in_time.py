@@ -227,3 +227,81 @@ def graded_volatility_targeted_allocator(
         return targets * min(1.0, target / realised)
 
     return allocate
+
+
+# Per-name price tilts on the equal-weight book. The owner asked whether the
+# size of a name should depend on where its price is, so each tilt turns one
+# reading of the name's own past prices into a multiplier on its equal-weight
+# slot; the slots are renormalised to the gross and then scaled to the
+# volatility target like the untilted book, so a tilt changes how the book is
+# shared out, not how much of the book is invested. Every reading ends on the
+# decision session. The three tilts are the three honest answers to "buy more
+# when...": the name is trending (price above its trailing average), the name
+# has pulled back (price below its trailing high), the name has led its peers
+# (trailing return rank). Each has one parameter beyond the window so the
+# scorecard measures the idea, not a fit.
+def _tilt_trend(closes: np.ndarray, strength: float) -> np.ndarray:
+    """(window+1, n) closes -> 1 above the window's mean close, 1-strength below."""
+    mean = np.nanmean(closes[:-1], axis=0)
+    return np.where(closes[-1] > mean, 1.0, 1.0 - strength)
+
+
+def _tilt_pullback(closes: np.ndarray, strength: float) -> np.ndarray:
+    """(window+1, n) closes -> 1 at the window high, up to 1+strength at a full retreat."""
+    high = np.nanmax(closes, axis=0)
+    with np.errstate(divide="ignore", invalid="ignore"):
+        retreat = 1.0 - closes[-1] / high
+    return 1.0 + strength * np.clip(np.nan_to_num(retreat), 0.0, 1.0)
+
+
+def _tilt_leader(closes: np.ndarray, strength: float) -> np.ndarray:
+    """(window+1, n) closes -> 1-strength for the weakest trailing return,
+    1+strength for the strongest."""
+    with np.errstate(divide="ignore", invalid="ignore"):
+        trailing = closes[-1] / closes[0] - 1.0
+    order = np.argsort(np.argsort(np.nan_to_num(trailing)))
+    if len(order) < 2:
+        return np.ones(len(order))
+    return 1.0 + strength * (2.0 * order / (len(order) - 1) - 1.0)
+
+
+TILTS = {"trend": _tilt_trend, "pullback": _tilt_pullback, "leader": _tilt_leader}
+
+
+def graded_tilted_allocator(
+    mask: np.ndarray,
+    min_grade: int,
+    tilt: str,
+    strength: float = 0.5,
+    window: int = 63,
+    target: float = 0.25,
+    cap: float = 1.0,
+    vol_window: int = 63,
+):
+    """Return a callable (report, panel, config, t) -> tilted, vol-targeted weights."""
+    if tilt not in TILTS:
+        raise ValueError(f"unknown tilt {tilt!r}; one of {sorted(TILTS)}")
+    if not 0 <= strength <= 1 or window < 2 or not 0 < cap <= 1.0:
+        raise ValueError(
+            "need 0 <= strength <= 1, a window of two or more and 0 < cap <= 1"
+        )
+    read = TILTS[tilt]
+    scaled = graded_volatility_targeted_allocator(
+        mask, min_grade, window=vol_window, target=target, cap=1.0
+    )
+
+    def allocate(report, panel, config, t: int) -> np.ndarray:
+        base = scaled(report, panel, config, t)
+        held = base > 0
+        if t < window or not held.any():
+            return base
+        gross = float(base.sum())
+        closes = np.asarray(panel.adj_close[t - window : t + 1], dtype=float)[:, held]
+        multipliers = read(closes, strength)
+        if not np.isfinite(multipliers).all() or not multipliers.sum() > 0:
+            return base
+        targets = np.zeros(len(base))
+        targets[held] = gross * multipliers / multipliers.sum()
+        return np.minimum(targets, cap)
+
+    return allocate

@@ -524,3 +524,33 @@ def test_graded_volatility_targeted_allocator(history):
     assert np.allclose(scaled / scaled.sum(), base / base.sum())
     with pytest.raises(ValueError, match="positive target"):
         point_in_time.graded_volatility_targeted_allocator(mask, 0, target=0)
+
+
+# A price tilt reshares the volatility-targeted book between the held names
+# without changing how much of it is invested, reads nothing after the
+# decision session, and refuses an unknown tilt.
+@pytest.mark.parametrize("tilt", sorted(point_in_time.TILTS))
+def test_graded_tilted_allocator(history, tilt):
+    report = _report()
+    restricted, mask = point_in_time.point_in_time(report, history)
+    panel = report.panel
+    plain = point_in_time.graded_volatility_targeted_allocator(
+        mask, min_grade=0, window=5, target=100.0
+    )
+    tilted = point_in_time.graded_tilted_allocator(
+        mask, min_grade=0, tilt=tilt, strength=0.5, window=5, target=100.0, vol_window=5
+    )
+    t = T - 1
+    base = plain(restricted, panel, None, t)
+    weights = tilted(restricted, panel, None, t)
+    assert weights.sum() == pytest.approx(base.sum())
+    assert np.array_equal(weights > 0, base > 0)
+    later = panel.adj_close.copy()
+    later[t + 1 :] = 1.0
+    from dataclasses import replace
+
+    assert np.array_equal(
+        tilted(restricted, replace(panel, adj_close=later), None, t), weights
+    )
+    with pytest.raises(ValueError, match="unknown tilt"):
+        point_in_time.graded_tilted_allocator(mask, 0, tilt="luck")
