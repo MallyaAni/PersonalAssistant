@@ -113,10 +113,19 @@ if [[ -n "${BACKUP_MIRROR_HOST:-}" ]]; then
             # holds what the volume holds, a week deep. Without this the
             # archive would survive exactly the failure the dump already
             # survives - one disk - and not the one PITR is for.
+            # Bounded (2026-10-21): the Mac took the archive at one segment a
+            # minute and a deploy sat 40 minutes on this non-fatal step. rsync
+            # is incremental, so a cut-off mirror simply finishes on a later
+            # backup; a deploy must not wait on a slow link for a copy it
+            # already has on spark2. BACKUP_WAL_MIRROR_SECONDS overrides.
             if [[ -d "$root/data/wal-archive" ]] && command -v rsync >/dev/null 2>&1; then
-                rsync -a -e "ssh -o BatchMode=yes -o ConnectTimeout=10" --delete "$root/data/wal-archive/" "$host:$mirror_dir/wal-archive/" \
-                    && echo "WAL archive mirrored to $host:$mirror_dir/wal-archive" \
-                    || echo "WARNING: could not mirror the WAL archive to $host" >&2
+                if timeout "${BACKUP_WAL_MIRROR_SECONDS:-600}" rsync -a -e "ssh -o BatchMode=yes -o ConnectTimeout=10" --delete "$root/data/wal-archive/" "$host:$mirror_dir/wal-archive/"; then
+                    echo "WAL archive mirrored to $host:$mirror_dir/wal-archive"
+                elif [[ $? -eq 124 ]]; then
+                    echo "WARNING: WAL archive mirror to $host cut off after ${BACKUP_WAL_MIRROR_SECONDS:-600}s; it resumes on the next backup" >&2
+                else
+                    echo "WARNING: could not mirror the WAL archive to $host" >&2
+                fi
             fi
             # Prune the mirror on the same terms as the local copy; without this
             # the remote keeps every dump forever, noticed only when its disk
