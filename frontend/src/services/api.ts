@@ -3536,7 +3536,7 @@ export interface DeskStrategySimulation {
   in_sample_decisions?: number;
   out_of_sample_decisions?: number;
   provenance: {cost_bps: number; account_sha256: string; config_sha256: string; basis: string; source_record_sha256?: string;
-    strategy_identity?: string; verified_against_installed_strategy?: boolean; sample?: 'in_sample' | 'out_of_sample';
+    strategy_identity?: string; verified_against_installed_strategy?: boolean; strategy_binding?: 'superseded'; sample?: 'in_sample' | 'out_of_sample';
     model_fit_through?: string;
     strategy_contract?: {schema: string; strategy_identity: string; history_sha256: string; audit_sha256: string; source_record_sha256: string; config_sha256: string}};
 }

@@ -166,6 +166,10 @@ const referencePosition = (allocation: DeskModelAllocation, ticker: string, now:
 // Match authenticated history by its validated economics contract while retaining legacy exact-record checks.
 export const strategyHistoryMatches = (simulation: DeskStrategyStock | null | undefined, current: StrategyChartTarget | null | undefined): boolean => {
   if (!simulation || simulation.policy !== 'grade-led-learned-sizing/1' || simulation.provenance.basis !== 'account_independent_unit_capital_targets') return false
+  // An audited history whose sources the current release has since replaced is still the audited
+  // replay of the policy it names; the chart shows it under that policy until a new one is installed.
+  if (simulation.provenance.strategy_binding === 'superseded' && simulation.provenance.verified_against_installed_strategy === false
+    && simulation.provenance.strategy_contract?.schema === 'strategy-history-economics-binding/1') return true
   if (current && !current.strategyIdentity) return simulation.provenance.source_record_sha256 === current.record
   const expected = current?.strategyIdentity ?? (simulation.provenance.verified_against_installed_strategy === true ? simulation.provenance.strategy_identity : null)
   if (!expected || !/^[a-f0-9]{64}$/.test(expected)) return false
