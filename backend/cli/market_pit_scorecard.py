@@ -112,6 +112,29 @@ WORST_NAME_DAY_BASIS = "lagged-simple/2"
 # returning a `simulate.run` allocator. Parameters are frozen here, before
 # any result is seen, and named in the output file, so an arm is one
 # registered trial.
+
+
+# Each name's GICS sector from the constituent file; an overlay name without
+# one takes the sector its first theme belongs to, so a focus semiconductor
+# joins Information Technology beside the constituents it moves with.
+def _sectors():
+    from backend.market import universe
+
+    by_theme = {
+        universe.AI_COMPUTE: "Information Technology",
+        universe.SOFTWARE: "Information Technology",
+        universe.MEMORY_STORAGE: "Information Technology",
+        universe.NETWORKING: "Information Technology",
+        universe.HYPERSCALER: "Information Technology",
+        universe.POWER_COOLING: "Industrials",
+    }
+    labels = {}
+    for member in universe.build_universe():
+        theme = member.themes[0] if member.themes else None
+        labels[member.ticker] = member.sector or by_theme.get(theme, member.ticker)
+    return labels
+
+
 ARMS = {
     # P1.2: every A/A+ name at equal weight, capped at 10% of equity each.
     "ew_graded": lambda report, mask: point_in_time.graded_equal_weight_allocator(
@@ -166,34 +189,109 @@ ARMS = {
     # `point_in_time.TILTS`), so the scorecard says whether where a name's
     # price sits should change its share of the book.
     "ew_graded_trend_25": lambda report, mask: point_in_time.graded_tilted_allocator(
-        mask, min_grade=grading.ORDINAL[grading.A], tilt="trend", strength=0.5,
-        window=63, target=0.25, cap=1.0
+        mask,
+        min_grade=grading.ORDINAL[grading.A],
+        tilt="trend",
+        strength=0.5,
+        window=63,
+        target=0.25,
+        cap=1.0,
     ),
     # Per-name price tilt on the 0.25-target equal-weight book: pullback (see
     # `point_in_time.TILTS`), so the scorecard says whether where a name's
     # price sits should change its share of the book.
     "ew_graded_pullback_25": lambda report, mask: point_in_time.graded_tilted_allocator(
-        mask, min_grade=grading.ORDINAL[grading.A], tilt="pullback", strength=0.5,
-        window=63, target=0.25, cap=1.0
+        mask,
+        min_grade=grading.ORDINAL[grading.A],
+        tilt="pullback",
+        strength=0.5,
+        window=63,
+        target=0.25,
+        cap=1.0,
     ),
     # Per-name price tilt on the 0.25-target equal-weight book: leader (see
     # `point_in_time.TILTS`), so the scorecard says whether where a name's
     # price sits should change its share of the book.
     "ew_graded_leader_25": lambda report, mask: point_in_time.graded_tilted_allocator(
-        mask, min_grade=grading.ORDINAL[grading.A], tilt="leader", strength=0.5,
-        window=63, target=0.25, cap=1.0
+        mask,
+        min_grade=grading.ORDINAL[grading.A],
+        tilt="leader",
+        strength=0.5,
+        window=63,
+        target=0.25,
+        cap=1.0,
     ),
     # The leader tilt at another strength, so the scorecard shows whether the
     # gain moves with the tilt or sits at one lucky setting.
-    "ew_graded_leader_25_s25": lambda report, mask: point_in_time.graded_tilted_allocator(
-        mask, min_grade=grading.ORDINAL[grading.A], tilt="leader", strength=0.25,
-        window=63, target=0.25, cap=1.0
+    "ew_graded_leader_25_s25": lambda report, mask: (
+        point_in_time.graded_tilted_allocator(
+            mask,
+            min_grade=grading.ORDINAL[grading.A],
+            tilt="leader",
+            strength=0.25,
+            window=63,
+            target=0.25,
+            cap=1.0,
+        )
     ),
     # The leader tilt at another strength, so the scorecard shows whether the
     # gain moves with the tilt or sits at one lucky setting.
-    "ew_graded_leader_25_s100": lambda report, mask: point_in_time.graded_tilted_allocator(
-        mask, min_grade=grading.ORDINAL[grading.A], tilt="leader", strength=1.0,
-        window=63, target=0.25, cap=1.0
+    "ew_graded_leader_25_s100": lambda report, mask: (
+        point_in_time.graded_tilted_allocator(
+            mask,
+            min_grade=grading.ORDINAL[grading.A],
+            tilt="leader",
+            strength=1.0,
+            window=63,
+            target=0.25,
+            cap=1.0,
+        )
+    ),
+    # The leader tilt under the installed per-name cap, as the candidate policy
+    # would run it, so the scorecard numbers describe what would be installed.
+    "ew_graded_leader_25_cap25": lambda report, mask: (
+        point_in_time.graded_tilted_allocator(
+            mask,
+            min_grade=grading.ORDINAL[grading.A],
+            tilt="leader",
+            strength=0.5,
+            window=63,
+            target=0.25,
+            cap=0.25,
+        )
+    ),
+    # The leader-tilted book with one GICS sector capped at half, then a third,
+    # of the book: the only concentration control left once reweighting among
+    # names that move together has been shown not to help.
+    "ew_graded_leader_25_sector50": lambda report, mask: (
+        point_in_time.group_capped_allocator(
+            point_in_time.graded_tilted_allocator(
+                mask,
+                min_grade=grading.ORDINAL[grading.A],
+                tilt="leader",
+                strength=0.5,
+                window=63,
+                target=0.25,
+                cap=1.0,
+            ),
+            _sectors(),
+            0.5,
+        )
+    ),
+    "ew_graded_leader_25_sector35": lambda report, mask: (
+        point_in_time.group_capped_allocator(
+            point_in_time.graded_tilted_allocator(
+                mask,
+                min_grade=grading.ORDINAL[grading.A],
+                tilt="leader",
+                strength=0.5,
+                window=63,
+                target=0.25,
+                cap=1.0,
+            ),
+            _sectors(),
+            0.35,
+        )
     ),
     # A walk-forward gradient-boosted ranker, top ten members at 10% each.
     # "hgb_rank" trains on price features plus the desk's grade and summed

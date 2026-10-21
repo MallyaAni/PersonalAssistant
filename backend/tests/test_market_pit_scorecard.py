@@ -554,3 +554,29 @@ def test_graded_tilted_allocator(history, tilt):
     )
     with pytest.raises(ValueError, match="unknown tilt"):
         point_in_time.graded_tilted_allocator(mask, 0, tilt="luck")
+
+
+# A group cap scales one sector's names down together, leaves the others and
+# the cash alone, and never changes which names are held.
+def test_group_capped_allocator(history):
+    report = _report()
+    restricted, mask = point_in_time.point_in_time(report, history)
+    panel = report.panel
+    equal = point_in_time.graded_equal_weight_allocator(
+        mask, min_grade=0, cap=1.0, gross=1.0
+    )
+    t = T - 1
+    base = equal(restricted, panel, None, t)
+    held = [name for name, weight in zip(panel.tickers, base, strict=True) if weight > 0]
+    assert len(held) >= 2
+    groups = {name: "one" for name in held[:-1]}
+    capped = point_in_time.group_capped_allocator(equal, groups, 0.5)
+    weights = capped(restricted, panel, None, t)
+    assert np.array_equal(weights > 0, base > 0)
+    first = sum(weights[panel.index(name)] for name in held[:-1])
+    assert first == pytest.approx(0.5 * base.sum())
+    assert weights[panel.index(held[-1])] == base[panel.index(held[-1])]
+    loose = point_in_time.group_capped_allocator(equal, groups, 1.0)
+    assert np.allclose(loose(restricted, panel, None, t), base)
+    with pytest.raises(ValueError, match="group_cap"):
+        point_in_time.group_capped_allocator(equal, groups, 0)

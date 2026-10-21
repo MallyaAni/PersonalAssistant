@@ -305,3 +305,32 @@ def graded_tilted_allocator(
         return np.minimum(targets, cap)
 
     return allocate
+
+
+# Sector concentration control. The A/A+ names cluster in one or two GICS
+# sectors, and the equal-risk arm showed that reweighting among names that
+# move together buys no drawdown; the only lever left is how much of the book
+# one sector may hold. A group's weights are scaled down together to the cap
+# (a share of the book's gross) and the excess stays in cash, so the control
+# changes nothing about which names are held or how they rank, only how far
+# one sector can carry the book. `groups` maps a ticker to its label; a name
+# without a label is its own group.
+def group_capped_allocator(inner, groups: dict, group_cap: float):
+    """Return a callable (report, panel, config, t) -> inner weights, each group capped."""
+    if not 0 < group_cap <= 1:
+        raise ValueError("need 0 < group_cap <= 1")
+
+    def allocate(report, panel, config, t: int) -> np.ndarray:
+        targets = np.array(inner(report, panel, config, t), dtype=float)
+        gross = float(targets.sum())
+        if not gross > 0:
+            return targets
+        labels = np.array([groups.get(name, name) for name in panel.tickers])
+        for label in np.unique(labels[targets > 0]):
+            members = labels == label
+            share = float(targets[members].sum())
+            if share > group_cap * gross:
+                targets[members] *= group_cap * gross / share
+        return targets
+
+    return allocate
