@@ -90,11 +90,30 @@ ROTATION_WEIGHT = 0.5
 # number was development evidence; the second is the test. The ridge set
 # stays available as RIDGE_WEIGHTS for the comparison the forward record
 # will eventually settle.
+#
+# 2026-10-22: the valuation analyst carries three votes. On the whole S&P
+# 500 point in time (every member as of each session, sector peers, the
+# dated index changes as the book; `market_universe_hindsight_research`)
+# it is the one analyst whose score ranks the next sixty sessions' excess
+# return every year since 2020 (rank IC +0.05 to +0.11 in 2021, 2025,
+# 2026; fundamental ~0 since 2018, technical ~0, sentiment covers 45% of
+# names at ~0). Graded with value at three, the installed leader rule
+# earned 25.0% a year at Sharpe 1.11 on the book against 22.0% at 0.99
+# with equal votes (better in 9 of 11 years), and 17.1% at 1.00 on the
+# S&P 500 against 15.3% at 0.91 (9 of 11). Walk-forward, the weight
+# chosen each year from {1, 2, 3, 4} on the years before it settles on
+# three from 2020 and makes 23.8% at 0.95 over 2019-2026 on the book
+# against 19.6% at 0.82 for equal votes, 18.3% at 0.98 against 16.0% at
+# 0.88 on the S&P 500 - the test the ridge set above failed. Weights four
+# and five score the same; two keeps half the gain; dropping sentiment
+# loses it. Scaled to the equal total, a bullish valuation alone now
+# reaches A (2.08 votes), and growth with trend alone stops at B (1.38):
+# the grade follows the analyst that has been right.
 ANALYST_WEIGHTS = {
     "fundamental": 1.0,
     "technical": 1.0,
     "sentiment": 1.0,
-    "value": 1.0,
+    "value": 3.0,
     "rotation": ROTATION_WEIGHT,
 }
 RIDGE_WEIGHTS = {

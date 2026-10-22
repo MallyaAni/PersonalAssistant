@@ -316,9 +316,11 @@ def test_the_live_value_read_regrades_a_name():
         {"ADBE": {"now": 0.10, "close": 0.60, "stance": -1}},
     )
     row = {r["ticker"]: r for r in rows}["ADBE"]
-    # The value veto caps the top grades: one bearish analyst drops A+ to B.
+    # A bearish valuation outweighs the three bullish votes: at three votes
+    # it takes the sum below the B line, so the live grade is C, not the
+    # vetoed B it was when every analyst carried one vote.
     assert row["grade"] == "A+"
-    assert row["grade_live"] == "B"
+    assert row["grade_live"] == "C"
 
 
 # The row carries the live grade's own margin, so "at risk" reads the
@@ -342,9 +344,11 @@ def test_the_live_grade_carries_its_own_margin():
     )
     row = {r["ticker"]: r for r in rows}["ADBE"]
     assert row["grade_margin"] == 0.5  # the evening margin stands
-    # A live A+ at release (sentiment bullish, votes 3 above the A+ line
-    # of 2) carries its own margin, distinct from the fixture's evening one.
-    assert row["grade_margin_live"] == 1.0
+    # A live A+ at release (sentiment bullish, three one-vote analysts at
+    # 0.69 each once valuation's three votes are scaled in, 2.08 against the
+    # A+ line of 2) carries its own margin, distinct from the fixture's
+    # evening one.
+    assert abs(row["grade_margin_live"] - (3 * 4.5 / 6.5 - 2.0)) < 1e-9
     record["grades"]["ADBE"]["stances"] = {
         "fundamental": 1,
         "technical": 1,
