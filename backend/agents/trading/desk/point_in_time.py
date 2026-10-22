@@ -578,7 +578,7 @@ def forecast_tilted_allocator(inner, forecast, strength: float = 0.5):
 # trailing stop on each name do what a trader expects of it. Each keeps the
 # session state it needs in the closure, read forward only.
 def banded_allocator(inner, band: float = 0.01):
-    """Return a callable keeping a name's last target until the new one moves by `band`."""
+    """Return a callable keeping a target until the new one moves by `band`."""
     state = {"t": -1, "previous": None}
 
     def allocate(report, panel, config, t: int) -> np.ndarray:
@@ -596,7 +596,7 @@ def banded_allocator(inner, band: float = 0.01):
 
 
 def index_regime_allocator(inner, span: int = 50, scale: float = 0.5):
-    """Return a callable scaling the targets by `scale` while the benchmark is under its EMA."""
+    """Return a callable scaling targets by `scale` under the benchmark EMA."""
 
     def allocate(report, panel, config, t: int) -> np.ndarray:
         targets = np.array(inner(report, panel, config, t), dtype=float)
@@ -615,7 +615,7 @@ def index_regime_allocator(inner, span: int = 50, scale: float = 0.5):
 
 
 def trailing_stop_allocator(inner, stop: float = 0.15, cooldown: int = 10):
-    """Return a callable exiting a name `stop` under its peak close, out for `cooldown`."""
+    """Return a callable exiting a name `stop` under its peak, out for `cooldown`."""
     state = {"t": -1, "peak": None, "blocked_until": None}
 
     def allocate(report, panel, config, t: int) -> np.ndarray:
@@ -639,6 +639,41 @@ def trailing_stop_allocator(inner, stop: float = 0.15, cooldown: int = 10):
         out = (blocked_until >= t) & held
         targets[out] = 0.0
         state["t"] = t
+        return targets
+
+    return allocate
+
+
+# Enter on one grade, hold on a lower one. The installed rule exits a name
+# the session its grade slips below A, and the replay's own audit found the
+# exited names went on to beat the benchmark: the downgrade sells too soon.
+# This keeps a held name while it still grades at least `hold_grade` and
+# admits a new one only at `enter_grade`, so the book is the same names with
+# a slower hand on the exit. `build(mask)` makes the inner allocator from a
+# mask; the mask it is given admits a name on the entry grade, or on the hold
+# grade when the previous session's targets held it.
+def grade_hysteresis_allocator(
+    build, mask: np.ndarray, report, enter_grade: int, hold_grade: int
+):
+    """Return a callable (report, panel, config, t) -> targets, exiting lower."""
+    if hold_grade > enter_grade:
+        raise ValueError("the hold grade must not be above the entry grade")
+    state = {"held": None}
+
+    class _Mask:
+        def __getitem__(self, t):
+            base = np.asarray(mask[t], dtype=bool)
+            grades = report.graded.grades[t]
+            keep = grades >= enter_grade
+            if state["held"] is not None and len(state["held"]) == len(keep):
+                keep |= state["held"] & (grades >= hold_grade)
+            return base & keep
+
+    inner = build(_Mask())
+
+    def allocate(report_, panel, config, t: int) -> np.ndarray:
+        targets = np.array(inner(report_, panel, config, t), dtype=float)
+        state["held"] = targets > 0
         return targets
 
     return allocate

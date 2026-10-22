@@ -15,7 +15,7 @@ import {
   type UTCTimestamp,
 } from 'lightweight-charts'
 import { exportDeskPersonalReceipt, getDeskChart, getDeskPersonalHistory, getDeskOriginalStrategyRecommendation, getDeskRecordedStrategyRecommendations, DESK_CHART_DEFAULT_SESSIONS, type DeskRecordedStrategyReference, type DeskOriginalStrategyRecommendation, type DeskPersonalReceipt, type DeskChart, type DeskChartBar, type DeskChartDecision, type DeskChartTimeframe } from '../../services/api'
-import type { DeskHistory, DeskHistoryFill, DeskHistoryRow, DeskLive, DeskModelAllocation, DeskPaperLive, DeskStructure, DeskStrategyStock, DeskStrategyDecision } from '../../services/api'
+import type { DeskHistory, DeskHistoryFill, DeskHistoryRow, DeskLive, DeskModelAllocation, DeskPaperLive, DeskPolicyReplay, DeskStructure, DeskStrategyStock, DeskStrategyDecision } from '../../services/api'
 import { SessionPrice } from './StockBoard'
 import { LEVEL_NAME, percent, shares } from './TradeBoard'
 import {confirmedPaperFills, paperActivitySession, paperFillSession} from './paperFills'
@@ -345,6 +345,15 @@ const gradeMarkers = (history: {rows: {date: string; at?: string; grade?: string
   return out
 }
 
+// What the rule's entries in this name did afterwards, against the benchmark, in one line.
+const replayOutcomeLine = (replay: DeskPolicyReplay): string => {
+  const entry = replay.outcomes?.entry_summary
+  if (!entry || !entry.count) return ''
+  const pct = (value: number | undefined) => value === undefined ? '—' : `${(value * 100).toFixed(0)}%`
+  const signed = (value: number | undefined) => value === undefined ? '—' : `${value >= 0 ? '+' : ''}${(value * 100).toFixed(1)}%`
+  return `${entry.count} entr${entry.count === 1 ? 'y' : 'ies'} here · beat QQQ after 20 sessions ${pct(entry.hit_rate_20)} of the time, mean excess ${signed(entry.mean_excess_20)} · after 60: ${pct(entry.hit_rate_60)}, ${signed(entry.mean_excess_60)}.`
+}
+
 // The chart's own marker shape, shared by every layer drawn on the candles.
 type MarkerKind = 'replay' | 'recorded' | 'current'
 type MarkerSample = 'in_sample' | 'out_of_sample' | 'live' | 'unknown'
@@ -383,6 +392,37 @@ const replayColor = (action: string, sample: MarkerSample) => action === 'Buy'
 const DUST_WEIGHT = 0.005
 const dustTrades = (simulation: DeskStrategyStock | null | undefined): number =>
   simulation?.decisions.filter(row => ['BUY', 'SELL', 'TRIM'].includes(row.action) && typeof row.weight === 'number' && row.weight > 0 && row.weight < DUST_WEIGHT).length ?? 0
+
+// An entry or an exit is always drawn; a resize of a held name only when it is a real
+// reallocation. The rule nudges a held name's slot most sessions as the tilt and the
+// volatility target drift, and drawing every nudge buried the decisions a person reads.
+const RESIZE_WEIGHT = 0.02
+const drawnReplayTrade = (trade: DeskPolicyReplay['trades'][number]): boolean =>
+  Number.isFinite(trade.size) && trade.size >= DUST_WEIGHT
+  && (trade.target < DUST_WEIGHT || Math.abs(trade.target - trade.size) < DUST_WEIGHT || trade.size >= RESIZE_WEIGHT)
+
+// The installed policy's own decisions back in time: a target set at a close trades at the
+// next open, so the marker sits on that next session's candle (its first bar on 15m).
+const policyReplayMarkers = (replay: DeskPolicyReplay | null | undefined, bars: DeskChartBar[], timeframe: Timeframe, policy?: string): ChartMarker[] => {
+  const markers = new Map<string, ChartMarker>()
+  for (const trade of replay?.trades ?? []) {
+    if (!drawnReplayTrade(trade)) continue
+    const candle = timeframe === '15m' ? bars.find(bar => bar.date === trade.date && !bar.auction && drawableCandle(bar)) : markerCandle(trade.date, bars, timeframe)
+    if (!candle) continue
+    const time = barStamp(candle, timeframe)
+    const action = trade.action === 'BUY' ? 'Buy' : 'Sell'
+    const key = `replay:${time}:${action}`
+    const previous = markers.get(key)
+    const weight = (previous?.recommendations?.reduce((sum, item) => sum + item.weight, 0) ?? 0) + trade.size
+    const at = `${trade.date}T09:30:00-04:00`
+    markers.set(key, {id: `strategy:${key}`, time, position: action === 'Buy' ? 'belowBar' : 'aboveBar',
+      color: replayColor(action, 'out_of_sample'), shape: 'circle', text: targetLabel({action, weight}), size: 1, kind: 'replay', sample: 'out_of_sample', policy,
+      recommendations: [...(previous?.recommendations ?? []), {id: `policy-replay:${trade.decided}:${action}`, at, action, weight: trade.size, simulated: true,
+        evidence: {grade: replay!.rows.filter(row => row.date <= trade.decided).slice(-1)[0]?.grade, inputs_as_of: trade.decided, model_position_size: trade.target,
+          reason: `Rule target ${(trade.target * 100).toFixed(1)}% set at the ${trade.decided} close; ${action.toLowerCase()} at the ${trade.date} open.`} as DeskStrategyDecision['evidence']}]})
+  }
+  return [...markers.values()]
+}
 
 const strategyTargetMarkers = (simulation: DeskStrategyStock | null | undefined, current: StrategyChartTarget | null | undefined, bars: DeskChartBar[], timeframe: Timeframe, recorded: DeskRecordedStrategyReference[] = [], policy?: string): ChartMarker[] => {
   const targets: (StrategyChartTarget & {decision?: DeskStrategyDecision; recorded?: DeskRecordedStrategyReference; kind: MarkerKind; sample: MarkerSample})[] = []
@@ -745,6 +785,7 @@ export const TickerChart = ({
   levels = null,
   strategy = false,
   simulation = null,
+  policyReplay: servedReplay = null,
   simulationError = '',
   modelTarget = null,
   allocation,
@@ -778,6 +819,9 @@ export const TickerChart = ({
   suggestion?: { word: string; detail: string } | null
   strategy?: boolean
   simulation?: DeskStrategyStock | null
+  // The installed policy's own replay, served beside the audited history and kept
+  // even when that history is another policy's.
+  policyReplay?: DeskPolicyReplay | null
   simulationError?: string
   modelTarget?: StrategyChartTarget | null
   allocation?: DeskModelAllocation
@@ -1034,7 +1078,14 @@ export const TickerChart = ({
   // A paper history is only a replay of the policy that wrote it; hide a retired policy's signals instead of mislabelling them as today's.
   const livePolicy = currentPolicy ?? allocation?.policy
   const replayHidden = !strategy && Boolean(history?.policy) && Boolean(livePolicy) && history!.policy !== livePolicy
-  const targetMarkers = useMemo(() => strategyTargetMarkers(simulation, modelTarget, merged.bars, timeframe, recordedRows, livePolicy), [simulation, modelTarget, merged, timeframe, recordedRows, livePolicy])
+  // Every chart shows the installed policy's decisions and no other's: the policy's own
+  // replay when it is served, the audited history only while it is that policy's.
+  const policyReplay = servedReplay && servedReplay.status === 'available' && (!livePolicy || servedReplay.policy === livePolicy) ? servedReplay : null
+  const auditedCurrent = !!simulation && (!livePolicy || simulation.policy === livePolicy)
+  const targetMarkers = useMemo(() => [
+    ...(policyReplay ? policyReplayMarkers(policyReplay, merged.bars, timeframe, livePolicy) : []),
+    ...strategyTargetMarkers(policyReplay || !auditedCurrent ? null : simulation, modelTarget, merged.bars, timeframe, recordedRows, livePolicy),
+  ], [simulation, policyReplay, auditedCurrent, modelTarget, merged, timeframe, recordedRows, livePolicy])
   // The confirmed entry already shows the current call on its own candle; the newest-candle square
   // speaks only when there is no such entry, so one call is never drawn twice.
   const currentMarker = useMemo(() => strategy && !targetMarkers.some(marker => marker.kind === 'current')
@@ -1381,10 +1432,7 @@ export const TickerChart = ({
     scale.setVisibleLogicalRange({from: start, to: start + span})
   }
 
-  // A replay of a policy the desk has since replaced is history, not the desk's
-  // present reasoning: its trades start hidden, and the toggle says whose they are.
-  const replayStale = !!(simulation && livePolicy && simulation.policy !== livePolicy)
-  useEffect(() => {if (replayStale) setShowFills(false)}, [replayStale])
+  const replayStale = !!(simulation && livePolicy && simulation.policy !== livePolicy) && !policyReplay
   // The pressed timeframe and range read like the board's filter chips.
   const chip = (on: boolean) => `rounded border px-2 py-0.5 text-xs ${on ? 'border-[#0071e3] bg-[#e8f2ff] font-medium text-[#0071e3]' : 'border-black/[0.08] text-[#6e6e73]'}`
   if (strategy) return <section className="mb-4" aria-label={`${ticker} price chart`}>
@@ -1409,7 +1457,7 @@ export const TickerChart = ({
         <button type="button" aria-label="Zoom in" title="Zoom in" className={chip(false)} onClick={() => zoomRange(2 / 3)}>+</button>
         <button type="button" aria-label="Zoom out" title="Zoom out" className={chip(false)} onClick={() => zoomRange(1.5)}>−</button>
       </div>
-      <label className="flex items-center gap-1"><input type="checkbox" checked={showFills} onChange={event => setShowFills(event.target.checked)} />{replayStale ? 'Buy / Sell · previous policy' : 'Buy / Sell'}</label>
+      <label className="flex items-center gap-1"><input type="checkbox" checked={showFills} onChange={event => setShowFills(event.target.checked)} />Buy / Sell</label>
       <label className="flex items-center gap-1"><input type="checkbox" checked={showSignals} onChange={event => setShowSignals(event.target.checked)} />Grades</label>
     </div>
     {/* One line names the replay, and says when it is a policy the desk has since replaced; the
@@ -1418,18 +1466,30 @@ export const TickerChart = ({
       data-model-fit-through={simulation?.provenance.model_fit_through ?? ''}
       data-next-publication={allocation?.status === 'awaiting_nightly' ? allocation.next_publication_at ?? '' : ''}
       className="mb-2 flex flex-wrap items-center gap-x-2 text-[11px] text-[#6e6e73]">
-      <span>{simulation
-        ? livePolicy && simulation.policy !== livePolicy ? `Replay · previous policy ${simulation.policy}` : `Replay · ${simulation.policy}`
-        : `Policy ${livePolicy ?? 'unavailable'} · replay unavailable`}{simulation?.provenance.model_fit_through && ` · fit through ${simulation.provenance.model_fit_through}`}</span>
-      {simulation && <details aria-label={`${ticker} replay basis`} className="inline">
+      <span>{policyReplay
+        ? `Replay · ${policyReplay.policy} · ${policyReplay.start} → ${policyReplay.through}`
+        : simulation && !replayStale ? `Replay · ${simulation.policy}${simulation.provenance.model_fit_through ? ` · fit through ${simulation.provenance.model_fit_through}` : ''}`
+        : `Replay · ${livePolicy ?? 'policy'} · not yet generated`}</span>
+      {(policyReplay || (simulation && !replayStale)) && <details aria-label={`${ticker} replay basis`} className="inline">
         <summary className="cursor-pointer text-[#0071e3]">about</summary>
-        <span className="block">Historical replay of {simulation.policy}{livePolicy && simulation.policy !== livePolicy ? `, replaced by ${livePolicy}` : ''} · {simulation.start} → {simulation.through} · models were not refitted at each past date · not out-of-sample validation or advice published at that time.</span>
-        {typeof simulation.in_sample_decisions === 'number' && typeof simulation.out_of_sample_decisions === 'number'
-          && <span className="block">{simulation.in_sample_decisions} decisions in-sample, {simulation.out_of_sample_decisions} after the fit date{dustTrades(simulation) > 0 ? ` · ${dustTrades(simulation)} trades under 0.5% not drawn` : ''}.</span>}
+        {policyReplay ? <>
+          <span className="block">{policyReplay.note}</span>
+          {replayOutcomeLine(policyReplay) && <span className="block">{replayOutcomeLine(policyReplay)}</span>}
+          {policyReplay.trades.filter(trade => !drawnReplayTrade(trade)).length > 0 && <span className="block">{policyReplay.trades.filter(trade => !drawnReplayTrade(trade)).length} small resizes of a held slot not drawn; entries, exits and reallocations of 2% or more are.</span>}
+        </> : <>
+          <span className="block">Historical replay of {simulation!.policy} · {simulation!.start} → {simulation!.through} · models were not refitted at each past date · not out-of-sample validation or advice published at that time.</span>
+          {typeof simulation!.in_sample_decisions === 'number' && typeof simulation!.out_of_sample_decisions === 'number'
+            && <span className="block">{simulation!.in_sample_decisions} decisions in-sample, {simulation!.out_of_sample_decisions} after the fit date{dustTrades(simulation) > 0 ? ` · ${dustTrades(simulation)} trades under 0.5% not drawn` : ''}.</span>}
+        </>}
       </details>}
     </div>
     {/* A name the grades reached but the replay never sized is the most puzzling chart on the desk: say so instead of showing arrows with no circles. */}
-    {strategy && simulation && simulation.decisions.length === 0 && <p aria-label={`${ticker} replay without trades`} className="mb-2 text-[11px] text-[#6e6e73]">
+    {strategy && policyReplay && !policyReplay.trades.some(drawnReplayTrade) && <p aria-label={`${ticker} replay without trades`} className="mb-2 text-[11px] text-[#6e6e73]">
+      {policyReplay.rows.some(row => row.grade === 'A' || row.grade === 'A+')
+        ? `The rule never held ${ticker} in this window: the sessions it graded A or A+ never gave it a slot.`
+        : `The rule never held ${ticker}: it never graded A or A+ in this window.`}
+    </p>}
+    {strategy && !policyReplay && simulation && !replayStale && simulation.decisions.length === 0 && <p aria-label={`${ticker} replay without trades`} className="mb-2 text-[11px] text-[#6e6e73]">
       {!simulation.grade_rows?.some(row => row.grade === 'A' || row.grade === 'A+')
         ? `The replay never bought ${ticker}: it never graded A or A+ in this window, so there was no trade to draw.`
         : simulation.targets.some(row => typeof row.weight === 'number' && row.weight > 0)

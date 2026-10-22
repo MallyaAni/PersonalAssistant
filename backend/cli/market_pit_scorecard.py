@@ -551,6 +551,29 @@ ARMS.update(
                 _leader_ewma()(report, mask), stop=0.25
             )
         ),
+        # Enter at A, hold while at least B: the installed rule with a slower exit.
+        "leader_ewma_holdB": lambda report, mask: (
+            point_in_time.forecast_targeted_allocator(
+                point_in_time.grade_hysteresis_allocator(
+                    lambda held: point_in_time.graded_tilted_allocator(
+                        held,
+                        min_grade=grading.ORDINAL[grading.B],
+                        tilt="leader",
+                        strength=0.5,
+                        window=63,
+                        target=1e9,
+                        cap=0.25,
+                    ),
+                    mask,
+                    report,
+                    grading.ORDINAL[grading.A],
+                    grading.ORDINAL[grading.B],
+                ),
+                forecaster="ewma",
+                target=0.25,
+                ewma_span=20,
+            )
+        ),
     }
 )
 

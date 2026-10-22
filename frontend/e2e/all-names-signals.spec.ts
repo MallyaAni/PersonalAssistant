@@ -2,7 +2,7 @@ import {expect, test, type Page} from '@playwright/test'
 
 const names = ['BUYLOW', 'BUYHIGH', 'SELLLOW', 'SELLHIGH', 'WAIT', 'MISSING']
 const session = '2026-10-13'
-type Fixture = {phase: string; paper: boolean; lost: boolean; expired: boolean; quoteMissing: boolean; liveReads: number; diagnostics: string[]; recordedMode?: 'original' | 'foreign' | 'bytes' | 'late' | 'paged'; recordedReads?: number; originalMode?: 'original' | 'foreign' | 'size'; originalReads?: number; originalDelay?: number; denseMarkers?: boolean; installedHistory?: boolean; numerical?: 'execute' | 'wait'; numericalForeign?: boolean; numericalExpired?: boolean; publicationV2?: boolean; noSellSignals?: boolean; simulationPolicy?: string; signalUntil?: string; allocationUntil?: string; allocationWrong?: boolean; allocationMissing?: boolean; regularFallback?: boolean; publishedPlan?: boolean; independentSizing?: boolean; independentSignalWrong?: boolean; targetWeight?: number; simulationIdentityWrong?: boolean; entryAt?: number; formingSignal?: boolean; chartFrames?: string[]; zoomHistory?: boolean; chartSessions?: number[]; currentSessionBars?: boolean; openPlan?: boolean}
+type Fixture = {phase: string; paper: boolean; lost: boolean; expired: boolean; quoteMissing: boolean; liveReads: number; diagnostics: string[]; recordedMode?: 'original' | 'foreign' | 'bytes' | 'late' | 'paged'; recordedReads?: number; originalMode?: 'original' | 'foreign' | 'size'; originalReads?: number; originalDelay?: number; denseMarkers?: boolean; installedHistory?: boolean; numerical?: 'execute' | 'wait'; numericalForeign?: boolean; numericalExpired?: boolean; publicationV2?: boolean; noSellSignals?: boolean; simulationPolicy?: string; signalUntil?: string; allocationUntil?: string; allocationWrong?: boolean; allocationMissing?: boolean; regularFallback?: boolean; publishedPlan?: boolean; independentSizing?: boolean; independentSignalWrong?: boolean; targetWeight?: number; simulationIdentityWrong?: boolean; entryAt?: number; formingSignal?: boolean; chartFrames?: string[]; zoomHistory?: boolean; chartSessions?: number[]; currentSessionBars?: boolean; openPlan?: boolean; policyReplay?: boolean}
 
 type ReferenceFixture = Fixture & {referenceMode?: 'trim' | 'exit' | 'buy'; referenceUnknown?: boolean; referenceObserved?: boolean; referenceResolved?: boolean; referenceBookInvalid?: boolean; numericalQuoteUntil?: string; persistedPosition?: number; persistedInvalid?: 'unavailable' | 'foreign' | 'book'; assessmentMissing?: boolean}
 
@@ -292,7 +292,14 @@ async function install(page: Page, baseURL: string, state: ReferenceFixture) {
           action:index%2 ? 'SELL' : 'BUY',target_weight:.02,weight:.02,
           evidence:{grade:'A',inputs_as_of:'2026-10-08',model_position_size:.02,features:{ema_21_distance:-.01},reason:'Original dense-fixture recommendation'}})) : []),
       ],
-      trades: [{id: 'sim-buy', date: '2026-10-14', at: '2026-10-14T14:00:00Z', action: 'BUY', qty: 7, price: 101}, {id: 'sim-sell', date: '2026-10-15', at: '2026-10-15T15:00:00Z', action: 'SELL', qty: 5, price: 102}], targets: [], latest_target: .02, latest_holding: 2, provenance: {cost_bps: 10, basis: 'account_independent_unit_capital_targets', source_record_sha256: (state.simulationIdentityWrong ? 'c' : 'a').repeat(64),
+      trades: [{id: 'sim-buy', date: '2026-10-14', at: '2026-10-14T14:00:00Z', action: 'BUY', qty: 7, price: 101}, {id: 'sim-sell', date: '2026-10-15', at: '2026-10-15T15:00:00Z', action: 'SELL', qty: 5, price: 102}], targets: [], latest_target: .02,
+      // The installed policy's own replay: an entry at the Oct 12 open, a small resize, a 3% add, an exit at the Oct 15 open.
+      ...(state.policyReplay ? {policy_replay: {status: 'available', policy: 'grade-led-learned-sizing/1', arm: 'fixture-arm', basis: 'point_in_time_research_targets_not_audited_history',
+        start: '2016-01-04', through: '2026-10-15', generated_at: '2026-10-16T01:00:00Z', note: 'In-sample research fixture.',
+        rows: [{date: '2026-10-09', weight: .05, grade: 'A'}, {date: '2026-10-13', weight: .08, grade: 'A+'}, {date: '2026-10-14', weight: 0, grade: 'B'}],
+        trades: [{decided: '2026-10-09', date: '2026-10-12', action: 'BUY', size: .05, target: .05}, {decided: '2026-10-12', date: '2026-10-13', action: 'BUY', size: .006, target: .056},
+          {decided: '2026-10-13', date: '2026-10-14', action: 'BUY', size: .03, target: .086}, {decided: '2026-10-14', date: '2026-10-15', action: 'SELL', size: .086, target: 0}],
+        outcomes: {entry_summary: {count: 1, hit_rate_20: 1, mean_excess_20: .04, hit_rate_60: 0, mean_excess_60: -.02}}, latest_target: 0}} : {}), latest_holding: 2, provenance: {cost_bps: 10, basis: 'account_independent_unit_capital_targets', source_record_sha256: (state.simulationIdentityWrong ? 'c' : 'a').repeat(64),
         ...(state.publicationV2 ? {config_sha256: '1'.repeat(64), verified_against_installed_strategy:state.installedHistory, strategy_identity: (state.simulationIdentityWrong ? 'c' : 'd').repeat(64),
           strategy_contract: {schema: 'strategy-history-economics-binding/1', strategy_identity: 'd'.repeat(64), history_sha256: '2'.repeat(64), audit_sha256: '3'.repeat(64), source_record_sha256: 'a'.repeat(64), config_sha256: '1'.repeat(64)}} : {})}}
     else if (path.includes('/live/read/')) json = {read: 'Buyers defended support.', lines: {short: [], medium: [], long: []}, data_at: bar, read_at: at, stale: false}
@@ -583,6 +590,28 @@ test('Current position and historical trade sizes have distinct labels on every 
     await expect(dialog.getByLabel('BUYHIGH current chart position',{exact:true})).toHaveText('Position 14.3%')
     await expect(dialog.getByLabel('BUYHIGH target chart markers',{exact:true})).not.toContainText('14.3%')
   }
+  expect(state.diagnostics).toEqual([])
+})
+
+// Every chart shows the installed policy's own decisions back in time, drawn from its replay;
+// an older policy's audited history is never drawn beside them.
+test('Charts draw the installed policy replay and never an older policy',async ({page,baseURL})=>{
+  const state=fixture()
+  Object.assign(state,{publicationV2:true,phase:'post-market',policyReplay:true,simulationPolicy:'earlier-policy'})
+  await install(page,baseURL!,state)
+  await page.goto('/?deskView=strategy#desk')
+  await page.getByRole('button',{name:'BUYHIGH',exact:true}).click()
+  const dialog=page.getByRole('dialog',{name:'BUYHIGH history',exact:true})
+  await expect(dialog.getByLabel('BUYHIGH strategy chart window',{exact:true})).toContainText('Replay · grade-led-learned-sizing/1 · 2016-01-04 → 2026-10-15')
+  await expect(dialog).not.toContainText('previous policy')
+  await expect(dialog).not.toContainText('earlier-policy')
+  // The entry, the 3% add and the exit are drawn; the 0.6% resize of a held slot is not.
+  await expect(dialog.getByLabel('BUYHIGH target chart markers',{exact:true})).toHaveText('Buy 5.0% · Buy 3.0% · Sell 8.6%')
+  const basis=dialog.getByLabel('BUYHIGH replay basis',{exact:true})
+  await basis.locator('summary').click()
+  await expect(basis).toContainText('In-sample research fixture.')
+  await expect(basis).toContainText('1 entry here · beat QQQ after 20 sessions 100% of the time, mean excess +4.0% · after 60: 0%, -2.0%.')
+  await expect(basis).toContainText('1 small resizes of a held slot not drawn')
   expect(state.diagnostics).toEqual([])
 })
 

@@ -3546,8 +3546,28 @@ export interface DeskStrategySimulation {
     strategy_contract?: {schema: string; strategy_identity: string; history_sha256: string; audit_sha256: string; source_record_sha256: string; config_sha256: string}};
 }
 
+// The installed policy's own replay: the point-in-time rule's target in this
+// name on every session and the trades it implies at the next open. Research,
+// not audited history; the chart draws it only for the installed policy.
+export interface DeskPolicyReplay {
+  status: 'available';
+  policy: string;
+  arm: string;
+  basis: string;
+  start: string;
+  through: string;
+  generated_at: string;
+  note: string;
+  audit?: {entry_summary?: Record<string, number>; exit_summary?: Record<string, number>; by_year?: Record<string, Record<string, number>>};
+  rows: {date: string; weight: number; grade: string}[];
+  trades: {decided: string; date: string; action: 'BUY' | 'SELL'; size: number; target: number}[];
+  outcomes?: {entry_summary?: Record<string, number>; exit_summary?: Record<string, number>};
+  latest_target: number;
+}
+
 export interface DeskStrategyStock extends DeskStrategySimulation {
   recorded_history_version?: 'strategy-recorded-entries/1';
+  policy_replay?: DeskPolicyReplay;
   ticker: string;
   decisions: DeskStrategyDecision[];
   trades: DeskStrategyTrade[];

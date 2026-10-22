@@ -72,6 +72,44 @@ def _superseded_history(root, ticker):
 
 
 # Serve one authenticated simulation projection without reading or changing a broker.
+# The installed policy's own replay, when the research run has written one:
+# the point-in-time rule's target in this name on every session and the
+# trades it implies at the next open. Research, not audited history: the
+# served value says so, and the chart draws it only when its policy is the
+# installed one.
+def _policy_replay(root, ticker):
+    from backend.cli import market_policy_replay_research as research
+    from backend.market import learned_live_holding
+
+    try:
+        _, installed = learned_live_holding.read_configuration(Path(root), datetime.now(UTC))
+        policy = installed["policy"]
+        arm = research.INSTALLED_ARMS[policy]
+        folder = Path(root) / research.DIRECTORY / arm
+        pointer = json.loads((folder / "latest.json").read_bytes())
+        manifest = json.loads((folder / pointer["through"] / "manifest.json").read_bytes())
+        if manifest["schema"] != research.SCHEMA or manifest["policy"] != policy:
+            return None
+        stock = json.loads((folder / pointer["through"] / f"{ticker.upper()}.json").read_bytes())
+    except (OSError, ValueError, KeyError, TypeError):
+        return None
+    return {
+        "status": "available",
+        "policy": policy,
+        "arm": arm,
+        "basis": manifest["basis"],
+        "start": manifest["start"],
+        "through": manifest["through"],
+        "generated_at": manifest["generated_at"],
+        "note": manifest["note"],
+        "audit": manifest.get("audit", {}),
+        "rows": stock["rows"],
+        "trades": stock["trades"],
+        "outcomes": stock.get("outcomes", {}),
+        "latest_target": stock["latest_target"],
+    }
+
+
 async def view(user_id, response, ticker=None):
     _operator_only(user_id)
     response.headers["Cache-Control"] = "private, no-store"
@@ -91,7 +129,12 @@ async def view(user_id, response, ticker=None):
         ) from exc
     # The frozen-model boundary is stamped on the served rows, not in the sealed
     # artefact, so the chart can mute what the models had already seen.
-    return {"user_id": user_id, **strategy_replay_sample.stamp(value), 'recorded_history_version':strategy_entry_history.PAGE_SCHEMA}
+    served = {"user_id": user_id, **strategy_replay_sample.stamp(value), 'recorded_history_version':strategy_entry_history.PAGE_SCHEMA}
+    if ticker is not None:
+        replay = await asyncio.to_thread(_policy_replay, settings.MARKET_DATA_ROOT, ticker)
+        if replay is not None:
+            served["policy_replay"] = replay
+    return served
 
 
 # Return the simulated portfolio and dated coverage independently of the paper account.
