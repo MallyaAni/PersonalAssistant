@@ -1293,17 +1293,15 @@ export const TickerChart = ({
     const overlays = showFills && strategy ? targetMarkers.filter(marker => marker.kind === 'recorded') : []
     const chart = chartRef.current, plugin = markersRef.current, element = holder.current
     if (!chart || !plugin || !element) return
-    if (!strategy) {
-      plugin.setMarkers(markers)
-      setMarkerOverlays(previous => previous.length ? [] : previous)
-      element.dataset.overlayMarkerCount = '0'
-      return
-    }
+    // The paper chart takes the same label pass as the strategy chart: with the replay
+    // drawn beside the fills, two labels on one stretch of a candle were unreadable.
     const measure = document.createElement('canvas').getContext('2d')
     if (measure) measure.font = '11px Arial, sans-serif'
     // Keep every clickable marker; label only those that fit at this zoom, prioritizing selected decisions and grades.
     const paint = () => {
-      const occupied: {left: number; right: number; position: string}[] = []
+      // Markers on one candle stack, text and all, so their labels never collide; only
+      // labels from different candles compete for a stretch of one side.
+      const occupied: {left: number; right: number; position: string; time?: unknown}[] = []
       const labelled = new Set<ChartMarker>()
       const edges: typeof edgeLabels = []
       const overlay: OverlayMarker[] = []
@@ -1343,8 +1341,11 @@ export const TickerChart = ({
         const width = textWidth(marker.text)
         if (width > plotWidth-12) continue
         const left = Math.max(6,Math.min(x-width/2,plotWidth-width-6))
-        const span = {left,right:left+width,position:marker.position}
-        if (occupied.some(other => other.position === span.position && span.left < other.right+8 && span.right > other.left-8)) continue
+        const span = {left,right:left+width,position:marker.position,time:marker.time}
+        // The paper chart keeps every fill, decision and grade label it always drew; only
+        // the replay's labels give way there, so the replay never buries the account's own record.
+        const yields = strategy || marker.kind === 'replay'
+        if (yields && occupied.some(other => other.position === span.position && other.time !== span.time && span.left < other.right+8 && span.right > other.left-8)) continue
         occupied.push(span)
         if (Math.abs(left-(x-width/2))<1) {labelled.add(marker);continue}
         const bar = merged.bars.find(row=>Number(barStamp(row,timeframe))===Number(marker.time))
