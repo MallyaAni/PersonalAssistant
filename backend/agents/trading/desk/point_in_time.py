@@ -16,7 +16,7 @@ mask defines the equal-weight book that is the survivorship hurdle.
 from __future__ import annotations
 
 from dataclasses import replace
-from datetime import date
+from datetime import date, timedelta
 from pathlib import Path
 
 import numpy as np
@@ -674,6 +674,56 @@ def grade_hysteresis_allocator(
     def allocate(report_, panel, config, t: int) -> np.ndarray:
         targets = np.array(inner(report_, panel, config, t), dtype=float)
         state["held"] = targets > 0
+        return targets
+
+    return allocate
+
+
+# No new entry in the week before a name reports. The installed rule's own
+# replay found entries made within seven calendar days of a release beat the
+# benchmark 35% of the time at twenty sessions against 52% otherwise. The
+# release dates come from the 8-K item 2.02 acceptances in the filing store;
+# `known` reads the actual next date (an upper bound on the guard, since a
+# company announces its date weeks ahead but the store has only the past),
+# otherwise the expected date is the last release the session already knew
+# plus the name's typical gap, and no guard applies when that is stale.
+def earnings_guard_allocator(
+    inner,
+    releases: dict,
+    days_before: int = 7,
+    known: bool = False,
+    typical_gap: int = 91,
+):
+    """Return a callable deferring a name's entry while its next release is within `days_before`."""
+    state = {"t": -1, "previous": None}
+    sorted_releases = {name: sorted(dates) for name, dates in releases.items()}
+
+    def next_release(name: str, session):
+        dates = sorted_releases.get(name) or []
+        if known:
+            later = [d for d in dates if d >= session]
+            return later[0] if later else None
+        earlier = [d for d in dates if d < session]
+        if not earlier:
+            return None
+        expected = earlier[-1] + timedelta(days=typical_gap)
+        # A date already more than a quarter stale is not a forecast.
+        return expected if (expected - session).days > -30 else None
+
+    def allocate(report, panel, config, t: int) -> np.ndarray:
+        targets = np.array(inner(report, panel, config, t), dtype=float)
+        previous = state["previous"]
+        session = np.datetime64(panel.dates[t], "D").astype(object)
+        for column, name in enumerate(panel.tickers):
+            entering = targets[column] > 0 and (
+                previous is None or t <= state["t"] or previous[column] <= 0
+            )
+            if not entering:
+                continue
+            upcoming = next_release(name, session)
+            if upcoming is not None and 0 <= (upcoming - session).days <= days_before:
+                targets[column] = 0.0
+        state["t"], state["previous"] = t, targets.copy()
         return targets
 
     return allocate

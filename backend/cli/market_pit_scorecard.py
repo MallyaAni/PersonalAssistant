@@ -506,6 +506,40 @@ def _leader_ewma(strength=0.5, window=63, target=0.25, cap=0.25, span=20):
     )
 
 
+# The 8-K item 2.02 acceptance dates on file for every name on the panel, in
+# New York, from the newest events frame; the report carries no filings.
+def _releases(report) -> dict:
+    from datetime import UTC, datetime
+    from zoneinfo import ZoneInfo
+
+    from backend.market.store import MarketStore
+
+    store = MarketStore(Path(_RELEASES_ROOT[0]))
+    new_york = ZoneInfo("America/New_York")
+    out: dict = {}
+    for name in report.panel.tickers:
+        frame = store.read_frame("edgar_events", name)
+        if frame is None:
+            continue
+        columns = frame[0]
+        dates = set()
+        for accepted, items in zip(
+            columns.get("accepted", []), columns.get("items", []), strict=False
+        ):
+            if "2.02" not in str(items):
+                continue
+            stamp = datetime.fromisoformat(str(accepted))
+            if stamp.tzinfo is None:
+                stamp = stamp.replace(tzinfo=UTC)
+            dates.add(stamp.astimezone(new_york).date())
+        out[name] = sorted(dates)
+    return out
+
+
+# Set by main() to the data root the arms read filings from.
+_RELEASES_ROOT = ["data/market"]
+
+
 ARMS.update(
     {
         "leader_ewma_t20": _leader_ewma(target=0.20),
@@ -572,6 +606,21 @@ ARMS.update(
                 forecaster="ewma",
                 target=0.25,
                 ewma_span=20,
+            )
+        ),
+        # No new entry in the week before a name reports: expected from the
+        # filing cadence (no lookahead), and with the actual date as the bound.
+        "leader_ewma_earnings7": lambda report, mask: (
+            point_in_time.earnings_guard_allocator(
+                _leader_ewma()(report, mask), _releases(report), days_before=7
+            )
+        ),
+        "leader_ewma_earnings7_known": lambda report, mask: (
+            point_in_time.earnings_guard_allocator(
+                _leader_ewma()(report, mask),
+                _releases(report),
+                days_before=7,
+                known=True,
             )
         ),
     }
@@ -1127,6 +1176,7 @@ def main(argv: list[str] | None = None) -> int:
     from backend.market.store import MarketStore
 
     root = Path(args.root)
+    _RELEASES_ROOT[0] = str(root)
     store = MarketStore(root)
     arm = ARMS[args.arm] if args.arm else None
     cap_tag = None

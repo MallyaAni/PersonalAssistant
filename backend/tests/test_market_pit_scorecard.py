@@ -731,3 +731,47 @@ def test_overlay_allocators():
     assert out[11][0] == 0.0 and out[14][0] == 0.0
     assert out[15][0] == 0.10
     assert all(row[1] == books[t][1] for t, row in enumerate(out))
+
+
+# The earnings guard defers an entry while a release is due within the week,
+# whether the date is known or expected from the filing cadence, and never
+# touches a name already held.
+def test_earnings_guard_allocator():
+    from datetime import date
+
+    dates = np.datetime64("2023-01-02") + np.arange(40)
+    panel = SimpleNamespace(
+        dates=dates, tickers=("AAA", "BBB"), adj_close=np.full((40, 2), 100.0)
+    )
+    books = {t: np.array([0.0, 0.10]) for t in range(40)}
+    for t in range(10, 40):
+        books[t] = np.array([0.10, 0.10])
+
+    def inner(report, panel, config, t):
+        return books[t].copy()
+
+    # AAA reports on 2023-01-16, four days after its entry on session 10 (2023-01-12).
+    known = point_in_time.earnings_guard_allocator(
+        inner, {"AAA": [date(2023, 1, 16)]}, days_before=7, known=True
+    )
+    out = [known(None, panel, None, t) for t in range(40)]
+    assert out[10][0] == 0.0 and out[13][0] == 0.0
+    assert out[15][0] == 0.10  # after the release the entry goes through
+    assert all(row[1] == 0.10 for row in out)
+    # Expected from the cadence: a release 91 days before the entry puts the next one on the entry day.
+    expected = point_in_time.earnings_guard_allocator(
+        inner, {"AAA": [date(2023, 1, 12) - timedelta_days(91)]}, days_before=7
+    )
+    out = [expected(None, panel, None, t) for t in range(40)]
+    assert out[10][0] == 0.0 and out[20][0] == 0.10
+    # A stale cadence (last release long ago) is no forecast and no guard.
+    stale = point_in_time.earnings_guard_allocator(
+        inner, {"AAA": [date(2022, 1, 1)]}, days_before=7
+    )
+    assert stale(None, panel, None, 10)[0] == 0.10
+
+
+def timedelta_days(days: int):
+    from datetime import timedelta
+
+    return timedelta(days=days)
