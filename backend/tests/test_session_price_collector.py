@@ -242,17 +242,32 @@ async def test_unsupported_locking_skips_collection_and_credentials(
     assert list(tmp_path.iterdir()) == []
 
 
-# A publication folder whose contents cannot be read as a current publication
-# (expired after the close, or replaced by a release awaiting its first nightly
-# plan) must not freeze the display prices: the graded universe still names
-# the board.
+# A publication the installed configuration no longer binds (a release replaced
+# its policy) or that has expired still verifies on its own identity and still
+# names the board, so the display prices keep flowing; a damaged one names
+# nothing and no other source stands in.
 @pytest.mark.asyncio
-async def test_unreadable_publication_falls_back_to_the_graded_universe(tmp_path):
-    from backend.market import strategy_publication
+async def test_unbound_or_expired_publication_still_names_the_universe(
+    tmp_path, monkeypatch
+):
+    from datetime import timedelta
+
+    from backend.market import strategy_publication as publication
+    from backend.tests.test_strategy_publication import NOW as PUBLISHED_AT
+    from backend.tests.test_strategy_publication import snapshot
 
     root = graded_root(tmp_path)
-    (root / strategy_publication.DIRECTORY).mkdir(parents=True)
-    (root / strategy_publication.DIRECTORY / "latest.json").write_text("{}")
+    value = snapshot()
+    publication.publish(root, value, PUBLISHED_AT)
+    monkeypatch.setattr(
+        publication.learned_live_holding,
+        "read_configuration",
+        lambda root, at: (b"replaced", {"cost_bps": 10, "policy": "other/1"}),
+    )
+    monkeypatch.setattr(
+        "backend.services.session_price_collector.deskrecord.latest_pair",
+        lambda root: (_ for _ in ()).throw(AssertionError("must not fall back")),
+    )
     calls = []
 
     def fetch(symbols):
@@ -264,9 +279,25 @@ async def test_unreadable_publication_falls_back_to_the_graded_universe(tmp_path
         interval_seconds=0.05,
         collect=partial(session_price_snapshot.collect, fetch=fetch),
     )
-    collector.start()
-    try:
-        await eventually(lambda: len(calls) >= 1)
-    finally:
-        await collector.stop()
-    assert calls[0] == ("AAA", "BBB")
+    for clock in (PUBLISHED_AT + timedelta(hours=1), PUBLISHED_AT + timedelta(days=1)):
+        calls.clear()
+        monkeypatch.setattr(
+            "backend.services.session_price_collector.datetime",
+            type(
+                "Clock",
+                (),
+                {
+                    "now": staticmethod(lambda tz=None, clock=clock: clock),
+                    "fromisoformat": staticmethod(datetime.fromisoformat),
+                },
+            ),
+        )
+        collector.start()
+        try:
+            await eventually(lambda: len(calls) >= 1)
+        finally:
+            await collector.stop()
+        assert calls[0] == tuple(value["rows"])
+    # A damaged pointer names nothing.
+    (root / publication.DIRECTORY / "latest.json").write_text("{}")
+    assert collector._collect_once()["status"] == "unavailable"

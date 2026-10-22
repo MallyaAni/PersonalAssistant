@@ -1,6 +1,7 @@
 """Collect display quotes for the backend lifetime without any account actions."""
 
 import asyncio
+import json
 import logging
 import math
 import time
@@ -39,23 +40,24 @@ class SessionPriceCollector:
             logger.info("Display-price snapshot publication recovered")
             self._last_failure = None
 
-    # Prefer the independent published universe. A publication that cannot be
-    # read right now (expired after the close, or replaced by a release that is
-    # waiting for its first nightly plan) still has the same names on the board,
-    # so the desk record's graded universe keeps the display prices flowing
-    # rather than freezing every quote until the next publication.
+    # Prefer the independent published universe. A publication the installed
+    # configuration no longer binds (expired after the close, or replaced by a
+    # release waiting for its first nightly plan) still verifies on its own
+    # identity and still names the board, so its names keep the display prices
+    # flowing. One that does not verify names nothing: no other source stands
+    # in for a damaged publication.
     def _collect_once(self):
         from backend.market import strategy_publication
 
-        symbols = None
         if (self._root / strategy_publication.DIRECTORY).exists():
+            now = datetime.now(UTC)
             try:
-                symbols = list(
-                    strategy_publication.read(self._root, datetime.now(UTC))["rows"]
-                )
+                symbols = list(strategy_publication.read(self._root, now)["rows"])
             except (OSError, ValueError, TypeError, KeyError):
-                symbols = None
-        if not symbols:
+                symbols = _verified_unbound_universe(self._root, now)
+            if not symbols:
+                return {"status": "unavailable"}
+        else:
             latest, _ = deskrecord.latest_pair(self._root)
             symbols = list((latest or {}).get("grades") or {})
         return self._collect(self._root, symbols, interval_seconds=self._interval)
@@ -105,3 +107,27 @@ class SessionPriceCollector:
                 await task
             if self._task is task:
                 self._task = None
+
+
+# The names of the latest publication when it verifies on its own identity and
+# clocks but the installed configuration no longer binds it, or it has expired.
+def _verified_unbound_universe(root, now):
+    from datetime import timedelta
+    from hashlib import sha256
+
+    from backend.market import strategy_publication
+
+    folder = Path(root) / strategy_publication.DIRECTORY
+    try:
+        pointer = json.loads((folder / "latest.json").read_bytes())
+        raw = (folder / f"{pointer['snapshot_id']}.json").read_bytes()
+        if sha256(raw).hexdigest() != pointer["bytes_sha256"]:
+            return []
+        stored = json.loads(raw)
+        until = datetime.fromisoformat(stored["valid_until"])
+        strategy_publication.validate(
+            stored, min(now, until - timedelta(microseconds=1))
+        )
+        return list(stored["rows"])
+    except (OSError, ValueError, TypeError, KeyError, AttributeError, OverflowError):
+        return []
