@@ -2,7 +2,7 @@ import {expect, test, type Page} from '@playwright/test'
 
 const names = ['BUYLOW', 'BUYHIGH', 'SELLLOW', 'SELLHIGH', 'WAIT', 'MISSING']
 const session = '2026-10-13'
-type Fixture = {phase: string; paper: boolean; lost: boolean; expired: boolean; quoteMissing: boolean; liveReads: number; diagnostics: string[]; recordedMode?: 'original' | 'foreign' | 'bytes' | 'late' | 'paged'; recordedReads?: number; originalMode?: 'original' | 'foreign' | 'size'; originalReads?: number; originalDelay?: number; denseMarkers?: boolean; installedHistory?: boolean; numerical?: 'execute' | 'wait'; numericalForeign?: boolean; numericalExpired?: boolean; publicationV2?: boolean; noSellSignals?: boolean; simulationPolicy?: string; signalUntil?: string; allocationUntil?: string; allocationWrong?: boolean; allocationMissing?: boolean; regularFallback?: boolean; publishedPlan?: boolean; independentSizing?: boolean; independentSignalWrong?: boolean; targetWeight?: number; simulationIdentityWrong?: boolean; entryAt?: number; formingSignal?: boolean; chartFrames?: string[]; zoomHistory?: boolean; chartSessions?: number[]; currentSessionBars?: boolean}
+type Fixture = {phase: string; paper: boolean; lost: boolean; expired: boolean; quoteMissing: boolean; liveReads: number; diagnostics: string[]; recordedMode?: 'original' | 'foreign' | 'bytes' | 'late' | 'paged'; recordedReads?: number; originalMode?: 'original' | 'foreign' | 'size'; originalReads?: number; originalDelay?: number; denseMarkers?: boolean; installedHistory?: boolean; numerical?: 'execute' | 'wait'; numericalForeign?: boolean; numericalExpired?: boolean; publicationV2?: boolean; noSellSignals?: boolean; simulationPolicy?: string; signalUntil?: string; allocationUntil?: string; allocationWrong?: boolean; allocationMissing?: boolean; regularFallback?: boolean; publishedPlan?: boolean; independentSizing?: boolean; independentSignalWrong?: boolean; targetWeight?: number; simulationIdentityWrong?: boolean; entryAt?: number; formingSignal?: boolean; chartFrames?: string[]; zoomHistory?: boolean; chartSessions?: number[]; currentSessionBars?: boolean; openPlan?: boolean}
 
 type ReferenceFixture = Fixture & {referenceMode?: 'trim' | 'exit' | 'buy'; referenceUnknown?: boolean; referenceObserved?: boolean; referenceResolved?: boolean; referenceBookInvalid?: boolean; numericalQuoteUntil?: string; persistedPosition?: number; persistedInvalid?: 'unavailable' | 'foreign' | 'book'; assessmentMissing?: boolean}
 
@@ -187,6 +187,10 @@ async function install(page: Page, baseURL: string, state: ReferenceFixture) {
         observed_at: '2026-10-19T23:49:42Z', as_of: at, published_at: at, valid_until: state.allocationUntil ?? until,
         strategy_identity: 'd'.repeat(64), snapshot_id: 'e'.repeat(64), receipt_sha256: 'f'.repeat(64), basis: 'account_independent_unit_capital_targets',
         ...(state.recordedMode ? {recorded_history_version:'strategy-recorded-entries/1'} : {}),
+        // An open-executed policy: the plan changes from the previous plan (BUYHIGH grew from 10.0% to 14.3%,
+        // NEWNAME is new, SELLHIGH was 12.0% and is now 0) and nothing waits for a fifteen-minute entry.
+        ...(state.openPlan ? {execution: {timing: 'next_open'}, previous_plan: {session: '2026-10-16', policy: 'earlier-policy/1', published_at: '2026-10-16T23:40:00Z',
+          rows: {BUYHIGH: .1, BUYLOW: 0, SELLHIGH: .12, SELLLOW: 0}}} : {}),
         account_basis: 'no_account_inputs', timing_basis: 'nightly_position_size_not_immediate_trade_size',
         entry_assessment: state.numerical ? {version:'strategy-numerical-entries/1',status:'available',snapshot_id:(state.numericalForeign ? '0' : 'e').repeat(64),
           publication_receipt_sha256:'f'.repeat(64),strategy_identity:'d'.repeat(64),receipt_sha256:'a'.repeat(64),
@@ -579,6 +583,45 @@ test('Current position and historical trade sizes have distinct labels on every 
     await expect(dialog.getByLabel('BUYHIGH current chart position',{exact:true})).toHaveText('Position 14.3%')
     await expect(dialog.getByLabel('BUYHIGH target chart markers',{exact:true})).not.toContainText('14.3%')
   }
+  expect(state.diagnostics).toEqual([])
+})
+
+// A policy that acts at the open names the plan's change from the previous plan as the day's
+// action: Buy or Sell with its size, badged "at open", pre-market and through the session, never pending.
+test('Open-executed plan shows the change from the previous plan at the open on the board and every chart',async ({page,baseURL})=>{
+  const state=fixture()
+  Object.assign(state,{publicationV2:true,openPlan:true,phase:'post-market',currentSessionBars:true})
+  await install(page,baseURL!,state)
+  await page.goto('/?deskView=strategy#desk')
+  const board=page.getByRole('region',{name:'All names signals',exact:true})
+  await expect(board.getByLabel('BUYHIGH verdict',{exact:true})).toHaveText('Buy')
+  await expect(board.getByLabel('BUYHIGH verdict cell',{exact:true})).toContainText('at open')
+  await expect(board.getByLabel('BUYHIGH trade size',{exact:true})).toHaveText('4.3%')
+  await expect(board.getByLabel('BUYHIGH model size',{exact:true})).toHaveText('14.3%')
+  await expect(board.getByLabel('NEWNAME verdict',{exact:true})).toHaveText('Buy')
+  await expect(board.getByLabel('NEWNAME trade size',{exact:true})).toHaveText('7.5%')
+  await expect(board.getByLabel('SELLHIGH verdict',{exact:true})).toHaveText('Sell')
+  await expect(board.getByLabel('SELLHIGH trade size',{exact:true})).toHaveText('12.0%')
+  await expect(board.getByLabel('SELLHIGH model size',{exact:true})).toHaveText('0.0%')
+  await expect(board.getByLabel('BUYLOW verdict',{exact:true})).toHaveText('')
+  await expect(board.getByLabel('BUYLOW verdict cell',{exact:true})).not.toContainText('pending')
+  await expect(board.getByLabel('Signal coverage')).toHaveText('2 buys · 1 sells')
+  await board.getByRole('button',{name:'BUYHIGH',exact:true}).click()
+  const dialog=page.getByRole('dialog',{name:'BUYHIGH history',exact:true})
+  for(const frame of ['D','W','15m']){
+    await dialog.getByRole('group',{name:'Chart timeframe',exact:true}).getByRole('button',{name:frame,exact:true}).click()
+    await expect(dialog.getByLabel('BUYHIGH current chart target',{exact:true})).toHaveText('Buy 4.3%')
+    await expect(dialog.getByLabel('BUYHIGH current chart position',{exact:true})).toHaveText('Position 14.3%')
+    await expect(dialog.getByLabel('BUYHIGH chart plan timing',{exact:true})).toHaveText('At open')
+    await expect(dialog.getByLabel('BUYHIGH chart entry state',{exact:true})).toHaveCount(0)
+  }
+  await dialog.getByRole('button',{name:'Close',exact:true}).click()
+  state.phase='open'
+  await refresh(page,state)
+  await expect(board.getByLabel('BUYHIGH verdict',{exact:true})).toHaveText('Buy')
+  await expect(board.getByLabel('BUYHIGH verdict cell',{exact:true})).toContainText('at open')
+  await expect(board.getByLabel('BUYHIGH verdict cell',{exact:true})).not.toContainText('pending')
+  await expect(board.getByLabel('SELLHIGH verdict',{exact:true})).toHaveText('Sell')
   expect(state.diagnostics).toEqual([])
 })
 

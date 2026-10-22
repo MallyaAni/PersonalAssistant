@@ -2520,6 +2520,11 @@ export type DeskEntryReasonCode = 'execute_now' | 'waiting_better_price' | 'at_t
 
 export interface DeskModelAllocation {
   version: 'published-model-allocation/1' | 'strategy-model-allocation/1' | 'strategy-model-allocation/2';
+  // How the installed policy acts on the plan: at the next open, or on
+  // fifteen-minute entries. An open-executed plan carries the plan it changes
+  // from, whose policy may be the one a release replaced.
+  execution?: {timing: 'next_open' | 'fifteen_minute'};
+  previous_plan?: {session: string; policy: string; published_at: string; rows: Record<string, number>} | null;
   recorded_history_version?: 'strategy-recorded-entries/1';
   // `awaiting_nightly` is a verified publication whose own clock has expired,
   // not an integrity failure: the last plan is carried in `last_rows`.

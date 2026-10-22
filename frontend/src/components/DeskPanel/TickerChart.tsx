@@ -1396,7 +1396,7 @@ export const TickerChart = ({
         </span>
         {chartAction === 'Wait' && headerWord && <span className="rounded bg-[#eef1f6] px-1.5 py-0.5 text-[10px] font-medium text-[#3a3a3c]" aria-label={`${ticker} chart entry state`}>pending</span>}
         {modelTarget.positionWeight != null && <span className="text-[#6e6e73]" aria-label={`${ticker} current chart position`}>Position {sizePercent(modelTarget.positionWeight)}%</span>}
-        {modelTarget.nextSessionPlan && <span className="text-[#6e6e73]" aria-label={`${ticker} chart plan timing`}>Next session</span>}
+        {modelTarget.nextSessionPlan && <span className="text-[#6e6e73]" aria-label={`${ticker} chart plan timing`}>{modelTarget.atOpen ? 'At open' : 'Next session'}</span>}
       </div> : null) : <span className="text-[#6e6e73]" aria-label={`${ticker} current chart target`}></span>}
       <div role="group" aria-label="Chart timeframe" className="flex gap-1">
         {(['15m', 'daily', 'weekly'] as const).map(frame => <button key={frame} type="button" aria-pressed={timeframe === frame} className={chip(timeframe === frame)} onClick={() => setTimeframe(frame)}>{frame === 'daily' ? 'D' : frame === 'weekly' ? 'W' : '15m'}</button>)}

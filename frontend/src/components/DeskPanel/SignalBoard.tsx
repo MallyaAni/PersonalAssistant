@@ -8,7 +8,7 @@ import {StrategyTechnicalEvidence} from './StrategyTechnicalEvidence'
 type Side = 'all' | 'buy' | 'sell'
 type Signal = {word: string; ready: boolean; priority: string; rank: number; reason: string}
 // The row's existing signals plus the backend's one-word verdict when it supplies one.
-export type Signals = {ticker: string; grade: string; setup: DeskCurrentSetup | null; buy: Signal; sell: Signal; evidence?: DeskStrategyDecision['evidence']; current?: {completed: string; quote: string; until: string}; plan?: {session: string; published: string; validUntil: string; calculated?: string}; nextSession?: boolean; lastPlan?: boolean;
+export type Signals = {ticker: string; grade: string; setup: DeskCurrentSetup | null; buy: Signal; sell: Signal; evidence?: DeskStrategyDecision['evidence']; current?: {completed: string; quote: string; until: string}; plan?: {session: string; published: string; validUntil: string; calculated?: string}; nextSession?: boolean; atOpen?: boolean; lastPlan?: boolean;
   verdict?: 'buy' | 'sell' | 'nothing'; reason_code?: string; size_weight?: number; verdict_reason?: string}
 const PRIORITY: Record<string, number> = {high: 3, medium: 2, low: 1}
 
@@ -28,9 +28,9 @@ const REASON_WORDS: Record<DeskEntryReasonCode, string> = {
 }
 
 // `state` is the one structured qualifier the verdict cell shows beside the word.
-type VerdictView = {verdict: DeskEntryVerdict; reason: string; size: number | null; nextSession: boolean; lastPlan: boolean; observedAt: string | null; validUntil: number; sourceAt: number; state?: 'pending' | 'unavailable'}
+type VerdictView = {verdict: DeskEntryVerdict; reason: string; size: number | null; nextSession: boolean; atOpen?: boolean; lastPlan: boolean; observedAt: string | null; validUntil: number; sourceAt: number; state?: 'pending' | 'unavailable'}
 
-export type StrategyChartTarget = {ticker: string; date: string; at: string; validUntil: string | null; action: 'Buy' | 'Sell' | null; weight: number; record: string; strategyIdentity?: string; evidence?: DeskStrategyDecision['evidence']; entry?: {at: string; validUntil: string}; entryReason?: string; recordedHistoryAvailable?: boolean; nextSessionPlan?: boolean; displayAction?: string; referenceTransition?: boolean; positionWeight?: number; tradeWeight?: number | null}
+export type StrategyChartTarget = {ticker: string; date: string; at: string; validUntil: string | null; action: 'Buy' | 'Sell' | null; weight: number; record: string; strategyIdentity?: string; evidence?: DeskStrategyDecision['evidence']; entry?: {at: string; validUntil: string}; entryReason?: string; recordedHistoryAvailable?: boolean; nextSessionPlan?: boolean; atOpen?: boolean; displayAction?: string; referenceTransition?: boolean; positionWeight?: number; tradeWeight?: number | null}
 
 // Recognize the independently authenticated publication formats without consulting an account.
 const independentAllocation = (allocation?: DeskModelAllocation): boolean => allocation?.version === 'strategy-model-allocation/1' || allocation?.version === 'strategy-model-allocation/2'
@@ -47,7 +47,7 @@ const referenceEntryFormat = (entry: DeskModelAllocation['entry_assessment']): b
 // Require a complete internally consistent publication before using its own stock universe or percentages.
 const publicationValid = (allocation: DeskModelAllocation | undefined, now: number): boolean => {
   if (allocation?.version !== 'strategy-model-allocation/2' || allocation.status !== 'available'
-      || allocation.policy !== 'grade-led-learned-sizing/1' || allocation.basis !== 'account_independent_unit_capital_targets'
+      || !allocation.policy || allocation.basis !== 'account_independent_unit_capital_targets'
       || allocation.account_basis !== 'no_account_inputs' || allocation.timing_basis !== 'nightly_position_size_not_immediate_trade_size'
       || allocation.identity?.schema !== 'strategy-recommendation-publication/1'
       || allocation.identity.strategy_identity !== allocation.strategy_identity || allocation.identity.session !== allocation.session
@@ -185,6 +185,7 @@ export const strategyHistoryMatches = (simulation: DeskStrategyStock | null | un
 export const modelWeight = (latest: DeskRecord, allocation: DeskModelAllocation | undefined, ticker: string, now: number): number | null => {
   const weight = allocation?.rows?.[ticker]?.target_weight
   if (allocation?.version === 'strategy-model-allocation/2') {
+    if (allocation.execution?.timing === 'next_open') return publicationValid(allocation, now) && typeof weight === 'number' ? weight : null
     const reference=referencePosition(allocation,ticker,now)
     return allocation.reference_positions!==undefined ? reference : reference ?? (publicationValid(allocation, now) && typeof weight === 'number' ? weight : null)
   }
@@ -219,7 +220,8 @@ export const strategyChartTarget = (latest: DeskRecord, allocation: DeskModelAll
       weight:reference ? current?.row.size_weight ?? 0 : weight, positionWeight:weight, tradeWeight:current?.row.size_weight ?? null, referenceTransition:reference,
       record: allocation.snapshot_id!, strategyIdentity: allocation.strategy_identity,
       recordedHistoryAvailable:allocation.recorded_history_version==='strategy-recorded-entries/1',
-      nextSessionPlan:displayed.buy.word==='Buy setup' || displayed.sell.word==='Exit',entryReason:actionFor(displayed).reason,
+      nextSessionPlan:displayed.buy.word==='Buy setup' || displayed.sell.word==='Exit' || displayed.atOpen===true, atOpen:displayed.atOpen===true,
+      ...(displayed.atOpen ? {tradeWeight: displayed.size_weight ?? null} : {}), entryReason:actionFor(displayed).reason,
       displayAction:actionLabel(actionFor(displayed).word),
       evidence: current?.row.evidence ?? allocation.reference_positions?.rows[ticker]?.evidence ?? allocation.rows[ticker].evidence,
       entry: !reference && current?.row.state === 'execute' ? {at:current.at,validUntil:current.validUntil} : undefined}
@@ -356,9 +358,29 @@ const publishedPlanFor = (latest: DeskRecord, live: DeskLive, allocation: DeskMo
   }
 }
 
+// A policy that acts at the open has one action a day per name: the plan's change
+// from the previous plan, bought or sold at the next open. Before the open it is what
+// to do at 09:30; during the session it is what the open did. No fifteen-minute entry
+// is awaited, so nothing here is ever pending.
+const openPlanSignals = (allocation: DeskModelAllocation, ticker: string, now: number): Signals => {
+  const unavailable = signal('Unavailable', false, '', 'Verified current strategy publication required.', 3)
+  const row = allocation.rows?.[ticker]
+  if (!row || !publicationValid(allocation, now)) return {ticker, grade: '—', setup: null, buy: unavailable, sell: unavailable}
+  const grade = allocation.grade_signals?.[ticker]?.grade ?? '—'
+  const previous = allocation.previous_plan?.rows?.[ticker] ?? 0
+  const delta = row.target_weight - (Number.isFinite(previous) ? previous : 0)
+  const inactive = signal('—', false, '', '', 2)
+  const base = {ticker, grade, setup: null, evidence: row.evidence}
+  // A change the size column prints as 0.0% trades no shares, so it is no action.
+  if (delta >= 0.0005) return {...base, nextSession: true, atOpen: true, size_weight: delta, sell: inactive, buy: signal('Buy plan', false, '', '', 1)}
+  if (delta <= -0.0005) return {...base, nextSession: true, atOpen: true, size_weight: -delta, buy: inactive, sell: signal('Sell plan', false, '', '', 1)}
+  return {...base, nextSession: false, buy: signal('Do nothing', false, '', '', 2), sell: inactive}
+}
+
 // Build independent entry and downside-review signals without reading any account or funded order.
 const signalsForBase = (latest: DeskRecord, live: DeskLive, ticker: string, now: number, allocation?: DeskModelAllocation): Signals => {
   if (allocation?.version === 'strategy-model-allocation/2') {
+    if (allocation.execution?.timing === 'next_open') return openPlanSignals(allocation, ticker, now)
     const unavailable = signal('Unavailable', false, '', 'Verified current strategy publication required.', 3)
     const open = sessionOpen(live, allocation)
     const plan = publishedPlanFor(latest, live, allocation, ticker, now)
@@ -464,7 +486,7 @@ export const signalsFor = (latest: DeskRecord, live: DeskLive, ticker: string, n
   const base = signalsForBase(latest, live, ticker, now, allocation)
   // A next-session plan carries its own size and direction; the backend's live verdict fields
   // describe the current session and would overwrite them with "nothing".
-  const signals = base.nextSession ? base : {...base, ...verdictFields(allocation, ticker, now)}
+  const signals = base.nextSession || allocation?.execution?.timing === 'next_open' ? base : {...base, ...verdictFields(allocation, ticker, now)}
   if (outsideRegularSession(allocation) && signals.nextSession !== true && signals.lastPlan !== true && signals.buy.word !== 'Do nothing')
     return {ticker: signals.ticker, grade: signals.grade, setup: null, evidence: signals.evidence, nextSession: false,
       buy: signal('Do nothing', false, '', '', 2),
@@ -487,7 +509,7 @@ const actionFor = (row: Signals): Signal => row.sell.ready || row.sell.rank < ro
 
 // Use direct trading labels while keeping confirmation and timing requirements in the supporting details.
 const actionLabel = (word: string): string => ['Buy now', 'Buy plan', 'Buy setup', 'Buy pending'].includes(word) ? 'Buy'
-  : ['Sell review now', 'Exit if held', 'Exit', 'Sell pending'].includes(word) ? 'Sell' : word
+  : ['Sell review now', 'Exit if held', 'Exit', 'Sell pending', 'Sell plan'].includes(word) ? 'Sell' : word
 
 // Collapse every waiting, avoided and unavailable path into the one word the
 // board promises, while leaving the original detail as the supporting reason.
@@ -534,7 +556,7 @@ const signalsView = (signals: Signals, selected: Signal, allocation: DeskModelAl
   const observedAt = signals.current?.quote ?? entry?.row.quote_at ?? null
   const until = Date.parse(signals.current?.until ?? entry?.validUntil ?? '')
   const sourceAt = Date.parse(observedAt ?? '') || Date.parse(signals.plan?.published ?? '') || now
-  return {verdict, reason: selected.reason, size, nextSession: signals.nextSession === true && verdict !== 'nothing',
+  return {verdict, reason: selected.reason, size, nextSession: signals.nextSession === true && verdict !== 'nothing', atOpen: signals.atOpen === true,
     lastPlan: signals.lastPlan === true, observedAt, validUntil: Number.isFinite(until) ? until : 0, sourceAt,
     state: selected.word === 'Unavailable' ? 'unavailable' : selected.word.endsWith(' pending') && verdict !== 'nothing' ? 'pending' : undefined}
 }
@@ -735,7 +757,7 @@ export const SignalBoard = ({latest, live, allocation, now, onOpen, closes, refr
         <td aria-label={`${row.ticker} displayed grade`} className="p-2">{row.grade}</td>
         <td aria-label={`${row.ticker} verdict cell`} className="max-w-sm p-2">
           <p aria-label={`${row.ticker} verdict`} className={`font-semibold ${tone}`}>{label}</p>
-          {(view.nextSession || view.state) && <span className="mt-1 inline-block rounded bg-[#eef1f6] px-1.5 py-0.5 text-[10px] font-medium text-[#3a3a3c]">{view.nextSession ? 'next session' : view.state}</span>}
+          {(view.nextSession || view.state) && <span className="mt-1 inline-block rounded bg-[#eef1f6] px-1.5 py-0.5 text-[10px] font-medium text-[#3a3a3c]">{view.nextSession ? view.atOpen ? 'at open' : 'next session' : view.state}</span>}
           {refreshing && <span className="mt-1 ml-1 inline-block rounded bg-[#fff4d6] px-1.5 py-0.5 text-[10px] font-medium text-[#9a6700]">refreshing</span>}
         </td>
         {independent && <td className="p-2"><span aria-label={`${row.ticker} trade size`}>{sizeText(view.size)}</span>{sizedAmount(row.ticker, view.size, planningEquity, displayedBoardPrice(live, row.ticker, now, closes?.[row.ticker], latest.session)?.price)}</td>}

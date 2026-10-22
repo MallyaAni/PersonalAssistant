@@ -1532,6 +1532,47 @@ The detailed current continuation remains the TOP of the attached
 learned-live-release-20261006 worktree's NEXT_SESSION.md. Keep existing heartbeat
 ACTIVE and quiet unchanged. No question pending; no agents without delegation,
 usage-limited retries/replacements, denied-read bypass or native-pool adoption.
+## 2026-10-21 21:50 ET — EWMA release INSTALLED and deployed (b7796ab4); open-executed plan served as the day's action
+
+Nightly 19:30–19:55 ET under grade-led-leader-weight/1 (trailing vol):
+8 market-on-open orders submitted 19:49 (sell ALAB 16, HPE 177, MU 17,
+NTAP 48, SMCI 220, SNDK 4; buy COHR 1, TSM 1), equity 89,734. Release
+for a933941b (EWMA-20 estimate + partial-grid daily candle; identity
+differs from 1fa135f9 in grade_led_leader_policy.py and api/v1/market.py)
+installed 19:55 ET, archive 20261021T235557-leader-*; deploy28 failed on
+`test_invalid_independent_publication_cannot_fall_back` (the collector
+must not fall back from a damaged publication) → collector now names the
+universe from a publication that verifies on its own identity but is
+expired or unbound (b7796ab4), never from a damaged one; deploy29 gated
+11566 and deployed b7796ab4 20:48 ET, ADMITTED host==container.
+
+The install re-bound the config, so the 19:49 publication became
+superseded; republished 20:55 ET with `publish_now.py` under EWMA
+(targets ≈9% larger than the orders, which were sized with trailing vol;
+tomorrow night aligns). Then the board showed grade — and Position
+Unavailable: `publicationValid` hard-coded 'grade-led-learned-sizing/1'
+(fixed: the policy is the one the identity names), and
+`reference_positions` is unavailable because the persisted reference
+book's source binding is stale and reseeding needs the installed history
+to bind to the new policy — so the whole fifteen-minute entry chain is
+dead under the leader policy until the history is regenerated. Under
+open fills it is also moot: the day's action is the plan's change from
+the previous plan at the open. `market_allocation` now serves
+`execution.timing` (`next_open` for `grade_led_leader_policy.POLICY`,
+else `fifteen_minute`) and `previous_plan` (the latest earlier publication
+verifying on its own identity, whatever its policy); the board shows Buy
+delta / Sell delta with an "at open" badge, Position = target, nothing
+pending; the chart header mirrors it ("Buy 3.8%", "At open"). e2e
+'Open-executed plan…' added; `test_model_allocation_view` covers
+`_previous_plan`/`_execution`.
+
+Tomorrow 09:30: market-on-open fills; check `paper/state.json` and the
+Paper account tab. `docs/research/grade-led-leader-weight-contract-2026-10-21.md`
+(bound) still says ordinary orders keep the probability timing — stale
+since f6bec580; fix with the next release. History regeneration under
+the leader policy remains the biggest open item (charts' replay, 15m
+reference book).
+
 ## 2026-10-21 19:10 ET — Trader's read of the live dashboard; display fixes in source, NOT DEPLOYED
 
 Owner: "think from a traders perspective when using browser"; "every

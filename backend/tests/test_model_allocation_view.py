@@ -111,6 +111,7 @@ def test_current_publication_is_unchanged(monkeypatch, tmp_path):
             "reason": "Fresh numerical 15-minute observation required",
         },
         "recorded_history_version": "strategy-recorded-entries/1",
+        "execution": {"timing": "fifteen_minute"},
         "market_phase": market_phase.describe(PUBLISHED_AT),
     }
 
@@ -334,3 +335,49 @@ def test_replaced_policy_keeps_the_last_plan_until_the_nightly(monkeypatch, tmp_
     assert result["status"] == "awaiting_nightly"
     assert result["expired_at"] == value["valid_until"]
     assert result["superseded_policy"] == value["policy"]
+
+
+# A policy that acts at the open names the plan it changes from: the latest
+# earlier publication that still verifies on its own identity, whatever its
+# policy, since the first plan under a new policy changes from the old one's.
+def test_open_executed_plan_carries_the_previous_plan(monkeypatch, tmp_path):
+    from backend.market import grade_led_leader_policy as leader
+
+    earlier = snapshot()
+    earlier["session"] = "2026-01-05"
+    earlier["identity"]["session"] = "2026-01-05"
+    earlier["snapshot_id"] = publication._digest(earlier["identity"])
+    earlier["observed_at"] = (PUBLISHED_AT - timedelta(days=1, seconds=20)).isoformat()
+    earlier["as_of"] = earlier["published_at"] = (
+        PUBLISHED_AT - timedelta(days=1)
+    ).isoformat()
+    earlier["valid_until"] = "2026-01-06T16:00:00-05:00"
+    earlier["grade_signals"]["AAA"]["session"] = "2026-01-05"
+    earlier["rows"]["AAA"]["target_weight"] = 0.25
+    earlier["rows"]["AAA"]["evidence"]["model_position_size"] = 0.25
+    earlier["rows"]["AAA"]["evidence"]["inputs_as_of"] = "2026-01-05"
+    earlier["receipt_sha256"] = publication._digest(
+        {k: v for k, v in earlier.items() if k != "receipt_sha256"}
+    )
+    publication.publish(tmp_path, earlier, PUBLISHED_AT - timedelta(days=1))
+    value = publish_fixture(tmp_path, monkeypatch)
+    assert market_allocation._previous_plan(tmp_path, value) == {
+        "session": "2026-01-05",
+        "policy": earlier["policy"],
+        "published_at": earlier["published_at"],
+        "rows": {"AAA": 0.25},
+    }
+    # A damaged earlier publication is not a previous plan.
+    folder = tmp_path / publication.DIRECTORY
+    path = folder / f"{earlier['snapshot_id']}.json"
+    path.write_bytes(path.read_bytes().replace(b"0.25", b"0.26"))
+    assert market_allocation._previous_plan(tmp_path, value) is None
+    # The served answer says how the installed policy acts.
+    assert market_allocation._execution(tmp_path, value) == {
+        "execution": {"timing": "fifteen_minute"}
+    }
+    opened = {**value, "policy": leader.POLICY}
+    assert market_allocation._execution(tmp_path, opened) == {
+        "execution": {"timing": "next_open"},
+        "previous_plan": None,
+    }
