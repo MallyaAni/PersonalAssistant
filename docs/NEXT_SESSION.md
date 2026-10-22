@@ -1532,6 +1532,67 @@ The detailed current continuation remains the TOP of the attached
 learned-live-release-20261006 worktree's NEXT_SESSION.md. Keep existing heartbeat
 ACTIVE and quiet unchanged. No question pending; no agents without delegation,
 usage-limited retries/replacements, denied-read bypass or native-pool adoption.
+## 2026-10-22 08:50 ET — Hindsight-free universe test: the grading selects almost nothing outside the theme; the B cut's gain is book-specific
+
+`backend/cli/market_universe_hindsight_research.py` scores an arm on every
+S&P 500 member point in time (membership rebuilt from `constituents.csv` +
+`sp500_changes_wikipedia.csv`; value peers by GICS sector; regime unchanged;
+report restricted before the scorecard so the "today's book" line cannot
+redeploy into non-members; names whose bars end are carried flat after the
+membership drops them — the book keeps dust remainders of every name it ever
+sold, and `equity()` demands a mark for them). Doc:
+`docs/research/universe-hindsight-2026-10-22.md`; payloads under
+`data/market/research/universe-hindsight/`. All window, 25 bp, 20 offsets:
+installed A cut 15.3% / −37.3% / Sharpe 0.91 against SPY 13.9% / −33.7% /
+0.83 (2016–2023: 13.1% vs 13.2%, nothing; 2024–2026: 23.8% / 1.33 vs 20.4% /
+1.28, a modest edge); B cut 13.9% / −38.4% / 0.84 — the four points it adds
+on the book vanish on the broad market, and in 2024–2026 it trails SPY. The
+panel is survivor-tilted (327 of 503 members holdable in 2015), so these are
+upper bounds; the equal-weight control is empty on 400 names (1/N under the
+0.5% trade floor), so only SPY/QQQ count as controls there. The 16:05 B-cut
+install still runs unless vetoed; the owner was told it is a bet on the
+theme's breadth, not on the grading. Next on the grading engine: what the A
+cut found from 2024 that it did not before (expectations gap? tone reader?),
+and a trade-floor-aware equal-weight control for broad runs.
+
+## 2026-10-22 08:45 ET — "I don't see the historical signals": the paper chart never read the replay; fixed and deployed (5fd2068c)
+
+The owner opens charts from the Paper account tab. That chart never
+fetched `desk/strategy-simulation/<T>` (the view that carries
+`policy_replay`), so it drew only the paper history's recalculated
+decisions, hidden whenever that history was an older policy's — which it
+always was after the leader policy went in. Fixed in 0c9f3e4f: every
+open chart reads the view (DeskPanel fetches it in both views;
+`simulation` stays `null` on the paper chart, `policyReplay` is passed
+in both), the paper chart's "Policy replay" box is on by default when a
+replay is served and draws `policyReplayMarkers`, names the replay in a
+line above the chart, and lists the last twelve drawn trades under the
+fills; the older history's decisions remain only when no replay is
+served. The strategy chart was fine (AAOI/MU verified on D/W/15m,
+Recent and Full history) — one defect there too: a trade label lost its
+candle to a grade-change label (`priority`), fixed. 5fd2068c then ran
+the strategy chart's label pass on the paper chart as well (it set
+markers raw, so the replay wrote over the fills): markers on one candle
+stack and never collide; on the paper chart only replay labels yield, so
+the account's own fill/decision/grade labels stay as they always were
+(`chart-15m.spec` expects them). Fixtures in `chart-15m.spec.ts` and
+`chart-human-labels.spec.ts` now answer the strategy-simulation read
+with `{}`. e2e on the chart specs: no failures beyond the baseline
+(`~/dsv41/wp/e2ebase.fail`; note its lines end in "────" padding, strip
+it before comparing). Playwright runs with
+`~/dsv41/wp/e2e_run.sh <specs>` (bridge network, `VITE_API_URL=` empty;
+`--network host` hits the production frontend on 5173 and every test
+sees the sign-in page).
+
+Seen on the paper tab, not changed: the nightly sizes the open-executed
+buys against cash on hand (TSM 1 sh, COHR 1 sh tonight against a 5.1% /
+2.4% target) while the trims release ~$54k at the same open; the
+redeploy puts it to work the next night. Under the vol target the book
+is ~48% invested anyway, so the day's shortfall is the two buys (~$6k,
+7% of equity), not the proceeds. A same-day redeploy after the open
+fills would close it; it touches bound execution sources, so it is a
+release, not a patch.
+
 ## 2026-10-22 03:30 ET — Foreign filers: where their quarterly numbers already are
 
 `desk/earnings/<T>` (the release reader, `edgar_tone` frames) carries
