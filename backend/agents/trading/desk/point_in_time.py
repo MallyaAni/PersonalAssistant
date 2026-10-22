@@ -727,3 +727,78 @@ def earnings_guard_allocator(
         return targets
 
     return allocate
+
+
+# Do not chase. The installed rule's replay found its entries into names
+# that had already run 25% or more over the last 63 sessions lost to the
+# benchmark (-1.7% at 60 sessions, 39% hit rate, n=110) while entries into
+# names that had not were worth +3% to +5%; entries made with QQQ up more
+# than 8% over 20 sessions lost too. This defers a name's entry while its
+# own trailing return, or the benchmark's, is above the bar; a held name
+# is untouched, so the leader tilt still sizes the leaders it already holds.
+def chase_guard_allocator(
+    inner,
+    window: int = 63,
+    max_return: float | None = 0.25,
+    bench_window: int = 20,
+    max_bench_return: float | None = None,
+):
+    """Return a callable deferring entries into names, or sessions, that have already run."""
+    state = {"t": -1, "previous": None}
+
+    def allocate(report, panel, config, t: int) -> np.ndarray:
+        targets = np.array(inner(report, panel, config, t), dtype=float)
+        previous = state["previous"]
+        closes = np.asarray(panel.adj_close, dtype=float)
+        bench_hot = False
+        if max_bench_return is not None and t >= bench_window:
+            bench = closes[:, panel.index(panel.benchmark)]
+            if (
+                np.isfinite(bench[t])
+                and np.isfinite(bench[t - bench_window])
+                and bench[t - bench_window] > 0
+            ):
+                bench_hot = bench[t] / bench[t - bench_window] - 1.0 > max_bench_return
+        for column in np.flatnonzero(targets > 0):
+            entering = previous is None or t <= state["t"] or previous[column] <= 0
+            if not entering:
+                continue
+            hot = bench_hot
+            if max_return is not None and t >= window:
+                then, now = closes[t - window, column], closes[t, column]
+                if np.isfinite(then) and np.isfinite(now) and then > 0:
+                    hot = hot or now / then - 1.0 > max_return
+            if hot:
+                targets[column] = 0.0
+        state["t"], state["previous"] = t, targets.copy()
+        return targets
+
+    return allocate
+
+
+# Size by the grade itself. The grade read of 2026-10-22 found A+ names
+# earned +5.7% over QQQ at sixty sessions, B names +3.8% and A names +2.8%,
+# so the letters are information about size, not only about admission.
+# This reshares the inner book's slots by a multiplier per grade and keeps
+# the gross the inner arm chose, so it changes who gets how much, not how
+# much is invested.
+def grade_tilt_allocator(inner, report, multipliers: dict):
+    """Return a callable resharing held slots by the name's grade multiplier."""
+
+    def allocate(report_, panel, config, t: int) -> np.ndarray:
+        targets = np.array(inner(report_, panel, config, t), dtype=float)
+        held = targets > 0
+        if not held.any():
+            return targets
+        gross = float(targets.sum())
+        grades = report.graded.grades[t]
+        scale = np.array([multipliers.get(int(g), 1.0) for g in grades], dtype=float)
+        shares = targets * scale
+        total = float(shares[held].sum())
+        if not total > 0:
+            return targets
+        out = np.zeros(len(targets))
+        out[held] = shares[held] * gross / total
+        return np.minimum(out, targets.max() * 1.5)
+
+    return allocate

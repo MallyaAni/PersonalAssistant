@@ -145,3 +145,78 @@ only lever that has moved the drawdown so far.
 
 The edge, where there is one, is in which names get the A: that is the
 grading engine, and `market_grade_quality_research.py` reads it next.
+
+## What the entries that failed had in common
+
+Each of the 557 entries with a 60-session outcome, bucketed by what the
+rule could see at the close it decided (mean / median excess over QQQ at
+60 sessions, and the share that beat it):
+
+| the name's own 63-session return | n | mean | median | beat |
+|---|---|---|---|---|
+| below 0 | 127 | +5.1% | +1.4% | 57% |
+| 0 to 25% | 320 | +3.3% | +2.6% | 62% |
+| 25 to 50% | 90 | −1.7% | −3.9% | 39% |
+| above 50% | 20 | 0.0% | −1.5% | 45% |
+
+| QQQ's 20-session return | n | mean | median | beat |
+|---|---|---|---|---|
+| below −3% | 93 | +6.1% | +5.7% | 61% |
+| −3% to 3% | 195 | +2.4% | +2.0% | 56% |
+| 3% to 8% | 206 | +2.6% | +2.1% | 60% |
+| above 8% | 63 | −0.6% | −2.2% | 38% |
+
+| the name against its 252-session high | n | mean | median | beat |
+|---|---|---|---|---|
+| more than 30% below | 48 | +7.0% | +6.8% | 63% |
+| 15–30% below | 83 | +3.7% | +0.1% | 51% |
+| 5–15% below | 152 | +4.7% | +2.9% | 63% |
+| within 5% | 274 | +0.7% | +0.9% | 53% |
+
+The rule chases. Its entries into names that had already run a quarter
+or more in three months, or made with the index up more than 8% in a
+month, or within 5% of the name's yearly high, were the entries that
+lost; the entries into names that had pulled back were the ones that
+earned. This is the owner's "buy the dip" put in numbers, and it is an
+entry rule, not a sizing rule: the leader tilt that sizes a held leader
+up is not contradicted, since it acts on names already in the book.
+Scored as overlays (`chase_guard_allocator`): defer an entry while the
+name's 63-session return is above 25% (`leader_ewma_chase25`), while
+QQQ's 20-session return is above 8% (`leader_ewma_chase_q8`), either
+(`leader_ewma_chase_both`), and the first on the B cut
+(`leader_ewma_minB_chase25`).
+
+Scored (all window, 25 bp, 20 offsets):
+
+| arm | CAGR | worst DD | median DD | Sharpe |
+|---|---|---|---|---|
+| installed (A cut) | 22.0% | −34.2% | −32.3% | 0.99 |
+| A cut, no entry while the name ran >25% in 63 | 22.3% | −35.4% | −31.0% | 1.13 |
+| A cut, no entry while QQQ ran >8% in 20 | 21.8% | −35.2% | −32.2% | 0.98 |
+| A cut, either | 21.9% | −35.4% | −30.4% | 1.12 |
+| B cut | 26.0% | −34.3% | −32.8% | 1.11 |
+| B cut, no entry while the name ran >25% | 23.7% | −33.9% | −31.2% | 1.13 |
+
+The name's own run is the guard that matters (the index bar adds
+nothing). On the A cut it raises the Sharpe from 0.99 to 1.13 and the
+median drawdown by a point, for a point more at the worst; on the B cut
+it gives back two points of CAGR for half a point of worst drawdown. By
+the owner's criterion the B cut alone stays the candidate; the no-chase
+guard is the next thing to put in front of him, as a Sharpe improvement
+rather than a return one, once the B cut has a forward record.
+
+## Sizing by grade (scored last)
+
+A multiplier per letter on top of the leader tilt (A+ 1.5x, A 1.0x, B
+0.75x; `grade_tilt_allocator`): B cut 26.5% at −35.1% (against the B
+cut's 26.0% at −34.3%); A cut 23.5% at −36.0% (against 22.0% at −34.2%).
+Half a point of return for a point of drawdown: not adopted.
+
+## Overnight verdict
+
+Of everything scored (eleven overlays, nine parameter neighbours, three
+grade cuts, two chase guards, two grade tilts), one change clears the
+owner's bar: admit at B. It is built on branch `entry-grade-b`, release
+files ready, to be installed after the 2026-10-22 close. The chart
+audit after the replay deploy (94 names × 3 frames, 0 console errors,
+header words 6 Buy / 4 Sell / 84 blank) matches the board.

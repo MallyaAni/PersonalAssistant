@@ -1532,6 +1532,61 @@ The detailed current continuation remains the TOP of the attached
 learned-live-release-20261006 worktree's NEXT_SESSION.md. Keep existing heartbeat
 ACTIVE and quiet unchanged. No question pending; no agents without delegation,
 usage-limited retries/replacements, denied-read bypass or native-pool adoption.
+## 2026-10-22 03:30 ET — Foreign filers: where their quarterly numbers already are
+
+`desk/earnings/<T>` (the release reader, `edgar_tone` frames) carries
+quarterly `revenue_usd_m` / `eps_usd` for NBIS (582.3 / −0.68, Q2 2026)
+and SIMO (451.0 / 3.99) from their 6-K releases, and nothing for ASML
+and TSM (they report in EUR / TWD and the reader extracts USD only; XBRL
+for both is annual). The fix is a bridge: for a name without quarterly
+XBRL facts, build the fundamentals analyst's quarterly series from the
+reader's figures dated by reaction date (point in time), and extend the
+reader's prompt to capture native-currency revenue with its currency so
+growth rates (currency-invariant) cover ASML/TSM; USD levels for the
+valuation analyst need an FX series. Changes grades, so it goes through
+the same evidence bar as a policy change. Not built.
+
+## 2026-10-22 03:05 ET — Chase study: the losing entries were the ones that chased; guard scored, not adopted
+
+Entries bucketed by what the rule saw (audit doc, last two sections):
+names up >25% in 63 sessions lost (−1.7% at 60, 39% beat); QQQ up >8%
+in 20 lost (−0.6%, 38%); names within 5% of their yearly high earned
++0.7% against +4–7% for pulled-back names. `chase_guard_allocator`
+arms: A cut + name guard 22.3% / −35.4% / Sharpe 1.13; B cut + name
+guard 23.7% / −33.9% / 1.13 against the B cut's 26.0% / −34.3% / 1.11.
+The B cut alone remains the candidate (owner's criterion); the guard is
+a Sharpe improvement to show him later. Scheduled: 09:42 ET open-fill
+check; 16:05 ET B-cut install (vetoable).
+
+## 2026-10-22 02:40 ET — Overnight results: nothing tested beats the installed rule except the B cut; B cut built on a branch, NOT installed
+
+Overlays scored (all lost to the installed rule; table in
+`docs/research/leader-policy-signal-audit-2026-10-21.md`): bands, QQQ-trend
+cuts, trailing stops, hold-through-B, pre-earnings guard. Grade read
+(`docs/research/grade-quality-2026-10-22.md`): A+ +5.7%, B +3.8%, A +2.8%,
+C +1.9% excess over QQQ at 60 sessions; value analyst strongest, release
+tone weakest alone. Arms on the cut: `leader_ewma_minB` 26.0% / -34.3% /
+Sharpe 1.11 (installed 22.0 / -34.2 / 0.99), both windows ahead;
+`leader_ewma_aplus` 19.0% / -33.8%; minB neighbours t20 23.3/-31.9, c20
+identical, s25 25.4/-33.9.
+
+Branch `entry-grade-b` (800eb204): `entry_grade` / `minimum_held_grade` /
+`exit_letter` on the policy classes (leader: B), `grade_led_policy.signals`
+takes the boundary, `strategy_publication.validate` admits a positive
+weight at the policy's letters, `learned_live_holding.entry_grade(policy)`
+and `grade_led_policy.admitted_for(policy)` for every reader (parity,
+decision view, current opportunities, personal guidance), the board's
+`publicationValid` no longer names letters, the contract document records
+revisions 1-3, `test_reconciliation_release_admission.UNCHANGED_VIEW`
+refreshed (precedent fb568d06). Targeted suites: 692 passed; wider subset
+3726 passed with the same 43 environment failures as main; e2e 85 passed.
+Candidate files in `docs/research/trading-approval-candidates-2026-10-22/entry-grade-b/`
+(dry-run install accepted). Install after the 10-22 close per the README;
+a 16:05 ET reminder is scheduled; the owner can veto in the morning.
+
+Not done: foreign-filer fundamentals (release-reader figures are the
+source); 2019/2022 failure study; CNN exposure forecaster.
+
 ## 2026-10-22 00:00 ET — Installed-policy replay on every chart DEPLOYED (10c12d70); per-signal audit written
 
 Owner (asleep, 8 hours of work authorised): "have you read the charts of
