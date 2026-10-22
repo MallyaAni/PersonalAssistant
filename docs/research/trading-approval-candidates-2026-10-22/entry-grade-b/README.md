@@ -1,9 +1,21 @@
 # Candidate: draw the leader-weight slots at B or better
 
-Status: EVIDENCE ONLY, not implemented, not installed. Prepared overnight
-2026-10-22 for the owner's decision; the first plan it could affect is the
-19:30 ET nightly after it is installed, so nothing is lost by installing
-after the close rather than before the open.
+Status: IMPLEMENTED on branch `entry-grade-b` (ee301307), tested, NOT
+merged, NOT installed. The proposed release files beside this README
+carry the branch's identity and `install_leader_release.py --dry-run`
+accepts them. The first plan it can affect is the 19:30 ET nightly after
+it is installed, so it is installed after the 2026-10-22 close, not
+before the open: the orders queued at the broker for that open were
+sized under the A cut, and the board must keep describing them.
+
+Install sequence (after 16:00 ET): merge the branch to main, push, run
+`install_leader_release.py` with `--revision <merge commit>` from
+`~/dspark-commit`, deploy from `~/deploy/anios`, confirm ADMITTED
+host==container, then `publish_now.py` is NOT needed (the 19:30 nightly
+publishes under the new boundary). Regenerate the chart replay afterwards
+with `market_policy_replay_research.py --arm leader_ewma_minB` once that
+arm is mapped in `INSTALLED_ARMS` (one-line change: the replay must show
+the B-cut rule, not the A-cut one).
 
 ## The change
 
