@@ -757,7 +757,7 @@ export const SignalBoard = ({latest, live, allocation, now, onOpen, closes, refr
         <td aria-label={`${row.ticker} displayed grade`} className="p-2">{row.grade}</td>
         <td aria-label={`${row.ticker} verdict cell`} className="max-w-sm p-2">
           <p aria-label={`${row.ticker} verdict`} className={`font-semibold ${tone}`}>{label}</p>
-          {(view.nextSession || view.state) && <span className="mt-1 inline-block rounded bg-[#eef1f6] px-1.5 py-0.5 text-[10px] font-medium text-[#3a3a3c]">{view.nextSession ? view.atOpen ? 'at open' : 'next session' : view.state}</span>}
+          {(view.nextSession || view.state) && <span className="mt-1 inline-block whitespace-nowrap rounded bg-[#eef1f6] px-1.5 py-0.5 text-[10px] font-medium text-[#3a3a3c]">{view.nextSession ? view.atOpen ? 'at open' : 'next session' : view.state}</span>}
           {refreshing && <span className="mt-1 ml-1 inline-block rounded bg-[#fff4d6] px-1.5 py-0.5 text-[10px] font-medium text-[#9a6700]">refreshing</span>}
         </td>
         {independent && <td className="p-2"><span aria-label={`${row.ticker} trade size`}>{sizeText(view.size)}</span>{sizedAmount(row.ticker, view.size, planningEquity, displayedBoardPrice(live, row.ticker, now, closes?.[row.ticker], latest.session)?.price)}</td>}

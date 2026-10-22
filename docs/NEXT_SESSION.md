@@ -1532,6 +1532,23 @@ The detailed current continuation remains the TOP of the attached
 learned-live-release-20261006 worktree's NEXT_SESSION.md. Keep existing heartbeat
 ACTIVE and quiet unchanged. No question pending; no agents without delegation,
 usage-limited retries/replacements, denied-read bypass or native-pool adoption.
+## 2026-10-21 22:50 ET — Open-plan board DEPLOYED (00f28cdb); all 94 names × 3 frames audited
+
+deploy31 gated 11567 and deployed 00f28cdb at 22:02 ET, ADMITTED
+host==container. Live board (owner's browser session): 6 buys · 4
+sells at open (ALAB 3.8, COHR 2.6, GEV 0.6, SMCI 6.2, SNDK 3.2, SNPS
+6.7; sells HPE 13.8, MU 20.0, NTAP 17.1, TSM 19.4), Position = target,
+blank elsewhere; chart header mirrors ("Sell 20.0% · Position 5.0% · At
+open"). Paper tab: 8 orders "Queued at the broker · fills at the open".
+`~/dsv41/audit2/frames.mjs` (copy to the e2e tree as frames_audit.mjs;
+run in the playwright image with --network host): 94/94 names, D 96 /
+W 72 / 15m 98 visible bars (padding included) on every name, 0 console
+errors or warnings, headers 6 Buy / 4 Sell / 84 blank = the board.
+Screenshots in `~/dsv41/audit2/shots/<T>-<D|W|15m>.png`.
+
+Not deployed: the verdict badge no-wrap (this commit). Deploy with the
+next change.
+
 ## 2026-10-21 21:50 ET — EWMA release INSTALLED and deployed (b7796ab4); open-executed plan served as the day's action
 
 Nightly 19:30–19:55 ET under grade-led-leader-weight/1 (trailing vol):
