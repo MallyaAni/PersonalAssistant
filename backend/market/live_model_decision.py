@@ -174,8 +174,10 @@ def _recorded_fill_entry(entry, now):
     if not isinstance(execution, dict):
         raise ValueError("Original journal execution clocks required")
     _order_identity(
-        entry.get("client_order_id"), entry.get("symbol"),
-        entry.get("side"), entry.get("session"),
+        entry.get("client_order_id"),
+        entry.get("symbol"),
+        entry.get("side"),
+        entry.get("session"),
     )
     _journal_quantities(entry)
     _journal_fill(entry, execution, now)
@@ -579,7 +581,9 @@ def _validate(record, config, report):
     current = receipt["current_weights"]
     if set(receipt["grade_signals"]) != names or receipt[
         "grade_signals"
-    ] != grade_led_policy.signals(report, held):
+    ] != grade_led_policy.signals(
+        report, held, learned_live_holding.entry_grade(config["policy"])
+    ):
         raise ValueError("Original numeric policy grade signals required")
     basket = _basket(paper, names, receipt)
     actions = _actions(record, config, receipt, held, basket, names)

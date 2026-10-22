@@ -20,6 +20,7 @@ from backend.market import (
     desk_freshness,
     entry_timing,
     execution_quotes,
+    grade_led_policy,
     holdings,
     learned_holding_transition,
     learned_live_holding,
@@ -194,7 +195,10 @@ def _personal_targets(record, weights, shares, prices, equity, cash):
         for name in set(desired) | set(shares):
             grade = (record["grades"].get(name) or {}).get("grade")
             current = shares.get(name, 0) * prices.get(name, 0) / equity
-            if grade in ("A+", "A") and current > 0:
+            if (
+                grade in grade_led_policy.admitted_for(record["targets"]["policy"])
+                and current > 0
+            ):
                 desired[name] = (
                     current
                     if desired.get(name, 0) <= 0
@@ -671,15 +675,16 @@ def build(
         owned = {position.ticker for position in held if position.shares > 0}
         for name, row in result["rows"].items():
             grade = (record.get("grades", {}).get(name) or {}).get("grade")
+            admitted = grade_led_policy.admitted_for(record["targets"]["policy"])
             signal = (
                 "hold"
-                if grade in ("A+", "A") and name in owned
+                if grade in admitted and name in owned
                 else "buy"
-                if grade in ("A+", "A")
+                if grade in admitted
                 else "sell"
-                if grade in ("B", "C") and name in owned
+                if grade in ("B", "C") and grade not in admitted and name in owned
                 else "avoid"
-                if grade in ("B", "C")
+                if grade in ("B", "C") and grade not in admitted
                 else "unavailable"
             )
             row.update(

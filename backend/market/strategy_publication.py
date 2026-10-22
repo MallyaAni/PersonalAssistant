@@ -173,6 +173,9 @@ def validate(value, now, *, expected_sources=None, config_sha256=None):
     if set(value["rows"]) != set(value["grade_signals"]) or not value["rows"]:
         raise ValueError("Complete independent stock universe required")
     weights = []
+    # A positive weight needs the grade the publishing policy admits at, which
+    # the policy class names; the letters are not a constant of the contract.
+    admitted = grade_led_policy.admitted_letters(learned_live_holding.entry_grade(value["policy"]))
     for name, row in value["rows"].items():
         weight, reading, evidence = row["target_weight"], value["grade_signals"][name], row["evidence"]
         if (name in ("SPY", "QQQ") or type(weight) not in (int, float)
@@ -182,7 +185,7 @@ def validate(value, now, *, expected_sources=None, config_sha256=None):
                 or reading["grade"] not in (None, "A+", "A", "B", "C")
                 or evidence["grade"] != reading["grade"] or evidence["inputs_as_of"] != value["session"]
                 or evidence["model_position_size"] != weight
-                or (weight > 0 and reading["grade"] not in ("A", "A+"))
+                or (weight > 0 and reading["grade"] not in admitted)
                 or set(evidence["features"]) - set(FEATURE_NAMES)
                 or any(type(v) not in (int, float) or not math.isfinite(v) for v in evidence["features"].values())):
             raise ValueError("Original grade-qualified percentages and technical evidence required")

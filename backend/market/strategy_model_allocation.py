@@ -37,7 +37,7 @@ def targets_from_model(
         leader.GradeLedLeaderFundedPolicy if policy == leader.POLICY
         else funded.GradeLedFundedPolicy
     )(reader, cost_bps)
-    signals = grade_led_policy.signals(report, {})
+    signals = grade_led_policy.signals(report, {}, policy.entry_grade)
     grades = {
         name: int(report.graded.grades[-1, column])
         for column, name in enumerate(report.panel.tickers) if name in signals

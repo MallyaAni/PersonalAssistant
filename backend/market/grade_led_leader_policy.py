@@ -1,8 +1,8 @@
 """Grade direction with leader-tilted equal weight at a realised-volatility target.
 
 The candidate keeps every rule of the installed grade-led policy except how an
-eligible name is sized: instead of the learned scenario optimiser, each A/A+
-name takes an equal slot tilted by its trailing-return rank among the sized
+eligible name is sized: instead of the learned scenario optimiser, each name
+graded B or better takes an equal slot tilted by its trailing-return rank among the sized
 names, the book is scaled down to a realised-volatility target, and each name
 is capped. Nothing after the decision session is read, no model is fitted, and
 the receipt says the optimiser did not run.
@@ -35,6 +35,8 @@ TRADING_DAYS = 252.0
 # forecast of the same quantity did worse (-39.8%): the naive forecaster is
 # the one that earned its place.
 EWMA_SPAN = 20
+# The ordinal grade (C 0, B 1, A 2, A+ 3) at which a name is admitted.
+ENTRY_GRADE = 1
 
 
 def forecast_volatility(basket: np.ndarray) -> float:
@@ -138,6 +140,15 @@ class GradeLedLeaderFundedPolicy(funded.GradeLedFundedPolicy):
     protocol = PROTOCOL
     sizing_reason = BASIS
     target_basis = BASIS
+    # A name is admitted at B or better and held while it keeps at least B.
+    # On the point-in-time scorecard the B cut earned 26.0% a year against
+    # the A cut's 22.0% at the same worst drawdown (-34.3% against -34.2%),
+    # ahead in both windows, and the grade read behind it is that B names
+    # outran A names over the next sixty sessions while A+ led both: the A
+    # cut kept the weakest upper grade and left a better one out.
+    entry_grade = ENTRY_GRADE
+    minimum_held_grade = ENTRY_GRADE
+    exit_letter = "B"
 
     # Bind the sizing source beside the funded policy source the parent already pins;
     # the installed subclass passes its release arguments through unchanged.

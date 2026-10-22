@@ -1,0 +1,27 @@
+{
+  "at": "2026-10-22T05:27:50+00:00",
+  "commit": "",
+  "extra": {
+    "arguments": {
+      "floor": 1.0,
+      "held": 0,
+      "judged": 0,
+      "missed": []
+    },
+    "failures": [],
+    "floors_breached": []
+  },
+  "floor": 0.7,
+  "name": "tool-selection",
+  "notes": "124 labelled cases, 0 failing",
+  "reps": 1,
+  "right": 200,
+  "scores": [
+    {
+      "name": "measured",
+      "right": 200,
+      "total": 200
+    }
+  ],
+  "total": 200
+}

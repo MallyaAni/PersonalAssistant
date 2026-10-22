@@ -248,7 +248,11 @@ def mode_of(context: dict | None) -> str:
 
 # Recheck grade constraints and receipt consistency on the learned sizing basis.
 def _grade_led_targets(record: dict, report) -> dict:
-    from backend.market import grade_led_leader_policy, grade_led_policy
+    from backend.market import (
+        grade_led_leader_policy,
+        grade_led_policy,
+        learned_live_holding,
+    )
 
     policy = (record.get("targets") or {}).get("policy")
     basis = {
@@ -315,7 +319,8 @@ def _grade_led_targets(record: dict, report) -> dict:
     # The later positions GET can have a different mark. Decode the planner's
     # original price from its recorded weight, equity and conserved quantity.
     prices = {name: current[name] * equity / qty for name, qty in held.items()}
-    signals = grade_led_policy.signals(report, held)
+    entry = learned_live_holding.entry_grade(policy)
+    signals = grade_led_policy.signals(report, held, entry)
     ordinals = {
         name: int(report.graded.grades[-1, column])
         for column, name in enumerate(report.panel.tickers)
@@ -327,7 +332,7 @@ def _grade_led_targets(record: dict, report) -> dict:
         maps[0], {"current_weights": dict(current)}, signals, prices, equity
     )
     if any(
-        signal["grade"] in ("B", "C") and wanted.get(name, 0) > TOLERANCE
+        0 <= ordinals.get(name, -1) < entry and wanted.get(name, 0) > TOLERANCE
         for name, signal in signals.items()
     ):
         raise ValueError("Below-A grade-led target must be zero")

@@ -11,6 +11,7 @@ from backend.market import (
     alpaca,
     desk_freshness,
     deskrecord,
+    grade_led_policy,
     holdings,
     live_chart,
     live_technical,
@@ -115,7 +116,10 @@ def facts_for(record, snapshot, bars_by_symbol, now):
         fact = {
             "ticker": symbol,
             "grade": grade["grade_live"],
-            "entry_permitted": grade["grade_live"] in ("A", "A+"),
+            "entry_permitted": grade["grade_live"]
+            in grade_led_policy.admitted_for(
+                (record.get("targets") or {}).get("policy")
+            ),
             "decision_session": record["session"],
             "bar": observed.isoformat(),
             "valid_until": deadlines[symbol],
@@ -263,7 +267,7 @@ def collect(root, writer, now=None, fetch=None):
 
 
 # Reject corrupt prices and policy violations before displaying a stored judgment.
-def valid_row(row, grade):
+def valid_row(row, grade, policy=None):
     try:
         if not isinstance(row["levels"], dict) or any(
             not isinstance(item, dict)
@@ -279,7 +283,8 @@ def valid_row(row, grade):
             {
                 "levels": row["levels"],
                 "candles": [row["bar"]],
-                "entry_permitted": (grade or {}).get("grade_live") in ("A", "A+"),
+                "entry_permitted": (grade or {}).get("grade_live")
+                in grade_led_policy.admitted_for(policy),
             },
         )
         return True
@@ -334,7 +339,9 @@ def read(root, record, snapshot, now):
             for key in ("price", "levels", "bar", "valid_until")
         ):
             continue
-        if not valid_row(row, grades.get(symbol)):
+        if not valid_row(
+            row, grades.get(symbol), (record.get("targets") or {}).get("policy")
+        ):
             continue
         until = desk_freshness.timestamp(row.get("valid_until"))
         generated = desk_freshness.timestamp(row.get("generated_at"))
