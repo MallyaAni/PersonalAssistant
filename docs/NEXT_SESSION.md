@@ -1532,7 +1532,45 @@ The detailed current continuation remains the TOP of the attached
 learned-live-release-20261006 worktree's NEXT_SESSION.md. Keep existing heartbeat
 ACTIVE and quiet unchanged. No question pending; no agents without delegation,
 usage-limited retries/replacements, denied-read bypass or native-pool adoption.
-## 2026-10-22 11:30 ET — B cut installed at the owner's word (1a1af70d, 09:05 ET); execution-timing study: the clock is a wash; value-weighted grading is the lead
+## 2026-10-22 11:10 ET — Value-weighted grading candidate built (branch `value-weighted-grading`, d6f58f25), awaiting the owner; floor arm scored; audits green
+
+Candidate doc `docs/research/value-weighted-grading-2026-10-22.md`:
+`grading.ANALYST_WEIGHTS["value"] = 3` (scaled to the equal total; a
+bullish valuation alone reaches A, growth+trend alone stops at B, a bearish
+valuation against three bulls is C). Tests adjusted with the reason
+(`test_trading_grading`, `test_market_holdings`); desk guide text names the
+weights. Walk-forward (weight chosen each year on prior years' Sharpe from
+{1,2,3,4}; `~/dsv41/universe/walk_forward.py`) settles on 3 and beats equal
+votes 2019–2026 on the book (23.8% / 0.95 vs 19.6% / 0.82) and the S&P 500
+(18.3% / 0.98 vs 16.0% / 0.88) — the test the ridge set in grading.py
+failed. Today 18 of 94 grades would move (`grade_diff.log`). NOT merged:
+the owner was asked for "go". When merged: deploy (unit gate; a full-suite
+run on the branch was interrupted — rerun `backend/tests` on the branch
+before merging), nightly regrades, rerun `market_policy_replay_research`.
+
+Floor on the vol-target scale (`~/dsv41/universe/floor_arm.py`,
+`floor_scores.json`): B cut, book, 25 bp: floor 0.5 → 26.7% / −34.1% / 1.12
+against 26.0% / −34.3% / 1.11 (2020 +16.6% vs +7.4%); floor 0.65 → 27.5% /
+−36.0%; floor 0.35 → 26.2%. With value×3: B+val3+floor50 27.3% / −33.4% /
+1.12; A+val3+floor50 26.0% / −34.1% / 1.13. A floor of 0.5 is a one-line
+policy change (`grade_led_leader_policy.leader_weights`: `scale = max(0.5,
+min(1, target/realised))`) through the release ceremony — a second
+candidate for the owner, worth ~0.7 pt a year at equal drawdown.
+
+Frames audit after the deploys (`~/dsv41/audit2/frames_1022.log`,
+`frames.json`): 94 names, 0 console errors, replay served on every name;
+D 97 visible bars, W 72 (51 on short histories), 15m 98; D markers median
+54 (18 names have none inside the 260 loaded sessions — expected), W min 8.
+Paper tab after the open: $87,013, cash 60.7%, 8 filled, today −4.24% on a
+broad AI selloff (GEV −10%, COHR −12%). Scheduled: 19:55 ET check of the
+first nightly under the B cut (`trig_01N798638aFXknVa35ZVXmkh`).
+
+Noted, not built: the paper tab's "Saved target" column reads the nightly
+record (A-cut targets, 7.3% NTAP) while the Stocks board reads the
+republished B-cut publication (2.5%) — one day's inconsistency from the
+pre-open republish; tonight's nightly aligns them.
+
+## 2026-10-22 10:05 ET — B cut installed at the owner's word (1a1af70d, 09:05 ET); execution-timing study: the clock is a wash; value-weighted grading is the lead
 
 Owner read the universe caveat and said "ok you can install it now / dont
 wait" at 09:03 ET. Merged `entry-grade-b` (identity equal on all 43 bound
