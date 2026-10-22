@@ -1532,6 +1532,20 @@ The detailed current continuation remains the TOP of the attached
 learned-live-release-20261006 worktree's NEXT_SESSION.md. Keep existing heartbeat
 ACTIVE and quiet unchanged. No question pending; no agents without delegation,
 usage-limited retries/replacements, denied-read bypass or native-pool adoption.
+## 2026-10-22 03:30 ET — Foreign filers: where their quarterly numbers already are
+
+`desk/earnings/<T>` (the release reader, `edgar_tone` frames) carries
+quarterly `revenue_usd_m` / `eps_usd` for NBIS (582.3 / −0.68, Q2 2026)
+and SIMO (451.0 / 3.99) from their 6-K releases, and nothing for ASML
+and TSM (they report in EUR / TWD and the reader extracts USD only; XBRL
+for both is annual). The fix is a bridge: for a name without quarterly
+XBRL facts, build the fundamentals analyst's quarterly series from the
+reader's figures dated by reaction date (point in time), and extend the
+reader's prompt to capture native-currency revenue with its currency so
+growth rates (currency-invariant) cover ASML/TSM; USD levels for the
+valuation analyst need an FX series. Changes grades, so it goes through
+the same evidence bar as a policy change. Not built.
+
 ## 2026-10-22 03:05 ET — Chase study: the losing entries were the ones that chased; guard scored, not adopted
 
 Entries bucketed by what the rule saw (audit doc, last two sections):
