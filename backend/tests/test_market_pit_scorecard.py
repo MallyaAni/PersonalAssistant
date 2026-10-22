@@ -775,3 +775,46 @@ def timedelta_days(days: int):
     from datetime import timedelta
 
     return timedelta(days=days)
+
+
+# The chase guard defers an entry into a name that has already run, or on a
+# session the benchmark has, and never touches a name already held.
+def test_chase_guard_allocator():
+    closes = np.full((40, 3), 100.0)
+    closes[:, 0] = np.linspace(100.0, 140.0, 40)  # AAA runs 40% over the window
+    panel = SimpleNamespace(
+        dates=np.datetime64("2023-01-02") + np.arange(40),
+        tickers=("AAA", "BBB", "QQQ"),
+        adj_close=closes,
+        benchmark="QQQ",
+        index=lambda name: ("AAA", "BBB", "QQQ").index(name),
+    )
+    books = {t: np.array([0.0, 0.10, 0.0]) for t in range(40)}
+    for t in range(30, 40):
+        books[t] = np.array([0.10, 0.10, 0.0])
+
+    def inner(report, panel, config, t):
+        return books[t].copy()
+
+    guard = point_in_time.chase_guard_allocator(inner, window=20, max_return=0.15)
+    out = [guard(None, panel, None, t) for t in range(40)]
+    assert out[30][0] == 0.0 and out[39][0] == 0.0  # the entry waits while AAA is hot
+    assert all(row[1] == 0.10 for row in out)  # BBB, held throughout, is untouched
+    # A held name is never evicted by the guard: once in, the run is its own.
+    books[30] = np.array([0.10, 0.10, 0.0])
+    closes[:, 0] = 100.0
+    closes[31:, 0] = 150.0
+    held = point_in_time.chase_guard_allocator(inner, window=20, max_return=0.15)
+    out = [held(None, panel, None, t) for t in range(40)]
+    assert out[30][0] == 0.10 and out[39][0] == 0.10
+    # The benchmark bar alone.
+    closes[:, 2] = 100.0
+    closes[35:, 2] = 120.0
+    bench = point_in_time.chase_guard_allocator(
+        inner, max_return=None, bench_window=10, max_bench_return=0.08
+    )
+    out = [bench(None, panel, None, t) for t in range(40)]
+    assert out[30][0] == 0.10  # entered before the benchmark ran
+    books[36] = np.array([0.0, 0.10, 0.0])  # AAA leaves and would re-enter at 37
+    out = [bench(None, panel, None, t) for t in range(40)]
+    assert out[37][0] == 0.0

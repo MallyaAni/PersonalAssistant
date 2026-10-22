@@ -623,6 +623,26 @@ ARMS.update(
         "leader_ewma_minB_s25": _leader_ewma(
             min_grade=grading.ORDINAL[grading.B], strength=0.25
         ),
+        # Do not chase: defer an entry while the name has run 25% in 63
+        # sessions, while QQQ has run 8% in 20, or either.
+        "leader_ewma_chase25": lambda report, mask: point_in_time.chase_guard_allocator(
+            _leader_ewma()(report, mask)
+        ),
+        "leader_ewma_chase_q8": lambda report, mask: (
+            point_in_time.chase_guard_allocator(
+                _leader_ewma()(report, mask), max_return=None, max_bench_return=0.08
+            )
+        ),
+        "leader_ewma_chase_both": lambda report, mask: (
+            point_in_time.chase_guard_allocator(
+                _leader_ewma()(report, mask), max_bench_return=0.08
+            )
+        ),
+        "leader_ewma_minB_chase25": lambda report, mask: (
+            point_in_time.chase_guard_allocator(
+                _leader_ewma(min_grade=grading.ORDINAL[grading.B])(report, mask)
+            )
+        ),
         # No new entry in the week before a name reports: expected from the
         # filing cadence (no lookahead), and with the actual date as the bound.
         "leader_ewma_earnings7": lambda report, mask: (
