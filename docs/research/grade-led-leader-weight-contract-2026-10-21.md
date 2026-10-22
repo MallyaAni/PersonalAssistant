@@ -99,3 +99,13 @@ account's forward record is the only out-of-sample evidence that counts.
    a better one out. The publication contract admits a positive weight at
    any letter the policy's entry grade allows, and every reader of grade
    signals asks the policy class for that boundary rather than assuming A.
+4. Exposure floor 0.5. The volatility target scales the book down but never
+   below half its full exposure (`EXPOSURE_FLOOR`; the certificate carries
+   `exposure_floor`). Basis: the rule held a sixth of its book through 2020
+   and made -6% in a year the equal-weight A/A+ book made +37%, the spike
+   having cut the exposure first and kept it cut through the rebound. On
+   the scorecard (B cut, 25 bp, 20 offsets) the floor earned 26.7% a year
+   at worst drawdown -34.1% and Sharpe 1.12 against 26.0%, -34.3% and 1.11
+   (2020 +16.6% against +7.4%); 0.65 bought drawdown (-36.0%), 0.35 changed
+   nothing. Research: `~/dsv41/universe/floor_arm.py`, payloads under
+   `data/market/research/universe-hindsight/floor_scores.json`.
