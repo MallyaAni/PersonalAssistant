@@ -2282,7 +2282,7 @@ const DeskGuide = ({latest, open}: {latest: DeskRecord; open: boolean}) => {
       <details className="mt-3">
         <summary className="cursor-pointer text-[#0071e3]">How ranking and sizing work</summary>
         <p className="mt-2">{TRIGGER_LEGEND} Numbers beside these letters are rounded cross-sectional percentiles, not individual letter grades or probabilities of profit. A+/A/B/C is the combined grade. {rankingText} Reset ranking restores automatic ordering after column sorting. Intraday inputs update where available; other votes and theses remain from the evening decision.</p>
-        <p className="mt-2">Current voting rules: growth &amp; margins, price trend, earnings-release tone and relative valuation each carry one vote;
+        <p className="mt-2">Current voting rules: growth &amp; margins, price trend and earnings-release tone each carry one vote, relative valuation three (the analyst that has predicted returns, on this book and on the whole S&P 500);
           rotation carries half a vote. A bearish core analyst caps the grade at B.
           {learnedAllocation(latest)
             ? ' The recorded learned allocation uses joint return and risk distributions, transaction costs and available cash. It can reduce exposure while grades remain strong. Unsupported holdings retain capital separately; a missing forecast is not a zero target. The nightly decision sets targets; the learned timing model decides when supported orders are ready in the actual session.'

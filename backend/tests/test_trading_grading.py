@@ -71,11 +71,13 @@ def test_one_name_grades_like_the_panel():
     base = {"fundamental": 0, "technical": 0, "sentiment": 0, "value": 0, "rotation": 0}
     assert grade_from_stances(base, ANALYST_WEIGHTS)[0] == "C"
     assert grade_from_stances({**base, "technical": 1}, ANALYST_WEIGHTS)[0] == "B"
+    # Valuation carries three votes: alone it reaches A; growth with trend alone does not.
+    assert grade_from_stances({**base, "value": 1}, ANALYST_WEIGHTS)[0] == "A"
     assert (
         grade_from_stances({**base, "fundamental": 1, "technical": 1}, ANALYST_WEIGHTS)[
             0
         ]
-        == "A"
+        == "B"
     )
     assert (
         grade_from_stances({**base, "sentiment": 1, "rotation": 1}, ANALYST_WEIGHTS)[0]
