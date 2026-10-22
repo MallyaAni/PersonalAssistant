@@ -39,9 +39,15 @@ Point-in-time scorecard, 20 offsets, 25 bp, `~/dsv41/pit/pit_leader_ewma_minB_20
 | B cut, 2024–2026 | 39.9% | −26.4% | 1.37 | | |
 | A+ only | 19.0% | −33.8% | 1.01 | 10/20 | 0/20 |
 
+| B cut, target 0.22 | 24.6% | −32.1% | 1.12 | 20/20 | 6/20 |
+| B cut, no entry while the name ran >25% in 63 | 23.7% | −33.9% | 1.13 | 20/20 | 0/20 |
+
 Four points of CAGR for a tenth of a point of drawdown, better in both
 windows, and the owner's criterion (more gain for no more drawdown) is
-met outright. The grade-quality read (`docs/research/grade-quality-2026-10-22.md`)
+met outright. The 0.22 target is the alternative for an owner who wants
+the drawdown lower than today's as well: two and a half points of CAGR
+over the installed rule for two points less worst drawdown (2024–26:
+35.9% at −23.6%). The candidate as prepared keeps 0.25. The grade-quality read (`docs/research/grade-quality-2026-10-22.md`)
 explains it: at 60 sessions B names earn +3.8% over QQQ against A's
 +2.8% (A+ +5.7%), so the A cut keeps the weakest upper grade and drops a
 better one. Neighbours of the B cut (target 0.20, cap 0.20, tilt 0.25)
