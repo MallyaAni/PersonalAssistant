@@ -204,3 +204,19 @@ it gives back two points of CAGR for half a point of worst drawdown. By
 the owner's criterion the B cut alone stays the candidate; the no-chase
 guard is the next thing to put in front of him, as a Sharpe improvement
 rather than a return one, once the B cut has a forward record.
+
+## Sizing by grade (scored last)
+
+A multiplier per letter on top of the leader tilt (A+ 1.5x, A 1.0x, B
+0.75x; `grade_tilt_allocator`): B cut 26.5% at −35.1% (against the B
+cut's 26.0% at −34.3%); A cut 23.5% at −36.0% (against 22.0% at −34.2%).
+Half a point of return for a point of drawdown: not adopted.
+
+## Overnight verdict
+
+Of everything scored (eleven overlays, nine parameter neighbours, three
+grade cuts, two chase guards, two grade tilts), one change clears the
+owner's bar: admit at B. It is built on branch `entry-grade-b`, release
+files ready, to be installed after the 2026-10-22 close. The chart
+audit after the replay deploy (94 names × 3 frames, 0 console errors,
+header words 6 Buy / 4 Sell / 84 blank) matches the board.

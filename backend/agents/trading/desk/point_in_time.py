@@ -774,3 +774,31 @@ def chase_guard_allocator(
         return targets
 
     return allocate
+
+
+# Size by the grade itself. The grade read of 2026-10-22 found A+ names
+# earned +5.7% over QQQ at sixty sessions, B names +3.8% and A names +2.8%,
+# so the letters are information about size, not only about admission.
+# This reshares the inner book's slots by a multiplier per grade and keeps
+# the gross the inner arm chose, so it changes who gets how much, not how
+# much is invested.
+def grade_tilt_allocator(inner, report, multipliers: dict):
+    """Return a callable resharing held slots by the name's grade multiplier."""
+
+    def allocate(report_, panel, config, t: int) -> np.ndarray:
+        targets = np.array(inner(report_, panel, config, t), dtype=float)
+        held = targets > 0
+        if not held.any():
+            return targets
+        gross = float(targets.sum())
+        grades = report.graded.grades[t]
+        scale = np.array([multipliers.get(int(g), 1.0) for g in grades], dtype=float)
+        shares = targets * scale
+        total = float(shares[held].sum())
+        if not total > 0:
+            return targets
+        out = np.zeros(len(targets))
+        out[held] = shares[held] * gross / total
+        return np.minimum(out, targets.max() * 1.5)
+
+    return allocate

@@ -652,6 +652,19 @@ ARMS.update(
         "leader_ewma_minB_t22": _leader_ewma(
             min_grade=grading.ORDINAL[grading.B], target=0.22
         ),
+        # Size by grade on top of the leader tilt: A+ 1.5x, A 1.0x, B 0.75x.
+        "leader_ewma_minB_gradetilt": lambda report, mask: (
+            point_in_time.grade_tilt_allocator(
+                _leader_ewma(min_grade=grading.ORDINAL[grading.B])(report, mask),
+                report,
+                {3: 1.5, 2: 1.0, 1: 0.75},
+            )
+        ),
+        "leader_ewma_gradetilt": lambda report, mask: (
+            point_in_time.grade_tilt_allocator(
+                _leader_ewma()(report, mask), report, {3: 1.5, 2: 1.0}
+            )
+        ),
         # No new entry in the week before a name reports: expected from the
         # filing cadence (no lookahead), and with the actual date as the bound.
         "leader_ewma_earnings7": lambda report, mask: (
