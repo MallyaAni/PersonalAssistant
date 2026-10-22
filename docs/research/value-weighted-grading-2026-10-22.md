@@ -39,6 +39,15 @@ return over SPY, on every S&P 500 member point in time
 | 2025 | 0.00 | +0.02 | −0.01 (0.46) | +0.11 | +0.06 |
 | 2026 | +0.01 | −0.05 | +0.02 (0.47) | +0.08 | +0.02 |
 
+A coverage fact behind the table (`~/dsv41/universe/book_coverage.py`):
+on the book the valuation analyst scored 9% of names in 2016, 8% in 2017,
+29% in 2018 and 86% from 2019 (the as-of fundamentals it reads begin
+then); the other three covered ~100% throughout. Before 2019 the desk
+effectively graded without a valuation vote, so the 2016–2018 rows of
+every scorecard are a different engine, and the walk-forward years the
+weight was chosen on (2016–2018 for 2019) carried little valuation
+evidence — the choice is conservative, not flattered.
+
 Valuation (which carries the expectations gap when the live desk runs) is
 the only analyst positive in every year since 2020 and the only one with a
 reading above +0.05 since 2017. Its coverage reached 0.9 of names in 2019
