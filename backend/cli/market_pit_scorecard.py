@@ -614,6 +614,15 @@ ARMS.update(
         # only the names whose own release said the quarter was strong.
         "leader_ewma_minB": _leader_ewma(min_grade=grading.ORDINAL[grading.B]),
         "leader_ewma_aplus": _leader_ewma(min_grade=grading.ORDINAL[grading.A_PLUS]),
+        "leader_ewma_minB_t20": _leader_ewma(
+            min_grade=grading.ORDINAL[grading.B], target=0.20
+        ),
+        "leader_ewma_minB_c20": _leader_ewma(
+            min_grade=grading.ORDINAL[grading.B], cap=0.20
+        ),
+        "leader_ewma_minB_s25": _leader_ewma(
+            min_grade=grading.ORDINAL[grading.B], strength=0.25
+        ),
         # No new entry in the week before a name reports: expected from the
         # filing cadence (no lookahead), and with the actual date as the bound.
         "leader_ewma_earnings7": lambda report, mask: (
