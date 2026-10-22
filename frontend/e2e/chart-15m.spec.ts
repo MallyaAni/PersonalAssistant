@@ -124,6 +124,8 @@ async function install(page: Page, frontendURL: string) {
         : {ema9: series(100), ema21: series(125), ema50: series(110), ema200: series(100), band_upper: series(125), band_lower: series(0)},
       levels: weekly ? {} : {high_52w: series(140), low_52w: series(80)}, entries: [], data_status: 'complete', quote_bar: '2026-09-24T13:45:00Z', last_bar_complete: false}
     } else if (url.pathname === `${base}/paper`) json = {reason: 'unavailable'}
+    // Every open chart now reads the installed policy's replay from the strategy-stock view; an empty view has no replay to draw.
+    else if (url.pathname === `${base}/strategy-simulation/AAPL`) json = {}
     else if (url.pathname === `${base}/earnings/AAPL`) json = {symbol: 'AAPL', read: null}
     else if (url.pathname === `${base}/live/read/AAPL`) json = {symbol: 'AAPL', read: null, lines: {short: [], medium: [], long: []}}
     else {

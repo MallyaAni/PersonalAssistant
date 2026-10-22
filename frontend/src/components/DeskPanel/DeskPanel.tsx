@@ -2887,7 +2887,9 @@ const NameDetail = ({
     let alive = true
     setSimulation(null)
     setSimulationError('')
-    if (strategy) getDeskStrategyStock(userId, ticker).then(value => {if (alive) setSimulation(value)}).catch(reason => {if (alive) setSimulationError(reason.message)})
+    // Every open chart reads the installed policy's replay from the strategy view; the paper
+    // chart keeps its own history and shows no simulation error of its own.
+    getDeskStrategyStock(userId, ticker).then(value => {if (alive) setSimulation(value)}).catch(reason => {if (alive) setSimulationError(reason.message)})
     return () => {alive = false}
   }, [userId, ticker, strategy])
   const [history, setHistory] = useState<DeskHistory | null>(null)
@@ -2968,7 +2970,7 @@ const NameDetail = ({
             so it leads on a phone and holds the right two-fifths of a wide
             window, staying in place while the reasoning scrolls beside it. */}
         <div className={strategy ? 'mb-4 w-full' : 'mb-4 lg:sticky lg:top-0 lg:w-[40vw] lg:max-w-[54rem] lg:shrink-0'}>
-          <TickerChart key={`${userId}:${ticker}:${personalHistory}:${historyGeneration}`} userId={userId} ticker={ticker} history={history ?? undefined} currentPolicy={latest.targets?.policy} paperActivity={paperActivity} paperRecordedFills={paperRecordedFills} paperRecordedFillsReason={paperRecordedFillsReason} paperAccountUnavailable={paperAccountUnavailable} quote={live.quotes[ticker]} live={live} now={now} personalHistory={personalHistory} personalReceiptId={personalReceiptId} tall close={lastClose ?? row?.last_close} closeSession={latest.session} suggestion={liveSuggestion} levels={live.structure?.[ticker] ?? null} modelTarget={strategy ? strategyChartTarget(latest, allocation, ticker, now, live) : null} strategy={strategy} simulation={strategy ? matchingSimulation : simulation} policyReplay={strategy ? simulation?.policy_replay ?? null : null} simulationError={strategy ? matchingSimulationError : simulationError} allocation={allocation} boardSignal={boardSignal} />
+          <TickerChart key={`${userId}:${ticker}:${personalHistory}:${historyGeneration}`} userId={userId} ticker={ticker} history={history ?? undefined} currentPolicy={latest.targets?.policy} paperActivity={paperActivity} paperRecordedFills={paperRecordedFills} paperRecordedFillsReason={paperRecordedFillsReason} paperAccountUnavailable={paperAccountUnavailable} quote={live.quotes[ticker]} live={live} now={now} personalHistory={personalHistory} personalReceiptId={personalReceiptId} tall close={lastClose ?? row?.last_close} closeSession={latest.session} suggestion={liveSuggestion} levels={live.structure?.[ticker] ?? null} modelTarget={strategy ? strategyChartTarget(latest, allocation, ticker, now, live) : null} strategy={strategy} simulation={strategy ? matchingSimulation : null} policyReplay={simulation?.policy_replay ?? null} simulationError={strategy ? matchingSimulationError : ''} allocation={allocation} boardSignal={boardSignal} />
         </div>
         <div className="lg:min-w-0 lg:flex-1">
         {order && <PaperOrderCard ticker={ticker} row={order} session={latest.session} />}

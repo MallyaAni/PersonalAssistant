@@ -832,7 +832,9 @@ export const TickerChart = ({
   const [intradaySessions, setIntradaySessions] = useState(DESK_CHART_DEFAULT_SESSIONS['15m'])
   const [showSignals, setShowSignals] = useState(strategy)
   const [showRecommendations, setShowRecommendations] = useState(false)
-  const [showDecisions, setShowDecisions] = useState(false)
+  // The installed policy's own replay is on by default wherever a chart opens; an older
+  // history's recalculated decisions stay off until asked for.
+  const [decisionsChoice, setDecisionsChoice] = useState<boolean | null>(null)
   const [showFills, setShowFills] = useState(true)
   const [showResearch, setShowResearch] = useState(strategy)
   const [showPaperFills, setShowPaperFills] = useState(false)
@@ -1077,15 +1079,18 @@ export const TickerChart = ({
   const simulatedTrades = useMemo(() => simulatedTradeMarkers(simulation, merged.bars, timeframe), [simulation, merged, timeframe])
   // A paper history is only a replay of the policy that wrote it; hide a retired policy's signals instead of mislabelling them as today's.
   const livePolicy = currentPolicy ?? allocation?.policy
-  const replayHidden = !strategy && Boolean(history?.policy) && Boolean(livePolicy) && history!.policy !== livePolicy
   // Every chart shows the installed policy's decisions and no other's: the policy's own
   // replay when it is served, the audited history only while it is that policy's.
   const policyReplay = servedReplay && servedReplay.status === 'available' && (!livePolicy || servedReplay.policy === livePolicy) ? servedReplay : null
+  const replayHidden = !strategy && !policyReplay && Boolean(history?.policy) && Boolean(livePolicy) && history!.policy !== livePolicy
+  const showDecisions = decisionsChoice ?? Boolean(policyReplay)
+  const setShowDecisions = setDecisionsChoice
+  const replayMarkers = useMemo(() => policyReplay ? policyReplayMarkers(policyReplay, merged.bars, timeframe, livePolicy) : [], [policyReplay, merged, timeframe, livePolicy])
   const auditedCurrent = !!simulation && (!livePolicy || simulation.policy === livePolicy)
   const targetMarkers = useMemo(() => [
-    ...(policyReplay ? policyReplayMarkers(policyReplay, merged.bars, timeframe, livePolicy) : []),
+    ...replayMarkers,
     ...strategyTargetMarkers(policyReplay || !auditedCurrent ? null : simulation, modelTarget, merged.bars, timeframe, recordedRows, livePolicy),
-  ], [simulation, policyReplay, auditedCurrent, modelTarget, merged, timeframe, recordedRows, livePolicy])
+  ], [simulation, policyReplay, replayMarkers, auditedCurrent, modelTarget, merged, timeframe, recordedRows, livePolicy])
   // The confirmed entry already shows the current call on its own candle; the newest-candle square
   // speaks only when there is no such entry, so one call is never drawn twice.
   const currentMarker = useMemo(() => strategy && !targetMarkers.some(marker => marker.kind === 'current')
@@ -1278,7 +1283,9 @@ export const TickerChart = ({
     const markers: ChartMarker[] = [
       ...(personalHistory && showRecommendations && !strategy ? actionMarkers : []),
       ...(showSignals ? changes : []),
-      ...(!strategy && showDecisions && !replayHidden ? [...decisions, ...timedDecisions] : []),
+      // The paper chart draws the installed policy's replay when it is served, and an
+      // older history's recalculated decisions only when no replay is.
+      ...(!strategy && showDecisions && !replayHidden ? policyReplay ? replayMarkers : [...decisions, ...timedDecisions] : []),
       ...(showFills ? strategy ? [...targetMarkers.filter(marker => marker.kind !== 'recorded'), ...(currentMarker ? [currentMarker] : [])] : [...fillMarks, ...timedFills] : []),
     ].filter(marker => Number.isFinite(marker.time)).sort((a, b) => Number(a.time) - Number(b.time))
     // Recorded live recommendations are drawn over the canvas as hollow circles: the series
@@ -1327,8 +1334,9 @@ export const TickerChart = ({
           left: shapeX, top: Math.max(4, Math.min(y, element.clientHeight - 4)), labelLeft, labelTop,
           text: fits ? marker.text : '', policy: marker.policy, time: marker.time, recommendations: marker.recommendations})
       }
-      // Retain the selected action label before choosing other nearby labels.
-      const priority = (marker: ChartMarker) => marker.recommendations?.some(item => selected.has(item.id)) ? 0 : marker.recommendations ? 2 : 1
+      // Retain the selected action label first, then trades and recommendations: when a
+      // buy or sell shares a candle with a grade change, the size is what a person acts on.
+      const priority = (marker: ChartMarker) => marker.recommendations?.some(item => selected.has(item.id)) ? 0 : marker.recommendations ? 1 : 2
       for (const marker of [...markers].sort((a,b) => priority(a)-priority(b) || Number(b.time)-Number(a.time))) {
         const x = chart.timeScale().timeToCoordinate(marker.time)
         if (x == null || x < 0 || x > plotWidth) continue
@@ -1360,7 +1368,7 @@ export const TickerChart = ({
     const observer = new ResizeObserver(paint)
     observer.observe(element)
     return () => {observer.disconnect();chart.timeScale().unsubscribeVisibleLogicalRangeChange(paint)}
-  }, [data, merged, timeframe, fullHistory, showSignals, showRecommendations, showDecisions, showFills, showPaperFills, actionMarkers, changes, decisions, fillMarks, timedDecisions, timedFills, personalHistory, strategy, targetMarkers, currentMarker, currentCall, replayHidden, selectedRecommendations])
+  }, [data, merged, timeframe, fullHistory, showSignals, showRecommendations, showDecisions, showFills, showPaperFills, actionMarkers, changes, decisions, fillMarks, timedDecisions, timedFills, personalHistory, strategy, targetMarkers, replayMarkers, policyReplay, currentMarker, currentCall, replayHidden, selectedRecommendations])
 
   // Open the original evidence behind a clicked marker or its corresponding candle.
   useEffect(() => {
@@ -1636,6 +1644,11 @@ export const TickerChart = ({
       {!strategy && replayHidden && <p aria-label={`${ticker} hidden policy replay`} className="mb-2 text-[11px] text-[#6e6e73]">
         replay of {history?.policy} hidden: differs from live policy {livePolicy}
       </p>}
+      {/* The paper chart names the same replay the strategy chart draws, so the account's
+          fills can be read against what the installed rule would have done. */}
+      {!strategy && policyReplay && showDecisions && <p aria-label={`${ticker} paper chart replay`} className="mb-2 text-[11px] text-[#6e6e73]">
+        Replay · {policyReplay.policy} · {policyReplay.start} → {policyReplay.through} · Buy/Sell circles are the installed rule's own decisions back in time, filled at the next open; they are not this account's fills.
+      </p>}
       {error && (
         <p role="alert" className="text-xs text-[#b42318]">
           {error}
@@ -1676,7 +1689,7 @@ export const TickerChart = ({
             ? <p className="mt-1 text-[11px] text-[#6e6e73]" aria-label="Fifteen-minute chart caption">
               Latest session: {data.bars[data.bars.length - 1]?.date ?? 'unavailable'}.{' '}
               {data.sessions} {data.live_feed ? '' : 'complete '}session{data.sessions === 1 ? '' : 's'} of fifteen-minute (15m) bars loaded ({merged.bars.length} bars, New York time).
-              {showDecisions && !replayHidden && ' Policy replay uses the last regular bar of its decision session.'}
+              {showDecisions && !replayHidden && (policyReplay ? ' Replay markers sit on the first bar of the session the trade fills at the open.' : ' Policy replay uses the last regular bar of its decision session.')}
             </p>
             : <p className="mt-1 text-[11px] text-[#6e6e73]">
             {merged.live && summary?.last.close !== null
@@ -1690,22 +1703,22 @@ export const TickerChart = ({
           <details className="mt-1 text-[11px] text-[#6e6e73]" aria-label="Chart legend">
             <summary className="cursor-pointer">Chart key</summary>
             <p>
-            {strategy ? showPaperFills ? 'Circles: confirmed actual paper executions. Original fills and prices are listed below.' : 'Filled circles: replayed BUY/SELL/TRIM sizes, muted when in-sample. Hollow circles: recorded live recommendations. Square: the current call. Arrows: grade changes, not additional trades.' : `Circles: shares filled per ${timeframe === 'weekly' ? 'week' : timeframe === 'daily' ? 'day' : '15-minute bar'}. Individual fills and prices below (unadjusted).`}{showSignals ? ' Grade readings are labelled Saved or Recalculated when known.' : ''}{!strategy && showDecisions && !replayHidden ? ' Signal and RESET labels: policy replay, not trades.' : ''}{!strategy && personalHistory && showRecommendations ? ' Saved Buy/Sell labels: recommendations, not fills.' : ''}
+            {strategy ? showPaperFills ? 'Circles: confirmed actual paper executions. Original fills and prices are listed below.' : 'Filled circles: replayed BUY/SELL/TRIM sizes, muted when in-sample. Hollow circles: recorded live recommendations. Square: the current call. Arrows: grade changes, not additional trades.' : `Circles: shares filled per ${timeframe === 'weekly' ? 'week' : timeframe === 'daily' ? 'day' : '15-minute bar'}. Individual fills and prices below (unadjusted).`}{showSignals ? ' Grade readings are labelled Saved or Recalculated when known.' : ''}{!strategy && showDecisions && !replayHidden ? policyReplay ? ' Buy/Sell circles: the installed policy replay, not fills.' : ' Signal and RESET labels: policy replay, not trades.' : ''}{!strategy && personalHistory && showRecommendations ? ' Saved Buy/Sell labels: recommendations, not fills.' : ''}
             </p>
           </details>
           {!strategy && timeframe === '15m' && fills.some(fill => !recordedInstant(fill.filled_at)) && <p aria-label="Fill timing" className="mt-1 text-[11px] text-[#6e6e73]">Some fills have no recorded time; listed below, not marked on 15m.</p>}
           <p aria-label="Chart refresh status" role={refreshFailed ? 'status' : undefined} className="mt-1 text-[11px] text-[#6e6e73]">Regular-session chart · refresh 20s{data.live_feed ? ` · ${data.live_feed.toUpperCase()}` : ''}{data.live_as_of ? ` · checked ${recordedTime(data.live_as_of)}` : ''}{refreshFailed ? ' · Refresh failed; showing last snapshot' : data.live_reason ? ` · ${data.live_reason}` : ''}</p>
-          {!strategy && showDecisions && !replayHidden && history?.policy && <p className="mt-1 text-[11px] text-[#6e6e73]" aria-label="Policy decision note">
+          {!strategy && showDecisions && !replayHidden && !policyReplay && history?.policy && <p className="mt-1 text-[11px] text-[#6e6e73]" aria-label="Policy decision note">
             {history.policy}: {DECISION_NOTE}
           </p>}
-          {!strategy && !replayHidden && history?.policy && currentPolicy && history.policy !== currentPolicy && <details className="mt-1 text-[11px] text-[#6e6e73]" aria-label="Historical policy comparison">
+          {!strategy && !replayHidden && !policyReplay && history?.policy && currentPolicy && history.policy !== currentPolicy && <details className="mt-1 text-[11px] text-[#6e6e73]" aria-label="Historical policy comparison">
             <summary className="cursor-pointer">Historical policy</summary>
             <p>History uses {history.policy}; the displayed allocation uses {currentPolicy}. Historical replay signals and grade statistics do not describe the current allocator's decisions or performance.</p>
           </details>}
           {/* What the markers mean under the equal-weight policy, and how the
               reset sessions were found: without a clock on file no session is
               a reset, and the chart says so rather than guessing one. */}
-          {!strategy && showDecisions && !replayHidden && isEqualWeight(history?.policy) && <p className="mt-1 text-[11px] text-[#6e6e73]" aria-label="Policy marker legend">
+          {!strategy && showDecisions && !replayHidden && !policyReplay && isEqualWeight(history?.policy) && <p className="mt-1 text-[11px] text-[#6e6e73]" aria-label="Policy marker legend">
             {EQUAL_WEIGHT_LEGEND}{history?.rebalance_note ? ` ${history.rebalance_note[0].toUpperCase()}${history.rebalance_note.slice(1)}.` : ''}
           </p>}
 
@@ -1749,7 +1762,15 @@ export const TickerChart = ({
                 <li key={`${fill.date}-${fill.side}-${fill.qty}-${index}`}>{sessionLabel(fill.date, currentYear)}{fill.filled_at ? ` · ${newYorkClock(Date.parse(fill.filled_at) / 1000, false)} ET` : ''} · {tradeText(fill.side, fill.qty, fill.price)}{isRedeploy(fill) ? ' · idle cash put to work' : ''}</li>
               ))}
             </ul>}
-            {showDecisions && !replayHidden && (recentDecisions.length === 0
+            {showDecisions && !replayHidden && policyReplay && (!policyReplay.trades.some(drawnReplayTrade)
+              ? <p className="mt-1">The installed rule never traded {ticker} in its replay.</p>
+              : <ul className="mt-1" aria-label={`${ticker} strategy signals`}>
+                {policyReplay.trades.filter(drawnReplayTrade).slice(-12).reverse().map(trade => {
+                  const price = closeOn(trade.date, merged.bars, timeframe)
+                  return <li key={`${trade.date}-${trade.action}`}>{sessionLabel(trade.date, currentYear)} · {trade.action === 'BUY' ? 'Buy' : 'Sell'} {sizePercent(trade.size)}% at the open · target {sizePercent(trade.target)}% set at the {trade.decided} close{price !== null ? ` · close $${price.toFixed(2)}` : ''}</li>
+                })}
+              </ul>)}
+            {showDecisions && !replayHidden && !policyReplay && (recentDecisions.length === 0
               ? <p className="mt-1">No policy replay action in the loaded history.</p>
               : <ul className="mt-1" aria-label={`${ticker} strategy signals`}>
                 {recentDecisions.map(row => {
