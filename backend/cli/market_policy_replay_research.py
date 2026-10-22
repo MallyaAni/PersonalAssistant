@@ -38,7 +38,7 @@ DIRECTORY = "research/policy-replay"
 SCHEMA = "policy-replay-research/1"
 # The arm that reproduces each installed policy's rule, and the policy it stands for.
 INSTALLED_ARMS = {
-    "grade-led-leader-weight/1": "ew_graded_leader_forecast_ewma",
+    "grade-led-leader-weight/1": "leader_ewma_minB",
 }
 # A target move the size column would print as 0.0% is no trade.
 DUST = 0.0005
