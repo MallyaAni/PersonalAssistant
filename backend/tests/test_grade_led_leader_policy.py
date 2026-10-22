@@ -109,8 +109,20 @@ def test_volatility_scale_never_exceeds_one(wobble):
     assert np.isclose(realised, expected_vol)
     assert np.isclose(certificate["realised_volatility"], realised)
     assert certificate["volatility_estimator"] == f"ewma_span_{leader.EWMA_SPAN}"
-    expected = min(1.0, 0.25 / realised) if realised else 1.0
+    expected = max(leader.EXPOSURE_FLOOR, min(1.0, 0.25 / realised)) if realised else 1.0
     assert np.isclose(certificate["scale"], expected)
+    assert certificate["exposure_floor"] == leader.EXPOSURE_FLOOR
+
+
+# The floor holds the book at half its exposure through a volatility spike, and
+# a caller may lower it to nothing to see the bare target.
+def test_exposure_floor_keeps_half_the_book_in_a_spike():
+    window = closes(leader.WINDOW + 1, wobble=0.2, seed=3)
+    sized = np.array([True, True, True, True, True])
+    _, floored = leader.leader_weights(window, sized, cap=1.0)
+    _, bare = leader.leader_weights(window, sized, cap=1.0, floor=0.0)
+    assert bare["scale"] < leader.EXPOSURE_FLOOR
+    assert floored["scale"] == leader.EXPOSURE_FLOOR
 
 
 # The per-name cap trims a slot and leaves the excess in cash rather than elsewhere.

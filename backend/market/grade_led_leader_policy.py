@@ -35,6 +35,17 @@ TRADING_DAYS = 252.0
 # forecast of the same quantity did worse (-39.8%): the naive forecaster is
 # the one that earned its place.
 EWMA_SPAN = 20
+# The least of its full exposure the book keeps whatever the volatility
+# reads: the target is a brake, not an exit. Without a floor the rule held
+# a sixth of its book through 2020 and made -6% in a year the equal-weight
+# A/A+ book made +37%, because a volatility spike cut the exposure first
+# and kept it cut through the rebound. On the scorecard (B cut, 25 bp, 20
+# offsets) a floor of 0.5 earned 26.7% a year at worst drawdown -34.1% and
+# Sharpe 1.12 against 26.0%, -34.3% and 1.11 without one (2020 +16.6%
+# against +7.4%, every other year within a point); 0.65 earned 27.5% at
+# -36.0%, 0.35 was the rule without a floor. Half is the floor that paid
+# for itself without buying drawdown.
+EXPOSURE_FLOOR = 0.5
 # The ordinal grade (C 0, B 1, A 2, A+ 3) at which a name is admitted.
 ENTRY_GRADE = 1
 
@@ -48,9 +59,17 @@ def forecast_volatility(basket: np.ndarray) -> float:
 
 # Share one unit of capital across the sized names from their trailing closes only:
 # equal slots tilted by trailing-return rank, the whole book scaled down to the
-# volatility target, each name capped, the remainder cash; never levered.
+# volatility target but never below the exposure floor, each name capped, the
+# remainder cash; never levered.
 def leader_weights(
-    closes, sized, *, window=WINDOW, strength=STRENGTH, target=TARGET, cap=growth.CAP
+    closes,
+    sized,
+    *,
+    window=WINDOW,
+    strength=STRENGTH,
+    target=TARGET,
+    cap=growth.CAP,
+    floor=EXPOSURE_FLOOR,
 ):
     closes = np.asarray(closes, dtype=float)
     sized = np.asarray(sized, dtype=bool)
@@ -62,6 +81,7 @@ def leader_weights(
         or not 0 <= strength <= 1
         or not target > 0
         or not 0 < cap <= 1
+        or not 0 <= floor <= 1
     ):
         raise ValueError("Exactly window+1 trailing closes for every name required")
     certificate = {
@@ -70,6 +90,7 @@ def leader_weights(
         "strength": float(strength),
         "volatility_target": float(target),
         "volatility_estimator": f"ewma_span_{EWMA_SPAN}",
+        "exposure_floor": float(floor),
         "cap": float(cap),
         "annualisation": TRADING_DAYS,
         "sized": int(sized.sum()),
@@ -85,7 +106,7 @@ def leader_weights(
     slots = multipliers / multipliers.sum()
     basket = np.diff(np.log(book), axis=0).mean(axis=1)
     realised = forecast_volatility(basket)
-    scale = min(1.0, target / realised) if realised > 0 else 1.0
+    scale = max(floor, min(1.0, target / realised)) if realised > 0 else 1.0
     weights[sized] = np.minimum(slots * scale, cap)
     if not np.isfinite(weights).all() or weights.sum() > 1 + 1e-10:
         raise ValueError("Leader weights must stay within unit capital")
