@@ -117,3 +117,31 @@ feed (the release reader's "usual gap 91 days" is a start).
 The installed point is not on a cliff. The 0.20 target is the one
 neighbour a more cautious owner would pick: two points of CAGR for four
 points less drawdown.
+
+## Overlays scored against the installed rule (all window, 25 bp, 20 offsets)
+
+| overlay | CAGR | worst DD | Sharpe | verdict |
+|---|---|---|---|---|
+| installed | 22.0% | −34.2% | 0.99 | — |
+| trade band 1% (`banded_allocator`) | 22.0% | −35.4% | 0.98 | no gain after costs |
+| trade band 2% | 21.9% | −35.1% | 0.98 | no |
+| QQQ under 50-day EMA → half exposure | 18.2% | −35.2% | 0.93 | no: the drawdowns arrive before the trend turns |
+| QQQ under 50-day EMA → cash | 14.1% | −41.7% | 0.78 | no |
+| QQQ under 200-day EMA → half | 20.2% | −34.2% | 0.97 | no |
+| trailing stop 15% (`trailing_stop_allocator`) | 20.6% | −38.6% | 0.95 | no: whipsaw |
+| trailing stop 25% | 21.4% | −35.7% | 0.98 | no |
+| enter at A, hold while ≥B (`grade_hysteresis_allocator`) | 21.6% | −37.1% | 0.94 | no: the per-signal exit finding does not survive at the book level |
+| no entry within 7 days of a release, cadence-expected (`earnings_guard_allocator`) | 22.0% | −35.5% | 1.00 | no (2024–26: 28.2% / −29.8%, better) |
+| same, with the actual date (the bound) | 21.8% | −35.0% | 0.99 | no |
+
+Nothing tested tonight beats the installed rule on the owner's criterion
+(more return for no more drawdown). The two per-signal findings (exits
+too early, entries before earnings) are real at the signal level and
+disappear at the book level once the slots they free are reallocated:
+the book is a portfolio, and these overlays move money between names
+that are all exposed to the same factor. The return and the drawdown
+both come from that factor, which is why the volatility target is the
+only lever that has moved the drawdown so far.
+
+The edge, where there is one, is in which names get the A: that is the
+grading engine, and `market_grade_quality_research.py` reads it next.

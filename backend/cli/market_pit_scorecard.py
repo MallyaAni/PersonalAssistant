@@ -489,11 +489,13 @@ ARMS = {
 # The installed leader-weight rule with one setting moved at a time: the
 # sensitivity around what is installed, so a parameter that happens to sit on
 # a cliff is seen before it is trusted. Each is the installed rule otherwise.
-def _leader_ewma(strength=0.5, window=63, target=0.25, cap=0.25, span=20):
+def _leader_ewma(
+    strength=0.5, window=63, target=0.25, cap=0.25, span=20, min_grade=None
+):
     return lambda report, mask: point_in_time.forecast_targeted_allocator(
         point_in_time.graded_tilted_allocator(
             mask,
-            min_grade=grading.ORDINAL[grading.A],
+            min_grade=grading.ORDINAL[grading.A] if min_grade is None else min_grade,
             tilt="leader",
             strength=strength,
             window=window,
@@ -608,6 +610,10 @@ ARMS.update(
                 ewma_span=20,
             )
         ),
+        # The grade cut the slots are drawn at: every B-or-better name, or
+        # only the names whose own release said the quarter was strong.
+        "leader_ewma_minB": _leader_ewma(min_grade=grading.ORDINAL[grading.B]),
+        "leader_ewma_aplus": _leader_ewma(min_grade=grading.ORDINAL[grading.A_PLUS]),
         # No new entry in the week before a name reports: expected from the
         # filing cadence (no lookahead), and with the actual date as the bound.
         "leader_ewma_earnings7": lambda report, mask: (
