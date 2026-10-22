@@ -1532,6 +1532,46 @@ The detailed current continuation remains the TOP of the attached
 learned-live-release-20261006 worktree's NEXT_SESSION.md. Keep existing heartbeat
 ACTIVE and quiet unchanged. No question pending; no agents without delegation,
 usage-limited retries/replacements, denied-read bypass or native-pool adoption.
+## 2026-10-22 11:30 ET — B cut installed at the owner's word (1a1af70d, 09:05 ET); execution-timing study: the clock is a wash; value-weighted grading is the lead
+
+Owner read the universe caveat and said "ok you can install it now / dont
+wait" at 09:03 ET. Merged `entry-grade-b` (identity equal on all 43 bound
+sources), installed the release (approved_at 13:05:10Z), deployed
+(deploy36), ADMITTED host==container. The install re-bound the config
+before the open, so the board went "unavailable" (the A-cut publication no
+longer verified); `publish_now.py` at 09:29 republished under the B cut (33
+names, ~60% invested) and the board came back once the merged container
+was up (09:39). The 09:30 orders (A-cut trims, queued the night before)
+filled 09:30–09:32 as queued. The 16:05 install trigger is disabled. Chart
+replay regenerated under `leader_ewma_minB` (29,547 trades); charts show it.
+Board line fix 9d5dd31d ("Open plan · session · legs trade at the first
+open after publication (published HH:MM)" instead of "Awaiting 15-minute
+entries") is pushed, NOT deployed yet — deploy with the next change.
+
+Execution timing (`docs/research/execution-timing-2026-10-22.md`): after a
+>3% gap down the book names recover +26 bp by 10:00 and +43 bp by noon, but
+rescoring the whole rule at 10:00/10:30/11:00/close moves CAGR by <0.3%:
+the open is fine; no threshold rule is worth shipping; a learned timing
+model has a ~0.3%/yr ceiling. The owner floated an LLM/CNN reading chart
+images for "wick fakeouts"; answered: bars, not pictures, and the grading
+side first.
+
+Grading lead (`~/dsv41/universe/analyst_ic.py`, `regrade.py`): on the broad
+S&P 500 panel only the valuation analyst (with the expectations gap) has a
+positive 60-session rank IC since 2020 (+0.05 to +0.11 in 2021/2025/2026);
+fundamental ~0 since 2018, technical ~0/negative, sentiment covers 45% of
+names at IC ~0. Regrading with `ANALYST_WEIGHTS` value=3 (others 1, scaled):
+A cut on the book 22.0 → 25.0% / −34.1% / Sharpe 1.11 (beats A in 9 of 11
+years); on the S&P 500 PIT 15.3 → 17.1% / −34.7% / 1.00 (9 of 11 years);
+value 4–5 the same, value 2 half the gain, dropping sentiment loses it.
+With the B cut: book 26.0 → 26.6 (2024 falls 41.7 → 21.9), broad 13.9 →
+14.4. The B cut's 2024 +41.7% is one year doing most of its work. Running
+now (`floor_arm.py`): a floor on the vol-target scaling (the rule made −6%
+in 2020 against +37% for the equal-weight A/A+ book; the leader tilt and the
+vol target both cut the rebound), with and without value=3. Next: write the
+value-weight candidate (grading.py is not a bound source but changes every
+grade; the owner approves), and the same-day redeploy of open proceeds.
+
 ## 2026-10-22 08:50 ET — Hindsight-free universe test: the grading selects almost nothing outside the theme; the B cut's gain is book-specific
 
 `backend/cli/market_universe_hindsight_research.py` scores an arm on every
