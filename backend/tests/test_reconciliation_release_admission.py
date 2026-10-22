@@ -14,7 +14,7 @@ VIEW = "backend/market/live_model_decision.py"
 # Pinned to the grade-led-leader-weight/1 candidate tree (the selector and policy
 # tuples in both modules accept the leader id); before it: abff0526... and 3e894a1f....
 UNCHANGED = "b451c4812d69b037afefc41e8dfd9b9b056ba5483858086543cb190e15823dc3"
-UNCHANGED_VIEW = "3cdf9b9398c3e5751d064af3b0920efd457a8610ecac774d52d96cff4e8a1676"
+UNCHANGED_VIEW = "6c120695e6b858949dd421666e3589d7b1ef11dcae1ffdee61582fec1435f9e4"
 
 
 # Build a synthetic approval transition around the actual candidate CLI source.

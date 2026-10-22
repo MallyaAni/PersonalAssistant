@@ -11,6 +11,7 @@ from backend.market import (
     calendar,
     desk_freshness,
     execution_quotes,
+    grade_led_policy,
     holdings,
     opportunity,
     personal_risk,
@@ -669,7 +670,9 @@ def action_for_row(
         return said(action, size or 0.0, why)
     # Preserve the incumbent covered-downgrade exit opinion. A personal sale
     # does not imply a replacement buy or make its future proceeds available.
-    if current > 0 and row["grade_live"] not in ("A", "A+"):
+    if current > 0 and row["grade_live"] not in grade_led_policy.admitted_for(
+        toward_targets
+    ):
         return said(
             Action.SELL,
             -current,

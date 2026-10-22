@@ -1,0 +1,32 @@
+{
+  "at": "2026-10-22T05:27:50+00:00",
+  "commit": "",
+  "extra": {
+    "arguments": {
+      "floor": 1.0,
+      "held": 9,
+      "judged": 10,
+      "missed": [
+        {
+          "query": "what's on this weekend?",
+          "wrote": "events this week"
+        }
+      ]
+    },
+    "failures": [],
+    "floors_breached": []
+  },
+  "floor": 0.7,
+  "name": "tool-selection",
+  "notes": "124 labelled cases, 0 failing",
+  "reps": 1,
+  "right": 10,
+  "scores": [
+    {
+      "name": "live_data",
+      "right": 10,
+      "total": 10
+    }
+  ],
+  "total": 10
+}

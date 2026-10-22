@@ -19,7 +19,7 @@ const REASON_WORDS: Record<DeskEntryReasonCode, string> = {
   waiting_better_price: 'Wait one candle for a better price',
   at_target: 'The model position is already at target',
   no_allocation: 'No model allocation for this name',
-  grade_below_a: 'The grade is below A',
+  grade_below_a: 'The grade is below the entry grade',
   awaiting_candle: 'Awaiting a completed 15-minute candle',
   publication_expired: 'The published assessment has expired',
   quote_stale: 'A fresh compatible quote is required',
@@ -65,7 +65,8 @@ const publicationValid = (allocation: DeskModelAllocation | undefined, now: numb
         || !(grade.grade===null && grade.action==='unavailable' || ['A+', 'A', 'B', 'C'].includes(grade.grade ?? '')) || evidence?.grade !== grade.grade
         || evidence?.inputs_as_of !== allocation.session || evidence?.model_position_size !== row.target_weight
         || typeof row.target_weight !== 'number' || !Number.isFinite(row.target_weight) || row.target_weight < 0 || row.target_weight > 1
-        || (row.target_weight > 0 && (!['A+', 'A'].includes(grade.grade!) || !['buy', 'hold'].includes(grade.action)))) return false
+        // Which letters a positive target may carry is the publishing policy's boundary, checked by the backend; the action says it was admitted.
+        || (row.target_weight > 0 && !['buy', 'hold'].includes(grade.action))) return false
     total += row.target_weight
   }
   return total <= 1 + 1e-12
@@ -351,7 +352,7 @@ const publishedPlanFor = (latest: DeskRecord, live: DeskLive, allocation: DeskMo
     ticker, grade: independent ? grade : `${grade} · plan`, setup: null, evidence:v2 ? allocation.rows[ticker].evidence : undefined,
     buy: signal(eligible && weight > 0 ? waiting ? 'Wait' : independent ? 'Buy setup' : 'Buy plan' : eligible ? independent ? 'Wait' : 'No buy allocation' : independent ? 'Avoid' : 'Avoid new entry', false, '', reason, eligible && weight > 0 ? 1 : 2),
     sell: signal(hasExit ? waiting ? 'Wait' : independent ? 'Exit' : 'Exit if held' : independent ? '—' : 'No grade exit', false, '', hasExit
-      ? `The published grade-led policy exits below A if held; this viewer's holdings are unknown. ${timing}`
+      ? `The published grade-led policy exits below its entry grade if held; this viewer's holdings are unknown. ${timing}`
       : `${eligible ? 'Grade retains entry permission' : 'No new entry or model sell action'}. ${timing}`, hasExit ? 1 : 2),
     plan: {session: session!, published: allocation!.observed_at!, validUntil: allocation!.valid_until!, calculated: independent ? allocation!.as_of : undefined},
     nextSession: true,
@@ -430,7 +431,7 @@ const signalsForBase = (latest: DeskRecord, live: DeskLive, ticker: string, now:
     const quote = displayedBoardPrice(live,ticker,now)
     if (plan && allocation.grade_signals?.[ticker]?.action === 'sell' && open
         && quote?.current && quote.kind === 'midpoint' && quote.word === 'regular')
-      return {...plan,nextSession:false,sell:signal('Sell review now',true,'','The model grade dropped below A: exit an existing position. This is not a short sale; no holding amount is assumed.',0)}
+      return {...plan,nextSession:false,sell:signal('Sell review now',true,'','The model grade dropped below the entry grade: exit an existing position. This is not a short sale; no holding amount is assumed.',0)}
     if (plan && entry) {
       const ready = entry.row.state === 'execute'
       return {...plan,nextSession:false,buy:signal(ready ? 'Buy now' : 'Wait',ready,'',ready

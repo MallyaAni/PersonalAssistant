@@ -24,7 +24,7 @@ REASONS = {
     "waiting_better_price": "Wait one candle for a better price",
     "at_target": "The model position is already at target",
     "no_allocation": "No model allocation for this name",
-    "grade_below_a": "The grade is below A",
+    "grade_below_a": "The grade is below the entry grade",
     "awaiting_candle": "Awaiting a completed 15-minute candle",
     "publication_expired": "The published assessment has expired",
     "quote_stale": "A fresh compatible quote is required",

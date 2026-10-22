@@ -64,6 +64,9 @@ def _account(equity, held, prices, cash):
 
 # Bind the reviewed reader and fixed fees without fitting or contacting a broker.
 class JointFundedPolicy:
+    # The grade at which a name is admitted, and the grade it must keep to
+    # stay; a subclass that admits lower sets both.
+    entry_grade = 2
     minimum_held_grade = 1
     version = POLICY
     protocol = PROTOCOL
@@ -97,7 +100,7 @@ class JointFundedPolicy:
             sorted(
                 name
                 for name, grade in grades.items()
-                if grade >= 2
+                if grade >= self.entry_grade
                 or (grade >= self.minimum_held_grade and current.get(name, 0) > 0)
             )
         )
@@ -525,7 +528,10 @@ class RetainedMarketConditionedFundedPolicy(MarketConditionedTimedFundedPolicy):
 class GradeLedFundedPolicy(RetainedMarketConditionedFundedPolicy):
     version = "grade-led-learned-sizing/1"
     protocol = "docs/research/grade-led-sizing-contract-2026-10-13.md"
+    entry_grade = 2
     minimum_held_grade = 2
+    # The letter a held name has slipped below when the policy exits it.
+    exit_letter = "A"
     target_basis = "grade_constrained_learned_sizes"
 
     # Record every grade signal even when no executable size can be funded.
@@ -535,7 +541,7 @@ class GradeLedFundedPolicy(RetainedMarketConditionedFundedPolicy):
         targets, receipt = super().decide(
             session, report, equity, held, prices, cash, blocked
         )
-        readings = grade_led_policy.signals(report, held)
+        readings = grade_led_policy.signals(report, held, self.entry_grade)
         # Include zero-size names so a grade exit remains visible without any owned shares.
         targets = {**dict.fromkeys(readings, 0.0), **targets}
         receipt["targets"] = targets
@@ -564,7 +570,7 @@ class GradeLedFundedPolicy(RetainedMarketConditionedFundedPolicy):
             [
                 replace(
                     order,
-                    reason="Grade below A; exit"
+                    reason=f"Grade below {self.exit_letter}; exit"
                     if order.symbol in exits
                     else "Grade-led learned sizing adjustment",
                 )

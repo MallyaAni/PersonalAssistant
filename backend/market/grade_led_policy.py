@@ -4,10 +4,39 @@ import numpy as np
 
 POLICY = "grade-led-learned-sizing/1"
 LETTERS = {-1: None, 0: "C", 1: "B", 2: "A", 3: "A+"}
+# The grade at which this policy admits a name; a policy that admits lower
+# says so on its class and the signals are read against that boundary.
+ENTRY_GRADE = 2
+# How the boundary is named in a signal's reason: the admitted letters, and
+# the letter a name has slipped below when it must be exited.
+ENTRY_WORDS = {3: ("A+", "A+"), 2: ("A/A+", "A"), 1: ("B/A/A+", "B")}
+
+
+# The letters a boundary admits, in the order the ladder names them.
+def admitted_letters(entry_grade=ENTRY_GRADE):
+    return tuple(
+        letter
+        for ordinal, letter in sorted(LETTERS.items())
+        if letter and ordinal >= entry_grade
+    )
+
+
+# The letters the named policy admits a name at; a policy this module does not
+# know keeps the A boundary the desk's readers always assumed.
+def admitted_for(policy):
+    from backend.market import learned_live_holding
+
+    try:
+        return admitted_letters(learned_live_holding.entry_grade(policy))
+    except ValueError:
+        return admitted_letters(ENTRY_GRADE)
 
 
 # Describe grade permission independently of the optimizer and any resulting order.
-def signals(report, held):
+def signals(report, held, entry_grade=ENTRY_GRADE):
+    if entry_grade not in ENTRY_WORDS:
+        raise ValueError("Entry grade must be B, A or A+")
+    admitted, boundary = ENTRY_WORDS[entry_grade]
     rows = {}
     for column, name in enumerate(report.panel.tickers):
         if name in ("SPY", "QQQ"):
@@ -22,11 +51,11 @@ def signals(report, held):
             "unavailable"
             if grade < 0
             else "hold"
-            if grade >= 2 and held.get(name, 0) > 0
+            if grade >= entry_grade and held.get(name, 0) > 0
             else "buy"
-            if grade >= 2
+            if grade >= entry_grade
             else "sell"
-            if held.get(name, 0) > 0 or prior >= 2
+            if held.get(name, 0) > 0 or prior >= entry_grade
             else "avoid"
         )
         rows[name] = {
@@ -39,9 +68,12 @@ def signals(report, held):
             "reason": (
                 "Grade unavailable; preserve existing shares"
                 if grade < 0
-                else "A/A+ entry permission; learned sizing and funding apply"
-                if grade >= 2
-                else "Below A; exit existing shares and do not initiate a purchase"
+                else f"{admitted} entry permission; learned sizing and funding apply"
+                if grade >= entry_grade
+                else (
+                    f"Below {boundary}; exit existing shares "
+                    "and do not initiate a purchase"
+                )
             ),
         }
     return rows

@@ -342,6 +342,16 @@ class GradeLedLeaderHoldingPolicy(
 GRADE_LED_POLICIES = (grade_led_policy.POLICY, leader.POLICY)
 
 
+# The grade at which the named policy admits a name, read from the policy
+# class so every reader of its signals checks the boundary the policy set.
+def entry_grade(policy: str) -> int:
+    if policy == leader.POLICY:
+        return leader.GradeLedLeaderFundedPolicy.entry_grade
+    if policy == grade_led_policy.POLICY:
+        return funded.GradeLedFundedPolicy.entry_grade
+    raise ValueError("Installed grade-led model required")
+
+
 # Authenticate one installed configuration for nightly and personal decision readers.
 def read_configuration(root, now):
     raw = (Path(root) / CONFIG).read_bytes()

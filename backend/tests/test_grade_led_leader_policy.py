@@ -163,7 +163,7 @@ def test_size_report_reads_nothing_outside_the_trailing_window(reader):
 # A grade exit is sold, an ungraded holding is kept whole, and the rest is leader-sized.
 def test_funded_decision_with_held_exit_and_protected_names(reader, monkeypatch):
     policy = chosen(reader, monkeypatch)
-    shown = leader_report(reader, (3, 1, -1, 0, 0), prior=(3, 3, -1, 0, 0))
+    shown = leader_report(reader, (3, 0, -1, 0, 0), prior=(3, 3, -1, 0, 0))
     day = str(shown.panel.dates[-1])
     held = {"AAA": 10, "BBB": 10, "CCC": 10}
     prices = {"AAA": 100.0, "BBB": 100.0, "CCC": 100.0}
@@ -227,7 +227,7 @@ def test_blocked_names_cannot_grow(reader, monkeypatch):
 # A held name without a full trailing window refuses the night's sizing, not the exit.
 def test_short_window_refuses_sizing_but_keeps_grade_exit(reader, monkeypatch):
     policy = chosen(reader, monkeypatch)
-    shown = leader_report(reader, (3, 1, -1, 0, 0), prior=(3, 3, -1, 0, 0))
+    shown = leader_report(reader, (3, 0, -1, 0, 0), prior=(3, 3, -1, 0, 0))
     shown.panel.adj_close[-5, 0] = np.nan
     day = str(shown.panel.dates[-1])
     held = {"AAA": 10, "BBB": 10}
@@ -253,7 +253,7 @@ def test_short_window_refuses_sizing_but_keeps_grade_exit(reader, monkeypatch):
 # Orders say what sized them, and a grade exit keeps the parent's exit wording.
 def test_plan_labels_orders_by_leader_sizing(reader, monkeypatch):
     policy = chosen(reader, monkeypatch)
-    shown = leader_report(reader, (3, 1, -1, 0, 0), prior=(3, 3, -1, 0, 0))
+    shown = leader_report(reader, (3, 0, -1, 0, 0), prior=(3, 3, -1, 0, 0))
     day = str(shown.panel.dates[-1])
     orders, state, note = policy.plan(
         day, paper.PaperState(), 10000, {"BBB": 10}, {"AAA": 100.0, "BBB": 100.0},
@@ -263,7 +263,7 @@ def test_plan_labels_orders_by_leader_sizing(reader, monkeypatch):
     reasons = {order.symbol: order.reason for order in orders}
     assert reasons == {
         "AAA": "Grade-led leader-weight sizing adjustment",
-        "BBB": "Grade below A; exit",
+        "BBB": "Grade below B; exit",
     }
     assert state.policy_version == leader.POLICY
     assert state.allocation_state["receipt"]["target_basis"] == leader.BASIS
@@ -293,7 +293,7 @@ def test_unit_capital_targets_share_the_sizing(reader):
     assert qualification["excluded_entries"] == {
         "BBB": {"reason": "buy_permission_blocked"}
     }
-    assert signals == grade.signals(shown, {})
+    assert signals == grade.signals(shown, {}, leader.ENTRY_GRADE)
     with pytest.raises(ValueError, match="grade-led model required"):
         strategy_model_allocation.targets_from_model(shown, reader, 10, set(), "x")
 
