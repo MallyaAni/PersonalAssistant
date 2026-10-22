@@ -728,6 +728,10 @@ export const SignalBoard = ({latest, live, allocation, now, onOpen, closes, refr
       <p className="text-xs text-[#6e6e73]">{independent
         ? savedNamesOnly ? `Saved stocks · ${latest.session} · current strategy unavailable` : awaitingNightly
           ? `Last plan · ${publicationSession ?? 'unavailable'} · next plan ${allocation?.next_publication_at ? evidenceTime(allocation.next_publication_at) : 'not yet scheduled'}`
+          // An open-executed plan awaits no fifteen-minute entry: its legs trade at the first
+          // open after it was published, so the line says when that was.
+          : allocation?.execution?.timing === 'next_open' && sessionOpen(live, allocation)
+            ? `Open plan · ${allocation.session ?? latest.session} · legs trade at the first open after publication${allocation.published_at ? ` (published ${evidenceTime(allocation.published_at)})` : ''}`
           : `${sessionOpen(live, allocation) ? allocation?.version === 'strategy-model-allocation/2' && !currentSession ? 'Awaiting 15-minute entries' : '15-minute signals' : 'Next-session actions'} · ${currentSession ?? allocation?.session ?? latest.session}`
         : 'Regular-session signals and published strategy plans · no paper account or portfolio inputs required. Immediate signals first, then waiting, plans and unavailable; High → Medium → Low within each group. Equal priorities sort alphabetically.'}</p>
       <div className="flex flex-wrap items-center gap-2" role="group" aria-label="Signal ranking">

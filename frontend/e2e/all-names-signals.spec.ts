@@ -651,6 +651,9 @@ test('Open-executed plan shows the change from the previous plan at the open on 
   await expect(board.getByLabel('BUYHIGH verdict cell',{exact:true})).toContainText('at open')
   await expect(board.getByLabel('BUYHIGH verdict cell',{exact:true})).not.toContainText('pending')
   await expect(board.getByLabel('SELLHIGH verdict',{exact:true})).toHaveText('Sell')
+  // During the session the board awaits no fifteen-minute entry: it says when the plan was published.
+  await expect(board).toContainText('Open plan · 2026-10-19 · legs trade at the first open after publication (published')
+  await expect(board).not.toContainText('Awaiting 15-minute entries')
   expect(state.diagnostics).toEqual([])
 })
 
