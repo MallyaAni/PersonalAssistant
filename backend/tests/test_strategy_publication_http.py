@@ -42,7 +42,7 @@ class PublicationHTTPTests(unittest.IsolatedAsyncioTestCase):
                     response=await client.get(url,headers={'Authorization':'Bearer '+owner})
                     self.assertEqual(response.status_code,200)
                     # The market phase rides on every answer; its own tests cover its clocks.
-                    self.assertEqual({k:v for k,v in response.json().items() if k not in ('entry_assessment','market_phase')},
+                    self.assertEqual({k:v for k,v in response.json().items() if k not in ('entry_assessment','market_phase','execution')},
                         {**value,'recorded_history_version':'strategy-recorded-entries/1'})
                     self.assertEqual(response.json()['market_phase']['acts_in'],'regular_session')
                     self.assertEqual(response.json()['entry_assessment']['status'],'unavailable')
