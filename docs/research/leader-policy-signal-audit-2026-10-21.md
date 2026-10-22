@@ -88,3 +88,32 @@ GEV, CRM, COHR, TSM) are too young to judge.
    the evidence.
 3. The regime dependence (2021/2022/2024 flat) is the open problem; the
    volatility target is the only regime reader the rule has.
+
+## Entries before earnings
+
+Matching each entry to the name's next 8-K item 2.02 acceptance date
+(the actual release; a company announces its date weeks ahead, so a live
+guard would know it): entries within 7 calendar days before a release
+(n=46) beat QQQ 35% of the time at 20 sessions, mean excess −1.2%;
+entries 8–21 days before (n=61) 57%, +2.5%; entries further out (n=471)
+52%, +1.0%. A guard that defers a new entry until after a release due
+within a week is supported by this sample; it needs an expected-date
+feed (the release reader's "usual gap 91 days" is a start).
+
+## Sensitivity of the installed parameters (all window, 25 bp)
+
+| arm | CAGR | worst DD | Sharpe |
+|---|---|---|---|
+| installed (s0.5 w63 t0.25 cap0.25 span20) | 22.0% | −34.2% | 0.99 |
+| target 0.20 | 20.0% | −30.4% | 1.03 |
+| target 0.30 | 23.3% | −41.1% | 0.96 |
+| tilt 0.25 | 22.3% | −34.6% | 0.99 |
+| tilt 0.75 | 21.1% | −36.5% | 0.97 |
+| cap 0.20 | 20.2% | −34.6% | 0.97 |
+| cap 0.33 | 23.1% | −36.3% | 0.99 |
+| EWMA span 10 | 22.0% | −37.2% | 0.98 |
+| EWMA span 40 | 22.0% | −34.6% | 0.98 |
+
+The installed point is not on a cliff. The 0.20 target is the one
+neighbour a more cautious owner would pick: two points of CAGR for four
+points less drawdown.

@@ -1532,6 +1532,55 @@ The detailed current continuation remains the TOP of the attached
 learned-live-release-20261006 worktree's NEXT_SESSION.md. Keep existing heartbeat
 ACTIVE and quiet unchanged. No question pending; no agents without delegation,
 usage-limited retries/replacements, denied-read bypass or native-pool adoption.
+## 2026-10-22 00:00 ET — Installed-policy replay on every chart DEPLOYED (10c12d70); per-signal audit written
+
+Owner (asleep, 8 hours of work authorised): "have you read the charts of
+these stocks and actually seen if they produce profits? ... no
+hindsight"; "why do charts say buy/sell previous policy?"; "everything
+must be the latest policy and should show the decisions of the latest
+policy back in time"; "make this trading system as good as possible".
+
+Built: `backend/cli/market_policy_replay_research.py` walks the installed
+rule (scorecard arm `ew_graded_leader_forecast_ewma`, the same
+parameters as the release) forward over the point-in-time panel and
+writes per-name targets, next-open trades and what followed each entry
+and exit at 5/20/60 sessions against QQQ, under
+`data/market/research/policy-replay/<arm>/<through>/` (~6 min; run it
+after each nightly or when the policy changes; `latest.json` points the
+API at the newest). `market_simulation.view` serves it as `policy_replay`
+beside the audited history; the chart (`policyReplayMarkers`) draws it
+and never another policy's markers: entries, exits and reallocations
+≥2%, with the "about" disclosure carrying the note and this name's
+outcomes. Deployed 10c12d70 at 23:55 ET, ADMITTED.
+
+Audit (`docs/research/leader-policy-signal-audit-2026-10-21.md`): 585
+entries 2016–2026; beat QQQ 51% at 20 sessions (+0.9% mean excess), 56%
+at 60 (+2.8%); 2021/2022/2024 no edge. Exits sell too soon (+2.4%
+excess for the exited name over the next 60 sessions). The rule churns
+(12,909 target moves ≥0.05%). Entries within 7 calendar days before an
+earnings release: 35% beat QQQ, −1.2% mean excess (n=46) — a pre-earnings
+entry guard is worth building once an expected-date feed exists.
+
+Sensitivity grid (`~/dsv41/pit/arms_grid.sh`, all-window CAGR/worst DD):
+installed 22.0/−34.2; t20 20.0/−30.4 (Sharpe 1.03); t30 23.3/−41.1; s25
+22.3/−34.6; s75 21.1/−36.5; c20 20.2/−34.6; c33 23.1/−36.3; span10
+22.0/−37.2; span40 22.0/−34.6; w42, w126 in the logs. The installed
+parameters are not on a cliff; nothing to change.
+
+Overlays (`arms_overlay.sh`, results in `~/dsv41/pit/`): band1, band2,
+qqq50_half, qqq50_cash, qqq200_half, stop15, stop25, holdB (enter at A,
+hold while ≥B; `point_in_time.grade_hysteresis_allocator`). Any adoption
+is a bound change to `grade_led_leader_policy.py` through the release
+ceremony.
+
+hgb-tilt arms killed at 03:10Z after 5h16m without a result (CPU needed).
+
+Foreign filers: ASML files us-gaap annual facts only; TSM ifrs-full
+annual (20-F) only; SIMO/NBIS CIKs unresolved. Quarterly numbers for
+these come from the release reader's extracted figures (`revenue_usd_m`
+in `desk/earnings/<T>`), not XBRL — wiring those into the fundamentals
+analyst is the fix.
+
 ## 2026-10-21 22:50 ET — Open-plan board DEPLOYED (00f28cdb); all 94 names × 3 frames audited
 
 deploy31 gated 11567 and deployed 00f28cdb at 22:02 ET, ADMITTED
