@@ -185,3 +185,22 @@ name's 63-session return is above 25% (`leader_ewma_chase25`), while
 QQQ's 20-session return is above 8% (`leader_ewma_chase_q8`), either
 (`leader_ewma_chase_both`), and the first on the B cut
 (`leader_ewma_minB_chase25`).
+
+Scored (all window, 25 bp, 20 offsets):
+
+| arm | CAGR | worst DD | median DD | Sharpe |
+|---|---|---|---|---|
+| installed (A cut) | 22.0% | −34.2% | −32.3% | 0.99 |
+| A cut, no entry while the name ran >25% in 63 | 22.3% | −35.4% | −31.0% | 1.13 |
+| A cut, no entry while QQQ ran >8% in 20 | 21.8% | −35.2% | −32.2% | 0.98 |
+| A cut, either | 21.9% | −35.4% | −30.4% | 1.12 |
+| B cut | 26.0% | −34.3% | −32.8% | 1.11 |
+| B cut, no entry while the name ran >25% | 23.7% | −33.9% | −31.2% | 1.13 |
+
+The name's own run is the guard that matters (the index bar adds
+nothing). On the A cut it raises the Sharpe from 0.99 to 1.13 and the
+median drawdown by a point, for a point more at the worst; on the B cut
+it gives back two points of CAGR for half a point of worst drawdown. By
+the owner's criterion the B cut alone stays the candidate; the no-chase
+guard is the next thing to put in front of him, as a Sharpe improvement
+rather than a return one, once the B cut has a forward record.

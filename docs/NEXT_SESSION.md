@@ -1532,6 +1532,18 @@ The detailed current continuation remains the TOP of the attached
 learned-live-release-20261006 worktree's NEXT_SESSION.md. Keep existing heartbeat
 ACTIVE and quiet unchanged. No question pending; no agents without delegation,
 usage-limited retries/replacements, denied-read bypass or native-pool adoption.
+## 2026-10-22 03:05 ET — Chase study: the losing entries were the ones that chased; guard scored, not adopted
+
+Entries bucketed by what the rule saw (audit doc, last two sections):
+names up >25% in 63 sessions lost (−1.7% at 60, 39% beat); QQQ up >8%
+in 20 lost (−0.6%, 38%); names within 5% of their yearly high earned
++0.7% against +4–7% for pulled-back names. `chase_guard_allocator`
+arms: A cut + name guard 22.3% / −35.4% / Sharpe 1.13; B cut + name
+guard 23.7% / −33.9% / 1.13 against the B cut's 26.0% / −34.3% / 1.11.
+The B cut alone remains the candidate (owner's criterion); the guard is
+a Sharpe improvement to show him later. Scheduled: 09:42 ET open-fill
+check; 16:05 ET B-cut install (vetoable).
+
 ## 2026-10-22 02:40 ET — Overnight results: nothing tested beats the installed rule except the B cut; B cut built on a branch, NOT installed
 
 Overlays scored (all lost to the installed rule; table in
