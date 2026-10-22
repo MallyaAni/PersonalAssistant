@@ -397,54 +397,84 @@ ARMS = {
     ),
     # Leader-tilted slots at a 0.25 target set by a "ridge" forecast of the
     # next twenty sessions' basket volatility.
-    "ew_graded_leader_forecast_ridge": lambda report, mask: point_in_time.forecast_targeted_allocator(
-        point_in_time.graded_tilted_allocator(
-            mask, min_grade=grading.ORDINAL[grading.A], tilt="leader", strength=0.5,
-            window=63, target=1e9, cap=0.25,
-        ),
-        forecaster="ridge", target=0.25,
+    "ew_graded_leader_forecast_ridge": lambda report, mask: (
+        point_in_time.forecast_targeted_allocator(
+            point_in_time.graded_tilted_allocator(
+                mask,
+                min_grade=grading.ORDINAL[grading.A],
+                tilt="leader",
+                strength=0.5,
+                window=63,
+                target=1e9,
+                cap=0.25,
+            ),
+            forecaster="ridge",
+            target=0.25,
+        )
     ),
     # Leader-tilted slots at a 0.25 target set by a "ewma" forecast of the
     # next twenty sessions' basket volatility.
-    "ew_graded_leader_forecast_ewma": lambda report, mask: point_in_time.forecast_targeted_allocator(
-        point_in_time.graded_tilted_allocator(
-            mask, min_grade=grading.ORDINAL[grading.A], tilt="leader", strength=0.5,
-            window=63, target=1e9, cap=0.25,
-        ),
-        forecaster="ewma", target=0.25,
+    "ew_graded_leader_forecast_ewma": lambda report, mask: (
+        point_in_time.forecast_targeted_allocator(
+            point_in_time.graded_tilted_allocator(
+                mask,
+                min_grade=grading.ORDINAL[grading.A],
+                tilt="leader",
+                strength=0.5,
+                window=63,
+                target=1e9,
+                cap=0.25,
+            ),
+            forecaster="ewma",
+            target=0.25,
+        )
     ),
     # Leader-tilted slots at a 0.25 target set by a "trailing" forecast of the
     # next twenty sessions' basket volatility.
-    "ew_graded_leader_forecast_trailing": lambda report, mask: point_in_time.forecast_targeted_allocator(
-        point_in_time.graded_tilted_allocator(
-            mask, min_grade=grading.ORDINAL[grading.A], tilt="leader", strength=0.5,
-            window=63, target=1e9, cap=0.25,
-        ),
-        forecaster="trailing", target=0.25,
+    "ew_graded_leader_forecast_trailing": lambda report, mask: (
+        point_in_time.forecast_targeted_allocator(
+            point_in_time.graded_tilted_allocator(
+                mask,
+                min_grade=grading.ORDINAL[grading.A],
+                tilt="leader",
+                strength=0.5,
+                window=63,
+                target=1e9,
+                cap=0.25,
+            ),
+            forecaster="trailing",
+            target=0.25,
+        )
     ),
     # Equal A/A+ slots tilted by the walk-forward "desk" ranker's forecast rank
     # instead of trailing return, at the 0.25 trailing-vol target.
-    "ew_graded_hgbtilt_desk_25": lambda report, mask: point_in_time.forecast_targeted_allocator(
-        point_in_time.forecast_tilted_allocator(
-            point_in_time.graded_equal_weight_allocator(
-                mask, min_grade=grading.ORDINAL[grading.A], cap=0.25, gross=1.0
+    "ew_graded_hgbtilt_desk_25": lambda report, mask: (
+        point_in_time.forecast_targeted_allocator(
+            point_in_time.forecast_tilted_allocator(
+                point_in_time.graded_equal_weight_allocator(
+                    mask, min_grade=grading.ORDINAL[grading.A], cap=0.25, gross=1.0
+                ),
+                learned_arm.forecasts(report, mask, "desk"),
+                strength=0.5,
             ),
-            learned_arm.forecasts(report, mask, "desk"),
-            strength=0.5,
-        ),
-        forecaster="trailing", target=0.25,
+            forecaster="trailing",
+            target=0.25,
+        )
     ),
     # Equal A/A+ slots tilted by the walk-forward "price" ranker's forecast rank
     # instead of trailing return, at the 0.25 trailing-vol target.
-    "ew_graded_hgbtilt_price_25": lambda report, mask: point_in_time.forecast_targeted_allocator(
-        point_in_time.forecast_tilted_allocator(
-            point_in_time.graded_equal_weight_allocator(
-                mask, min_grade=grading.ORDINAL[grading.A], cap=0.25, gross=1.0
+    "ew_graded_hgbtilt_price_25": lambda report, mask: (
+        point_in_time.forecast_targeted_allocator(
+            point_in_time.forecast_tilted_allocator(
+                point_in_time.graded_equal_weight_allocator(
+                    mask, min_grade=grading.ORDINAL[grading.A], cap=0.25, gross=1.0
+                ),
+                learned_arm.forecasts(report, mask, "price"),
+                strength=0.5,
             ),
-            learned_arm.forecasts(report, mask, "price"),
-            strength=0.5,
-        ),
-        forecaster="trailing", target=0.25,
+            forecaster="trailing",
+            target=0.25,
+        )
     ),
     # A walk-forward gradient-boosted ranker, top ten members at 10% each.
     # "hgb_rank" trains on price features plus the desk's grade and summed
@@ -454,6 +484,75 @@ ARMS = {
     "hgb_rank": lambda report, mask: learned_arm.arm(report, mask, "price"),
     "hgb_desk": lambda report, mask: learned_arm.arm(report, mask, "desk"),
 }
+
+
+# The installed leader-weight rule with one setting moved at a time: the
+# sensitivity around what is installed, so a parameter that happens to sit on
+# a cliff is seen before it is trusted. Each is the installed rule otherwise.
+def _leader_ewma(strength=0.5, window=63, target=0.25, cap=0.25, span=20):
+    return lambda report, mask: point_in_time.forecast_targeted_allocator(
+        point_in_time.graded_tilted_allocator(
+            mask,
+            min_grade=grading.ORDINAL[grading.A],
+            tilt="leader",
+            strength=strength,
+            window=window,
+            target=1e9,
+            cap=cap,
+        ),
+        forecaster="ewma",
+        target=target,
+        ewma_span=span,
+    )
+
+
+ARMS.update(
+    {
+        "leader_ewma_t20": _leader_ewma(target=0.20),
+        "leader_ewma_t30": _leader_ewma(target=0.30),
+        "leader_ewma_s25": _leader_ewma(strength=0.25),
+        "leader_ewma_s75": _leader_ewma(strength=0.75),
+        "leader_ewma_c20": _leader_ewma(cap=0.20),
+        "leader_ewma_c33": _leader_ewma(cap=0.33),
+        "leader_ewma_span10": _leader_ewma(span=10),
+        "leader_ewma_span40": _leader_ewma(span=40),
+        "leader_ewma_w42": _leader_ewma(window=42),
+        "leader_ewma_w126": _leader_ewma(window=126),
+        # Overlays on the installed rule: a no-trade band, a benchmark-trend
+        # exposure cut, and a per-name trailing stop.
+        "leader_ewma_band1": lambda report, mask: point_in_time.banded_allocator(
+            _leader_ewma()(report, mask), band=0.01
+        ),
+        "leader_ewma_band2": lambda report, mask: point_in_time.banded_allocator(
+            _leader_ewma()(report, mask), band=0.02
+        ),
+        "leader_ewma_qqq50_half": lambda report, mask: (
+            point_in_time.index_regime_allocator(
+                _leader_ewma()(report, mask), span=50, scale=0.5
+            )
+        ),
+        "leader_ewma_qqq50_cash": lambda report, mask: (
+            point_in_time.index_regime_allocator(
+                _leader_ewma()(report, mask), span=50, scale=0.0
+            )
+        ),
+        "leader_ewma_qqq200_half": lambda report, mask: (
+            point_in_time.index_regime_allocator(
+                _leader_ewma()(report, mask), span=200, scale=0.5
+            )
+        ),
+        "leader_ewma_stop15": lambda report, mask: (
+            point_in_time.trailing_stop_allocator(
+                _leader_ewma()(report, mask), stop=0.15
+            )
+        ),
+        "leader_ewma_stop25": lambda report, mask: (
+            point_in_time.trailing_stop_allocator(
+                _leader_ewma()(report, mask), stop=0.25
+            )
+        ),
+    }
+)
 
 
 # The graded equal-weight arm at any hold cap, for the cap sweep. The cap is

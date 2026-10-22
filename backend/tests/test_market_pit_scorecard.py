@@ -683,6 +683,51 @@ def test_forecast_tilted_allocator(history):
         last_training_label_end=np.full(T, -1),
     )
     assert np.allclose(
-        point_in_time.forecast_tilted_allocator(slots, unfitted)(restricted, panel, None, t),
+        point_in_time.forecast_tilted_allocator(slots, unfitted)(
+            restricted, panel, None, t
+        ),
         base,
     )
+
+
+# The three overlays on a fixed inner book: the band holds a small move and
+# passes a large one, the regime cut scales by the benchmark's trend, the
+# trailing stop exits a name under its peak and lets it back after the cooldown.
+def test_overlay_allocators():
+    n = 3
+    closes = np.full((40, n), 100.0)
+    closes[:, 2] = 100.0  # the benchmark column
+    panel = SimpleNamespace(
+        dates=np.datetime64("2023-01-03") + np.arange(40),
+        tickers=("AAA", "BBB", "QQQ"),
+        adj_close=closes,
+        benchmark="QQQ",
+        index=lambda name: ("AAA", "BBB", "QQQ").index(name),
+    )
+    books = {t: np.array([0.10, 0.10, 0.0]) for t in range(40)}
+    books[5] = np.array([0.105, 0.10, 0.0])
+    books[6] = np.array([0.15, 0.0, 0.0])
+
+    def inner(report, panel, config, t):
+        return books[t].copy()
+
+    banded = point_in_time.banded_allocator(inner, band=0.01)
+    assert np.allclose(banded(None, panel, None, 4), [0.10, 0.10, 0.0])
+    # A 0.5% move is held at the previous target; a 5% move and an exit trade.
+    assert np.allclose(banded(None, panel, None, 5), [0.10, 0.10, 0.0])
+    assert np.allclose(banded(None, panel, None, 6), [0.15, 0.0, 0.0])
+
+    closes[30:, 2] = 80.0  # the benchmark falls under its trend
+    regime = point_in_time.index_regime_allocator(inner, span=10, scale=0.5)
+    assert np.allclose(regime(None, panel, None, 20), [0.10, 0.10, 0.0])
+    assert np.allclose(regime(None, panel, None, 35), [0.05, 0.05, 0.0])
+
+    closes[:, 0] = 100.0
+    closes[10, 0] = 120.0
+    closes[11:, 0] = 100.0  # AAA sits 16.7% under its peak from session 11
+    stopped = point_in_time.trailing_stop_allocator(inner, stop=0.15, cooldown=3)
+    out = [stopped(None, panel, None, t) for t in range(16)]
+    assert out[10][0] == 0.10
+    assert out[11][0] == 0.0 and out[14][0] == 0.0
+    assert out[15][0] == 0.10
+    assert all(row[1] == books[t][1] for t, row in enumerate(out))

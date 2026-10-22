@@ -491,7 +491,9 @@ def forecast_targeted_allocator(
         if not np.isfinite(basket).all():
             return slots
         with np.errstate(divide="ignore", invalid="ignore"):
-            bench_returns = np.diff(np.log(np.asarray(panel.adj_close[: t + 1, bench], dtype=float)))
+            bench_returns = np.diff(
+                np.log(np.asarray(panel.adj_close[: t + 1, bench], dtype=float))
+            )
         bench_returns = np.nan_to_num(bench_returns)
         end = len(basket) - 1
         if forecaster == "trailing":
@@ -500,7 +502,9 @@ def forecast_targeted_allocator(
             alpha = 2.0 / (ewma_span + 1.0)
             variance = basket[-250:] ** 2
             weights = (1 - alpha) ** np.arange(len(variance))[::-1]
-            forecast = float(np.sqrt(np.sum(weights * variance) / weights.sum() * 252.0))
+            forecast = float(
+                np.sqrt(np.sum(weights * variance) / weights.sum() * 252.0)
+            )
         else:
             closes = np.asarray(panel.adj_close[: t + 1], dtype=float)[:, held]
             # Refit on the schedule, on examples whose targets end before the
@@ -548,7 +552,11 @@ def forecast_tilted_allocator(inner, forecast, strength: float = 0.5):
     def allocate(report, panel, config, t: int) -> np.ndarray:
         slots = np.array(inner(report, panel, config, t), dtype=float)
         held = np.flatnonzero(slots > 0)
-        if len(held) < 2 or np.isnat(forecast.fit_session[t]) or forecast.last_training_label_end[t] >= t:
+        if (
+            len(held) < 2
+            or np.isnat(forecast.fit_session[t])
+            or forecast.last_training_label_end[t] >= t
+        ):
             return slots
         scores = np.asarray(forecast.values[t], dtype=float)[held]
         if not np.isfinite(scores).all():
@@ -559,5 +567,78 @@ def forecast_tilted_allocator(inner, forecast, strength: float = 0.5):
         tilted = slots[held] * multipliers
         slots[held] = tilted * gross / tilted.sum()
         return slots
+
+    return allocate
+
+
+# Three overlays on an allocator's targets, each a question the owner asks
+# about the installed rule rather than a new rule: does trading only when a
+# target has moved enough keep more of the return after costs; does standing
+# aside when the benchmark is under its trend cut the drawdown; does a
+# trailing stop on each name do what a trader expects of it. Each keeps the
+# session state it needs in the closure, read forward only.
+def banded_allocator(inner, band: float = 0.01):
+    """Return a callable keeping a name's last target until the new one moves by `band`."""
+    state = {"t": -1, "previous": None}
+
+    def allocate(report, panel, config, t: int) -> np.ndarray:
+        targets = np.array(inner(report, panel, config, t), dtype=float)
+        previous = state["previous"]
+        if previous is not None and t > state["t"] and len(previous) == len(targets):
+            # A name leaving the book (target zero) always trades; a small
+            # move on a held name waits.
+            hold = (np.abs(targets - previous) < band) & (targets > 0) & (previous > 0)
+            targets[hold] = previous[hold]
+        state["t"], state["previous"] = t, targets.copy()
+        return targets
+
+    return allocate
+
+
+def index_regime_allocator(inner, span: int = 50, scale: float = 0.5):
+    """Return a callable scaling the targets by `scale` while the benchmark is under its EMA."""
+
+    def allocate(report, panel, config, t: int) -> np.ndarray:
+        targets = np.array(inner(report, panel, config, t), dtype=float)
+        if t < span:
+            return targets
+        bench = np.asarray(
+            panel.adj_close[: t + 1, panel.index(panel.benchmark)], dtype=float
+        )
+        if not np.isfinite(bench[-span:]).all():
+            return targets
+        if bench[-1] < _ema(bench, span)[-1]:
+            targets *= scale
+        return targets
+
+    return allocate
+
+
+def trailing_stop_allocator(inner, stop: float = 0.15, cooldown: int = 10):
+    """Return a callable exiting a name `stop` under its peak close, out for `cooldown`."""
+    state = {"t": -1, "peak": None, "blocked_until": None}
+
+    def allocate(report, panel, config, t: int) -> np.ndarray:
+        targets = np.array(inner(report, panel, config, t), dtype=float)
+        n = len(targets)
+        if state["peak"] is None or len(state["peak"]) != n:
+            state["peak"] = np.full(n, np.nan)
+            state["blocked_until"] = np.full(n, -1)
+        closes = np.asarray(panel.adj_close[t], dtype=float)
+        peak, blocked_until = state["peak"], state["blocked_until"]
+        held = targets > 0
+        # A name entering the book starts its peak at today's close; a held
+        # name's peak ratchets up; a name leaving forgets its peak.
+        entering = held & ~np.isfinite(peak)
+        peak[entering] = closes[entering]
+        peak[held] = np.fmax(peak[held], closes[held])
+        peak[~held] = np.nan
+        stopped = held & np.isfinite(peak) & (closes < peak * (1.0 - stop))
+        blocked_until[stopped] = t + cooldown
+        peak[stopped] = np.nan
+        out = (blocked_until >= t) & held
+        targets[out] = 0.0
+        state["t"] = t
+        return targets
 
     return allocate
