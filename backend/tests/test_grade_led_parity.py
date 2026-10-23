@@ -123,3 +123,45 @@ def test_grade_led_grade_mismatch_stays_visible(full_history):
     result = grade_parity.compare(record, report, LAST, full_history)
     assert not result["ok"]
     assert any(row["kind"] == grade_parity.GRADE for row in result["mismatches"])
+
+
+# A session the FOMC risk rule owns sets no allocation targets: the grades are
+# still checked and the result says why the targets were not.
+def _event_owned(record):
+    policy = record["paper"]["policy"]
+    record["paper"]["joint_funded"] = {"policy": policy, "as_of": None, "status": "event_priority"}
+    record["paper"]["event_risk"] = {"enabled": True, "session": LAST, "decision_date": "2024-03-28"}
+    return record
+
+
+def test_fomc_owned_session_checks_grades_not_targets(full_history):
+    report = _report()
+    record = _event_owned(_learned_record(report))
+    result = grade_parity.compare(record, report, LAST, full_history)
+    assert result["ok"]
+    assert not result["targets_compared"]
+    assert "FOMC risk rule" in result["target_basis"]
+    record["grades"]["CCC"]["grade"] = "B"
+    result = grade_parity.compare(record, report, LAST, full_history)
+    assert not result["ok"]
+    assert any(row["kind"] == grade_parity.GRADE for row in result["mismatches"])
+
+
+# The FOMC path is taken only on the record's own word for that session; a bare
+# status, a stale event block or a receipt beside it still fails closed.
+@pytest.mark.parametrize("broken", ["no_event", "stale_event", "disabled", "receipt"])
+def test_fomc_path_needs_the_records_own_event_block(full_history, broken):
+    report = _report()
+    record = _event_owned(_learned_record(report))
+    paper = record["paper"]
+    if broken == "no_event":
+        paper.pop("event_risk")
+    elif broken == "stale_event":
+        paper["event_risk"]["session"] = "2024-03-21"
+    elif broken == "disabled":
+        paper["event_risk"]["enabled"] = False
+    else:
+        paper["joint_funded"]["receipt"] = {}
+    result = grade_parity.compare(record, report, LAST, full_history)
+    assert not result["ok"]
+    assert result["mismatches"][0]["kind"] == grade_parity.TARGETS

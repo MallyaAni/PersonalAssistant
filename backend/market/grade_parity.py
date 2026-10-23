@@ -358,6 +358,27 @@ def _compare_targets(record: dict, report) -> tuple[list[dict], bool, str]:
             (record.get("paper") or {}).get("policy"),
         )
     )
+    # On a session the FOMC risk rule owns, the nightly sets no allocation
+    # targets for the paper book (its joint-funded block is marked
+    # `event_priority` and carries no receipt), so there is nothing to compare:
+    # the grades are still checked, and the result says why the targets were
+    # not, instead of failing the check for a receipt the rule never writes.
+    paper = record.get("paper") or {}
+    allocation = paper.get("joint_funded") or {}
+    event = paper.get("event_risk") or {}
+    if (
+        grade_led
+        and allocation.get("status") == "event_priority"
+        and "receipt" not in allocation
+        and event.get("enabled") is True
+        and event.get("session") == record.get("session")
+    ):
+        return (
+            [],
+            False,
+            "the FOMC risk rule owned this session's paper plan; no allocation "
+            "targets were set, so none were compared",
+        )
     if grade_led:
         basis = (
             "recorded learned proposal with grade constraints reapplied to the "
