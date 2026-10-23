@@ -1532,6 +1532,34 @@ The detailed current continuation remains the TOP of the attached
 learned-live-release-20261006 worktree's NEXT_SESSION.md. Keep existing heartbeat
 ACTIVE and quiet unchanged. No question pending; no agents without delegation,
 usage-limited retries/replacements, denied-read bypass or native-pool adoption.
+## 2026-10-23 12:00 ET — Combined release installed at 11:39 ET (f92c7045): FOMC decision-close restoration + valuation x3 + exposure floor 0.5
+
+The owner delegated ("i told you to take the lead on it. whatever improves our
+system to the best of its ability"; "right now i'm not using the dashboard so
+dont wait on anything"). One release, 44 bound sources, candidate
+`docs/research/trading-approval-candidates-2026-10-23/combined/`; deploy log
+`~/dsv41/deploy39.log`. Combined scorecard (real arm
+`leader_ewma_minB_floor50` on the value-weighted desk,
+`~/dsv41/pit/pit_combined_20261023.json`): 26.8% / -33.2% / Sharpe 1.10
+against the B cut's 26.0% / -34.3% / 1.11; 2016-2023 28.3% vs 25.0%,
+2024-2026 32.8% vs 39.9% — the valuation weight costs the recent theme run
+on the book and is kept for the hindsight-free evidence (S&P 500, walk-
+forward). The owner was told this trade plainly. NOTE grading.py is not a
+bound source: the valuation weight is outside the release identity, as every
+grading change has been. The chart replay now maps the policy to
+`leader_ewma_minB_floor50` (regenerated, 25,318 trades); the research floor
+caps then scales where the live rule scales then caps (pre-existing
+arm/live difference, unchanged).
+
+The installed release re-bound the config mid-session: the 2026-10-22
+publication stops verifying until tonight's 19:30 nightly publishes (owner
+not using the board today). FOMC cycle for 2026-10-28: cut filled at the
+10-23 open; nights of 10-23 and 10-26 hold; 10-27 (eve) should plan the
+restoration with `decision_close` timing for 10-28 15:45; the 10-28 nightly
+should hand back to the ordinary plan. Check the 10-27 nightly's log for
+"FOMC restoration at the decision close" and the balancer log on 10-28 for
+"FOMC restoration: ... sent".
+
 ## 2026-10-23 10:00 ET — FOMC restoration at the decision-day close: built, tested, release files ready (branch `fomc-decision-close`); install after today's close
 
 Owner (2026-10-22/23): the lead-in to each decision since Warsh's guidance
