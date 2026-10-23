@@ -65,6 +65,8 @@ def source_identity():
         root / "backend/cli/market_daily.py",
         root / "backend/agents/trading/desk/nightly_plan.py",
         root / "backend/agents/trading/desk/intraday_orders.py",
+        # The FOMC restoration sent on the decision session's last candle.
+        root / "backend/agents/trading/desk/decision_close.py",
         root / "backend/agents/trading/desk/funded_execution.py",
         root / "backend/agents/trading/desk/paper.py",
         root / "backend/agents/trading/desk/event_execution.py",
