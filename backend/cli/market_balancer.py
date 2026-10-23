@@ -250,6 +250,18 @@ def _send_paper_orders(data_dir: Path, live: dict, log_path: Path) -> None:
         )
     except Exception as exc:  # noqa: BLE001 - the orders never stop the balancer
         lines = [f"intraday orders unavailable ({type(exc).__name__}: {exc})"]
+    # An FOMC restoration planned for the decision session goes out on its last
+    # candle, after the statement (`decision_close`); its own failure is logged
+    # and never stops the ordinary orders above or the balancer.
+    try:
+        from backend.agents.trading.desk import decision_close
+        from backend.market import alpaca_trading
+
+        lines += decision_close.send_due(
+            data_dir, datetime.now(UTC), alpaca_trading.client_from_env
+        )
+    except Exception as exc:  # noqa: BLE001 - the orders never stop the balancer
+        lines.append(f"FOMC restoration unavailable ({type(exc).__name__}: {exc})")
     if not lines:
         return
     stamp = datetime.now(UTC).isoformat(timespec="seconds")

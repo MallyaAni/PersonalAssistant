@@ -60,3 +60,32 @@ which the nightly does not write when the FOMC rule owns the plan. Fixed in
 `grade_parity._compare_targets` (grades are still checked; targets are
 reported as not compared, with the reason), only when the record's own
 `event_risk` block names that session.
+
+## Where the post-decision move happens (2026-10-23)
+
+Equal-weighted book names, SIP fifteen-minute bars (`~/dsv41/universe/fomc_after.py`):
+
+| | 13:00→15:00 (statement, press conference) | 15:00→close | close→next open | next open→next close | next close→+5 |
+|---|---|---|---|---|---|
+| 2016–2025, every scheduled decision | +0.14% | −0.15% | +0.05% | −0.15% | +0.31% |
+| 2026-06-17 | −0.15% | −1.94% | +2.04% | +0.66% | −3.51% |
+| 2026-07-29 | +2.86% | −3.94% | +4.25% | +2.60% | +6.60% |
+| 2026-09-16 | −1.08% | +0.25% | +2.24% | +0.12% | +4.42% |
+
+Since the guidance change the decision-day close has been the low and the
+overnight gap the largest piece of the rebound. The cycle restored at the
+next open and so bought after the gap; worse, the ordinary plan only ran on
+the night after the cycle closed, so the plan's new buys went in three
+sessions after the decision. The owner's point, in his words: right after
+the Fed meeting stocks have gone up.
+
+Change (branch `fomc-decision-close`, released as the next trading
+approval): on the eve of the decision, once the cut has filled, the nightly
+plans the restoration for the decision session's 3:45 PM candle
+(`decision_close`, sent by the balancer after the 2:00 PM statement and the
+press conference, never on a price level); on the decision night, a cycle
+that finished hands the account back to the ordinary plan the same night, so
+its buys go in at the next open. A cut not filled by the eve restores at the
+next open as before. In the old regime the earlier fill is free (+0.05%
+average gap); in the three meetings since June it would have bought +2.0%,
++4.3% and +2.2% lower on the restored half.

@@ -6,7 +6,7 @@ Only confirmed event sales can be restored. A pending order blocks a new plan.
 
 The restoration is planned on the eve of the decision, once the cut has
 filled, and sent by the balancer on the decision session's last candle
-(`intraday_orders.DECISION_CLOSE`), after the 2:00 PM statement and the press
+(`decision_close`), after the 2:00 PM statement and the press
 conference. Since the June 2026 guidance change the rebound came overnight,
 between the decision-day close and the next open (+2.0%, +4.3% and +2.2% on
 the book after June, July and September), which a restoration at the next
@@ -19,7 +19,7 @@ import math
 from dataclasses import asdict, replace
 from datetime import date
 
-from backend.agents.trading.desk import event_risk, intraday_orders, paper
+from backend.agents.trading.desk import decision_close, event_risk, intraday_orders, paper
 
 # The opening-price allowance a next-open restoration reserves, and the wider
 # one for a restoration sent a session later at the decision-day close.
@@ -110,7 +110,7 @@ def plan(session, state, held, prices, cash, policy, *, advance_clock=True):
             new.event_cycle["id"],
         )
         if at_close:
-            order = replace(order, execution_timing=intraday_orders.DECISION_CLOSE)
+            order = replace(order, execution_timing=decision_close.DECISION_CLOSE)
         orders.append(order)
     if reducing:
         return orders, new, "FOMC reduction"

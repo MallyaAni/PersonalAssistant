@@ -7,7 +7,7 @@ import pytest
 from backend.agents.trading.desk import (
     event_execution,
     event_risk,
-    intraday_orders,
+    decision_close,
     nightly_plan,
     paper,
 )
@@ -57,7 +57,7 @@ def test_partial_reduction_retry_and_restoration_persist(tmp_path):
         "2026-09-15", state, {"AAA": 50}, {"AAA": 100}, 15000, policy()
     )
     assert [(o.side, o.qty) for o in orders] == [("buy", 50)]
-    assert orders[0].execution_timing == intraday_orders.DECISION_CLOSE
+    assert orders[0].execution_timing == decision_close.DECISION_CLOSE
     assert "decision close" in what
     state = persist(tmp_path, state, orders, "2026-09-15")
     state = receipt(tmp_path, state, "filled", 50)
@@ -280,7 +280,7 @@ def test_unfilled_cut_on_the_eve_restores_at_the_next_open(tmp_path):
         "2026-09-15", state, {"AAA": 80}, {"AAA": 100}, 10000, policy()
     )
     assert [(o.side, o.qty) for o in orders] == [("sell", 30)]
-    assert orders[0].execution_timing != intraday_orders.DECISION_CLOSE
+    assert orders[0].execution_timing != decision_close.DECISION_CLOSE
     assert what == "FOMC reduction"
     state = persist(tmp_path, state, orders, "2026-09-15")
     state = receipt(tmp_path, state, "filled", 30)
@@ -288,7 +288,7 @@ def test_unfilled_cut_on_the_eve_restores_at_the_next_open(tmp_path):
         "2026-09-16", state, {"AAA": 50}, {"AAA": 100}, 10000, policy(1)
     )
     assert [(o.side, o.qty) for o in orders] == [("buy", 50)]
-    assert orders[0].execution_timing != intraday_orders.DECISION_CLOSE
+    assert orders[0].execution_timing != decision_close.DECISION_CLOSE
 
 
 # The decision-close restoration reserves a wider allowance, since it fills a
@@ -306,9 +306,10 @@ def test_decision_close_restoration_reserves_a_wider_allowance(tmp_path):
 
 
 # The balancer sends a decision-close restoration only on the decision
-# session's last candle, never on a price level and never before.
-def test_decision_close_rows_are_due_only_on_the_last_candle():
+# session's last candle, never before and never after the close.
+def test_decision_close_rows_are_due_only_on_the_last_candle(tmp_path):
     from datetime import date, datetime
+    from types import SimpleNamespace
 
     row = {
         "symbol": "AAA",
@@ -316,19 +317,51 @@ def test_decision_close_rows_are_due_only_on_the_last_candle():
         "qty": 50,
         "client_order_id": "x",
         "event_id": "fomc:2026-09-16",
-        "execution_timing": intraday_orders.DECISION_CLOSE,
+        "execution_timing": decision_close.DECISION_CLOSE,
         "execute_on": "2026-09-16",
+        "session": "2026-09-15",
     }
-    state = paper.PaperState(pending=[row, {**row, "event_id": None}])
+    state = paper.PaperState(pending=[row, {**row, "client_order_id": "y", "event_id": None}])
     day = date(2026, 9, 16)
-    assert intraday_orders.due(state, day) == [row]
-    assert intraday_orders.due(state, date(2026, 9, 15)) == []
-    zone = intraday_orders.NEW_YORK
-    for clock, sent in ((datetime(2026, 9, 16, 14, 15, tzinfo=zone), None),
-                        (datetime(2026, 9, 16, 15, 46, tzinfo=zone), "market"),
-                        (datetime(2026, 9, 16, 16, 1, tzinfo=zone), None)):
-        assert intraday_orders.decide(row, None, None, clock, day)["send"] == sent
-    assert intraday_orders.timing_of(row) == intraday_orders.DECISION_CLOSE
+    assert decision_close.due(state, day) == [row]
+    assert decision_close.due(state, date(2026, 9, 15)) == []
+    paper.save_state(tmp_path, state)
+
+    class Broker:
+        def __init__(self):
+            self.sent = []
+
+        def clock(self):
+            return {"is_open": True}
+
+        def orders_since(self, since):
+            return []
+
+        def positions(self):
+            return [SimpleNamespace(symbol="AAA", qty=50)]
+
+        def submit_market(self, symbol, qty, side, cid):
+            self.sent.append((symbol, qty, side, cid))
+            return {"submitted_at": "2026-09-16T19:46:00Z"}
+
+    broker = Broker()
+    zone = decision_close.NEW_YORK
+    early = datetime(2026, 9, 16, 14, 15, tzinfo=zone)
+    assert decision_close.send_due(tmp_path, early, lambda: broker) == []
+    shown = decision_close.relabel(
+        [{"client_order_id": "x", "status": "Queued at the broker · FOMC order, fills at the open", "state": "queued"}],
+        paper.load_state(tmp_path),
+        early,
+    )[0]
+    assert shown["state"] == "waiting" and "3:45 PM" in shown["status"]
+    assert "after the FOMC statement" in shown["when"]
+    lines = decision_close.send_due(tmp_path, datetime(2026, 9, 16, 15, 46, tzinfo=zone), lambda: broker)
+    assert broker.sent == [("AAA", 50, "buy", "x")]
+    assert lines and lines[0].endswith("sent")
+    saved = paper.load_state(tmp_path)
+    assert saved.pending[0]["sent"]["how"] == "market"
+    # Sent once: a later candle finds nothing due.
+    assert decision_close.send_due(tmp_path, datetime(2026, 9, 16, 15, 50, tzinfo=zone), lambda: broker) == []
 
 
 # A cycle released on the decision night hands the account back to the
@@ -339,9 +372,11 @@ def test_released_cycle_hands_back_with_one_clock_step():
                                            "baseline": {"AAA": 100.0}})
     after = paper.PaperState(sessions_seen=["2026-09-15", "2026-09-16"],
                              sessions_since_rebalance=5)
-    assert nightly_plan.released(after, policy(1), [])
-    assert not nightly_plan.released(after, policy(0.5), [])
-    assert not nightly_plan.released(after, policy(1), ["order"])
+    assert nightly_plan.released(before, after, policy(1), [])
+    assert not nightly_plan.released(before, after, policy(0.5), [])
+    assert not nightly_plan.released(before, after, policy(1), ["order"])
+    # No cycle was running before tonight: nothing was released.
+    assert not nightly_plan.released(paper.PaperState(), after, policy(1), [])
     back = nightly_plan.handed_back(before, after, "2026-09-16")
     assert back.sessions_seen == ["2026-09-15"]
     assert back.sessions_since_rebalance == 4
@@ -423,7 +458,7 @@ def test_nightly_holds_the_decision_close_restoration_and_hands_back(
     assert "decision close" in entry["plan"]
     [row] = saved.pending
     assert row["side"] == "buy" and row["qty"] == 50 and row["event_id"]
-    assert row["execution_timing"] == intraday_orders.DECISION_CLOSE
+    assert row["execution_timing"] == decision_close.DECISION_CLOSE
     assert row["execute_on"] == "2026-09-16"
     # The balancer sends it at 3:45 PM on the decision session and it fills.
     row["sent"] = {"at": "2026-09-16T15:45:30-04:00", "how": "market"}

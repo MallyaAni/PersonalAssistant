@@ -1261,6 +1261,9 @@ def _paper_plan(
         if cash is not None and buying_power is not None
         else None,
     )
+    from backend.agents.trading.desk import decision_close
+
+    orders = decision_close.relabel(orders, state, now)
     from backend.market import learned_order_observation
     from backend.market.joint_funded_policy import MARKET_TIMED_POLICY, TIMED_POLICY
     from backend.market.learned_holding_transition import POLICY as RETAINED_POLICY

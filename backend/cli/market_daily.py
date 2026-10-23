@@ -351,7 +351,7 @@ def _reconcile(client, state, store_root: Path, live: bool, *, decision_at=None)
 def _reconciliation_pending(pending, known, decision_at):
     if decision_at is None:
         return pending
-    from backend.agents.trading.desk import intraday_orders
+    from backend.agents.trading.desk import decision_close, intraday_orders
     from backend.market import calendar
 
     if not isinstance(decision_at, datetime) or decision_at.utcoffset() is None:
@@ -371,7 +371,7 @@ def _reconciliation_pending(pending, known, decision_at):
             day,
             calendar.session_close(day)
             if row.get("execution_timing")
-            in (intraday_orders.INTRADAY_TIMING, intraday_orders.DECISION_CLOSE)
+            in (intraday_orders.INTRADAY_TIMING, decision_close.DECISION_CLOSE)
             else calendar.REGULAR_OPEN,
             calendar.NEW_YORK,
         )
@@ -563,7 +563,7 @@ def _on_the_boards_clock(orders) -> list:
 # one under its selected timing policy, preserving the event orders sent nightly.
 def _hold_for_the_session(orders, *, timing_policy=None) -> list:
     """Print the intraday orders as planned; return the rest."""
-    from backend.agents.trading.desk import intraday_orders
+    from backend.agents.trading.desk import decision_close, intraday_orders
 
     timing = intraday_orders.INTRADAY_TIMING
     for order in (o for o in orders if o.execution_timing == timing):
@@ -576,7 +576,7 @@ def _hold_for_the_session(orders, *, timing_policy=None) -> list:
             f"  {order.side:4} {order.qty:5d} {order.symbol:6} {order.reason}"
             f"  [planned for the next session: {rule}]"
         )
-    held = (timing, intraday_orders.DECISION_CLOSE)
+    held = (timing, decision_close.DECISION_CLOSE)
     for order in (o for o in orders if o.execution_timing == held[1]):
         print(
             f"  {order.side:4} {order.qty:5d} {order.symbol:6} {order.reason}"
@@ -592,7 +592,7 @@ def _hold_for_the_session(orders, *, timing_policy=None) -> list:
 def _pending_orders(
     orders, session, prices, reference_session, *, decision_at=None, timing_policy=None
 ):
-    from backend.agents.trading.desk import intraday_orders, paper
+    from backend.agents.trading.desk import decision_close, intraday_orders, paper
 
     decision_at = (decision_at or datetime.now(tz=UTC)).isoformat()
     upcoming = intraday_orders.next_session(date.fromisoformat(str(session)))
@@ -620,7 +620,7 @@ def _pending_orders(
             **(
                 {"execute_on": upcoming.isoformat() if upcoming else None}
                 if order.execution_timing
-                in (intraday_orders.INTRADAY_TIMING, intraday_orders.DECISION_CLOSE)
+                in (intraday_orders.INTRADAY_TIMING, decision_close.DECISION_CLOSE)
                 else {}
             ),
             "execution": {
@@ -1285,7 +1285,7 @@ def _paper_trade(
     orders, new_state, what = _planned(state, event_plan)
     # A cycle that finished tonight hands the account back to the ordinary plan
     # tonight, so its buys go in at the next open instead of a session later.
-    if event_plan and nightly_plan.released(new_state, policy, orders):
+    if event_plan and nightly_plan.released(state, new_state, policy, orders):
         event_plan = False
         orders, new_state, ordinary = _planned(
             nightly_plan.handed_back(state, new_state, session), event_plan

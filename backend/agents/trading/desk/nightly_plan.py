@@ -39,11 +39,13 @@ def event_plan_required(state, event_policy):
     )
 
 
-# Whether the event path just finished its cycle and left nothing to do: no
-# orders, no pending intent, no cycle, and tonight's policy does not reduce.
-def released(new_state, event_policy, orders) -> bool:
+# Whether the event path just finished a cycle that was running before tonight
+# and left nothing to do: no orders, no pending intent, no cycle, and tonight's
+# policy does not reduce.
+def released(before, new_state, event_policy, orders) -> bool:
     return bool(
-        not orders
+        before.event_cycle
+        and not orders
         and not new_state.pending
         and not new_state.event_cycle
         and event_policy.get("calendar_known")
