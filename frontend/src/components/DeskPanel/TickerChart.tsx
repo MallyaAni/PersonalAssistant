@@ -1021,7 +1021,8 @@ export const TickerChart = ({
     // Only the newest request may publish its coherent candle/indicator snapshot.
     const read = (first: boolean) => {
       const sequence = ++request
-      getDeskChart(userId, ticker, timeframe, timeframe === '15m' ? requestedSessions : strategy ? 2000 : DESK_CHART_DEFAULT_SESSIONS[timeframe])
+      // The strategy chart loads the whole replay window (from 2015), so Full history shows every replayed trade and grade change.
+      getDeskChart(userId, ticker, timeframe, timeframe === '15m' ? requestedSessions : strategy ? 4000 : DESK_CHART_DEFAULT_SESSIONS[timeframe])
         .then((payload) => {
           if (!live || sequence !== request) return
           setData(payload)

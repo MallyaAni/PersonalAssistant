@@ -1511,7 +1511,10 @@ async def desk_chart(
                 status_code=404, detail="no fifteen-minute bars stored for that name"
             )
         return {"user_id": user_id, **built}
-    capped = max(20, min(int(sessions or ticker_chart.DEFAULT_SESSIONS), 2000))
+    # Up to 4,000 sessions: the strategy chart's Full history must reach the
+    # start of the policy replay (2015-01-02, about 2,970 sessions); 2,000 cut it
+    # off in late 2018 and hid every earlier replayed trade and grade change.
+    capped = max(20, min(int(sessions or ticker_chart.DEFAULT_SESSIONS), 4000))
     # The same candle the board reads, so the averages and bands include
     # today only when the retained snapshot still contains valid current evidence.
     snap = _live_snapshot() or {}
