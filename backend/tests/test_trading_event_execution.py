@@ -4,7 +4,13 @@ from dataclasses import asdict
 
 import pytest
 
-from backend.agents.trading.desk import event_execution, event_risk, paper
+from backend.agents.trading.desk import (
+    event_execution,
+    event_risk,
+    intraday_orders,
+    nightly_plan,
+    paper,
+)
 from backend.cli import market_daily
 
 
@@ -45,24 +51,24 @@ def test_partial_reduction_retry_and_restoration_persist(tmp_path):
     assert orders[0].client_order_id != first_id
     state = persist(tmp_path, state, orders, "2026-09-14")
     state = receipt(tmp_path, state, "filled", 30)
-    orders, state, _ = event_execution.plan(
+    # The eve of the decision with the cut filled: the restoration is planned
+    # now, for the decision session's 3:45 PM candle, not the next open.
+    orders, state, what = event_execution.plan(
         "2026-09-15", state, {"AAA": 50}, {"AAA": 100}, 15000, policy()
     )
-    assert not orders
-    orders, state, _ = event_execution.plan(
-        "2026-09-16", state, {"AAA": 50}, {"AAA": 100}, 15000, policy(1)
-    )
     assert [(o.side, o.qty) for o in orders] == [("buy", 50)]
-    state = persist(tmp_path, state, orders, "2026-09-16")
+    assert orders[0].execution_timing == intraday_orders.DECISION_CLOSE
+    assert "decision close" in what
+    state = persist(tmp_path, state, orders, "2026-09-15")
     state = receipt(tmp_path, state, "filled", 50)
-    orders, state, what = event_execution.plan("2026-09-17", state, *args, policy(1))
+    orders, state, what = event_execution.plan("2026-09-16", state, *args, policy(1))
     paper.save_state(tmp_path, state)
     saved = paper.load_state(tmp_path)
     assert not orders
     assert not saved.event_cycle
     assert "complete" in what
     assert saved.last_rebalance == "2026-09-10"
-    assert saved.sessions_since_rebalance == 8
+    assert saved.sessions_since_rebalance == 7
     assert len(saved.journal) == 3
 
 
@@ -260,3 +266,185 @@ def test_daily_pipeline_persists_before_submission_and_reconciles(
     assert broker.orders[-1]["side"] == "buy"
     assert broker.orders[-1]["qty"] == 50
     assert paper.load_state(tmp_path).pending[0]["side"] == "buy"
+
+
+# A cut still unfilled on the eve is not restored early: only confirmed sales
+# are restored, and the restoration waits for the decision night's next open.
+def test_unfilled_cut_on_the_eve_restores_at_the_next_open(tmp_path):
+    orders, state, _ = event_execution.plan(
+        "2026-09-11", paper.PaperState(), {"AAA": 100}, {"AAA": 100}, 0, policy()
+    )
+    state = persist(tmp_path, state, orders, "2026-09-11")
+    state = receipt(tmp_path, state, "canceled", 20)
+    orders, state, what = event_execution.plan(
+        "2026-09-15", state, {"AAA": 80}, {"AAA": 100}, 10000, policy()
+    )
+    assert [(o.side, o.qty) for o in orders] == [("sell", 30)]
+    assert orders[0].execution_timing != intraday_orders.DECISION_CLOSE
+    assert what == "FOMC reduction"
+    state = persist(tmp_path, state, orders, "2026-09-15")
+    state = receipt(tmp_path, state, "filled", 30)
+    orders, state, _ = event_execution.plan(
+        "2026-09-16", state, {"AAA": 50}, {"AAA": 100}, 10000, policy(1)
+    )
+    assert [(o.side, o.qty) for o in orders] == [("buy", 50)]
+    assert orders[0].execution_timing != intraday_orders.DECISION_CLOSE
+
+
+# The decision-close restoration reserves a wider allowance, since it fills a
+# session after the close it was priced on.
+def test_decision_close_restoration_reserves_a_wider_allowance(tmp_path):
+    orders, state, _ = event_execution.plan(
+        "2026-09-11", paper.PaperState(), {"AAA": 100}, {"AAA": 100}, 0, policy()
+    )
+    state = persist(tmp_path, state, orders, "2026-09-11")
+    state = receipt(tmp_path, state, "filled", 50)
+    orders, _, _ = event_execution.plan(
+        "2026-09-15", state, {"AAA": 50}, {"AAA": 100}, 2000, policy()
+    )
+    assert orders[0].qty == int(2000 / (100 * (1 + event_execution.CLOSE_ALLOWANCE)))
+
+
+# The balancer sends a decision-close restoration only on the decision
+# session's last candle, never on a price level and never before.
+def test_decision_close_rows_are_due_only_on_the_last_candle():
+    from datetime import date, datetime
+
+    row = {
+        "symbol": "AAA",
+        "side": "buy",
+        "qty": 50,
+        "client_order_id": "x",
+        "event_id": "fomc:2026-09-16",
+        "execution_timing": intraday_orders.DECISION_CLOSE,
+        "execute_on": "2026-09-16",
+    }
+    state = paper.PaperState(pending=[row, {**row, "event_id": None}])
+    day = date(2026, 9, 16)
+    assert intraday_orders.due(state, day) == [row]
+    assert intraday_orders.due(state, date(2026, 9, 15)) == []
+    zone = intraday_orders.NEW_YORK
+    for clock, sent in ((datetime(2026, 9, 16, 14, 15, tzinfo=zone), None),
+                        (datetime(2026, 9, 16, 15, 46, tzinfo=zone), "market"),
+                        (datetime(2026, 9, 16, 16, 1, tzinfo=zone), None)):
+        assert intraday_orders.decide(row, None, None, clock, day)["send"] == sent
+    assert intraday_orders.timing_of(row) == intraday_orders.DECISION_CLOSE
+
+
+# A cycle released on the decision night hands the account back to the
+# ordinary planner the same night, with tonight's clock step counted once.
+def test_released_cycle_hands_back_with_one_clock_step():
+    before = paper.PaperState(sessions_seen=["2026-09-15"], sessions_since_rebalance=4,
+                              event_cycle={"id": "e", "decision_date": "2026-09-16",
+                                           "baseline": {"AAA": 100.0}})
+    after = paper.PaperState(sessions_seen=["2026-09-15", "2026-09-16"],
+                             sessions_since_rebalance=5)
+    assert nightly_plan.released(after, policy(1), [])
+    assert not nightly_plan.released(after, policy(0.5), [])
+    assert not nightly_plan.released(after, policy(1), ["order"])
+    back = nightly_plan.handed_back(before, after, "2026-09-16")
+    assert back.sessions_seen == ["2026-09-15"]
+    assert back.sessions_since_rebalance == 4
+    assert not back.event_cycle
+
+
+# Through the nightly: the eve queues the decision-close restoration for the
+# balancer and sends nothing to the broker at night; the decision night, with
+# the restoration filled, releases the cycle and runs the ordinary plan.
+def test_nightly_holds_the_decision_close_restoration_and_hands_back(
+    tmp_path, monkeypatch
+):
+    from types import SimpleNamespace
+
+    from backend.market import alpaca_trading
+    from backend.tests.test_market_daily import _report
+
+    class Broker:
+        # A broker whose orders and positions the test moves by hand.
+        def __init__(self):
+            self.qty = 100
+            self.orders = []
+            self.night_orders = 0
+
+        def account(self):
+            return SimpleNamespace(equity=100000, cash=90000)
+
+        def positions(self):
+            return [
+                SimpleNamespace(
+                    symbol="SNDK",
+                    qty=self.qty,
+                    market_value=self.qty * 100,
+                    avg_entry_price=100,
+                    current_price=100,
+                    unrealized_pl=0,
+                )
+            ]
+
+        def clock(self):
+            return {"is_open": False}
+
+        def submit_market_on_open(self, symbol, qty, side, client_order_id):
+            self.night_orders += 1
+            self.orders.append(
+                {
+                    "client_order_id": client_order_id,
+                    "symbol": symbol,
+                    "qty": qty,
+                    "side": side,
+                    "status": "new",
+                    "filled_qty": 0,
+                }
+            )
+            return {"submitted_at": "2026-09-12T00:01:02Z", "time_in_force": "day"}
+
+        submit_market_on_close = submit_market_on_open
+
+        def orders_since(self, since):
+            return self.orders
+
+        def cancel_orders(self, ids):
+            return None
+
+    broker = Broker()
+    monkeypatch.setattr(alpaca_trading, "client_from_env", lambda: broker)
+    monkeypatch.setattr(event_risk, "decision", lambda panel: policy())
+    paper.save_state(
+        tmp_path, paper.PaperState(last_rebalance="2026-09-10", sessions_since_rebalance=1)
+    )
+    report = _report()
+    market_daily.paper_trade(report, tmp_path, "2026-09-11", True)
+    broker.orders[0].update(status="filled", filled_qty=50, filled_avg_price=100)
+    broker.qty = 50
+    sent = broker.night_orders
+    entry = market_daily.paper_trade(report, tmp_path, "2026-09-15", True)
+    saved = paper.load_state(tmp_path)
+    assert broker.night_orders == sent
+    assert "decision close" in entry["plan"]
+    [row] = saved.pending
+    assert row["side"] == "buy" and row["qty"] == 50 and row["event_id"]
+    assert row["execution_timing"] == intraday_orders.DECISION_CLOSE
+    assert row["execute_on"] == "2026-09-16"
+    # The balancer sends it at 3:45 PM on the decision session and it fills.
+    row["sent"] = {"at": "2026-09-16T15:45:30-04:00", "how": "market"}
+    paper.save_state(tmp_path, saved)
+    broker.orders.append(
+        {
+            "client_order_id": row["client_order_id"],
+            "symbol": "SNDK",
+            "qty": 50,
+            "side": "buy",
+            "status": "filled",
+            "filled_qty": 50,
+            "filled_avg_price": 101,
+        }
+    )
+    broker.qty = 100
+    monkeypatch.setattr(event_risk, "decision", lambda panel: policy(1))
+    entry = market_daily.paper_trade(report, tmp_path, "2026-09-16", True)
+    saved = paper.load_state(tmp_path)
+    assert "FOMC restoration complete" in entry["plan"]
+    assert entry["plan"] != "FOMC restoration complete"
+    assert not saved.event_cycle
+    assert saved.sessions_seen.count("2026-09-16") == 1
+    assert sum(1 for r in saved.journal if r.get("side") == "buy" and r.get("event_id")) == 1

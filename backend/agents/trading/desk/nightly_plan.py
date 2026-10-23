@@ -39,6 +39,29 @@ def event_plan_required(state, event_policy):
     )
 
 
+# Whether the event path just finished its cycle and left nothing to do: no
+# orders, no pending intent, no cycle, and tonight's policy does not reduce.
+def released(new_state, event_policy, orders) -> bool:
+    return bool(
+        not orders
+        and not new_state.pending
+        and not new_state.event_cycle
+        and event_policy.get("calendar_known")
+        and event_policy.get("factor") != event_risk.REDUCED
+    )
+
+
+# The state the ordinary planner takes after a cycle is released tonight: the
+# event path's result with tonight's clock step taken back, since the ordinary
+# planner refuses a session it has already seen and counts the step itself.
+def handed_back(before, after, session):
+    back = paper.PaperState(**asdict(after))
+    if session not in before.sessions_seen and session in back.sessions_seen:
+        back.sessions_seen = [s for s in back.sessions_seen if s != session]
+        back.sessions_since_rebalance = before.sessions_since_rebalance
+    return back
+
+
 # Dispatch reconciled inputs with event priority and optional named research planning.
 def plan(
     session,

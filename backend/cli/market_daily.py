@@ -370,7 +370,8 @@ def _reconciliation_pending(pending, known, decision_at):
         deadline = datetime.combine(
             day,
             calendar.session_close(day)
-            if row.get("execution_timing") == intraday_orders.INTRADAY_TIMING
+            if row.get("execution_timing")
+            in (intraday_orders.INTRADAY_TIMING, intraday_orders.DECISION_CLOSE)
             else calendar.REGULAR_OPEN,
             calendar.NEW_YORK,
         )
@@ -575,7 +576,13 @@ def _hold_for_the_session(orders, *, timing_policy=None) -> list:
             f"  {order.side:4} {order.qty:5d} {order.symbol:6} {order.reason}"
             f"  [planned for the next session: {rule}]"
         )
-    return [o for o in orders if o.execution_timing != timing]
+    held = (timing, intraday_orders.DECISION_CLOSE)
+    for order in (o for o in orders if o.execution_timing == held[1]):
+        print(
+            f"  {order.side:4} {order.qty:5d} {order.symbol:6} {order.reason}"
+            "  [planned for the decision session: 3:45 PM, after the statement]"
+        )
+    return [o for o in orders if o.execution_timing not in held]
 
 
 # Preserve execution policy and reference evidence before an order can be sent.
@@ -612,7 +619,8 @@ def _pending_orders(
             ),
             **(
                 {"execute_on": upcoming.isoformat() if upcoming else None}
-                if order.execution_timing == intraday_orders.INTRADAY_TIMING
+                if order.execution_timing
+                in (intraday_orders.INTRADAY_TIMING, intraday_orders.DECISION_CLOSE)
                 else {}
             ),
             "execution": {
@@ -1246,32 +1254,43 @@ def _paper_trade(
         if feature_reader is None
         else feature_reader("blocked", report)
     )
+    def _planned(planning_state, event_plan):
+        return nightly_plan.plan(
+            session,
+            planning_state,
+            account.equity,
+            held,
+            prices,
+            targets,
+            grades,
+            policy,
+            finished={} if event_plan else _downgraded(report, held),
+            force_rebalance=rebalance_now,
+            entry_blocked=blocked,
+            entries=(
+                {}
+                if event_plan
+                else (
+                    _price_entries(report)
+                    if feature_reader is None
+                    else feature_reader("entries", report)
+                )
+            ),
+            cash=account.cash,
+            holding_policy=holding_policy,
+            report=report,
+        )
+
     event_plan = nightly_plan.event_plan_required(state, policy)
-    orders, new_state, what = nightly_plan.plan(
-        session,
-        state,
-        account.equity,
-        held,
-        prices,
-        targets,
-        grades,
-        policy,
-        finished={} if event_plan else _downgraded(report, held),
-        force_rebalance=rebalance_now,
-        entry_blocked=blocked,
-        entries=(
-            {}
-            if event_plan
-            else (
-                _price_entries(report)
-                if feature_reader is None
-                else feature_reader("entries", report)
-            )
-        ),
-        cash=account.cash,
-        holding_policy=holding_policy,
-        report=report,
-    )
+    orders, new_state, what = _planned(state, event_plan)
+    # A cycle that finished tonight hands the account back to the ordinary plan
+    # tonight, so its buys go in at the next open instead of a session later.
+    if event_plan and nightly_plan.released(new_state, policy, orders):
+        event_plan = False
+        orders, new_state, ordinary = _planned(
+            nightly_plan.handed_back(state, new_state, session), event_plan
+        )
+        what = f"{what}; {ordinary}"
     targets, policy_name, research_metadata = _holding_plan_metadata(
         holding_policy,
         event_plan,

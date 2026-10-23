@@ -65,6 +65,10 @@ from backend.market import bounded_execution, calendar, entry_timing, execution_
 INTRADAY_EXECUTION = True
 # The execution timing written on every ordinary order the nightly plans.
 INTRADAY_TIMING = "dip_or_close"
+# An FOMC restoration planned on the eve of the decision: a market order on the
+# decision session's last candle, after the statement and the press conference,
+# never earlier and never on a price level (`event_execution`).
+DECISION_CLOSE = "decision_close"
 # The way an order is sent from here: a day market order. MOC is kept only
 # to read back rows sent market-on-close before 2026-10-05.
 MARKET = "market"
@@ -96,8 +100,10 @@ def due(state: paper.PaperState, today: date) -> list[dict]:
     return [
         row
         for row in state.pending
-        if row.get("execution_timing") == INTRADAY_TIMING
-        and not row.get("event_id")
+        if (
+            (row.get("execution_timing") == INTRADAY_TIMING and not row.get("event_id"))
+            or (row.get("execution_timing") == DECISION_CLOSE and row.get("event_id"))
+        )
         and row.get("execute_on") == today.isoformat()
         and not row.get("sent")
     ]
@@ -111,6 +117,13 @@ def decide(
     row: dict, latch_row: dict | None, quote: dict | None, now: datetime, today: date
 ) -> dict[str, Any]:
     """Return legacy timing or an opt-in IOC decision with its execution guard."""
+    if row.get("execution_timing") == DECISION_CLOSE:
+        clock = entry_timing.session_clock(today)
+        final = clock["final"] <= now < clock["close"]
+        return {
+            "send": MARKET if final else None,
+            "timed": {"state": DECISION_CLOSE, "open": None, "level": None},
+        }
     if "execution_policy" in row and row.get("side") not in ("buy", "sell"):
         return {
             "send": None,
@@ -239,7 +252,11 @@ def _ready(
                 continue
         custom = False
         clock = entry_timing.session_clock(today) if required or timing_reader else None
-        if timing_reader is not None and "execution_policy" not in row:
+        if (
+            timing_reader is not None
+            and "execution_policy" not in row
+            and row.get("execution_timing") != DECISION_CLOSE
+        ):
             custom = clock["open"] <= now < clock["final"]
         if required and now < clock["final"] and not custom:
             continue
@@ -765,9 +782,11 @@ def why(row: dict) -> tuple[str, str]:
 # How a row is executed: the board's intraday rule, or one of the older
 # conventions an order planned before the switch still carries.
 def timing_of(row: dict) -> str:
-    """Return "dip_or_close", "event", "next_open" or "close" for a row."""
+    """Return "dip_or_close", "decision_close", "event", "next_open" or "close"."""
     if row.get("execution_timing") == INTRADAY_TIMING:
         return INTRADAY_TIMING
+    if row.get("execution_timing") == DECISION_CLOSE:
+        return DECISION_CLOSE
     if row.get("event_id") or row.get("priority"):
         return "event"
     if row.get("execution_timing") == "next_open" or row.get("side") == "buy":
@@ -1082,6 +1101,8 @@ def _when(
             except (ValueError, TypeError):
                 return f"{day} · learned timing unavailable"
         return f"{day} · {rule_text(side, out.get('open'), out.get('level'))}"
+    if timing == DECISION_CLOSE:
+        return f"{day} · 3:45 PM, after the FOMC statement (FOMC risk rule)"
     if timing == "event":
         return f"{day} · at the open (FOMC risk rule)"
     if timing == "next_open":
@@ -1180,6 +1201,14 @@ def _clock_status(
         if row["timing_policy"] != POLICY:
             return "waiting", "Timing policy unavailable"
         return learned_order_observation.clock_status(out.get("learned_timing"), now)
+    if row.get("execution_timing") == DECISION_CLOSE:
+        clock = entry_timing.session_clock(today)
+        if now < clock["final"]:
+            final = entry_timing._clock(clock["final"])
+            return "waiting", f"After the FOMC statement · market order at {final} ET"
+        if now < clock["close"]:
+            return "due", "After the FOMC statement · market order due"
+        return "missed", "Not sent: the session closed before the order went out"
     verdict = decide(row, entry_timing.row_for(latch, symbol, today), quote, now, today)
     timed = verdict["timed"]
     if "guard" in verdict:

@@ -3135,7 +3135,7 @@ export interface DeskPaperOrder {
   leg: string;
   why: string;
   reason?: string | null;
-  timing: 'dip_or_close' | 'next_open' | 'close' | 'event';
+  timing: 'dip_or_close' | 'decision_close' | 'next_open' | 'close' | 'event';
   timing_policy?: string;
   learned_timing?: {
     policy: string; state: string; reason: string; observed_qty: number | null;
