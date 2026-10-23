@@ -1532,6 +1532,29 @@ The detailed current continuation remains the TOP of the attached
 learned-live-release-20261006 worktree's NEXT_SESSION.md. Keep existing heartbeat
 ACTIVE and quiet unchanged. No question pending; no agents without delegation,
 usage-limited retries/replacements, denied-read bypass or native-pool adoption.
+## 2026-10-23 10:00 ET — FOMC restoration at the decision-day close: built, tested, release files ready (branch `fomc-decision-close`); install after today's close
+
+Owner (2026-10-22/23): the lead-in to each decision since Warsh's guidance
+change sold off and the market rose right after; "do it" to restoring at the
+decision close. Kept the FOMC rule on for 2026-10-28 (cut at the 10-23 open
+as queued). Branch: `event_execution` plans the restoration on the eve
+(cut filled) with `decision_close` timing; `desk/decision_close.py` (new,
+bound: identity now 44 sources) sends it on the decision session's 3:45 PM
+candle via `intraday_orders._send_one`; `market_balancer` calls it after the
+ordinary sender; `market.py` relabels those board rows; `nightly_plan.released`
+/ `handed_back` + `market_daily` run the ordinary plan on the decision night
+once the cycle finished (a cycle must have been running before tonight).
+`intraday_orders.py` is UNCHANGED on purpose: the original live-model history
+audit (`live_model_history_pending_audit.ORIGINAL_SOURCES`) pins its bytes and
+`entry_timing.py`'s; don't edit either without re-pinning that audit.
+`test_reconciliation_release_admission.UNCHANGED` re-pinned to this tree.
+Full suite: no new failures vs main (`test_settings_reach_their_consumer
+[internet.py]` fails in ~/dspark-commit on any branch: it reads that
+checkout's .env). Candidate: `docs/research/trading-approval-candidates-
+2026-10-23/fomc-decision-close/` (dry run accepted). The vol-floor and
+value-weighted-grading branches predate this; their identities must be
+recomputed on top of it before either is installed.
+
 ## 2026-10-22 11:10 ET — Value-weighted grading candidate built (branch `value-weighted-grading`, d6f58f25), awaiting the owner; floor arm scored; audits green
 
 Candidate doc `docs/research/value-weighted-grading-2026-10-22.md`:
