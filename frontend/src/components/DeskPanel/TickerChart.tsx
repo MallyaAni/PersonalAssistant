@@ -1060,7 +1060,6 @@ export const TickerChart = ({
   )
   const events = useMemo(() => recommendationEvents(receipts), [receipts])
   const actionMarkers = useMemo(() => recommendationMarkers(events, merged.bars, timeframe), [events, merged, timeframe])
-  const changes = useMemo(() => gradeMarkers(strategy && simulation?.grade_rows ? {rows: simulation.grade_rows} : history, merged.bars, timeframe, strategy), [history, simulation, merged, timeframe, strategy])
   const decisions = useMemo(() => decisionMarkers(history, merged.bars, timeframe), [history, merged, timeframe])
   const paperActivityWarning = paperAccountUnavailable
     ? 'Paper account is unavailable; execution history could not be verified.'
@@ -1082,6 +1081,13 @@ export const TickerChart = ({
   // Every chart shows the installed policy's decisions and no other's: the policy's own
   // replay when it is served, the audited history only while it is that policy's.
   const policyReplay = servedReplay && servedReplay.status === 'available' && (!livePolicy || servedReplay.policy === livePolicy) ? servedReplay : null
+  // The grade arrows come from the installed policy's replay when it carries them,
+  // so the chart's grades and its trades are one engine's; an older simulation's
+  // grades only when no replay is served.
+  const replayGrades = policyReplay?.grades?.length ? policyReplay.grades : null
+  const changes = useMemo(() => gradeMarkers(
+    strategy && replayGrades ? {rows: replayGrades} : strategy && simulation?.grade_rows ? {rows: simulation.grade_rows} : history,
+    merged.bars, timeframe, strategy), [history, simulation, replayGrades, merged, timeframe, strategy])
   const replayHidden = !strategy && !policyReplay && Boolean(history?.policy) && Boolean(livePolicy) && history!.policy !== livePolicy
   const showDecisions = decisionsChoice ?? Boolean(policyReplay)
   const setShowDecisions = setDecisionsChoice
@@ -1494,7 +1500,7 @@ export const TickerChart = ({
     </div>
     {/* A name the grades reached but the replay never sized is the most puzzling chart on the desk: say so instead of showing arrows with no circles. */}
     {strategy && policyReplay && !policyReplay.trades.some(drawnReplayTrade) && <p aria-label={`${ticker} replay without trades`} className="mb-2 text-[11px] text-[#6e6e73]">
-      {policyReplay.rows.some(row => row.grade === 'A' || row.grade === 'A+')
+      {(policyReplay.grades ?? policyReplay.rows).some(row => row.grade === 'A' || row.grade === 'A+')
         ? `The rule never held ${ticker} in this window: the sessions it graded A or A+ never gave it a slot.`
         : `The rule never held ${ticker}: it never graded A or A+ in this window.`}
     </p>}

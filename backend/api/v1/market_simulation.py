@@ -105,6 +105,7 @@ def _policy_replay(root, ticker):
         "audit": manifest.get("audit", {}),
         "rows": stock["rows"],
         "trades": stock["trades"],
+        "grades": stock.get("grades", []),
         "outcomes": stock.get("outcomes", {}),
         "latest_target": stock["latest_target"],
     }

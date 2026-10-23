@@ -297,6 +297,9 @@ async function install(page: Page, baseURL: string, state: ReferenceFixture) {
       ...(state.policyReplay ? {policy_replay: {status: 'available', policy: 'grade-led-learned-sizing/1', arm: 'fixture-arm', basis: 'point_in_time_research_targets_not_audited_history',
         start: '2016-01-04', through: '2026-10-15', generated_at: '2026-10-16T01:00:00Z', note: 'In-sample research fixture.',
         rows: [{date: '2026-10-09', weight: .05, grade: 'A'}, {date: '2026-10-13', weight: .08, grade: 'A+'}, {date: '2026-10-14', weight: 0, grade: 'B'}],
+        // Every grade change under the installed grading, each effective at the next open.
+        grades: [{date: '2026-10-08', grade: 'C', said: false, at: '2026-10-09T09:30:00-04:00'}, {date: '2026-10-09', grade: 'A', said: false, at: '2026-10-12T09:30:00-04:00'},
+          {date: '2026-10-14', grade: 'B', said: false, at: '2026-10-15T09:30:00-04:00'}],
         trades: [{decided: '2026-10-09', date: '2026-10-12', action: 'BUY', size: .05, target: .05}, {decided: '2026-10-12', date: '2026-10-13', action: 'BUY', size: .006, target: .056},
           {decided: '2026-10-13', date: '2026-10-14', action: 'BUY', size: .03, target: .086}, {decided: '2026-10-14', date: '2026-10-15', action: 'SELL', size: .086, target: 0}],
         outcomes: {entry_summary: {count: 1, hit_rate_20: 1, mean_excess_20: .04, hit_rate_60: 0, mean_excess_60: -.02}}, latest_target: 0}} : {}), latest_holding: 2, provenance: {cost_bps: 10, basis: 'account_independent_unit_capital_targets', source_record_sha256: (state.simulationIdentityWrong ? 'c' : 'a').repeat(64),
@@ -612,6 +615,11 @@ test('Charts draw the installed policy replay and never an older policy',async (
   await expect(basis).toContainText('In-sample research fixture.')
   await expect(basis).toContainText('1 entry here · beat QQQ after 20 sessions 100% of the time, mean excess +4.0% · after 60: 0%, -2.0%.')
   await expect(basis).toContainText('1 small resizes of a held slot not drawn')
+  // The grade arrows are the replay's own grade changes, not another source's.
+  await expect(dialog.getByLabel('BUYHIGH historical grade signals',{exact:true}).locator('li')).toHaveText([
+    '2026-10-09 · Grade change · Recalculated grade C→A',
+    '2026-10-14 · Grade change · Recalculated grade A→B',
+  ])
   expect(state.diagnostics).toEqual([])
 })
 

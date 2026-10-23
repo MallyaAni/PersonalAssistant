@@ -103,6 +103,16 @@ def signal_outcomes(panel, column: int, path: np.ndarray) -> dict:
     }
 
 
+# The New York open of a session, as the instant a close's grade takes effect.
+def _next_open(session: str) -> str:
+    from zoneinfo import ZoneInfo
+
+    opened = datetime.fromisoformat(f"{session}T09:30:00").replace(
+        tzinfo=ZoneInfo("America/New_York")
+    )
+    return opened.isoformat()
+
+
 def replay(report, history_path, arm_name: str) -> tuple[dict, dict[str, dict]]:
     """Return (manifest, {ticker: rows}) for the arm over the restricted panel."""
     restricted, mask = point_in_time.point_in_time(report, history_path)
@@ -117,11 +127,23 @@ def replay(report, history_path, arm_name: str) -> tuple[dict, dict[str, dict]]:
         if ticker in universe.MARKET_INDICES:
             continue
         path = weights[:, column]
-        rows, trades = [], []
+        rows, trades, grades = [], [], []
         previous = 0.0
         for t, day in enumerate(dates):
             weight = float(path[t])
             grade = restricted.graded.letter(t, column)
+            # Every change of letter under the installed grading, as the rule saw
+            # it at that close and acted on it at the next open: the chart's grade
+            # arrows, so they come from the same engine as its trades.
+            if t == 0 or grade != grades[-1]["grade"]:
+                grades.append(
+                    {
+                        "date": day,
+                        "grade": grade,
+                        "said": False,
+                        **({"at": _next_open(dates[t + 1])} if t + 1 < len(dates) else {}),
+                    }
+                )
             if abs(weight - previous) >= DUST or t == 0:
                 rows.append({"date": day, "weight": weight, "grade": grade})
             delta = weight - previous
@@ -141,6 +163,7 @@ def replay(report, history_path, arm_name: str) -> tuple[dict, dict[str, dict]]:
             "ticker": ticker,
             "rows": rows,
             "trades": trades,
+            "grades": grades,
             "latest_target": float(path[-1]),
             "sessions_held": int((path > 0).sum()),
             "outcomes": signal_outcomes(panel, column, path),
