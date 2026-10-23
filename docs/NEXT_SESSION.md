@@ -1532,6 +1532,19 @@ The detailed current continuation remains the TOP of the attached
 learned-live-release-20261006 worktree's NEXT_SESSION.md. Keep existing heartbeat
 ACTIVE and quiet unchanged. No question pending; no agents without delegation,
 usage-limited retries/replacements, denied-read bypass or native-pool adoption.
+## 2026-10-23 12:40 ET — Combined release live (464074b9), ADMITTED host==container, 44 sources
+
+deploy39 failed the gate on one test, `test_board_level_gate::
+test_the_v3_board_is_identical_to_main`: the /3 board golden carries each
+row's analyst opportunity score, built from `grading.ANALYST_WEIGHTS`, so the
+valuation weight moved it. Regenerated the golden from this tree (464074b9;
+only that field differed) and deploy40 passed. Lesson: I had compared the
+full-suite failures against a run of the value-weighted branch, not main, so
+a failure the valuation change caused looked pre-existing; compare against a
+run of main itself. Container reads value 3.0 and floor 0.5; the replay is
+served from `leader_ewma_minB_floor50`. Scheduled checks: 10-27 19:55 (eve
+plan), 10-28 15:52 (3:45 PM send), 10-28 19:55 (hand-back).
+
 ## 2026-10-23 12:00 ET — Combined release installed at 11:39 ET (f92c7045): FOMC decision-close restoration + valuation x3 + exposure floor 0.5
 
 The owner delegated ("i told you to take the lead on it. whatever improves our
