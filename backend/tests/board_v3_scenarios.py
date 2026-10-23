@@ -7,6 +7,12 @@ this file run under that checkout:
 
     PYTHONPATH=<main checkout>:<pytest> python backend/tests/board_v3_scenarios.py
 
+Regenerated on 2026-10-23 from the tree that gives the valuation analyst three
+votes (`grading.ANALYST_WEIGHTS`): the only field that moved was each row's
+analyst opportunity score, which is built from those weights. The comparison
+the test exists for - a latch or the `/4` timing changes no `/3` board - is
+unchanged.
+
 The golden is every board as sorted-key JSON with floats written to 12
 significant digits (`canonical`), so a last-bit difference in a numpy build on
 another machine is not read as a change while any real change is; gzip takes
