@@ -471,8 +471,13 @@ def forecast_targeted_allocator(
     min_train: int = 500,
     ridge_lambda: float = 1.0,
     ewma_span: int = 20,
+    floor: float = 0.0,
 ):
     """Return a callable (report, panel, config, t) -> inner weights at a forecast-vol target.
+
+    `floor` is the least fraction of the inner gross the target may leave
+    (`grade_led_leader_policy.EXPOSURE_FLOOR` in the installed rule); 0 is the
+    bare target.
 
     `inner` must return unscaled slots (equal or tilted, cap applied) whose gross is
     what the book would hold at full exposure; the forecast decides the fraction.
@@ -531,7 +536,7 @@ def forecast_targeted_allocator(
                 forecast = float(np.exp(np.r_[1.0, x] @ state["coef"]))
         if not forecast > 0:
             return slots
-        return slots * min(1.0, target / forecast)
+        return slots * max(floor, min(1.0, target / forecast))
 
     return allocate
 

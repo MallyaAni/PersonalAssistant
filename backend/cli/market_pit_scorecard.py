@@ -490,7 +490,7 @@ ARMS = {
 # sensitivity around what is installed, so a parameter that happens to sit on
 # a cliff is seen before it is trusted. Each is the installed rule otherwise.
 def _leader_ewma(
-    strength=0.5, window=63, target=0.25, cap=0.25, span=20, min_grade=None
+    strength=0.5, window=63, target=0.25, cap=0.25, span=20, min_grade=None, floor=0.0
 ):
     return lambda report, mask: point_in_time.forecast_targeted_allocator(
         point_in_time.graded_tilted_allocator(
@@ -505,6 +505,7 @@ def _leader_ewma(
         forecaster="ewma",
         target=target,
         ewma_span=span,
+        floor=floor,
     )
 
 
@@ -613,6 +614,11 @@ ARMS.update(
         # The grade cut the slots are drawn at: every B-or-better name, or
         # only the names whose own release said the quarter was strong.
         "leader_ewma_minB": _leader_ewma(min_grade=grading.ORDINAL[grading.B]),
+        # The installed rule from 2026-10-23: the B cut with the volatility
+        # target never leaving less than half the book invested.
+        "leader_ewma_minB_floor50": _leader_ewma(
+            min_grade=grading.ORDINAL[grading.B], floor=0.5
+        ),
         "leader_ewma_aplus": _leader_ewma(min_grade=grading.ORDINAL[grading.A_PLUS]),
         "leader_ewma_minB_t20": _leader_ewma(
             min_grade=grading.ORDINAL[grading.B], target=0.20

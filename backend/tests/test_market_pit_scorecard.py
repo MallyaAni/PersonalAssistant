@@ -645,6 +645,12 @@ def test_forecast_targeted_allocator(history, forecaster):
     assert np.allclose(again, scaled)
     with pytest.raises(ValueError, match="unknown forecaster"):
         point_in_time.forecast_targeted_allocator(slots, forecaster="luck")
+    # The installed rule's floor: a target that would scale the book to almost
+    # nothing leaves exactly half of it, as `leader_weights` does live.
+    floored = point_in_time.forecast_targeted_allocator(
+        slots, forecaster=forecaster, target=1e-6, min_train=5, floor=0.5
+    )(restricted, panel, None, t)
+    assert np.allclose(floored, base * 0.5)
 
 
 # A forecast tilt reshares the slots by the forecasts rank, keeps the gross,
