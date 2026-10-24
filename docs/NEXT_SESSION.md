@@ -1,5 +1,28 @@
 # Next session
 
+## CURRENT 2026-10-24 01:40 ET — chart replay is the installed policy itself; per-name P&L on every chart (8abb5f8f LIVE)
+
+- Replay (`backend/cli/market_policy_replay_research.py`, unbound) now runs over the whole desk
+  from each name's first full 64-close window (`book_eligibility`), using the live
+  `leader_weights`, the band buy block, the FOMC cycle (`fomc_overlay`) and the nightly's
+  `FUNDAMENTALS_CURRENT` grades. It used to mask names to C before their membership date,
+  so CRWV, IREN, AAPL, META and others never bought. Regenerate it after each nightly:
+  `cd ~/dspark-commit && PYTHONPATH=. ~/research-venv/bin/python -m backend.cli.market_policy_replay_research --root /home/animallya96/deploy/anios/data/market` (~6 min).
+- Each stock file carries `realised` (fills at the next open, 10 bp a side, SPY at the same weights,
+  round trips); `signal_outcomes` are measured from the fill. The chart prints the P&L line.
+- Independent checks (scripts on spark1): `~/dsv41/verifyA/` (live-code recompute, P&L recompute,
+  all 94 names) and `~/dsv41/audit3/` (browser sweep, `sweep4.mjs` + `analyze3.py`, 254,165 markers exact).
+- Chart rules (TickerChart.tsx `policyReplayMarkers`): every entry and exit its own marker; FOMC steps
+  always drawn with the real before-size; Add/Trim once 2% from the last drawn size; zoomed out past 180
+  bars adds/trims hidden.
+- ACN (most traded): +1.99% of book after 0.49% costs vs +2.02% SPY at the same weights: no edge.
+  Book in-sample 33.5% CAGR vs SPY at the same weights 12.0% (QQQ 16.5%); 81/94 names positive, 71 beat SPY.
+- OPEN, research next: (1) the scorecard grades with `corrected` fundamentals, live with `current`:
+  rerun the scorecard on `current`; (2) daily resize churn costs ~1.8 pts CAGR book-wide: test a no-trade
+  band; (3) trips of two sessions or fewer lose 1.4% of book: test exit hysteresis; (4) ACN adj_close
+  missing two 2025-26 dividends (provider data); (5) 15m chart blanks while loading more sessions (F6).
+- Scheduled FOMC checks 10-27 19:55, 10-28 15:52, 10-28 19:55 need the Windows PC on (it links spark1).
+
 ## CURRENT — replay limitation visible and LIVE0940f6a8; real preview + deployed6PASS; temporary branch retired
 
 LIVEfrontend0940f6a8335ee7b9b1c11fc569713316cbfd90fa/tree
