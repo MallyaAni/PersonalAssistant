@@ -1,5 +1,22 @@
 # Next session
 
+## CURRENT 2026-10-24 — account-simulator rule INSTALLED (ac891d78); backtest = charts = live
+
+- `backend/market/policy_book.py` is the one engine: backtest, strategy-chart replay (`market_policy_replay_research.installed_book`)
+  and, verified night by night, the live plan (independent replay of `GradeLedLeaderFundedPolicy.plan` on 2,895 nights in
+  `~/dsv41/verifyB/`, equal up to whole-share rounding; FOMC cycles leg for leg).
+- Live rule (contract revisions 5, 6): enter at A, hold while B, 1% minimum trade (`JointFundedPolicy.min_trade`),
+  P/E-history tilt 0.5 (`report_pe_tilt`). `grade_led_policy.signals` has a hold grade; parity/decision audit read it.
+- `levels_pit.split_adjusted_shares` look-ahead fixed (counts carry every split through the panel's last session).
+  Historical grades moved 10.4%; live 10-23 grades differ in CEG (B to C). Opportunity shadow migration declared.
+- Simulator, corrected grades, 10 bp: 37.6%/yr, worst -27.7%, Sharpe 1.46, 2015-22 21.2%, 2023-26 78.1%; old B rule 31.5%.
+  Sweeps: `CACHE=~/dsv41/book/cache_tilt.npz ~/dsv41/book/run.py '[{...Rule fields..., "_tilt": false}]'`.
+- Valuation research (`~/dsv41/valuation/`): no forward P/E data; extra entries (cheap B names, pullbacks) did not beat
+  the rule to 2022; only the P/E-history tilt passed. Grade history shifts ~2.4% with later filing revisions (evidence caveat).
+- First new-rule trades after the FOMC hand-back on 10-28. Offered the owner a shadow LLM analyst (records calls, no trading).
+- Known simulator/live gaps: whole-share rounding only. Old `levels_pit.trailing_levels` still has no split adjustment
+  (research/shadow only).
+
 ## CURRENT 2026-10-24 01:40 ET — chart replay is the installed policy itself; per-name P&L on every chart (8abb5f8f LIVE)
 
 - Replay (`backend/cli/market_policy_replay_research.py`, unbound) now runs over the whole desk
