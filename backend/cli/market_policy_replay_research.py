@@ -82,33 +82,50 @@ HORIZONS = (5, 20, 60)
 FUNDAMENTALS = desk.FUNDAMENTALS_CURRENT
 
 
-# What happened after each signal, with nothing the rule could not have known:
-# a target set at close t is compared with the name's close t+h against the
-# benchmark's, for each horizon. An entry (a target from zero) is judged by
-# its excess return; an exit (a target to zero) by the return it avoided.
+# Trading costs charged on every change of weight, per side, in the realised P&L.
+COST_BPS = 10.0
+
+
+# The adjusted open: the open on the adjusted-close basis, so a fill at the open
+# and a mark at the close are on one price scale across splits and dividends.
+def adjusted_open(panel, column: int) -> np.ndarray:
+    with np.errstate(invalid="ignore", divide="ignore"):
+        return (
+            np.asarray(panel.open[:, column], dtype=float)
+            * np.asarray(panel.adj_close[:, column], dtype=float)
+            / np.asarray(panel.close[:, column], dtype=float)
+        )
+
+
+# What happened after each signal, measured from the price the rule could
+# actually trade at: a target set at close t fills at the open of t+1, so the
+# outcome runs from that adjusted open to the close h sessions after the
+# decision, against the benchmark over the same span. An entry (a target from
+# zero) is judged by its excess return; an exit (a target to zero) by the
+# return it avoided. The overnight gap after the decision is not the rule's.
 def signal_outcomes(panel, column: int, path: np.ndarray) -> dict:
     closes = np.asarray(panel.adj_close[:, column], dtype=float)
-    bench = np.asarray(panel.adj_close[:, panel.index(panel.benchmark)], dtype=float)
+    fills = adjusted_open(panel, column)
+    b = panel.index(panel.benchmark)
+    bench = np.asarray(panel.adj_close[:, b], dtype=float)
+    bench_fill = adjusted_open(panel, b)
     entries: list[dict] = []
     exits: list[dict] = []
     n = len(path)
     for t in range(1, n):
         before, after = float(path[t - 1]), float(path[t])
-        kind = (
-            "entry"
-            if before < DUST <= after
-            else "exit"
-            if after < DUST <= before
-            else None
-        )
-        if kind is None or not np.isfinite(closes[t]) or closes[t] <= 0:
+        kind = "entry" if before == 0 < after else "exit" if after == 0 < before else None
+        if kind is None or t + 1 >= n:
             continue
-        row = {"date": str(panel.dates[t])[:10]}
+        price, base = fills[t + 1], bench_fill[t + 1]
+        if not (np.isfinite(price) and price > 0 and np.isfinite(base) and base > 0):
+            continue
+        row = {"date": str(panel.dates[t])[:10], "filled": str(panel.dates[t + 1])[:10]}
         for h in HORIZONS:
             if t + h < n and np.isfinite(closes[t + h]) and np.isfinite(bench[t + h]):
-                own = closes[t + h] / closes[t] - 1.0
+                own = closes[t + h] / price - 1.0
                 row[f"return_{h}"] = float(own)
-                row[f"excess_{h}"] = float(own - (bench[t + h] / bench[t] - 1.0))
+                row[f"excess_{h}"] = float(own - (bench[t + h] / base - 1.0))
         (entries if kind == "entry" else exits).append(row)
 
     return {
@@ -116,6 +133,99 @@ def signal_outcomes(panel, column: int, path: np.ndarray) -> dict:
         "exits": exits,
         "entry_summary": _pooled(entries),
         "exit_summary": _pooled(exits),
+    }
+
+
+# What the rule's trades in this name earned, as a share of the book: each fill
+# at its session's open (an FOMC restoration timed for the decision close at
+# that close), the position held at its weight from the fill, the overnight
+# move earned by the weight held into the open and the session's move by the
+# weight after it, COST_BPS charged on every change of weight. Beside it, the
+# benchmark held at the same weights on the same sessions: what the exposure
+# alone would have earned, so the name's P&L is read as the rule's choice of
+# this name and its timing, not as being invested. And the round trips, each
+# from its entry fill to its exit fill.
+def realised(panel, column: int, trades: list[dict]) -> dict:
+    dates = [str(d)[:10] for d in panel.dates]
+    index = {day: t for t, day in enumerate(dates)}
+    closes = np.asarray(panel.adj_close[:, column], dtype=float)
+    opens = adjusted_open(panel, column)
+    b = panel.index(panel.benchmark)
+    bench = np.asarray(panel.adj_close[:, b], dtype=float)
+    bench_open = adjusted_open(panel, b)
+    by_session: dict[int, list[dict]] = {}
+    for trade in trades:
+        by_session.setdefault(index[trade["date"]], []).append(trade)
+    n = len(dates)
+    earned = np.zeros(n)
+    benched = np.zeros(n)
+    costs = np.zeros(n)
+    at_open = np.zeros(n)
+    after_close = np.zeros(n)
+    unpriced: list[str] = []
+    weight = 0.0
+    for t in range(n):
+        held = weight
+        fills = by_session.get(t, [])
+        opening = [x for x in fills if x.get("timing") != "decision_close"]
+        closing = [x for x in fills if x.get("timing") == "decision_close"]
+        middle = opening[-1]["target"] if opening else held
+        weight = closing[-1]["target"] if closing else middle
+        costs[t] = COST_BPS / 1e4 * (abs(middle - held) + abs(weight - middle))
+        at_open[t], after_close[t] = middle, weight
+        if t == 0 or not (held or middle):
+            continue
+        priced = all(
+            np.isfinite(x) and x > 0
+            for x in (closes[t - 1], opens[t], closes[t], bench[t - 1], bench_open[t], bench[t])
+        )
+        if not priced:
+            unpriced.append(dates[t])
+            continue
+        earned[t] = held * (opens[t] / closes[t - 1] - 1) + middle * (closes[t] / opens[t] - 1)
+        benched[t] = held * (bench_open[t] / bench[t - 1] - 1) + middle * (bench[t] / bench_open[t] - 1)
+    trips: list[dict] = []
+    start = None
+    for t in range(n):
+        before = after_close[t - 1] if t else 0.0
+        if before == 0 and at_open[t] > 0:
+            start = t
+        if start is not None and before > 0 and at_open[t] == 0:
+            span = slice(start, t + 1)
+            trips.append(
+                {
+                    "entered": dates[start],
+                    "exited": dates[t],
+                    "sessions": t - start,
+                    "price_return": float(opens[t] / opens[start] - 1),
+                    "excess": float(
+                        opens[t] / opens[start] - bench_open[t] / bench_open[start]
+                    ),
+                    "pnl": float((earned[span] - costs[span]).sum()),
+                }
+            )
+            start = None
+    net = float((earned - costs).sum())
+    held_sessions = at_open > 0
+    short = [trip for trip in trips if trip["sessions"] <= 2]
+    return {
+        "cost_bps": COST_BPS,
+        "benchmark": panel.benchmark,
+        "gross": float(earned.sum()),
+        "costs": float(costs.sum()),
+        "net": net,
+        "benchmark_same_weights": float(benched.sum()),
+        "excess": float(net - benched.sum()),
+        "sessions_held": int(held_sessions.sum()),
+        "mean_weight_held": float(at_open[held_sessions].mean()) if held_sessions.any() else 0.0,
+        "round_trips": len(trips),
+        "winning_trips": sum(1 for trip in trips if trip["pnl"] > 0),
+        "trips_beating_benchmark": sum(1 for trip in trips if trip["excess"] > 0),
+        "short_trips": len(short),
+        "short_trip_pnl": float(sum(trip["pnl"] for trip in short)),
+        "open_since": dates[start] if start is not None else None,
+        "unpriced_sessions": unpriced,
+        "trips": trips,
     }
 
 
@@ -323,6 +433,7 @@ def replay(
             "latest_target": float(path[-1]),
             "sessions_held": int((path > 0).sum()),
             "outcomes": signal_outcomes(panel, column, path),
+            "realised": realised(panel, column, trades),
         }
     # The book-wide answer to "did the signals make money": every entry and
     # exit across the names, pooled, so one name's luck cannot carry it.

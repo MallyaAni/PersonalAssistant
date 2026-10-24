@@ -107,6 +107,7 @@ def _policy_replay(root, ticker):
         "trades": stock["trades"],
         "grades": stock.get("grades", []),
         "outcomes": stock.get("outcomes", {}),
+        **({"realised": stock["realised"]} if "realised" in stock else {}),
         "latest_target": stock["latest_target"],
     }
 

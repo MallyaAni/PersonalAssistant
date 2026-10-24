@@ -171,3 +171,54 @@ def test_band_block_stops_buys_and_growth(history):  # noqa: F811
     after = research.leader_target(restricted, mask, first + 1, blocked, current)
     assert (after <= current + 1e-15).all()
     assert ((after > 0) <= (current > 0)).all()
+
+
+class _PricePanel:
+    def __init__(self):
+        import numpy as np
+
+        self.dates = np.array(["2026-01-05", "2026-01-06", "2026-01-07", "2026-01-08"], dtype="datetime64[D]")
+        self.tickers = ("X", "SPY")
+        self.benchmark = "SPY"
+        self.open = np.array([[10.0, 100.0], [11.0, 100.0], [12.0, 100.0], [12.0, 100.0]])
+        self.close = np.array([[10.0, 100.0], [12.0, 100.0], [12.0, 100.0], [15.0, 100.0]])
+        self.adj_close = self.close.copy()
+
+    def index(self, ticker):
+        return self.tickers.index(ticker)
+
+
+# The P&L fills at the open after the decision: the overnight gap before the
+# fill is not earned, the move after it is, and both fills pay the cost.
+def test_realised_pnl_fills_at_the_next_open():
+    import pytest
+
+    trades = [
+        {"decided": "2026-01-05", "date": "2026-01-06", "action": "BUY", "size": 0.1, "target": 0.1},
+        {"decided": "2026-01-07", "date": "2026-01-08", "action": "SELL", "size": 0.1, "target": 0.0},
+    ]
+    out = research.realised(_PricePanel(), 0, trades)
+    cost = 2 * 0.1 * research.COST_BPS / 1e4
+    assert out["gross"] == pytest.approx(0.1 * (12 / 11 - 1))
+    assert out["costs"] == pytest.approx(cost)
+    assert out["net"] == pytest.approx(0.1 * (12 / 11 - 1) - cost)
+    assert out["benchmark_same_weights"] == pytest.approx(0.0)
+    assert out["round_trips"] == 1 and out["winning_trips"] == 1
+    (trip,) = out["trips"]
+    assert (trip["entered"], trip["exited"], trip["sessions"]) == ("2026-01-06", "2026-01-08", 2)
+    assert trip["price_return"] == pytest.approx(12 / 11 - 1)
+    assert out["open_since"] is None and out["unpriced_sessions"] == []
+
+
+# An entry's outcome runs from its fill, the next open, not from the decision close.
+def test_signal_outcomes_start_at_the_fill(monkeypatch):
+    import numpy as np
+    import pytest
+
+    monkeypatch.setattr(research, "HORIZONS", (1, 2))
+    out = research.signal_outcomes(_PricePanel(), 0, np.array([0.0, 0.1, 0.1, 0.0]))
+    (entry,) = out["entries"]
+    assert entry["date"] == "2026-01-06" and entry["filled"] == "2026-01-07"
+    assert entry["return_1"] == pytest.approx(0.0)
+    assert entry["return_2"] == pytest.approx(15 / 12 - 1)
+    assert out["exits"] == []

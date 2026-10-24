@@ -3565,6 +3565,12 @@ export interface DeskPolicyReplay {
   // Every grade change under the installed grading, from the same replay as the trades.
   grades?: {date: string; grade: string; said?: boolean; at?: string}[];
   outcomes?: {entry_summary?: Record<string, number>; exit_summary?: Record<string, number>};
+  // What the rule's trades in this name earned as a share of the book: fills at the next open,
+  // costs per side, beside the benchmark held at the same weights.
+  realised?: {cost_bps: number; benchmark: string; gross: number; costs: number; net: number; benchmark_same_weights: number; excess: number;
+    sessions_held: number; mean_weight_held: number; round_trips: number; winning_trips: number; trips_beating_benchmark: number;
+    short_trips: number; short_trip_pnl: number; open_since: string | null; unpriced_sessions: string[];
+    trips: {entered: string; exited: string; sessions: number; price_return: number; excess: number; pnl: number}[]};
   latest_target: number;
 }
 

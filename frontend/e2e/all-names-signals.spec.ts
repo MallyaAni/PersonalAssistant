@@ -307,7 +307,10 @@ async function install(page: Page, baseURL: string, state: ReferenceFixture) {
             {decided: '2026-10-14', date: '2026-10-15', action: 'BUY', size: .032, target: .064, reason: 'fomc_restoration_decision_close', timing: 'decision_close'}]
           : [{decided: '2026-10-09', date: '2026-10-12', action: 'BUY', size: .05, target: .05}, {decided: '2026-10-12', date: '2026-10-13', action: 'BUY', size: .006, target: .056},
           {decided: '2026-10-13', date: '2026-10-14', action: 'BUY', size: .03, target: .086}, {decided: '2026-10-14', date: '2026-10-15', action: 'SELL', size: .086, target: 0}],
-        outcomes: {entry_summary: {count: 1, hit_rate_20: 1, mean_excess_20: .04, hit_rate_60: 0, mean_excess_60: -.02}}, latest_target: 0}} : {}), latest_holding: 2, provenance: {cost_bps: 10, basis: 'account_independent_unit_capital_targets', source_record_sha256: (state.simulationIdentityWrong ? 'c' : 'a').repeat(64),
+        outcomes: {entry_summary: {count: 1, hit_rate_20: 1, mean_excess_20: .04, hit_rate_60: 0, mean_excess_60: -.02}},
+        realised: {cost_bps: 10, benchmark: 'SPY', gross: .0126, costs: .0003, net: .0123, benchmark_same_weights: .005, excess: .0073, sessions_held: 3, mean_weight_held: .07,
+          round_trips: 1, winning_trips: 1, trips_beating_benchmark: 1, short_trips: 0, short_trip_pnl: 0, open_since: null, unpriced_sessions: [],
+          trips: [{entered: '2026-10-12', exited: '2026-10-15', sessions: 3, price_return: .2, excess: .15, pnl: .0123}]}, latest_target: 0}} : {}), latest_holding: 2, provenance: {cost_bps: 10, basis: 'account_independent_unit_capital_targets', source_record_sha256: (state.simulationIdentityWrong ? 'c' : 'a').repeat(64),
         ...(state.publicationV2 ? {config_sha256: '1'.repeat(64), verified_against_installed_strategy:state.installedHistory, strategy_identity: (state.simulationIdentityWrong ? 'c' : 'd').repeat(64),
           strategy_contract: {schema: 'strategy-history-economics-binding/1', strategy_identity: 'd'.repeat(64), history_sha256: '2'.repeat(64), audit_sha256: '3'.repeat(64), source_record_sha256: 'a'.repeat(64), config_sha256: '1'.repeat(64)}} : {})}}
     else if (path.includes('/live/read/')) json = {read: 'Buyers defended support.', lines: {short: [], medium: [], long: []}, data_at: bar, read_at: at, stale: false}
@@ -620,7 +623,9 @@ test('Charts draw the installed policy replay and never an older policy',async (
   const basis=dialog.getByLabel('BUYHIGH replay basis',{exact:true})
   await basis.locator('summary').click()
   await expect(basis).toContainText('In-sample research fixture.')
-  await expect(basis).toContainText('1 entry here · beat QQQ after 20 sessions 100% of the time, mean excess +4.0% · after 60: 0%, -2.0%.')
+  await expect(basis).toContainText('1 entry here · from the fill, beat SPY after 20 sessions 100% of the time, mean excess +4.0% · after 60: 0%, -2.0%.')
+  // Whether trading the name this way made money is on the chart, not behind the about link.
+  await expect(dialog.getByLabel('BUYHIGH replay profit and loss',{exact:true})).toHaveText('Traded by the rule, BUYHIGH made money and beat SPY: +1.23% of the book after 0.03% costs (10 bp a side), against +0.50% for SPY at the same weights. 1 round trip: 1 made money, 1 beat SPY.')
   await expect(basis).toContainText('drawn once the position has moved 2% of the book. FOMC cuts and restorations are always drawn')
   // The grade arrows are the replay's own grade changes, not another source's.
   await expect(dialog.getByLabel('BUYHIGH historical grade signals',{exact:true}).locator('li')).toHaveText([

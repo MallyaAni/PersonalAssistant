@@ -351,7 +351,19 @@ const replayOutcomeLine = (replay: DeskPolicyReplay): string => {
   if (!entry || !entry.count) return ''
   const pct = (value: number | undefined) => value === undefined ? '—' : `${(value * 100).toFixed(0)}%`
   const signed = (value: number | undefined) => value === undefined ? '—' : `${value >= 0 ? '+' : ''}${(value * 100).toFixed(1)}%`
-  return `${entry.count} entr${entry.count === 1 ? 'y' : 'ies'} here · beat QQQ after 20 sessions ${pct(entry.hit_rate_20)} of the time, mean excess ${signed(entry.mean_excess_20)} · after 60: ${pct(entry.hit_rate_60)}, ${signed(entry.mean_excess_60)}.`
+  const benchmark = replay.realised?.benchmark ?? 'the benchmark'
+  return `${entry.count} entr${entry.count === 1 ? 'y' : 'ies'} here · from the fill, beat ${benchmark} after 20 sessions ${pct(entry.hit_rate_20)} of the time, mean excess ${signed(entry.mean_excess_20)} · after 60: ${pct(entry.hit_rate_60)}, ${signed(entry.mean_excess_60)}.`
+}
+
+// Whether trading the name this way made money: the rule's P&L in it as a share of the book,
+// after costs, beside the benchmark at the same weights, and how its round trips went.
+const replayRealisedLine = (replay: DeskPolicyReplay, ticker: string): string => {
+  const r = replay.realised
+  if (!r || !r.sessions_held) return ''
+  const points = (value: number) => `${value >= 0 ? '+' : '−'}${Math.abs(value * 100).toFixed(2)}%`
+  const verdict = r.net > 0 ? (r.excess > 0 ? 'made money and beat' : 'made money but trailed') : (r.excess > 0 ? 'lost money but beat' : 'lost money and trailed')
+  const trips = r.round_trips ? ` ${r.round_trips} round trip${r.round_trips === 1 ? '' : 's'}: ${r.winning_trips} made money, ${r.trips_beating_benchmark} beat ${r.benchmark}${r.short_trips ? `; ${r.short_trips} lasted two sessions or less (${points(r.short_trip_pnl)} of the book)` : ''}.` : ''
+  return `Traded by the rule, ${ticker} ${verdict} ${r.benchmark}: ${points(r.net)} of the book after ${points(r.costs).slice(1)} costs (${r.cost_bps} bp a side), against ${points(r.benchmark_same_weights)} for ${r.benchmark} at the same weights.${trips}${r.open_since ? ` Held since ${r.open_since}.` : ''}`
 }
 
 // The chart's own marker shape, shared by every layer drawn on the candles.
@@ -1567,6 +1579,7 @@ export const TickerChart = ({
         ? `Replay · ${policyReplay.policy} · ${policyReplay.start} → ${policyReplay.through}`
         : simulation && !replayStale ? `Replay · ${simulation.policy}${simulation.provenance.model_fit_through ? ` · fit through ${simulation.provenance.model_fit_through}` : ''}`
         : `Replay · ${livePolicy ?? 'policy'} · not yet generated`}</span>
+      {policyReplay && replayRealisedLine(policyReplay, ticker) && <span className="order-last basis-full font-medium" aria-label={`${ticker} replay profit and loss`}>{replayRealisedLine(policyReplay, ticker)}</span>}
       {(policyReplay || (simulation && !replayStale)) && <details aria-label={`${ticker} replay basis`} className="inline">
         <summary className="cursor-pointer text-[#0071e3]">about</summary>
         {policyReplay ? <>
