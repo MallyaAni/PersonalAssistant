@@ -28,6 +28,13 @@ results `~/dsv41/book/out_*.json`, `final.json`.
 
 ## Results (10 bp unless noted)
 
+These figures are on the grades as first computed. A look-ahead in the share
+counts behind the valuation inputs was found and fixed the same day
+(`docs/research/pe-history-tilt-2026-10-24.md`); on corrected grades, with the
+simulator's rounding matched to the live planner, the chosen rule earns 34.9%
+a year at -28.3% (to 2022 19.0%, after 74.2%) against 31.5% at -30.0% for the
+B rule (16.4%, 68.7%), still ahead in both windows.
+
 | Rule | CAGR | Worst drawdown | Sharpe | 2015-22 | 2023-26 | Fills |
 |---|---|---|---|---|---|---|
 | Installed: enter and hold at B | 34.0% | -29.5% | 1.39 | 19.8% | 68.5% | 82,446 |

@@ -42,6 +42,8 @@ name (CEG B -> C).
 | Sizing tilt: peers, growth-adjusted | 34.8-35.3% | | | 18.7-19.2% | 74.7-76.7% | 64-65 |
 | **Sizing tilt: P/E own history, strength 0.5** | **37.4%** | **-27.1%** | **1.45** | **21.2%** | **77.4%** | 65 |
 | same at 25 bp (baseline 33.0%, 16.9% / 72.9%) | 35.2% | -27.6% | | 18.9% | 75.6% | |
+| Installed form, live rounding (baseline 34.9%, -28.3%, 19.0% / 74.2%) | 37.6% | -27.7% | 1.46 | 21.2% | 78.1% | 65 |
+| same at 25 bp (baseline 33.0%) | 34.9% | -27.6% | 1.38 | 18.8% | 74.8% | |
 
 31 rules were tried; only the P/E-history tilt led in both windows. The extra
 entries add 10-30 trades a year whose median return is about +1% with 50-57%

@@ -53,11 +53,12 @@ EXPOSURE_FLOOR = 0.5
 # simulator (`backend.market.policy_book`: the nightly's grades, fills at the
 # next open from cash on hand, whole shares, 10 bp, the FOMC cycle), tuned on
 # 2015-2022 and checked on 2023-2026 (docs/research/
-# account-simulator-rule-2026-10-24.md): admitting at A and holding while B
-# earned 39.4% a year at worst drawdown -26.9% and Sharpe 1.51 against 34.0%,
-# -29.5% and 1.39 for admitting and holding at B, ahead in both windows (25.0%
-# against 19.8% to 2022, 74.4% against 68.5% after) and at 25 bp costs; the
-# 1% minimum trade cut fills from 82,000 to 6,700 without giving up return.
+# account-simulator-rule-2026-10-24.md), on split-corrected grades: admitting
+# at A and holding while B earned 34.9% a year at worst drawdown -28.3% and
+# Sharpe 1.38 against 31.5%, -30.0% and 1.31 for admitting and holding at B,
+# ahead in both windows (19.0% against 16.4% to 2022, 74.2% against 68.7%
+# after) and at 25 bp costs; the 1% minimum trade cut fills from 81,000 to
+# 7,000 without giving up return.
 ENTRY_GRADE = 2
 HOLD_GRADE = 1
 MIN_TRADE = 0.01
@@ -66,9 +67,9 @@ MIN_TRADE = 0.01
 # its own trailing three years of readings (valuation.own_history_rank: 0 the
 # cheapest it has been, 1 the richest); no positive earnings or fewer than 250
 # readings leaves the slot unchanged. On the account simulator with the
-# split-corrected grades it earned 37.4% a year at worst drawdown -27.1%
-# against 34.8% and -27.7% without it, ahead to 2022 (21.2% against 19.1%) and
-# after (77.4% against 73.8%), at 25 bp, in 8 of 11 years and about 3.5
+# split-corrected grades it earned 37.6% a year at worst drawdown -27.7%
+# against 34.9% and -28.3% without it, ahead to 2022 (21.2% against 19.0%) and
+# after (78.1% against 74.2%), at 25 bp, in 8 of 11 years and about 3.5
 # standard deviations above shuffled and random placebos; in practice it
 # reads "earnings have grown faster than the price"
 # (docs/research/pe-history-tilt-2026-10-24.md). It sizes; it admits no name.

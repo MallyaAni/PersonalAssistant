@@ -266,26 +266,43 @@ def simulate(
                 continue
         if t < window:
             continue
+        # A held name the trailing window cannot price freezes the whole
+        # decision, as the live sizing refuses to resize a book it cannot value.
+        if ((shares > 0) & ~mask[t] & (g >= 0)).any():
+            continue
         target = _ordinary(
             rule, mask[t], g, below, shares, band[t], adj_close, t, held,
             None if tilt is None else tilt[t],
         )
+        # A held name without a grade keeps its shares (a protected holding);
+        # the rest of the book is sized on the remaining capital.
+        protected = (shares > 0) & (g < 0)
+        if protected.any():
+            target = np.where(protected, held, target * (1.0 - held[protected].sum()))
         sells, buys = {}, {}
         for j in range(N):
-            if not (np.isfinite(adj_close[t, j]) and adj_close[t, j] > 0):
+            price = adj_close[t, j]
+            if not (np.isfinite(price) and price > 0) or protected[j]:
                 continue
-            want = (
-                math.floor(target[j] * value / adj_close[t, j]) if target[j] > 0 else 0
-            )
-            diff = want - shares[j]
-            if diff == 0:
+            # The funded planner's arithmetic: the continuous share gap, tested
+            # against the minimum trade (never an exit), rounded to the nearest
+            # whole share with nothing inside half a share; a held name the
+            # grade keeps never rounds to nothing.
+            exit_all = target[j] <= 0
+            gap = (target[j] * value / price if not exit_all else 0.0) - shares[j]
+            if not exit_all and abs(gap) * price < rule.min_trade * value:
                 continue
-            if want > 0 and abs(diff) * adj_close[t, j] < rule.min_trade * value:
+            qty = 0 if abs(gap) <= 0.5 + 1e-9 else int(math.floor(abs(gap) + 0.5))
+            if exit_all:
+                qty = int(shares[j])
+            if gap < 0 and not exit_all:
+                qty = min(qty, int(shares[j]) - 1) if shares[j] >= 1 else 0
+            if qty <= 0:
                 continue
-            if diff < 0:
-                sells[j] = -diff
+            if gap < 0:
+                sells[j] = qty
             else:
-                buys[j] = diff
+                buys[j] = qty
         if sells or buys:
             pending = (dates[t], sells, buys, None, None)
     return Book(dates, tickers, equity, weights, trades, costs_paid, planned, cash_close, cash_open)

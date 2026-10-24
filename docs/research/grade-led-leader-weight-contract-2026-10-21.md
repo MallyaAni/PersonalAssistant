@@ -160,6 +160,9 @@ account's forward record is the only out-of-sample evidence that counts.
    change corrects `levels_pit.split_adjusted_shares`, which put market caps a
    split factor too low before each later split and so graded later winners
    cheap in advance; the figures of revision 5 restated on corrected grades
-   are 34.8% a year at -27.7% (to 2022 19.1%, after 73.8%) against 31.4% for
-   entering and holding at B. With the tilt: 37.4% at -27.1%, Sharpe 1.45, to
-   2022 21.2%, after 77.4%, at 25 bp 35.2%. `docs/research/pe-history-tilt-2026-10-24.md`.
+   (and on the simulator's live rounding: nearest whole share, the minimum
+   trade on the continuous gap, protected and unpriced holdings as live) are
+   34.9% a year at -28.3% (to 2022 19.0%, after 74.2%) against 31.5% at
+   -30.0% for entering and holding at B. With the tilt: 37.6% at -27.7%,
+   Sharpe 1.46, to 2022 21.2%, after 78.1%, at 25 bp 34.9% (B rule 27.5%).
+   `docs/research/pe-history-tilt-2026-10-24.md`.
