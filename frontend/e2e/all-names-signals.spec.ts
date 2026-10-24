@@ -608,13 +608,14 @@ test('Charts draw the installed policy replay and never an older policy',async (
   await expect(dialog.getByLabel('BUYHIGH strategy chart window',{exact:true})).toContainText('Replay · grade-led-learned-sizing/1 · 2016-01-04 → 2026-10-15')
   await expect(dialog).not.toContainText('previous policy')
   await expect(dialog).not.toContainText('earlier-policy')
-  // The entry, the 3% add and the exit are drawn; the 0.6% resize of a held slot is not.
-  await expect(dialog.getByLabel('BUYHIGH target chart markers',{exact:true})).toHaveText('Buy 5.0% · Buy 3.0% · Sell 8.6%')
+  // The entry, the 3% add and the exit are drawn, each named by what it did to the position;
+  // the 0.6% resize of a held slot is not.
+  await expect(dialog.getByLabel('BUYHIGH target chart markers',{exact:true})).toHaveText('Buy 5.0% · Add 3.0% → 8.6% · Sell 8.6% · exit')
   const basis=dialog.getByLabel('BUYHIGH replay basis',{exact:true})
   await basis.locator('summary').click()
   await expect(basis).toContainText('In-sample research fixture.')
   await expect(basis).toContainText('1 entry here · beat QQQ after 20 sessions 100% of the time, mean excess +4.0% · after 60: 0%, -2.0%.')
-  await expect(basis).toContainText('1 small resizes of a held slot not drawn')
+  await expect(basis).toContainText('Adds and trims under 2% of the book are not drawn')
   // The grade arrows are the replay's own grade changes, not another source's.
   await expect(dialog.getByLabel('BUYHIGH historical grade signals',{exact:true}).locator('li')).toHaveText([
     '2026-10-09 · Grade change · Recalculated grade C→A',

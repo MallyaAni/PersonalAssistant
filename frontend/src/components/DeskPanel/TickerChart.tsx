@@ -368,9 +368,16 @@ type ChartMarker = {
   text: string
   size: number
   kind?: MarkerKind
+  // For a replayed trade: whether it opened, closed or resized the position.
+  role?: MarkerRole
   sample?: MarkerSample
   policy?: string
 }
+
+type MarkerRole = 'entry' | 'exit' | 'resize'
+// Wider than this many bars on screen, the chart draws the replay's entries and exits only:
+// the near-daily adds and trims of a held slot otherwise bury them.
+const ZOOMED_OUT_BARS = 180
 
 // Label the model's actual action size separately from a profit or remaining-position target.
 const targetLabel = (target: Pick<StrategyChartTarget, 'action' | 'weight'>): string => `${target.action} ${sizePercent(target.weight)}%`
@@ -402,26 +409,47 @@ const drawnReplayTrade = (trade: DeskPolicyReplay['trades'][number]): boolean =>
   && (trade.target < DUST_WEIGHT || Math.abs(trade.target - trade.size) < DUST_WEIGHT || trade.size >= RESIZE_WEIGHT)
 
 // The installed policy's own decisions back in time: a target set at a close trades at the
-// next open, so the marker sits on that next session's candle (its first bar on 15m).
+// next open, so the marker sits on that next session's candle (its first bar on 15m). The
+// rule resizes a held slot most sessions; every trade on one candle (a week on the weekly
+// chart) nets into one marker, named by what it did to the position: Buy opens one, Sell
+// closes it (its whole size at that point), Add and Trim say the change and where the
+// position stands after it. An Add or Trim under 2% of the book is not drawn.
 const policyReplayMarkers = (replay: DeskPolicyReplay | null | undefined, bars: DeskChartBar[], timeframe: Timeframe, policy?: string): ChartMarker[] => {
-  const markers = new Map<string, ChartMarker>()
+  const groups = new Map<number, {before: number; after: number; trades: (DeskPolicyReplay['trades'][number] & {before: number})[]}>()
+  let held = 0
   for (const trade of replay?.trades ?? []) {
-    if (!drawnReplayTrade(trade)) continue
+    const before = held
+    held = Number.isFinite(trade.target) ? trade.target : held
+    if (!Number.isFinite(trade.size) || trade.size < DUST_WEIGHT) continue
     const candle = timeframe === '15m' ? bars.find(bar => bar.date === trade.date && !bar.auction && drawableCandle(bar)) : markerCandle(trade.date, bars, timeframe)
     if (!candle) continue
-    const time = barStamp(candle, timeframe)
-    const action = trade.action === 'BUY' ? 'Buy' : 'Sell'
-    const key = `replay:${time}:${action}`
-    const previous = markers.get(key)
-    const weight = (previous?.recommendations?.reduce((sum, item) => sum + item.weight, 0) ?? 0) + trade.size
-    const at = `${trade.date}T09:30:00-04:00`
-    markers.set(key, {id: `strategy:${key}`, time, position: action === 'Buy' ? 'belowBar' : 'aboveBar',
-      color: replayColor(action, 'out_of_sample'), shape: 'circle', text: targetLabel({action, weight}), size: 1, kind: 'replay', sample: 'out_of_sample', policy,
-      recommendations: [...(previous?.recommendations ?? []), {id: `policy-replay:${trade.decided}:${action}`, at, action, weight: trade.size, simulated: true,
-        evidence: {grade: replay!.rows.filter(row => row.date <= trade.decided).slice(-1)[0]?.grade, inputs_as_of: trade.decided, model_position_size: trade.target,
-          reason: `Rule target ${(trade.target * 100).toFixed(1)}% set at the ${trade.decided} close; ${action.toLowerCase()} at the ${trade.date} open.`} as DeskStrategyDecision['evidence']}]})
+    const time = Number(barStamp(candle, timeframe))
+    const group = groups.get(time) ?? {before, after: before, trades: []}
+    group.after = trade.target
+    group.trades.push({...trade, before})
+    groups.set(time, group)
   }
-  return [...markers.values()]
+  const markers: ChartMarker[] = []
+  for (const [time, group] of groups) {
+    const net = group.after - group.before
+    const role: MarkerRole = group.before < DUST_WEIGHT && group.after >= DUST_WEIGHT ? 'entry'
+      : group.after < DUST_WEIGHT && group.before >= DUST_WEIGHT ? 'exit' : 'resize'
+    if (role === 'resize' && Math.abs(net) < RESIZE_WEIGHT) continue
+    const up = role === 'entry' || (role === 'resize' && net > 0)
+    const action = up ? 'Buy' : 'Sell'
+    const text = role === 'entry' ? `Buy ${sizePercent(group.after)}%`
+      : role === 'exit' ? `Sell ${sizePercent(group.before)}% · exit`
+      : `${up ? 'Add' : 'Trim'} ${sizePercent(Math.abs(net))}% → ${sizePercent(group.after)}%`
+    markers.push({id: `strategy:replay:${time}`, time: time as UTCTimestamp, position: up ? 'belowBar' : 'aboveBar',
+      color: replayColor(action, 'out_of_sample'), shape: 'circle', text, size: 1, kind: 'replay', role, sample: 'out_of_sample', policy,
+      recommendations: group.trades.map(trade => {
+        const side = trade.action === 'BUY' ? 'Buy' : 'Sell'
+        return {id: `policy-replay:${trade.decided}:${side}`, at: `${trade.date}T09:30:00-04:00`, action: side, weight: trade.size, simulated: true,
+          evidence: {grade: (replay!.grades ?? replay!.rows).filter(row => row.date <= trade.decided).slice(-1)[0]?.grade, inputs_as_of: trade.decided, model_position_size: trade.target,
+            reason: `Rule target ${(trade.target * 100).toFixed(1)}% (from ${(trade.before * 100).toFixed(1)}%) set at the ${trade.decided} close; ${side.toLowerCase()} at the ${trade.date} open.`} as DeskStrategyDecision['evidence']}
+      })})
+  }
+  return markers.sort((a, b) => Number(a.time) - Number(b.time))
 }
 
 const strategyTargetMarkers = (simulation: DeskStrategyStock | null | undefined, current: StrategyChartTarget | null | undefined, bars: DeskChartBar[], timeframe: Timeframe, recorded: DeskRecordedStrategyReference[] = [], policy?: string): ChartMarker[] => {
@@ -1308,6 +1336,9 @@ export const TickerChart = ({
     const paint = () => {
       // Markers on one candle stack, text and all, so their labels never collide; only
       // labels from different candles compete for a stretch of one side.
+      const visible = chart.timeScale().getVisibleLogicalRange()
+      const zoomedOut = !!visible && visible.to - visible.from > ZOOMED_OUT_BARS
+      const shown = zoomedOut ? markers.filter(marker => marker.role !== 'resize') : markers
       const occupied: {left: number; right: number; position: string; time?: unknown}[] = []
       const labelled = new Set<ChartMarker>()
       const edges: typeof edgeLabels = []
@@ -1341,8 +1372,9 @@ export const TickerChart = ({
       }
       // Retain the selected action label first, then trades and recommendations: when a
       // buy or sell shares a candle with a grade change, the size is what a person acts on.
-      const priority = (marker: ChartMarker) => marker.recommendations?.some(item => selected.has(item.id)) ? 0 : marker.recommendations ? 1 : 2
-      for (const marker of [...markers].sort((a,b) => priority(a)-priority(b) || Number(b.time)-Number(a.time))) {
+      const priority = (marker: ChartMarker) => marker.recommendations?.some(item => selected.has(item.id)) ? 0
+        : marker.role === 'entry' || marker.role === 'exit' ? 1 : marker.recommendations ? 2 : 3
+      for (const marker of [...shown].sort((a,b) => priority(a)-priority(b) || Number(b.time)-Number(a.time))) {
         const x = chart.timeScale().timeToCoordinate(marker.time)
         if (x == null || x < 0 || x > plotWidth) continue
         const width = textWidth(marker.text)
@@ -1362,10 +1394,20 @@ export const TickerChart = ({
           top:Math.max(4,Math.min(y+(marker.position==='aboveBar' ? -30 : 12),element.clientHeight-44)),
           color:marker.color,kind:marker.kind,recommendations:marker.recommendations})
       }
-      plugin.setMarkers(markers.map(marker => labelled.has(marker) ? marker : {...marker,text:''}))
+      plugin.setMarkers(shown.map(marker => labelled.has(marker) ? marker : {...marker,text:''}))
       setEdgeLabels(previous=>JSON.stringify(previous)===JSON.stringify(edges) ? previous : edges)
       setMarkerOverlays(previous=>JSON.stringify(previous)===JSON.stringify(overlay) ? previous : overlay)
-      element.dataset.markerCount = String(markers.length)
+      element.dataset.markerCount = String(shown.length)
+      // What this paint drew and labelled, for an audit to compare with the replay: every
+      // shown marker as time|role|text, the labelled times, and the visible time range.
+      element.dataset.markerSet = JSON.stringify(shown.map(marker => `${marker.time}|${marker.role ?? marker.kind ?? 'grade'}|${marker.text}`))
+      element.dataset.markerLabelled = JSON.stringify([...new Set([...[...labelled].map(marker => Number(marker.time)), ...edges.map(label => {
+        const marker = shown.find(item => (item.id ?? `${item.time}:${item.position}`) === label.key)
+        return marker ? Number(marker.time) : null
+      }).filter(time => time != null)])])
+      const range = chart.timeScale().getVisibleRange()
+      element.dataset.visibleRange = range ? `${Number(range.from)}-${Number(range.to)}` : ''
+      element.dataset.zoomedOut = String(zoomedOut)
       element.dataset.markerLabelCount = String(labelled.size+edges.length+overlay.filter(marker => marker.text).length)
       element.dataset.markerLabelSpans = JSON.stringify(occupied)
       element.dataset.overlayMarkerCount = String(overlay.length)
@@ -1491,7 +1533,7 @@ export const TickerChart = ({
         {policyReplay ? <>
           <span className="block">{policyReplay.note}</span>
           {replayOutcomeLine(policyReplay) && <span className="block">{replayOutcomeLine(policyReplay)}</span>}
-          {policyReplay.trades.filter(trade => !drawnReplayTrade(trade)).length > 0 && <span className="block">{policyReplay.trades.filter(trade => !drawnReplayTrade(trade)).length} small resizes of a held slot not drawn; entries, exits and reallocations of 2% or more are.</span>}
+          <span className="block">Buy opens a position and Sell closes it; Add and Trim show the change and the position after it. Adds and trims under 2% of the book are not drawn, and zoomed out past {ZOOMED_OUT_BARS} bars only entries and exits are.</span>
         </> : <>
           <span className="block">Historical replay of {simulation!.policy} · {simulation!.start} → {simulation!.through} · models were not refitted at each past date · not out-of-sample validation or advice published at that time.</span>
           {typeof simulation!.in_sample_decisions === 'number' && typeof simulation!.out_of_sample_decisions === 'number'
