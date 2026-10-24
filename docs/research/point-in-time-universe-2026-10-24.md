@@ -24,7 +24,7 @@ the rule is flattered.
 | | installed (25 bp) | 17.9% | -35.4% | 0.87 | 8.7% | 39.1% |
 | | old B rule | 19.0% | -33.9% | 0.93 | 11.5% | 35.7% |
 | | equal weight, no costs | 22.6% | -34.7% | 0.96 | 17.6% | 33.4% |
-| S&P 500 IT + Communication | installed (10 bp) | 19.6% | -35.7% | 0.96 | 9.6% | 42.6% |
+| S&P 500 IT + Communication | installed (10 bp) | 19.5% | -35.7% | 0.96 | 9.6% | 42.6% |
 | | equal weight, no costs | 19.9% | -34.4% | 0.93 | 15.2% | 30.2% |
 | SPY | | 13.8% | -33.7% | 0.82 | 10.2% | 21.3% |
 | Today's book (hindsight) | installed | 37.6% | -27.7% | 1.46 | 21.2% | 78.1% |
@@ -42,3 +42,11 @@ the rule is flattered.
   on every universe, so the install stands; but the grading is the weak part.
   The work that would move the system is a better selection signal, measured on
   this universe, not on the book.
+
+Correction (same day): the first run froze the whole book when a held name
+left the research universe (PSKY from 2026-08-11), because the simulator
+treated a non-member like an unpriceable holding. A name leaving the universe
+is now sold at the next open; only a held name the price window cannot value
+freezes the night. Figures above are from the corrected run (IT+Comm 19.5%
+instead of 19.6%; the old B rule on the whole index 13.3% at -25.6% instead
+of 13.5% at -35.6%); the readings are unchanged.

@@ -116,6 +116,10 @@ def simulate(
     with np.errstate(invalid="ignore", divide="ignore"):
         opens = open_ * adj_close / close
     mask = sizable(adj_close, tickers, benchmark)
+    # The names the trailing window can price: a held name outside it
+    # freezes the night, as live; a name merely outside a research
+    # universe is sold, not frozen.
+    priceable = mask.copy()
     if eligible is not None:
         # A research universe narrower than the desk (an index's dated
         # membership): a name outside it on a session is not sized there.
@@ -273,7 +277,7 @@ def simulate(
             continue
         # A held name the trailing window cannot price freezes the whole
         # decision, as the live sizing refuses to resize a book it cannot value.
-        if ((shares > 0) & ~mask[t] & (g >= 0)).any():
+        if ((shares > 0) & ~priceable[t] & (g >= 0)).any():
             continue
         target = _ordinary(
             rule, mask[t], g, below, shares, band[t], adj_close, t, held,

@@ -173,3 +173,16 @@ def test_eligible_mask_excludes_names():
     book = _run(grades, eligible=eligible)
     assert not [t for t in book.trades if t["ticker"] == "YYY"]
     assert [t for t in book.trades if t["ticker"] == "XXX"]
+
+
+# A held name that leaves the research universe is sold at the next open; it
+# does not freeze the rest of the book.
+def test_leaving_the_universe_sells_without_freezing():
+    grades = np.full((160, len(TICKERS)), 2, dtype=int)
+    grades[:, 3] = 0
+    eligible = np.ones((160, len(TICKERS)), dtype=bool)
+    eligible[120:, 0] = False
+    book = _run(grades, eligible=eligible, rule=pb.Rule(fomc=False, min_trade=0))
+    assert (book.weights[122:, 0] == 0).all()
+    later = [t for t in book.trades if t["decided"] > book.dates[121] and t["ticker"] != "XXX"]
+    assert later
