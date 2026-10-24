@@ -162,3 +162,14 @@ def test_tonights_plan_is_reported():
     assert book.planned[3] == 0 and book.planned[:3].sum() == pytest.approx(
         book.planned.sum()
     )
+
+
+# A research universe narrower than the desk: a name outside it is never sized.
+def test_eligible_mask_excludes_names():
+    grades = np.full((160, len(TICKERS)), 2, dtype=int)
+    grades[:, 3] = 0
+    eligible = np.ones((160, len(TICKERS)), dtype=bool)
+    eligible[:, 1] = False
+    book = _run(grades, eligible=eligible)
+    assert not [t for t in book.trades if t["ticker"] == "YYY"]
+    assert [t for t in book.trades if t["ticker"] == "XXX"]

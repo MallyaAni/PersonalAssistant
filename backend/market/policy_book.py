@@ -108,6 +108,7 @@ def simulate(
     capital: float = 100_000.0,
     start: int = 0,
     tilt: np.ndarray | None = None,
+    eligible: np.ndarray | None = None,
 ) -> Book:
     dates = [str(d)[:10] for d in dates]
     tickers = list(tickers)
@@ -115,6 +116,10 @@ def simulate(
     with np.errstate(invalid="ignore", divide="ignore"):
         opens = open_ * adj_close / close
     mask = sizable(adj_close, tickers, benchmark)
+    if eligible is not None:
+        # A research universe narrower than the desk (an index's dated
+        # membership): a name outside it on a session is not sized there.
+        mask &= np.asarray(eligible, dtype=bool)
     factor = (
         event_risk.live_path(_Shim(dates, tickers, adj_close, benchmark))
         if rule.fomc
