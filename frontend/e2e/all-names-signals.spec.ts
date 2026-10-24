@@ -2,7 +2,7 @@ import {expect, test, type Page} from '@playwright/test'
 
 const names = ['BUYLOW', 'BUYHIGH', 'SELLLOW', 'SELLHIGH', 'WAIT', 'MISSING']
 const session = '2026-10-13'
-type Fixture = {phase: string; paper: boolean; lost: boolean; expired: boolean; quoteMissing: boolean; liveReads: number; diagnostics: string[]; recordedMode?: 'original' | 'foreign' | 'bytes' | 'late' | 'paged'; recordedReads?: number; originalMode?: 'original' | 'foreign' | 'size'; originalReads?: number; originalDelay?: number; denseMarkers?: boolean; installedHistory?: boolean; numerical?: 'execute' | 'wait'; numericalForeign?: boolean; numericalExpired?: boolean; publicationV2?: boolean; noSellSignals?: boolean; simulationPolicy?: string; signalUntil?: string; allocationUntil?: string; allocationWrong?: boolean; allocationMissing?: boolean; regularFallback?: boolean; publishedPlan?: boolean; independentSizing?: boolean; independentSignalWrong?: boolean; targetWeight?: number; simulationIdentityWrong?: boolean; entryAt?: number; formingSignal?: boolean; chartFrames?: string[]; zoomHistory?: boolean; chartSessions?: number[]; currentSessionBars?: boolean; openPlan?: boolean; policyReplay?: boolean}
+type Fixture = {phase: string; paper: boolean; lost: boolean; expired: boolean; quoteMissing: boolean; liveReads: number; diagnostics: string[]; recordedMode?: 'original' | 'foreign' | 'bytes' | 'late' | 'paged'; recordedReads?: number; originalMode?: 'original' | 'foreign' | 'size'; originalReads?: number; originalDelay?: number; denseMarkers?: boolean; installedHistory?: boolean; numerical?: 'execute' | 'wait'; numericalForeign?: boolean; numericalExpired?: boolean; publicationV2?: boolean; noSellSignals?: boolean; simulationPolicy?: string; signalUntil?: string; allocationUntil?: string; allocationWrong?: boolean; allocationMissing?: boolean; regularFallback?: boolean; publishedPlan?: boolean; independentSizing?: boolean; independentSignalWrong?: boolean; targetWeight?: number; simulationIdentityWrong?: boolean; entryAt?: number; formingSignal?: boolean; chartFrames?: string[]; zoomHistory?: boolean; chartSessions?: number[]; currentSessionBars?: boolean; openPlan?: boolean; policyReplay?: boolean; policyReplayFomc?: boolean}
 
 type ReferenceFixture = Fixture & {referenceMode?: 'trim' | 'exit' | 'buy'; referenceUnknown?: boolean; referenceObserved?: boolean; referenceResolved?: boolean; referenceBookInvalid?: boolean; numericalQuoteUntil?: string; persistedPosition?: number; persistedInvalid?: 'unavailable' | 'foreign' | 'book'; assessmentMissing?: boolean}
 
@@ -300,7 +300,12 @@ async function install(page: Page, baseURL: string, state: ReferenceFixture) {
         // Every grade change under the installed grading, each effective at the next open.
         grades: [{date: '2026-10-08', grade: 'C', said: false, at: '2026-10-09T09:30:00-04:00'}, {date: '2026-10-09', grade: 'A', said: false, at: '2026-10-12T09:30:00-04:00'},
           {date: '2026-10-14', grade: 'B', said: false, at: '2026-10-15T09:30:00-04:00'}],
-        trades: [{decided: '2026-10-09', date: '2026-10-12', action: 'BUY', size: .05, target: .05}, {decided: '2026-10-12', date: '2026-10-13', action: 'BUY', size: .006, target: .056},
+        trades: state.policyReplayFomc
+          // An undrawn 1.4% add, then the FOMC rule halves the real 6.4% and buys it back at the decision close.
+          ? [{decided: '2026-10-09', date: '2026-10-12', action: 'BUY', size: .05, target: .05}, {decided: '2026-10-12', date: '2026-10-13', action: 'BUY', size: .014, target: .064},
+            {decided: '2026-10-13', date: '2026-10-14', action: 'SELL', size: .032, target: .032, reason: 'fomc_reduction'},
+            {decided: '2026-10-14', date: '2026-10-15', action: 'BUY', size: .032, target: .064, reason: 'fomc_restoration_decision_close', timing: 'decision_close'}]
+          : [{decided: '2026-10-09', date: '2026-10-12', action: 'BUY', size: .05, target: .05}, {decided: '2026-10-12', date: '2026-10-13', action: 'BUY', size: .006, target: .056},
           {decided: '2026-10-13', date: '2026-10-14', action: 'BUY', size: .03, target: .086}, {decided: '2026-10-14', date: '2026-10-15', action: 'SELL', size: .086, target: 0}],
         outcomes: {entry_summary: {count: 1, hit_rate_20: 1, mean_excess_20: .04, hit_rate_60: 0, mean_excess_60: -.02}}, latest_target: 0}} : {}), latest_holding: 2, provenance: {cost_bps: 10, basis: 'account_independent_unit_capital_targets', source_record_sha256: (state.simulationIdentityWrong ? 'c' : 'a').repeat(64),
         ...(state.publicationV2 ? {config_sha256: '1'.repeat(64), verified_against_installed_strategy:state.installedHistory, strategy_identity: (state.simulationIdentityWrong ? 'c' : 'd').repeat(64),
@@ -622,6 +627,15 @@ test('Charts draw the installed policy replay and never an older policy',async (
     '2026-10-09 · Grade change · Recalculated grade C→A',
     '2026-10-14 · Grade change · Recalculated grade A→B',
   ])
+  // An FOMC cut states the half of the real position it sold, even after undrawn adds, and the
+  // restoration says it filled at the decision close.
+  state.policyReplayFomc = true
+  await dialog.getByRole('button',{name:'Close',exact:true}).first().click()
+  await page.getByRole('button',{name:'BUYHIGH',exact:true}).click()
+  await expect(dialog.getByLabel('BUYHIGH target chart markers',{exact:true})).toHaveText('Buy 5.0% · FOMC cut 3.2% → 3.2% · FOMC restore 3.2% → 6.4%')
+  state.policyReplayFomc = false
+  await dialog.getByRole('button',{name:'Close',exact:true}).first().click()
+  await page.getByRole('button',{name:'BUYHIGH',exact:true}).click()
   // One weekly candle holds the entry, the add and the exit; each stays its own marker
   // instead of netting to nothing.
   await dialog.getByRole('group',{name:'Chart timeframe',exact:true}).getByRole('button',{name:'W',exact:true}).click()

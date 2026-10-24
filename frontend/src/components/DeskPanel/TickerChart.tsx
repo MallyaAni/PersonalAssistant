@@ -426,7 +426,7 @@ const replayCandle = (trade: ReplayTrade, bars: DeskChartBar[], timeframe: Timef
   return session[0]
 }
 const policyReplayMarkers = (replay: DeskPolicyReplay | null | undefined, bars: DeskChartBar[], timeframe: Timeframe, policy?: string): ChartMarker[] => {
-  type Group = {time: number; role: MarkerRole; before: number; after: number; trades: (ReplayTrade & {before: number})[]}
+  type Group = {time: number; role: MarkerRole; before: number; after: number; cut?: boolean; trades: (ReplayTrade & {before: number})[]}
   const groups: Group[] = []
   let held = 0
   let shown = 0
@@ -459,14 +459,17 @@ const policyReplayMarkers = (replay: DeskPolicyReplay | null | undefined, bars: 
       }
       if (role === 'resize' && Math.abs(after - shown) < RESIZE_WEIGHT) continue
     }
-    groups.push({time, role, before: role === 'exit' ? before : shown, after, trades: pending})
+    // An exit and an FOMC step state the real position before them (the FOMC rule cuts half
+    // of what is held, not of what the last marker showed); an Add or Trim chains from that marker.
+    groups.push({time, role, before: role === 'exit' || role === 'fomc' ? before : shown, after, trades: pending,
+      ...(role === 'fomc' ? {cut: trade.reason === 'fomc_reduction'} : {})})
     pending = []
     shown = after
   }
   const markers: ChartMarker[] = []
   groups.forEach((group, index) => {
     const net = group.after - group.before
-    const up = group.role === 'entry' || (group.role !== 'exit' && net > 0)
+    const up = group.role === 'entry' || (group.role === 'fomc' ? !group.cut : group.role !== 'exit' && net > 0)
     const action = up ? 'Buy' : 'Sell'
     const change = `${sizePercent(Math.abs(net))}% → ${sizePercent(group.after)}%`
     const text = group.role === 'entry' ? `Buy ${sizePercent(group.after)}%`
@@ -1578,7 +1581,7 @@ export const TickerChart = ({
       </details>}
     </div>
     {/* A name the grades reached but the replay never sized is the most puzzling chart on the desk: say so instead of showing arrows with no circles. */}
-    {strategy && policyReplay && !policyReplay.trades.some(drawnReplayTrade) && <p aria-label={`${ticker} replay without trades`} className="mb-2 text-[11px] text-[#6e6e73]">
+    {strategy && policyReplay && !policyReplay.trades.some(trade => trade.target > 0) && <p aria-label={`${ticker} replay without trades`} className="mb-2 text-[11px] text-[#6e6e73]">
       {(policyReplay.grades ?? policyReplay.rows).some(row => row.grade === 'A' || row.grade === 'A+')
         ? `The rule never held ${ticker} in this window: the sessions it graded A or A+ never gave it a slot.`
         : `The rule never held ${ticker}: it never graded A or A+ in this window.`}
@@ -1848,7 +1851,7 @@ export const TickerChart = ({
                 <li key={`${fill.date}-${fill.side}-${fill.qty}-${index}`}>{sessionLabel(fill.date, currentYear)}{fill.filled_at ? ` · ${newYorkClock(Date.parse(fill.filled_at) / 1000, false)} ET` : ''} · {tradeText(fill.side, fill.qty, fill.price)}{isRedeploy(fill) ? ' · idle cash put to work' : ''}</li>
               ))}
             </ul>}
-            {showDecisions && !replayHidden && policyReplay && (!policyReplay.trades.some(drawnReplayTrade)
+            {showDecisions && !replayHidden && policyReplay && (!policyReplay.trades.some(trade => trade.target > 0)
               ? <p className="mt-1">The installed rule never traded {ticker} in its replay.</p>
               : <ul className="mt-1" aria-label={`${ticker} strategy signals`}>
                 {policyReplay.trades.filter(drawnReplayTrade).slice(-12).reverse().map(trade => {
