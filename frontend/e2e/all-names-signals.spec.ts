@@ -608,19 +608,24 @@ test('Charts draw the installed policy replay and never an older policy',async (
   await expect(dialog.getByLabel('BUYHIGH strategy chart window',{exact:true})).toContainText('Replay · grade-led-learned-sizing/1 · 2016-01-04 → 2026-10-15')
   await expect(dialog).not.toContainText('previous policy')
   await expect(dialog).not.toContainText('earlier-policy')
-  // The entry, the 3% add and the exit are drawn, each named by what it did to the position;
-  // the 0.6% resize of a held slot is not.
-  await expect(dialog.getByLabel('BUYHIGH target chart markers',{exact:true})).toHaveText('Buy 5.0% · Add 3.0% → 8.6% · Sell 8.6% · exit')
+  // The entry, the add and the exit are drawn, each named by what it did to the position; the
+  // 0.6% resize of a held slot is not drawn on its own, so the add counts from the last marker
+  // (5.0% to 8.6%) and the sizes read from one marker to the next add up.
+  await expect(dialog.getByLabel('BUYHIGH target chart markers',{exact:true})).toHaveText('Buy 5.0% · Add 3.6% → 8.6% · Sell 8.6% · exit')
   const basis=dialog.getByLabel('BUYHIGH replay basis',{exact:true})
   await basis.locator('summary').click()
   await expect(basis).toContainText('In-sample research fixture.')
   await expect(basis).toContainText('1 entry here · beat QQQ after 20 sessions 100% of the time, mean excess +4.0% · after 60: 0%, -2.0%.')
-  await expect(basis).toContainText('Adds and trims under 2% of the book are not drawn')
+  await expect(basis).toContainText('drawn once the position has moved 2% of the book. FOMC cuts and restorations are always drawn')
   // The grade arrows are the replay's own grade changes, not another source's.
   await expect(dialog.getByLabel('BUYHIGH historical grade signals',{exact:true}).locator('li')).toHaveText([
     '2026-10-09 · Grade change · Recalculated grade C→A',
     '2026-10-14 · Grade change · Recalculated grade A→B',
   ])
+  // One weekly candle holds the entry, the add and the exit; each stays its own marker
+  // instead of netting to nothing.
+  await dialog.getByRole('group',{name:'Chart timeframe',exact:true}).getByRole('button',{name:'W',exact:true}).click()
+  await expect(dialog.getByLabel('BUYHIGH target chart markers',{exact:true})).toHaveText('Buy 5.0% · Add 3.6% → 8.6% · Sell 8.6% · exit')
   expect(state.diagnostics).toEqual([])
 })
 

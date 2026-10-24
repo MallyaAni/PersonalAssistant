@@ -3560,7 +3560,8 @@ export interface DeskPolicyReplay {
   note: string;
   audit?: {entry_summary?: Record<string, number>; exit_summary?: Record<string, number>; by_year?: Record<string, Record<string, number>>};
   rows: {date: string; weight: number; grade: string}[];
-  trades: {decided: string; date: string; action: 'BUY' | 'SELL'; size: number; target: number}[];
+  // `reason` names an FOMC-rule step; `timing` 'decision_close' fills at the decision session's 3:45 PM bar.
+  trades: {decided: string; date: string; action: 'BUY' | 'SELL'; size: number; target: number; reason?: string; timing?: 'decision_close'}[];
   // Every grade change under the installed grading, from the same replay as the trades.
   grades?: {date: string; grade: string; said?: boolean; at?: string}[];
   outcomes?: {entry_summary?: Record<string, number>; exit_summary?: Record<string, number>};

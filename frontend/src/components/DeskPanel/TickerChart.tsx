@@ -374,7 +374,7 @@ type ChartMarker = {
   policy?: string
 }
 
-type MarkerRole = 'entry' | 'exit' | 'resize'
+type MarkerRole = 'entry' | 'exit' | 'resize' | 'fomc'
 // Wider than this many bars on screen, the chart draws the replay's entries and exits only:
 // the near-daily adds and trims of a held slot otherwise bury them.
 const ZOOMED_OUT_BARS = 180
@@ -409,47 +409,83 @@ const drawnReplayTrade = (trade: DeskPolicyReplay['trades'][number]): boolean =>
   && (trade.target < DUST_WEIGHT || Math.abs(trade.target - trade.size) < DUST_WEIGHT || trade.size >= RESIZE_WEIGHT)
 
 // The installed policy's own decisions back in time: a target set at a close trades at the
-// next open, so the marker sits on that next session's candle (its first bar on 15m). The
-// rule resizes a held slot most sessions; every trade on one candle (a week on the weekly
-// chart) nets into one marker, named by what it did to the position: Buy opens one, Sell
-// closes it (its whole size at that point), Add and Trim say the change and where the
-// position stands after it. An Add or Trim under 2% of the book is not drawn.
+// next open, so the marker sits on that next session's candle (its first bar on 15m; an FOMC
+// restoration timed for the decision close sits on that session's 3:45 PM bar). The position
+// is walked trade by trade. Every entry and every exit is its own marker, even when one weekly
+// candle holds several. Every FOMC-rule cut and restoration is drawn and says so. Any other
+// resize is drawn once the position has moved RESIZE_WEIGHT from the size the last marker
+// showed, so the sizes read from one marker to the next always add up; resizes on one candle
+// merge into one Add or Trim. Buy opens a position, Sell closes it (its whole size at that
+// point), Add and Trim say the change since the last marker and where the position stands.
+type ReplayTrade = DeskPolicyReplay['trades'][number]
+const FOMC_REASON = /^fomc_/
+const replayCandle = (trade: ReplayTrade, bars: DeskChartBar[], timeframe: Timeframe) => {
+  if (timeframe !== '15m') return markerCandle(trade.date, bars, timeframe)
+  const session = bars.filter(bar => bar.date === trade.date && !bar.auction && drawableCandle(bar))
+  if (trade.timing === 'decision_close') return session.find(bar => bar.time && /T15:45:00/.test(bar.time)) ?? session[session.length - 1]
+  return session[0]
+}
 const policyReplayMarkers = (replay: DeskPolicyReplay | null | undefined, bars: DeskChartBar[], timeframe: Timeframe, policy?: string): ChartMarker[] => {
-  const groups = new Map<number, {before: number; after: number; trades: (DeskPolicyReplay['trades'][number] & {before: number})[]}>()
+  type Group = {time: number; role: MarkerRole; before: number; after: number; trades: (ReplayTrade & {before: number})[]}
+  const groups: Group[] = []
   let held = 0
+  let shown = 0
+  let pending: (ReplayTrade & {before: number})[] = []
   for (const trade of replay?.trades ?? []) {
     const before = held
-    held = Number.isFinite(trade.target) ? trade.target : held
-    if (!Number.isFinite(trade.size) || trade.size < DUST_WEIGHT) continue
-    const candle = timeframe === '15m' ? bars.find(bar => bar.date === trade.date && !bar.auction && drawableCandle(bar)) : markerCandle(trade.date, bars, timeframe)
-    if (!candle) continue
+    const after = Number.isFinite(trade.target) ? Math.max(0, trade.target) : held
+    held = after
+    const step = {...trade, before}
+    const candle = replayCandle(trade, bars, timeframe)
+    if (!candle) {
+      // Outside the drawn bars: the next marker's change is measured from here.
+      shown = after
+      pending = []
+      continue
+    }
+    pending.push(step)
     const time = Number(barStamp(candle, timeframe))
-    const group = groups.get(time) ?? {before, after: before, trades: []}
-    group.after = trade.target
-    group.trades.push({...trade, before})
-    groups.set(time, group)
+    const role: MarkerRole = before <= 0 && after > 0 ? 'entry' : after <= 0 && before > 0 ? 'exit'
+      : FOMC_REASON.test(trade.reason ?? '') ? 'fomc' : 'resize'
+    const last = groups[groups.length - 1]
+    if (role === 'resize' || role === 'fomc') {
+      // Resizes on the candle the last marker sits on join it, so a candle has one Add or Trim.
+      if (last && last.time === time && last.role === role) {
+        last.after = after
+        last.trades.push(...pending)
+        pending = []
+        shown = after
+        continue
+      }
+      if (role === 'resize' && Math.abs(after - shown) < RESIZE_WEIGHT) continue
+    }
+    groups.push({time, role, before: role === 'exit' ? before : shown, after, trades: pending})
+    pending = []
+    shown = after
   }
   const markers: ChartMarker[] = []
-  for (const [time, group] of groups) {
+  groups.forEach((group, index) => {
     const net = group.after - group.before
-    const role: MarkerRole = group.before < DUST_WEIGHT && group.after >= DUST_WEIGHT ? 'entry'
-      : group.after < DUST_WEIGHT && group.before >= DUST_WEIGHT ? 'exit' : 'resize'
-    if (role === 'resize' && Math.abs(net) < RESIZE_WEIGHT) continue
-    const up = role === 'entry' || (role === 'resize' && net > 0)
+    const up = group.role === 'entry' || (group.role !== 'exit' && net > 0)
     const action = up ? 'Buy' : 'Sell'
-    const text = role === 'entry' ? `Buy ${sizePercent(group.after)}%`
-      : role === 'exit' ? `Sell ${sizePercent(group.before)}% · exit`
-      : `${up ? 'Add' : 'Trim'} ${sizePercent(Math.abs(net))}% → ${sizePercent(group.after)}%`
-    markers.push({id: `strategy:replay:${time}`, time: time as UTCTimestamp, position: up ? 'belowBar' : 'aboveBar',
-      color: replayColor(action, 'out_of_sample'), shape: 'circle', text, size: 1, kind: 'replay', role, sample: 'out_of_sample', policy,
+    const change = `${sizePercent(Math.abs(net))}% → ${sizePercent(group.after)}%`
+    const text = group.role === 'entry' ? `Buy ${sizePercent(group.after)}%`
+      : group.role === 'exit' ? `Sell ${sizePercent(group.before)}% · exit`
+      : group.role === 'fomc' ? `FOMC ${up ? 'restore' : 'cut'} ${change}`
+      : `${up ? 'Add' : 'Trim'} ${change}`
+    markers.push({id: `strategy:replay:${group.time}:${index}`, time: group.time as UTCTimestamp, position: up ? 'belowBar' : 'aboveBar',
+      color: replayColor(action, 'out_of_sample'), shape: 'circle', text, size: 1, kind: 'replay', role: group.role, sample: 'out_of_sample', policy,
       recommendations: group.trades.map(trade => {
         const side = trade.action === 'BUY' ? 'Buy' : 'Sell'
-        return {id: `policy-replay:${trade.decided}:${side}`, at: `${trade.date}T09:30:00-04:00`, action: side, weight: trade.size, simulated: true,
+        const atClose = trade.timing === 'decision_close'
+        const why = trade.reason === 'fomc_reduction' ? ' (FOMC rule: half the position cut before the decision)'
+          : FOMC_REASON.test(trade.reason ?? '') ? ' (FOMC rule: position restored after the cut)' : ''
+        return {id: `policy-replay:${trade.decided}:${trade.date}:${side}`, at: `${trade.date}T${atClose ? '15:45' : '09:30'}:00-04:00`, action: side, weight: trade.size, simulated: true,
           evidence: {grade: (replay!.grades ?? replay!.rows).filter(row => row.date <= trade.decided).slice(-1)[0]?.grade, inputs_as_of: trade.decided, model_position_size: trade.target,
-            reason: `Rule target ${(trade.target * 100).toFixed(1)}% (from ${(trade.before * 100).toFixed(1)}%) set at the ${trade.decided} close; ${side.toLowerCase()} at the ${trade.date} open.`} as DeskStrategyDecision['evidence']}
+            reason: `Rule target ${(trade.target * 100).toFixed(1)}% (from ${(trade.before * 100).toFixed(1)}%) set at the ${trade.decided} close; ${side.toLowerCase()} at the ${trade.date} ${atClose ? 'close (3:45 PM)' : 'open'}${why}.`} as DeskStrategyDecision['evidence']}
       })})
-  }
-  return markers.sort((a, b) => Number(a.time) - Number(b.time))
+  })
+  return markers
 }
 
 const strategyTargetMarkers = (simulation: DeskStrategyStock | null | undefined, current: StrategyChartTarget | null | undefined, bars: DeskChartBar[], timeframe: Timeframe, recorded: DeskRecordedStrategyReference[] = [], policy?: string): ChartMarker[] => {
@@ -1418,7 +1454,7 @@ export const TickerChart = ({
     const observer = new ResizeObserver(paint)
     observer.observe(element)
     return () => {observer.disconnect();chart.timeScale().unsubscribeVisibleLogicalRangeChange(paint)}
-  }, [data, merged, timeframe, fullHistory, showSignals, showRecommendations, showDecisions, showFills, showPaperFills, actionMarkers, changes, decisions, fillMarks, timedDecisions, timedFills, personalHistory, strategy, targetMarkers, replayMarkers, policyReplay, currentMarker, currentCall, replayHidden, selectedRecommendations])
+  }, [data, merged, timeframe, fullHistory, showSignals, showRecommendations, showDecisions, showFills, showPaperFills, actionMarkers, changes, decisions, fillMarks, timedDecisions, timedFills, personalHistory, strategy, targetMarkers, replayMarkers, policyReplay, currentMarker, currentCall, replayHidden, selectedRecommendations, rangeReset, userId, ticker, requestedSessions])
 
   // Open the original evidence behind a clicked marker or its corresponding candle.
   useEffect(() => {
@@ -1533,7 +1569,7 @@ export const TickerChart = ({
         {policyReplay ? <>
           <span className="block">{policyReplay.note}</span>
           {replayOutcomeLine(policyReplay) && <span className="block">{replayOutcomeLine(policyReplay)}</span>}
-          <span className="block">Buy opens a position and Sell closes it; Add and Trim show the change and the position after it. Adds and trims under 2% of the book are not drawn, and zoomed out past {ZOOMED_OUT_BARS} bars only entries and exits are.</span>
+          <span className="block">Buy opens a position and Sell closes it; Add and Trim show the change since the last marker and the position after it, drawn once the position has moved 2% of the book. FOMC cuts and restorations are always drawn. Zoomed out past {ZOOMED_OUT_BARS} bars, adds and trims are hidden; every entry, exit and FOMC step stays.</span>
         </> : <>
           <span className="block">Historical replay of {simulation!.policy} · {simulation!.start} → {simulation!.through} · models were not refitted at each past date · not out-of-sample validation or advice published at that time.</span>
           {typeof simulation!.in_sample_decisions === 'number' && typeof simulation!.out_of_sample_decisions === 'number'
