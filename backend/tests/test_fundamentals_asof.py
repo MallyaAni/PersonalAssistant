@@ -331,3 +331,99 @@ def test_training_cli_consumes_the_selector_from_the_store(tmp_path):
     assert np.isnan(raw[0, 0, names.index("log_sales_yield")])
     frozen = cli.features_for(panel, store, date(2026, 3, 1), "frozen")
     assert frozen[3] is None
+
+
+# ---- revenue tag switches (ASC 606): the current tag, not the longest one
+
+
+def _switch_payload():
+    old = [
+        row(f"{y}-{m1}", f"{y}-{m2}", v, f"{y}-{f}", f"o{y}{m2}")
+        for y, base in ((2016, 100), (2017, 110))
+        for (m1, m2, f), v in zip(
+            (("01-01", "03-31", "05-01"), ("04-01", "06-30", "08-01"),
+             ("07-01", "09-30", "11-01")),
+            (base, base + 1, base + 2),
+        )
+    ] + [
+        row("2016-10-01", "2016-12-31", 103, "2017-02-15", "o16q4"),
+        row("2017-10-01", "2017-12-31", 113, "2018-02-15", "o17q4"),
+    ]
+    # Each new-tag 10-Q carries its prior-year comparative under the new tag,
+    # restated (the old tag said 110, 111, 112 for 2017).
+    new = []
+    for (m1, m2, f), cur, prior in zip(
+        (("01-01", "03-31", "05-01"), ("04-01", "06-30", "08-01"),
+         ("07-01", "09-30", "11-01")),
+        (120, 121, 122),
+        (109, 110, 111),
+    ):
+        accn = f"n18{m2}"
+        new.append(row(f"2018-{m1}", f"2018-{m2}", cur, f"2018-{f}", accn))
+        new.append(row(f"2017-{m1}", f"2017-{m2}", prior, f"2018-{f}", accn))
+    new.append(row("2018-01-01", "2018-12-31", 486, "2019-02-15", "n18k", "10-K"))
+    new.append(row("2017-01-01", "2017-12-31", 442, "2019-02-15", "n18k", "10-K"))
+    return payload(
+        Revenues=old, RevenueFromContractWithCustomerExcludingAssessedTax=new
+    )
+
+
+def test_a_tag_the_filer_stopped_using_does_not_outlive_its_successor():
+    v = fa.parse_versions(_switch_payload())
+    days = ["2018-04-30", "2018-05-02", "2018-11-02", "2019-02-16"]
+    trace = {}
+    r = fa.levels_for(v, sessions(*days), trace)["revenue"]
+    new = "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax"
+    # The old tag has more periods throughout; it is read only until the
+    # new tag reports a later quarter.
+    assert trace["revenue"] == ["us-gaap:Revenues", new, new, new]
+    assert r[0] == 110 + 111 + 112 + 113
+    # One new quarter and its comparative: no four consecutive quarters under
+    # the new tag, so the trailing sum is missing, never mixed with the old tag.
+    assert np.isnan(r[1])
+    assert np.isnan(r[2])
+    # The 10-K completes both years under the new tag (fourth quarters from
+    # the annual figures).
+    assert r[3] == 486.0
+
+
+def test_tag_switch_never_changes_an_earlier_session():
+    v = fa.parse_versions(_switch_payload())
+    days = sessions(*[f"20{y}-{m}-15" for y in (16, 17, 18, 19) for m in ("02", "05", "08", "11")])
+    full = fa.levels_for(v, days)
+    for cut in (date(2018, 2, 16), date(2018, 5, 1), date(2018, 8, 2), date(2019, 2, 15)):
+        part = fa.levels_for([x for x in v if x.available <= cut], days)
+        keep = days <= np.datetime64(cut)
+        for name, series in full.items():
+            np.testing.assert_array_equal(series[keep], part[name][keep])
+
+
+def test_an_inconsistently_dated_period_cannot_steer_the_tag():
+    bogus = [row("2026-01-01", "2026-03-31", 999, "2026-02-16", "x")]  # ends after filing
+    v = fa.parse_versions(
+        payload(
+            Revenues=QUARTERS,
+            RevenueFromContractWithCustomerExcludingAssessedTax=bogus,
+        )
+    )
+    trace = {}
+    r = fa.levels_for(v, sessions("2026-02-17"), trace)["revenue"]
+    assert trace["revenue"] == ["us-gaap:Revenues"]
+    assert r[0] == 460.0
+
+
+def test_an_instant_switch_reads_the_tag_still_reported():
+    def inst(tag, rows):
+        return {tag: {"units": {"USD": rows}}}
+
+    old = [
+        {"end": e, "val": 10, "filed": f, "accn": e}
+        for e, f in (("2017-03-31", "2017-05-01"), ("2017-06-30", "2017-08-01"),
+                     ("2017-09-30", "2017-11-01"), ("2017-12-31", "2018-02-15"))
+    ]
+    new = [{"end": "2018-03-31", "val": 20, "filed": "2018-05-01", "accn": "n"}]
+    v = fa.parse_versions(
+        {"facts": {"us-gaap": {**inst("LongTermDebtNoncurrent", old), **inst("LongTermDebt", new)}}}
+    )
+    debt = fa.levels_for(v, sessions("2018-04-30", "2018-05-02"))["debt"]
+    assert debt.tolist() == [10.0, 20.0]

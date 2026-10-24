@@ -62,8 +62,13 @@ CITED_CORRECTED = (
 # DeskReport and the nightly record so a figure is never presented under a
 # source it was not measured with. These identify data; paper.POLICY_VERSION
 # identifies execution, while report.inputs names analyst augmentations.
-CORRECTED_SOURCE = "fundamentals-features/2"
-CURRENT_SOURCE = "fundamentals-features/3"
+# /4 and /5 are /3 and /2 with the revenue tag chosen by the latest reported
+# period, then the most periods (fundamentals_asof._ranked_tags): the earlier
+# choice by count alone kept the pre-2018 revenue tags of names that moved to
+# the ASC 606 tags, and the reporting-period safeguard then withheld them for
+# years (55 of 94 book names; 17 scored names a session in 2019).
+CORRECTED_SOURCE = "fundamentals-features/5"
+CURRENT_SOURCE = "fundamentals-features/4"
 QUALIFIED_SOURCE = "fundamentals-qualified/1"
 LEGACY_SOURCE = "edgar-frozen"
 

@@ -15,6 +15,7 @@ from backend.market import fundamentals_asof as fa
 from backend.market.store import MarketStore
 from backend.tests.test_fundamental_period_eligibility import (
     ALTERNATIVE,
+    NEWER_SPAN_START,
     _history,
     _panel,
     _version,
@@ -76,7 +77,7 @@ def test_rejected_scored_leg_resets_finite_score_vote_and_grade():
         "A",
     ]
     assert np.isnan(opinion.evidence["gross_margin"][3:, 0]).all()
-    assert opinion.meta["source"] == "fundamentals-features/3"
+    assert opinion.meta["source"] == "fundamentals-features/4"
     # This remains a deliberate behavior difference from the previous source.
     previous = fundamental.opine_corrected(
         ff.features(_score_panel(), _inputs(versions))
@@ -149,7 +150,7 @@ def test_accepted_features_preserve_scores_and_votes():
     np.testing.assert_array_equal(current.stances(), previous.stances())
     for key in previous.evidence:
         np.testing.assert_array_equal(current.evidence[key], previous.evidence[key])
-    assert previous.meta["source"] == "fundamentals-features/2"
+    assert previous.meta["source"] == "fundamentals-features/5"
     assert previous.stance_resets is None
 
 
@@ -160,7 +161,7 @@ def test_store_to_desk_opinion_keeps_current_and_corrected_sources_separate(tmp_
     versions = _history() + [
         _version(
             "revenue",
-            "2026-01-01",
+            NEWER_SPAN_START,
             "2026-03-31",
             150.0,
             filed="2026-05-01",
@@ -180,12 +181,12 @@ def test_store_to_desk_opinion_keeps_current_and_corrected_sources_separate(tmp_
     assert (
         desk._fundamental_source_id("current")
         == current.meta["source"]
-        == "fundamentals-features/3"
+        == "fundamentals-features/4"
     )
     assert (
         desk._fundamental_source_id("corrected")
         == previous.meta["source"]
-        == "fundamentals-features/2"
+        == "fundamentals-features/5"
     )
     assert desk.run.__defaults__[-1] == "corrected"
 
@@ -196,7 +197,7 @@ def test_nightly_record_preserves_unscored_names_and_original_periods(tmp_path):
     versions = _history() + [
         _version(
             "revenue",
-            "2026-01-01",
+            NEWER_SPAN_START,
             "2026-03-31",
             150.0,
             filed="2026-05-01",
@@ -209,7 +210,7 @@ def test_nightly_record_preserves_unscored_names_and_original_periods(tmp_path):
     report = replace(
         report,
         opinions={fundamental.NAME: opinion},
-        fundamentals_source="fundamentals-features/3",
+        fundamentals_source="fundamentals-features/4",
     )
     data = market_daily.record(report)
     block = data["fundamental"]
@@ -231,7 +232,7 @@ def test_nightly_record_preserves_unscored_names_and_original_periods(tmp_path):
     path = market_daily.save(tmp_path, data)
     saved = json.loads(path.read_text(encoding="utf-8"))
     assert saved["fundamental"] == block
-    assert saved["provenance"]["data"]["fundamentals"] == "fundamentals-features/3"
+    assert saved["provenance"]["data"]["fundamentals"] == "fundamentals-features/4"
 
 
 # A mismatched report must not publish a /3 label over another calculation's evidence.
@@ -243,7 +244,7 @@ def test_record_refuses_mismatched_current_source():
     report = replace(
         report,
         opinions={fundamental.NAME: opinion},
-        fundamentals_source="fundamentals-features/3",
+        fundamentals_source="fundamentals-features/4",
     )
     with pytest.raises(ValueError, match="fundamental source"):
         market_daily.record(report)

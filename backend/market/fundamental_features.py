@@ -14,7 +14,8 @@ versions in `fundamentals_asof`:
   that session. Within the supplied versions, a restatement changes features
   and tag selection only from that calculated availability onward.
 - Each name's quarterly values come from the tag the as-of selector would
-  choose with the periods available then (deterministic table-order ties),
+  choose with the periods available then (latest period end, then most
+  periods, then deterministic table order),
   with quarters derived from six/nine-month spans and from the year exactly
   as `fundamentals_asof._quarters` derives them.
 - Missing values stay NaN. No zero is fabricated: a genuinely zero growth

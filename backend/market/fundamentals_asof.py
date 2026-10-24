@@ -16,6 +16,16 @@ the current margin adapter; `_quarters` keeps the original by-end projection and
 priority for tag selection, growth and other consumers. Matching retained spans
 does not validate the known gapped/overlapping annual-partition limitation.
 
+Tag selection is per session, from the versions available then: the candidate
+tag whose latest available period end is the most recent wins, then the one
+with the most periods, then table order (`_ranked_tags`), the key the frozen
+`edgar.parse_company_facts` already uses over its snapshot. Counting periods
+alone kept a tag the filer had stopped using (ASC 606 moved most revenue to
+RevenueFromContractWithCustomerExcludingAssessedTax in 2018) chosen for years,
+behind the reported period. Every value still comes from the one chosen tag:
+growth compares a quarter with the year-ago comparative filed under the same
+tag, and stays missing, never borrowed from the old tag, where none was filed.
+
 The level outputs retain the vocabulary consumed by `opportunity_learning.ratios`.
 The separate frozen `edgar`/`levels_pit` paths remain for their existing callers.
 """
@@ -318,27 +328,52 @@ def levels_for(
     return out
 
 
-# The value of one name now: the tag with the most periods available now
-# (ties by table order), then the trailing sum or the latest instant.
+# A version whose value is not finite, or whose period ends after its own
+# filing or acceptance, cannot say which tag the filer reports under now.
+def _dated_consistently(version: Version) -> bool:
+    if not np.isfinite(version.value) or version.end > version.filed:
+        return False
+    accepted = version.accepted
+    return accepted is None or accepted.astimezone(NEW_YORK).date() >= version.end
+
+
+# The candidate tags holding data now, best first: the latest available period
+# end (quarter end for a flow, instant date otherwise), then the number of
+# periods, then table order. Only the versions passed in are read, so a tag
+# the filer adopts later cannot change an earlier session; a tag with no
+# consistently dated period still ranks, last, so a lone tag is still read.
+def _ranked_tags(
+    name: str,
+    by_tag: Mapping[str, Mapping[tuple[date | None, date], Version]],
+    use_ytd: bool = True,
+) -> list[str]:
+    ranked = []
+    for order, tag in enumerate(_tag_order(name)):
+        spans = by_tag.get(tag)
+        if not spans:
+            continue
+        dated = {k: v for k, v in spans.items() if _dated_consistently(v)}
+        ends = (
+            set(_quarters(dated, use_ytd))
+            if name in FLOW_NAMES
+            else {e for _, e in dated}
+        )
+        ranked.append((max(ends) if ends else date.min, len(ends), -order, tag))
+    ranked.sort(reverse=True)
+    return [tag for *_, tag in ranked]
+
+
+# The value of one name now: the best ranked tag available now, then the
+# trailing sum of its quarters or its latest instant.
 def _select(
     name: str,
     by_tag: Mapping[str, Mapping[tuple[date | None, date], Version]],
     use_ytd: bool = True,
 ) -> tuple[float, str | None]:
-    best_tag, best_count = None, -1
-    for tag in _tag_order(name):
-        spans = by_tag.get(tag)
-        if not spans:
-            continue
-        count = (
-            len(_quarters(spans, use_ytd))
-            if name in FLOW_NAMES
-            else len({e for _, e in spans})
-        )
-        if count > best_count:
-            best_tag, best_count = tag, count
-    if best_tag is None:
+    ranked = _ranked_tags(name, by_tag, use_ytd)
+    if not ranked:
         return float("nan"), None
+    best_tag = ranked[0]
     spans = by_tag[best_tag]
     if name in FLOW_NAMES:
         return _four_quarters(_quarters(spans, use_ytd)), best_tag
@@ -346,8 +381,8 @@ def _select(
     return spans[(None, latest_end)].value, best_tag
 
 
-# The tag the frozen path would pick for the whole snapshot: the one with
-# the most distinct quarter ends (or instant dates) over every version.
+# The tag chosen over the whole snapshot: the latest period end, then the
+# most distinct quarter ends (or instant dates), over every version.
 def snapshot_tag(name: str, versions: Iterable[Version]) -> str | None:
     """Return the whole-history tag choice for `name`."""
     by_tag: dict[str, dict[tuple[date | None, date], Version]] = {}

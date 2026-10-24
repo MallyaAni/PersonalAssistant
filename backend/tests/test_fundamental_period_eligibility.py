@@ -17,6 +17,11 @@ from backend.market.panel import Panel
 
 REVENUE = "us-gaap:Revenues"
 ALTERNATIVE = "us-gaap:RevenueFromContractWithCustomerExcludingAssessedTax"
+# A six-month span ending 2026-03-31: newer reported revenue under the
+# alternative tag that forms no quarter, so the selector keeps the old tag and
+# only the reporting-end safeguard reacts. (A newer quarter under the
+# alternative tag makes it the chosen tag: see the tag-switch test below.)
+NEWER_SPAN_START = "2025-10-01"
 TAGS = {
     "revenue": REVENUE,
     "gross_profit": "us-gaap:GrossProfit",
@@ -106,7 +111,7 @@ def test_newer_revenue_candidate_withholds_all_obsolete_selected_metrics():
     versions = _history() + [
         _version(
             "revenue",
-            "2026-01-01",
+            NEWER_SPAN_START,
             "2026-03-31",
             99999.0,
             filed="2026-05-01",
@@ -220,7 +225,13 @@ def test_reported_span_frontier_is_independent_of_quarter_derivation(end, ytd_na
     panel = _panel(("2027-02-02",))
     legacy = ff.features(panel, {"TEST": versions}, ytd_names)
     current = ff.current_features(panel, {"TEST": versions}, ytd_names)
-    assert np.isfinite(legacy.values[0, 0]).all()
+    if fa.span_kind(date(2026, 1, 1), date.fromisoformat(end)) == "quarter":
+        # A newer quarter makes the alternative the chosen tag; with no
+        # comparative of its own nothing is computable, and nothing is borrowed.
+        assert np.isnan(legacy.values[0, 0]).all()
+        assert (current.eligibility.reasons[0, 0] == "not_computable").all()
+    else:
+        assert np.isfinite(legacy.values[0, 0]).all()
     assert np.isnan(current.values[0, 0]).all()
     assert current.eligibility.target_period_ends[0, 0] == np.datetime64(end)
     np.testing.assert_array_equal(
@@ -294,7 +305,7 @@ def test_acceptance_before_period_end_stays_rejected_after_filing_and_period_dat
 def test_acceptance_period_guard_uses_new_york_dates(accepted, valid):
     extra = _version(
         "revenue",
-        "2026-01-01",
+        NEWER_SPAN_START,
         "2026-03-31",
         500.0,
         filed="2026-04-01",
@@ -475,7 +486,7 @@ def test_frontier_alignment_and_results_do_not_depend_on_observation_order():
     stale = _history() + [
         _version(
             "revenue",
-            "2026-01-01",
+            NEWER_SPAN_START,
             "2026-03-31",
             500.0,
             filed="2026-05-01",

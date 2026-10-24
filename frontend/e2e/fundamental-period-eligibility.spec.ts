@@ -1,7 +1,7 @@
 import {expect, test, type Page, type TestInfo} from '@playwright/test'
 
 const USER = 'fundamental-period-fixture'
-const SOURCE = 'fundamentals-features/3'
+const SOURCE = 'fundamentals-features/4'
 const TARGET = '2026-06-30'
 const OLD = '2018-06-30'
 const METRICS = ['revenue_yoy', 'revenue_qoq', 'revenue_acceleration', 'gross_margin', 'net_margin', 'capex_to_revenue', 'ocf_to_revenue']
@@ -147,7 +147,7 @@ const scenarios: Scenario[] = [
   {name: 'context-only acceptance cannot establish a score', source: SOURCE, entry: {...unscored, score_available: true}, unavailable: true},
   {name: 'array cannot supply eligibility', source: SOURCE, entry: [], unavailable: true},
   {name: 'missing metric fails closed', source: SOURCE, entry: missingMetric, unavailable: true},
-  ...['fundamentals-features/2', 'fundamentals-features/1', 'edgar-frozen', 'fundamentals-features/99', undefined].map(source => ({name: `${source ?? 'absent source'} ignores foreign eligibility`, source, entry: eligibility(), ignored: true})),
+  ...['fundamentals-features/5', 'fundamentals-features/2', 'fundamentals-features/1', 'edgar-frozen', 'fundamentals-features/99', undefined].map(source => ({name: `${source ?? 'absent source'} ignores foreign eligibility`, source, entry: eligibility(), ignored: true})),
 ]
 
 for (const scenario of scenarios) {

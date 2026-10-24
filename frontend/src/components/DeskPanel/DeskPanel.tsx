@@ -285,9 +285,13 @@ const PERIOD_CHECK_REASONS: Record<string, string> = {
   no_revenue_period: 'Unavailable: no eligible reported revenue period was recorded.',
 }
 
-// Admit only complete, internally consistent /3 evidence without coercing dates or flags.
+// The fundamental sources that carry the reporting-period safeguard's evidence: /4 is /3 with
+// the revenue tag chosen by the latest reported period.
+const PERIOD_CHECKED_SOURCES = ['fundamentals-features/4', 'fundamentals-features/3']
+
+// Admit only complete, internally consistent /3 or /4 evidence without coercing dates or flags.
 const recordedPeriodEligibility = (fundamental: DeskRecord['fundamental'], ticker: string) => {
-  if (fundamental?.source !== 'fundamentals-features/3') return null
+  if (!fundamental || !PERIOD_CHECKED_SOURCES.includes(fundamental.source ?? '')) return null
   const eligibility = fundamental.eligibility?.[ticker]
   if (!eligibility || typeof eligibility !== 'object' || Array.isArray(eligibility)
     || typeof eligibility.score_available !== 'boolean' || typeof eligibility.vote_reset !== 'boolean'
@@ -316,7 +320,7 @@ const RecordedAnalystDates = ({fundamental, ticker}: {fundamental: DeskRecord['f
   const dates = fundamental?.dates?.[ticker]
   const periods = FUNDAMENTAL_PERIOD_LABELS.map(([key, label]) => ({key, label, date: recordedFiscalDate(dates?.[key])}))
   const hasDates = periods.some(period => period.date !== null)
-  const periodCheck = fundamental?.source === 'fundamentals-features/3'
+  const periodCheck = PERIOD_CHECKED_SOURCES.includes(fundamental?.source ?? '')
   const eligibility = recordedPeriodEligibility(fundamental, ticker)
   return <section aria-label="Recorded analyst evidence dates" className="mt-2 text-xs text-[#6e6e73]">
     <details>
@@ -376,10 +380,18 @@ const EveningAnalysis = ({grade, session, written, fundamental, ticker}: {grade:
 const describeFundamentalSource = (source?: string) => {
   const title = `Recorded fundamental source: ${source || 'not recorded'}.`
   switch (source) {
-    case 'fundamentals-features/3':
+    case 'fundamentals-features/4':
       return {title, current: true, known: true,
         notice: 'Fundamentals: stored filing versions; reporting-period safeguard applied.',
         simulationNote: ''}
+    case 'fundamentals-features/3':
+      return {title, current: false, known: true,
+        notice: 'Fundamentals: stored filing versions; reporting-period safeguard applied (previous revenue-tag choice).',
+        simulationNote: 'Chose each name\'s revenue tag by the most history, so names that moved to new revenue tags in 2018 were left out for years. Not measured with the current tag choice.'}
+    case 'fundamentals-features/5':
+      return {title, current: false, known: true,
+        notice: 'Fundamentals: stored filing versions; margin period dates checked (research calculation).',
+        simulationNote: 'Checks margin period dates, but does not exclude inputs from older reporting periods. Not measured with the reporting-period safeguard.'}
     case 'fundamentals-features/2':
       return {title, current: false, known: true,
         notice: 'Fundamentals: stored filing versions; margin period dates checked (previous calculation).',

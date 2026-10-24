@@ -736,3 +736,44 @@ def test_corrected_analyst_exposes_fiscal_period_dates():
     assert ends["gross_margin"] == "2025-12-31"
     # A feature with nothing on file has no reference period: the empty string.
     assert ends["net_margin"] == ""
+
+
+def _reasons(features, name):
+    return features.eligibility.reasons[:, 0, ff.FEATURE_NAMES.index(name)].tolist()
+
+
+# A filer that moved revenue to the ASC 606 tag is scored on the new tag, with
+# the year-ago comparative it filed under that tag, from that filing on.
+def test_switched_revenue_tag_is_scored_against_its_own_comparative():
+    old = [
+        row("2017-01-01", "2017-03-31", 98, "2017-05-01", "o1"),
+        row("2017-04-01", "2017-06-30", 99, "2017-08-01", "o2"),
+        row("2017-07-01", "2017-09-30", 100, "2017-11-01", "o3"),
+        row("2017-10-01", "2017-12-31", 101, "2018-02-15", "o4"),
+    ]
+    new = [
+        row("2018-01-01", "2018-03-31", 110, "2018-05-01", "n1"),
+        row("2017-01-01", "2017-03-31", 100, "2018-05-01", "n1"),
+    ]
+    gross = [row("2018-01-01", "2018-03-31", 44, "2018-05-01", "n1")]
+    v = fa.parse_versions(
+        payload(
+            Revenues=old,
+            RevenueFromContractWithCustomerExcludingAssessedTax=new,
+            GrossProfit=gross,
+        )
+    )
+    p = panel(["2018-04-30", "2018-05-02"], [[1.0, 1.0], [1.0, 1.0]])
+    current = ff.current_features(p, {"N0": v})
+    yoy = current.feature("revenue_yoy")[:, 0]
+    # Before the new filing the old tag is read (its latest quarter is current).
+    assert current.eligibility.target_period_ends[0, 0] == np.datetime64("2017-12-31")
+    assert current.feature("revenue_qoq")[0, 0] == np.log(101.0) - np.log(100.0)
+    assert _reasons(current, "revenue_yoy") == ["not_computable", "accepted"]
+    # From the new filing: the new quarter against the comparative filed with
+    # it (100), not the old tag's 98, and the end the safeguard expects.
+    assert yoy[1] == np.log(110.0) - np.log(100.0)
+    assert current.eligibility.target_period_ends[1, 0] == np.datetime64("2018-03-31")
+    assert current.feature("gross_margin")[1, 0] == 0.4
+    # No quarter-on-quarter figure is borrowed across tags.
+    assert np.isnan(current.feature("revenue_qoq")[1, 0])

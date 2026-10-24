@@ -1,7 +1,7 @@
 import {expect, test, type Page, type TestInfo} from '@playwright/test'
 
 const USER = 'fundamental-source-fixture'
-const CURRENT = 'fundamentals-features/3'
+const CURRENT = 'fundamentals-features/4'
 const PRIOR = 'fundamentals-features/2'
 // The strategy the record says the account runs (`targets.policy`), and
 // the strip's label for a simulation of it.
@@ -107,6 +107,8 @@ const cases: Case[] = [
   {name: 'old planner stamp does not prove execution parity', execution: 'cash-bounded-breakout-rotation/4', record: CURRENT, backtest: CURRENT, notice: CURRENT_NOTICE, curveLabel: LABEL, curveNote: 'cash capped after costs'},
   {name: 'unknown execution model', execution: 'future-model/99', record: CURRENT, backtest: CURRENT, notice: CURRENT_NOTICE, curveLabel: LABEL, curveNote: 'cash capped after costs'},
   {name: 'current record and simulation', record: CURRENT, backtest: CURRENT, notice: CURRENT_NOTICE, curveLabel: LABEL, curveNote: 'cash capped after costs'},
+  {name: 'previous tag-choice record beside current simulation', record: 'fundamentals-features/3', backtest: CURRENT, notice: 'Fundamentals: stored filing versions; reporting-period safeguard applied (previous revenue-tag choice).', curveLabel: LABEL, curveNote: 'cash capped after costs'},
+  {name: 'current record retains previous tag-choice simulation', record: CURRENT, backtest: 'fundamentals-features/3', notice: CURRENT_NOTICE, curveLabel: OLDER_INPUTS, curveNote: 'Chose each name\'s revenue tag by the most history, so names that moved to new revenue tags in 2018 were left out for years. Not measured with the current tag choice.'},
   {name: 'prior record and simulation', record: PRIOR, backtest: PRIOR, notice: PRIOR_NOTICE, curveLabel: OLDER_INPUTS, curveNote: PRIOR_NOTE},
   {name: 'earlier record and simulation', record: 'fundamentals-features/1', backtest: 'fundamentals-features/1', notice: 'Fundamentals: stored filing versions (earlier margin calculation).', curveLabel: OLDER_INPUTS, curveNote: 'Uses the earlier stored-filing calculation, before margin period dates were checked.'},
   {name: 'legacy record and simulation', record: 'edgar-frozen', backtest: 'edgar-frozen', notice: LEGACY_NOTICE, curveLabel: OLDER_INPUTS, curveNote: 'Uses the frozen EDGAR snapshot, not the current stored-filing calculation.'},
