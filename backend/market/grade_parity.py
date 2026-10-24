@@ -320,7 +320,8 @@ def _grade_led_targets(record: dict, report) -> dict:
     # original price from its recorded weight, equity and conserved quantity.
     prices = {name: current[name] * equity / qty for name, qty in held.items()}
     entry = learned_live_holding.entry_grade(policy)
-    signals = grade_led_policy.signals(report, held, entry)
+    hold = learned_live_holding.hold_grade(policy)
+    signals = grade_led_policy.signals(report, held, entry, hold)
     ordinals = {
         name: int(report.graded.grades[-1, column])
         for column, name in enumerate(report.panel.tickers)
@@ -332,10 +333,11 @@ def _grade_led_targets(record: dict, report) -> dict:
         maps[0], {"current_weights": dict(current)}, signals, prices, equity
     )
     if any(
-        0 <= ordinals.get(name, -1) < entry and wanted.get(name, 0) > TOLERANCE
+        0 <= ordinals.get(name, -1) < (hold if held.get(name, 0) > 0 else entry)
+        and wanted.get(name, 0) > TOLERANCE
         for name, signal in signals.items()
     ):
-        raise ValueError("Below-A grade-led target must be zero")
+        raise ValueError("Grade-led target below the entry or hold grade must be zero")
     if any(
         not _same_weight(weights[name], wanted.get(name))
         for weights in maps[1:]

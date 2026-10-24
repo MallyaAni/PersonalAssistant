@@ -296,6 +296,7 @@ async function install(page: Page, baseURL: string, state: ReferenceFixture) {
       // The installed policy's own replay: an entry at the Oct 12 open, a small resize, a 3% add, an exit at the Oct 15 open.
       ...(state.policyReplay ? {policy_replay: {status: 'available', policy: 'grade-led-learned-sizing/1', arm: 'fixture-arm', basis: 'point_in_time_research_targets_not_audited_history',
         start: '2016-01-04', through: '2026-10-15', generated_at: '2026-10-16T01:00:00Z', note: 'In-sample research fixture.',
+        book: {capital: 100000, fills: 6703, costs: 76000, all: {cagr: .394, max_drawdown: -.269, sharpe: 1.51, total: 40}, to_2022: {cagr: .25, max_drawdown: -.269}, from_2023: {cagr: .744, max_drawdown: -.252}},
         rows: [{date: '2026-10-09', weight: .05, grade: 'A'}, {date: '2026-10-13', weight: .08, grade: 'A+'}, {date: '2026-10-14', weight: 0, grade: 'B'}],
         // Every grade change under the installed grading, each effective at the next open.
         grades: [{date: '2026-10-08', grade: 'C', said: false, at: '2026-10-09T09:30:00-04:00'}, {date: '2026-10-09', grade: 'A', said: false, at: '2026-10-12T09:30:00-04:00'},
@@ -623,6 +624,7 @@ test('Charts draw the installed policy replay and never an older policy',async (
   const basis=dialog.getByLabel('BUYHIGH replay basis',{exact:true})
   await basis.locator('summary').click()
   await expect(basis).toContainText('In-sample research fixture.')
+  await expect(dialog.getByLabel('BUYHIGH replay book backtest',{exact:true})).toHaveText('The whole book under this rule, as one account: 39.4% a year, worst drop -26.9%, Sharpe 1.51 (to 2022 25.0%, from 2023 74.4%) · 6,703 fills after costs.')
   await expect(basis).toContainText('1 entry here · from the fill, beat SPY after 20 sessions 100% of the time, mean excess +4.0% · after 60: 0%, -2.0%.')
   // Whether trading the name this way made money is on the chart, not behind the about link.
   await expect(dialog.getByLabel('BUYHIGH replay profit and loss',{exact:true})).toHaveText('Traded by the rule, BUYHIGH made money and beat SPY: +1.23% of the book after 0.03% costs (10 bp a side), against +0.50% for SPY at the same weights. 1 round trip: 1 made money, 1 beat SPY.')

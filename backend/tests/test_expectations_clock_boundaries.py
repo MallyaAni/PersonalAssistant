@@ -221,7 +221,8 @@ def test_strict_valuation_applies_split_and_resets_equal_new_report_basis():
     legacy = levels_pit.point_in_time_levels(store, panel)
     explicit = levels_pit.point_in_time_levels(store, panel, strict_publication=False)
     np.testing.assert_array_equal(strict["shares"][:, 0], [np.nan, 20, 20, 20, 10])
-    np.testing.assert_array_equal(legacy["shares"][:, 0], [10, 20, 20, 20, 20])
+    # The closes are back-adjusted for the 2:1 split, so the pre-split count is too.
+    np.testing.assert_array_equal(legacy["shares"][:, 0], [20, 20, 20, 20, 20])
     for field in legacy:
         np.testing.assert_array_equal(legacy[field], explicit[field])
     assert store.record.facts == share_record().facts

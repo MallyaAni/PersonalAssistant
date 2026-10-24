@@ -33,10 +33,16 @@ def admitted_for(policy):
 
 
 # Describe grade permission independently of the optimizer and any resulting order.
-def signals(report, held, entry_grade=ENTRY_GRADE):
+# A policy may hold a name below the grade it admits at (`hold_grade`): a held
+# name keeps its place while it is graded at least that, and is exited below it.
+def signals(report, held, entry_grade=ENTRY_GRADE, hold_grade=None):
     if entry_grade not in ENTRY_WORDS:
         raise ValueError("Entry grade must be B, A or A+")
+    hold_grade = entry_grade if hold_grade is None else hold_grade
+    if hold_grade not in ENTRY_WORDS or hold_grade > entry_grade:
+        raise ValueError("Hold grade must be B, A or A+ and no higher than the entry")
     admitted, boundary = ENTRY_WORDS[entry_grade]
+    kept, floor = ENTRY_WORDS[hold_grade]
     rows = {}
     for column, name in enumerate(report.panel.tickers):
         if name in ("SPY", "QQQ"):
@@ -47,15 +53,16 @@ def signals(report, held, entry_grade=ENTRY_GRADE):
         )
         if grade not in LETTERS or prior not in LETTERS:
             raise ValueError("Observed ordinal grades required")
+        owned = held.get(name, 0) > 0
         action = (
             "unavailable"
             if grade < 0
             else "hold"
-            if grade >= entry_grade and held.get(name, 0) > 0
+            if grade >= hold_grade and owned
             else "buy"
             if grade >= entry_grade
             else "sell"
-            if held.get(name, 0) > 0 or prior >= entry_grade
+            if owned or prior >= entry_grade
             else "avoid"
         )
         rows[name] = {
@@ -70,6 +77,13 @@ def signals(report, held, entry_grade=ENTRY_GRADE):
                 if grade < 0
                 else f"{admitted} entry permission; learned sizing and funding apply"
                 if grade >= entry_grade
+                else f"Held while {kept}; no new purchase below {boundary}"
+                if action == "hold"
+                else (
+                    f"Below {floor}; exit existing shares "
+                    "and do not initiate a purchase"
+                )
+                if owned
                 else (
                     f"Below {boundary}; exit existing shares "
                     "and do not initiate a purchase"

@@ -46,11 +46,13 @@ def test_a_split_after_the_filing_scales_the_count_until_the_next_filing():
         dtype="datetime64[D]",
     )
     # One filing (250 shares) known from the start; a 10:1 split on 08-28;
-    # a new filing (2500, post-split) first seen on 09-05.
+    # a new filing (2500, post-split) first seen on 09-05. The closes are
+    # back-adjusted for the split on every session, so the old count carries
+    # it on every session too, before the split day as after it.
     shares = np.array([250.0] * 16 + [2500.0] * 4)
     out = levels_pit.split_adjusted_shares(shares, dates, [(date(2024, 8, 28), 10.0)])
-    assert out[0] == 250.0  # before the split, the filing's own basis
-    assert out[8] == 2500.0  # 08-28 onward, the old filing carries the split
+    assert out[0] == 2500.0  # before the split, on the closes' adjusted basis
+    assert out[8] == 2500.0
     assert out[15] == 2500.0
     assert out[16] == 2500.0  # the new filing is already on the new basis
     untouched = levels_pit.split_adjusted_shares(shares, dates, [])
@@ -122,3 +124,15 @@ def test_a_gated_rotation_session_has_no_rotation_vote():
     assert graded.stances["rotation"][2, 0] == 1  # held while the gate is open
     assert (graded.stances["rotation"][3:] == 0).all()  # nothing across the gate
     assert ones.shape == (t, n)
+
+
+# A split after the price series' last session is not yet in its closes, so a
+# count is not scaled for it.
+def test_a_split_after_the_price_vintage_is_not_applied():
+    dates = np.array(
+        [np.datetime64("2024-08-20") + np.timedelta64(i, "D") for i in range(5)],
+        dtype="datetime64[D]",
+    )
+    shares = np.array([250.0] * 5)
+    out = levels_pit.split_adjusted_shares(shares, dates, [(date(2024, 9, 30), 10.0)])
+    assert out.tolist() == shares.tolist()

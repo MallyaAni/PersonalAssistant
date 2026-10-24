@@ -68,6 +68,8 @@ class JointFundedPolicy:
     # stay; a subclass that admits lower sets both.
     entry_grade = 2
     minimum_held_grade = 1
+    # The least share of equity a resize must reach to trade; an exit always trades.
+    min_trade = 0.0
     version = POLICY
     protocol = PROTOCOL
     sizing_reason = "joint_net_growth"
@@ -245,7 +247,7 @@ class JointFundedPolicy:
                 whole_shares=True,
                 index_eligible=False,
                 entry_cap=growth.CAP,
-                min_trade=0.0,
+                min_trade=self.min_trade,
             )
             receipt["execution"] = {
                 "version": basket.version,
@@ -541,7 +543,9 @@ class GradeLedFundedPolicy(RetainedMarketConditionedFundedPolicy):
         targets, receipt = super().decide(
             session, report, equity, held, prices, cash, blocked
         )
-        readings = grade_led_policy.signals(report, held, self.entry_grade)
+        readings = grade_led_policy.signals(
+            report, held, self.entry_grade, self.minimum_held_grade
+        )
         # Include zero-size names so a grade exit remains visible without any owned shares.
         targets = {**dict.fromkeys(readings, 0.0), **targets}
         receipt["targets"] = targets

@@ -354,6 +354,15 @@ def entry_grade(policy: str) -> int:
     raise ValueError("Installed grade-led model required")
 
 
+# The least grade a held name keeps its place at under the named policy.
+def hold_grade(policy: str) -> int:
+    if policy == leader.POLICY:
+        return leader.GradeLedLeaderFundedPolicy.minimum_held_grade
+    if policy == grade_led_policy.POLICY:
+        return funded.GradeLedFundedPolicy.minimum_held_grade
+    raise ValueError("Installed grade-led model required")
+
+
 # Authenticate one installed configuration for nightly and personal decision readers.
 def read_configuration(root, now):
     raw = (Path(root) / CONFIG).read_bytes()

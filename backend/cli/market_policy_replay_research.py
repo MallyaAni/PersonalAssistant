@@ -39,11 +39,10 @@ from pathlib import Path
 
 import numpy as np
 
-from backend.agents.trading.desk import desk, event_risk, point_in_time
-from backend.market import grade_led_leader_policy as leader
+from backend.agents.trading.desk import desk, point_in_time
 from backend.cli import market_pit_scorecard as scorecard
-from backend.market import universe
-from backend.market.calendar import fomc_decisions
+from backend.market import grade_led_leader_policy as leader
+from backend.market import policy_book, universe
 from backend.market.store import MarketStore
 
 DIRECTORY = "research/policy-replay"
@@ -60,6 +59,7 @@ SOURCES = (
     "backend/cli/market_policy_replay_research.py",
     "backend/market/grade_led_leader_policy.py",
     "backend/agents/trading/desk/event_risk.py",
+    "backend/market/policy_book.py",
 )
 
 
@@ -114,7 +114,9 @@ def signal_outcomes(panel, column: int, path: np.ndarray) -> dict:
     n = len(path)
     for t in range(1, n):
         before, after = float(path[t - 1]), float(path[t])
-        kind = "entry" if before == 0 < after else "exit" if after == 0 < before else None
+        kind = (
+            "entry" if before == 0 < after else "exit" if after == 0 < before else None
+        )
         if kind is None or t + 1 >= n:
             continue
         price, base = fills[t + 1], bench_fill[t + 1]
@@ -177,13 +179,24 @@ def realised(panel, column: int, trades: list[dict]) -> dict:
             continue
         priced = all(
             np.isfinite(x) and x > 0
-            for x in (closes[t - 1], opens[t], closes[t], bench[t - 1], bench_open[t], bench[t])
+            for x in (
+                closes[t - 1],
+                opens[t],
+                closes[t],
+                bench[t - 1],
+                bench_open[t],
+                bench[t],
+            )
         )
         if not priced:
             unpriced.append(dates[t])
             continue
-        earned[t] = held * (opens[t] / closes[t - 1] - 1) + middle * (closes[t] / opens[t] - 1)
-        benched[t] = held * (bench_open[t] / bench[t - 1] - 1) + middle * (bench[t] / bench_open[t] - 1)
+        earned[t] = held * (opens[t] / closes[t - 1] - 1) + middle * (
+            closes[t] / opens[t] - 1
+        )
+        benched[t] = held * (bench_open[t] / bench[t - 1] - 1) + middle * (
+            bench[t] / bench_open[t] - 1
+        )
     trips: list[dict] = []
     start = None
     for t in range(n):
@@ -217,7 +230,9 @@ def realised(panel, column: int, trades: list[dict]) -> dict:
         "benchmark_same_weights": float(benched.sum()),
         "excess": float(net - benched.sum()),
         "sessions_held": int(held_sessions.sum()),
-        "mean_weight_held": float(at_open[held_sessions].mean()) if held_sessions.any() else 0.0,
+        "mean_weight_held": float(at_open[held_sessions].mean())
+        if held_sessions.any()
+        else 0.0,
         "round_trips": len(trips),
         "winning_trips": sum(1 for trip in trips if trip["pnl"] > 0),
         "trips_beating_benchmark": sum(1 for trip in trips if trip["excess"] > 0),
@@ -239,200 +254,120 @@ def _next_open(session: str) -> str:
     return opened.isoformat()
 
 
-# (T, N) True where the live policy could size the name at that close: a name
-# on today's desk (not an index, not the benchmark) with the full trailing
-# window of finite, positive closes the leader sizing reads.
-def book_eligibility(panel, window: int = leader.WINDOW) -> np.ndarray:
-    closes = np.asarray(panel.adj_close, dtype=float)
-    with np.errstate(invalid="ignore"):
-        priced = (np.isfinite(closes) & (closes > 0)).astype(np.int64)
-    run = np.cumsum(priced, axis=0)
-    span = window + 1
-    lagged = np.vstack([np.zeros((span, closes.shape[1]), dtype=np.int64), run[:-span]])
-    mask = (run - lagged[: len(run)]) == span
-    for ticker in (*universe.MARKET_INDICES, panel.benchmark):
-        if ticker in panel.tickers:
-            mask[:, panel.index(ticker)] = False
-    return mask
-
-
-# The installed policy's own sizing, session by session: every name graded at
-# least the entry grade with its full window is sized by the live
-# `leader_weights` on that close's trailing window, exactly as `size_report`
-# does for the nightly (live cap after the volatility scale, the 63-return
-# EWMA), so the chart cannot drift from the scorecard arm's approximations.
-# A name the band (exit) analyst signals at a close is buy-blocked that night
-# (`market_daily._band_blocked`): it is not sized unless already held, and a
-# held one may not grow past what it holds (`size_report`). `current` is the
-# book's target from the previous close.
-def leader_target(restricted, mask, t: int, blocked=None, current=None) -> np.ndarray:
-    panel = restricted.panel
-    window = leader.WINDOW
-    if t < window:
-        return np.zeros(len(panel.tickers))
-    closes = np.asarray(panel.adj_close[t - window : t + 1], dtype=float)
-    sized = mask[t] & (np.asarray(restricted.graded.grades[t]) >= leader.ENTRY_GRADE)
-    if blocked is None:
-        weights, _ = leader.leader_weights(closes, sized)
-        return weights
-    held = np.asarray(current, dtype=float) > 0
-    weights, _ = leader.leader_weights(closes, sized & (~blocked[t] | held))
-    return np.where(blocked[t], np.minimum(weights, current), weights)
-
-
-def live_leader_targets(restricted, mask: np.ndarray, blocked=None) -> np.ndarray:
-    weights = np.zeros((len(restricted.panel.dates), len(restricted.panel.tickers)))
-    for t in range(len(weights)):
-        current = weights[t - 1] if t else weights[0]
-        weights[t] = leader_target(restricted, mask, t, blocked, current)
-    return weights
-
-
-# The band analyst's buy block on every close, read causally from the panel.
-def band_blocked(panel) -> np.ndarray:
+# The installed policy run as the paper account runs it (`policy_book`): the
+# same engine the backtest reports, so the chart, the backtest and the live
+# rule are one calculation. Returns the simulated book and the desk's grades.
+def installed_book(report) -> policy_book.Book:
     from backend.agents.trading.desk import exit as exit_analyst
 
-    return np.asarray(exit_analyst.evidence(panel).signalled(), dtype=bool)
+    panel = report.panel
+    return policy_book.simulate(
+        panel.dates,
+        panel.tickers,
+        panel.benchmark,
+        np.asarray(panel.open, dtype=float),
+        np.asarray(panel.close, dtype=float),
+        np.asarray(panel.adj_close, dtype=float),
+        np.asarray(report.graded.grades),
+        np.asarray(exit_analyst.evidence(panel).signalled(), dtype=bool),
+        policy_book.Rule(),
+        tilt=leader.report_pe_tilts(report),
+    )
 
 
-# The FOMC rule the nightly runs instead of the leader plan in the guidance
-# regime (`nightly_plan.event_plan_required`, `event_execution.plan`): when
-# the factor drops at a close the book's holdings are the cycle's baseline and
-# half of each is sold at the next open; the book then stays frozen through
-# the lead-in; on the eve, with the cut done, the baseline is bought back at
-# the decision session's close; that night the ordinary plan takes over again.
-# A cycle that starts on the eve itself cuts at the decision open and restores
-# at the following open, as the live state machine does. Returns the adjusted
-# targets and, per session index, the FOMC step that set them.
-# `ordinary` is the plan the nightly would run at each close outside a cycle:
-# a (T, N) array, or a callable (t, previous targets) -> targets, so a rule that
-# reads the book (the band block) sees the book the FOMC cycle left.
-def fomc_overlay(panel, ordinary) -> tuple[np.ndarray, dict[int, str]]:
-    from datetime import date as _date
-
-    factor = event_risk.live_path(panel)
-    meetings = fomc_decisions()
-    days = [_date.fromisoformat(str(d)[:10]) for d in panel.dates]
-    plan = ordinary if callable(ordinary) else (lambda t, previous: ordinary[t])
-    width = len(panel.tickers) if callable(ordinary) else np.shape(ordinary)[1]
-    out = np.zeros((len(days), width))
-    steps: dict[int, str] = {}
-    cycle = None
-    for t, day in enumerate(days):
-        out[t] = plan(t, out[t - 1] if t else np.zeros(out.shape[1]))
-        if cycle is None:
-            if t == 0 or factor[t] != event_risk.REDUCED:
-                continue
-            upcoming = next((m for m in meetings if m >= day), None)
-            if upcoming is None:
-                continue
-            cycle = {"decision": upcoming, "baseline": out[t - 1].copy(), "cut": False}
-        eve = t + 1 < len(days) and days[t + 1] == cycle["decision"]
-        if day < cycle["decision"]:
-            if eve and cycle["cut"]:
-                out[t] = cycle["baseline"]
-                steps[t] = decision_close_step
-                cycle["restored"] = True
-            else:
-                out[t] = cycle["baseline"] * (1.0 - event_risk.REDUCED)
-                steps[t] = "fomc_reduction"
-                cycle["cut"] = True
-            continue
-        if not cycle.get("restored"):
-            out[t] = cycle["baseline"]
-            steps[t] = "fomc_restoration"
-        cycle = None
-    return out, steps
-
-
-decision_close_step = "fomc_restoration_decision_close"
+# The book's compounded record, over all of it and the 2015-2022 / 2023- windows
+# the rule was chosen and checked on.
+def book_summary(book) -> dict:
+    split = next(i for i, d in enumerate(book.dates) if d >= "2023-01-01")
+    start = int(np.argmax(np.isfinite(book.equity)))
+    return {
+        "capital": float(book.equity[start]),
+        "all": policy_book.metrics(book, leader.WINDOW),
+        "to_2022": policy_book.metrics(book, leader.WINDOW, split),
+        "from_2023": policy_book.metrics(book, split - 1),
+        "fills": len(book.trades),
+        "costs": float(book.costs),
+        "rule": {k: v for k, v in vars(policy_book.Rule()).items()},
+    }
 
 
 def replay(
     report, history_path, arm_name: str, *, basis: str = "book"
 ) -> tuple[dict, dict[str, dict]]:
-    """Return (manifest, {ticker: rows}) for the arm over the book or the membership panel."""
-    if basis == "membership":
-        restricted, mask = point_in_time.point_in_time(report, history_path)
-    elif basis == "book":
-        mask = book_eligibility(report.panel)
-        restricted = point_in_time.restrict(report, mask)
-    else:
-        raise ValueError(f"unknown basis {basis!r}")
-    panel = restricted.panel
+    """Return (manifest, {ticker: rows}) for the installed rule, or a scorecard arm."""
+    panel = report.panel
     dates = [str(d)[:10] for d in panel.dates]
-    steps: dict[int, str] = {}
+    summary = None
     if arm_name in INSTALLED_ARMS.values():
-        # The installed policy: its own sizing and its FOMC rule, not the arm.
-        blocked = band_blocked(panel)
-        weights, steps = fomc_overlay(
-            panel,
-            lambda t, current: leader_target(restricted, mask, t, blocked, current),
-        )
+        if basis != "book":
+            raise ValueError("The installed rule is replayed over the book")
+        restricted = report
+        book = installed_book(report)
+        summary = book_summary(book)
+        held = book.weights
+        by_name: dict[str, list[dict]] = {}
+        for trade in book.trades:
+            by_name.setdefault(trade["ticker"], []).append(
+                {k: v for k, v in trade.items() if k != "ticker"}
+            )
+        planned = book.planned if book.planned is not None else held[-1]
+        # The weight the rule set at each close: what is held after the next fills.
+        path = np.vstack([held[1:], planned[None, :]])
     else:
+        if basis == "membership":
+            restricted, mask = point_in_time.point_in_time(report, history_path)
+        else:
+            mask = policy_book.sizable(
+                np.asarray(panel.adj_close, dtype=float), panel.tickers, panel.benchmark
+            )
+            restricted = point_in_time.restrict(report, mask)
         allocator = scorecard.ARMS[arm_name](restricted, mask)
-        weights = np.zeros((len(dates), len(panel.tickers)))
+        path = np.zeros((len(dates), len(panel.tickers)))
         for t in range(len(dates)):
-            weights[t] = allocator(restricted, panel, None, t)
+            path[t] = allocator(restricted, panel, None, t)
+        held = np.vstack([np.zeros((1, len(panel.tickers))), path[:-1]])
+        by_name = {
+            ticker: _arm_trades(path[:, column], dates)
+            for column, ticker in enumerate(panel.tickers)
+        }
     stocks: dict[str, dict] = {}
     for column, ticker in enumerate(panel.tickers):
         if ticker in universe.MARKET_INDICES:
             continue
-        path = weights[:, column]
-        rows, trades, grades = [], [], []
-        # The last target written: a move is measured from what the chart last
-        # showed, so moves under DUST cannot add up to a drawn size that is off.
-        shown = 0.0
+        trades = by_name.get(ticker, [])
+        rows, grades = [], []
+        filled = {trade["date"] for trade in trades}
         for t, day in enumerate(dates):
-            weight = float(path[t])
-            # The letter the desk gave the name at that close. On the book basis a
-            # name too new for the sizing window still shows its real grade; it is
-            # simply not sized until the window fills, as live.
+            weight = float(held[t, column])
+            # The letter the desk gave the name at that close; a name too new for
+            # the sizing window still shows its real grade.
             grade = (report if basis == "book" else restricted).graded.letter(t, column)
-            # Every change of letter under the installed grading, as the rule saw
-            # it at that close and acted on it at the next open: the chart's grade
-            # arrows, so they come from the same engine as its trades.
+            # Every change of letter, as the rule saw it at that close and acted on
+            # it at the next open: the chart's grade arrows, from the same run.
             if t == 0 or grade != grades[-1]["grade"]:
                 grades.append(
                     {
                         "date": day,
                         "grade": grade,
                         "said": False,
-                        **({"at": _next_open(dates[t + 1])} if t + 1 < len(dates) else {}),
+                        **(
+                            {"at": _next_open(dates[t + 1])}
+                            if t + 1 < len(dates)
+                            else {}
+                        ),
                     }
                 )
-            delta = weight - shown
-            # An entry or an exit is always written, however small; a resize
-            # once it reaches DUST from the last written target.
-            opened_or_closed = (shown == 0.0) != (weight == 0.0)
-            moved = abs(delta) >= DUST or (opened_or_closed and delta != 0.0)
-            if moved or t == 0:
+            # The weight held at the close of each session the name traded.
+            if t == 0 or day in filled:
                 rows.append({"date": day, "weight": weight, "grade": grade})
-            # The target set at this close trades at the next session's open (an
-            # FOMC restoration on the eve, at the decision session's close).
-            if moved and t + 1 < len(dates):
-                trade = {
-                    "decided": day,
-                    "date": dates[t + 1],
-                    "action": "BUY" if delta > 0 else "SELL",
-                    "size": abs(delta),
-                    "target": weight,
-                }
-                if t in steps:
-                    trade["reason"] = steps[t]
-                    if steps[t] == decision_close_step:
-                        trade["timing"] = "decision_close"
-                trades.append(trade)
-            if moved:
-                shown = weight
         stocks[ticker] = {
             "ticker": ticker,
             "rows": rows,
             "trades": trades,
             "grades": grades,
-            "latest_target": float(path[-1]),
-            "sessions_held": int((path > 0).sum()),
-            "outcomes": signal_outcomes(panel, column, path),
+            "latest_target": float(path[-1, column]),
+            "sessions_held": int((held[:, column] > 0).sum()),
+            "outcomes": signal_outcomes(panel, column, path[:, column]),
             "realised": realised(panel, column, trades),
         }
     # The book-wide answer to "did the signals make money": every entry and
@@ -452,6 +387,7 @@ def replay(
         "arm": arm_name,
         "audit": audit,
         "basis": "point_in_time_research_targets_not_audited_history",
+        **({"book": summary} if summary else {}),
         "universe": basis,
         "start": dates[0],
         "through": dates[-1],
@@ -462,11 +398,12 @@ def replay(
         **({"membership": str(history_path)} if basis == "membership" else {}),
         "note": (
             (
-                "In-sample research: the installed rule run over today's desk "
-                "names from the first session each had a full price window, "
-                "reading only data up to each close, targets before costs and "
-                "fills, trades at the next open. Not audited accounting, not "
-                "advice that was ever published."
+                "In-sample research: the installed rule run as the paper account "
+                "runs it, over today's desk names from the first session each had "
+                "a full price window, reading only data up to each close: fills at "
+                "the next open from cash on hand, whole shares, 10 bp a side, the "
+                "FOMC cycle. The same run is the backtest. Not audited accounting, "
+                "not advice that was ever published."
             )
             if basis == "book"
             else (
@@ -478,6 +415,27 @@ def replay(
         ),
     }
     return manifest, stocks
+
+
+# A scorecard arm's trades: each change of target at a close, filled at the next open.
+def _arm_trades(path: np.ndarray, dates: list[str]) -> list[dict]:
+    trades = []
+    shown = 0.0
+    for t in range(len(dates) - 1):
+        weight = float(path[t])
+        delta = weight - shown
+        if abs(delta) >= DUST or ((shown == 0.0) != (weight == 0.0) and delta != 0.0):
+            trades.append(
+                {
+                    "decided": dates[t],
+                    "date": dates[t + 1],
+                    "action": "BUY" if delta > 0 else "SELL",
+                    "size": abs(delta),
+                    "target": weight,
+                }
+            )
+            shown = weight
+    return trades
 
 
 def _pooled(rows: list[dict]) -> dict:

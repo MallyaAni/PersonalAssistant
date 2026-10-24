@@ -355,6 +355,15 @@ const replayOutcomeLine = (replay: DeskPolicyReplay): string => {
   return `${entry.count} entr${entry.count === 1 ? 'y' : 'ies'} here · from the fill, beat ${benchmark} after 20 sessions ${pct(entry.hit_rate_20)} of the time, mean excess ${signed(entry.mean_excess_20)} · after 60: ${pct(entry.hit_rate_60)}, ${signed(entry.mean_excess_60)}.`
 }
 
+// The backtest the chart is drawn from, for the whole book: one simulated account run by this rule.
+const replayBookLine = (replay: DeskPolicyReplay): string => {
+  const b = replay.book
+  if (!b?.all) return ''
+  const pct = (value: number) => `${(value * 100).toFixed(1)}%`
+  return `The whole book under this rule, as one account: ${pct(b.all.cagr)} a year, worst drop ${pct(b.all.max_drawdown)}, Sharpe ${b.all.sharpe.toFixed(2)}`
+    + (b.to_2022 && b.from_2023 ? ` (to 2022 ${pct(b.to_2022.cagr)}, from 2023 ${pct(b.from_2023.cagr)})` : '') + ` · ${b.fills.toLocaleString()} fills after costs.`
+}
+
 // Whether trading the name this way made money: the rule's P&L in it as a share of the book,
 // after costs, beside the benchmark at the same weights, and how its round trips went.
 const replayRealisedLine = (replay: DeskPolicyReplay, ticker: string): string => {
@@ -1584,6 +1593,7 @@ export const TickerChart = ({
         <summary className="cursor-pointer text-[#0071e3]">about</summary>
         {policyReplay ? <>
           <span className="block">{policyReplay.note}</span>
+          {replayBookLine(policyReplay) && <span className="block" aria-label={`${ticker} replay book backtest`}>{replayBookLine(policyReplay)}</span>}
           {replayOutcomeLine(policyReplay) && <span className="block">{replayOutcomeLine(policyReplay)}</span>}
           <span className="block">Buy opens a position and Sell closes it; Add and Trim show the change since the last marker and the position after it, drawn once the position has moved 2% of the book. FOMC cuts and restorations are always drawn. Zoomed out past {ZOOMED_OUT_BARS} bars, adds and trims are hidden; every entry, exit and FOMC step stays.</span>
         </> : <>

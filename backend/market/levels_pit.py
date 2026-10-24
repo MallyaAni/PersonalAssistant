@@ -174,6 +174,7 @@ def split_adjusted_shares(
         same = np.isfinite(out[t]) and np.isfinite(out[t - 1]) and out[t] == out[t - 1]
         first_seen[t] = first_seen[t - 1] if same else t
     split_days = [(np.datetime64(d), r) for d, r in splits]
+    last = days[-1]
     for t in range(len(out)):
         if not np.isfinite(out[t]):
             continue
@@ -183,7 +184,14 @@ def split_adjusted_shares(
             continue
         factor = 1.0
         for day, ratio in split_days:
-            if seen < day <= days[t]:
+            # Every split after the count was filed, through the price series'
+            # own vintage (its last session): the stored closes are back-adjusted
+            # for every split up to then, including splits after t, so a count
+            # filed before a later split must carry it on every earlier session
+            # too. Applying it only from the split day put market caps (and P/S,
+            # P/E, the expectations gap) a split factor too low before each
+            # later split: NVDA read 40x too cheap before July 2021.
+            if seen < day <= last:
                 factor *= ratio
         out[t] = out[t] * factor
     return out

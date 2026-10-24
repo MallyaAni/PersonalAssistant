@@ -3559,6 +3559,10 @@ export interface DeskPolicyReplay {
   generated_at: string;
   note: string;
   audit?: {entry_summary?: Record<string, number>; exit_summary?: Record<string, number>; by_year?: Record<string, Record<string, number>>};
+  // The whole book under this rule on the account-faithful simulator: the backtest the chart is drawn from.
+  book?: {capital: number; fills: number; costs: number;
+    all: {cagr: number; max_drawdown: number; sharpe: number; total: number};
+    to_2022?: {cagr: number; max_drawdown: number}; from_2023?: {cagr: number; max_drawdown: number}};
   rows: {date: string; weight: number; grade: string}[];
   // `reason` names an FOMC-rule step; `timing` 'decision_close' fills at the decision session's 3:45 PM bar.
   trades: {decided: string; date: string; action: 'BUY' | 'SELL'; size: number; target: number; reason?: string; timing?: 'decision_close'}[];

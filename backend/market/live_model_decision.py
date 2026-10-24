@@ -582,7 +582,10 @@ def _validate(record, config, report):
     if set(receipt["grade_signals"]) != names or receipt[
         "grade_signals"
     ] != grade_led_policy.signals(
-        report, held, learned_live_holding.entry_grade(config["policy"])
+        report,
+        held,
+        learned_live_holding.entry_grade(config["policy"]),
+        learned_live_holding.hold_grade(config["policy"]),
     ):
         raise ValueError("Original numeric policy grade signals required")
     basket = _basket(paper, names, receipt)

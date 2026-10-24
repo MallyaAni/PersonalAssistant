@@ -103,6 +103,7 @@ def _policy_replay(root, ticker):
         "generated_at": manifest["generated_at"],
         "note": manifest["note"],
         "audit": manifest.get("audit", {}),
+        **({"book": manifest["book"]} if "book" in manifest else {}),
         "rows": stock["rows"],
         "trades": stock["trades"],
         "grades": stock.get("grades", []),

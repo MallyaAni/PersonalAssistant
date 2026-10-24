@@ -2,10 +2,11 @@
 
 The candidate keeps every rule of the installed grade-led policy except how an
 eligible name is sized: instead of the learned scenario optimiser, each name
-graded B or better takes an equal slot tilted by its trailing-return rank among the sized
-names, the book is scaled down to a realised-volatility target, and each name
-is capped. Nothing after the decision session is read, no model is fitted, and
-the receipt says the optimiser did not run.
+graded A or better (held while it keeps B) takes an equal slot tilted by its
+trailing-return rank among the sized names, the book is scaled down to a
+realised-volatility target, and each name is capped. Nothing after the
+decision session is read, no model is fitted, and the receipt says the
+optimiser did not run.
 """
 
 import hashlib
@@ -46,8 +47,76 @@ EWMA_SPAN = 20
 # -36.0%, 0.35 was the rule without a floor. Half is the floor that paid
 # for itself without buying drawdown.
 EXPOSURE_FLOOR = 0.5
-# The ordinal grade (C 0, B 1, A 2, A+ 3) at which a name is admitted.
-ENTRY_GRADE = 1
+# The ordinal grades (C 0, B 1, A 2, A+ 3) at which a name is admitted and at
+# which a held name keeps its place, and the least resize worth trading as a
+# share of equity (an exit always trades). Chosen on the account-faithful
+# simulator (`backend.market.policy_book`: the nightly's grades, fills at the
+# next open from cash on hand, whole shares, 10 bp, the FOMC cycle), tuned on
+# 2015-2022 and checked on 2023-2026 (docs/research/
+# account-simulator-rule-2026-10-24.md): admitting at A and holding while B
+# earned 39.4% a year at worst drawdown -26.9% and Sharpe 1.51 against 34.0%,
+# -29.5% and 1.39 for admitting and holding at B, ahead in both windows (25.0%
+# against 19.8% to 2022, 74.4% against 68.5% after) and at 25 bp costs; the
+# 1% minimum trade cut fills from 82,000 to 6,700 without giving up return.
+ENTRY_GRADE = 2
+HOLD_GRADE = 1
+MIN_TRADE = 0.01
+# The P/E-history tilt: each sized name's leader slot is multiplied by
+# 1 + PE_HISTORY_TILT * (1 - 2 h), where h is where its price/earnings sits in
+# its own trailing three years of readings (valuation.own_history_rank: 0 the
+# cheapest it has been, 1 the richest); no positive earnings or fewer than 250
+# readings leaves the slot unchanged. On the account simulator with the
+# split-corrected grades it earned 37.4% a year at worst drawdown -27.1%
+# against 34.8% and -27.7% without it, ahead to 2022 (21.2% against 19.1%) and
+# after (77.4% against 73.8%), at 25 bp, in 8 of 11 years and about 3.5
+# standard deviations above shuffled and random placebos; in practice it
+# reads "earnings have grown faster than the price"
+# (docs/research/pe-history-tilt-2026-10-24.md). It sizes; it admits no name.
+PE_HISTORY_TILT = 0.5
+PE_HISTORY_WINDOW = 756
+PE_HISTORY_MIN = 250
+
+
+def pe_history_tilt(history_rank, strength=PE_HISTORY_TILT):
+    h = np.asarray(history_rank, dtype=float)
+    return np.where(np.isfinite(h), 1.0 + strength * (1.0 - 2.0 * h), 1.0)
+
+
+# The valuation analyst's own price/earnings evidence (the reading the grade
+# cites), (T, N) in panel order, or None when the report carries none.
+def _report_pe(report):
+    opinion = (getattr(report, "opinions", None) or {}).get("value")
+    pe = None if opinion is None else (opinion.evidence or {}).get("price_earnings")
+    shape = (len(report.panel.dates), len(report.panel.tickers))
+    return None if pe is None or np.shape(pe) != shape else np.asarray(pe, float)
+
+
+# The tilt for every name on the report's last session: (N,) multipliers in
+# panel order, all 1.0 when the evidence is absent.
+def report_pe_tilt(report) -> np.ndarray:
+    from backend.market import valuation
+
+    pe = _report_pe(report)
+    if pe is None:
+        return np.ones(len(report.panel.tickers))
+    rank = valuation.own_history_rank(
+        pe[-PE_HISTORY_WINDOW:], window=PE_HISTORY_WINDOW, min_known=PE_HISTORY_MIN
+    )[-1]
+    return pe_history_tilt(rank)
+
+
+# The same tilt on every session of the report, for the account simulator:
+# row t reads only readings up to t, exactly as that night's plan would.
+def report_pe_tilts(report) -> np.ndarray | None:
+    from backend.market import valuation
+
+    pe = _report_pe(report)
+    if pe is None:
+        return None
+    rank = valuation.own_history_rank(
+        pe, window=PE_HISTORY_WINDOW, min_known=PE_HISTORY_MIN
+    )
+    return pe_history_tilt(rank)
 
 
 def forecast_volatility(basket: np.ndarray) -> float:
@@ -70,6 +139,7 @@ def leader_weights(
     target=TARGET,
     cap=growth.CAP,
     floor=EXPOSURE_FLOOR,
+    extra=None,
 ):
     closes = np.asarray(closes, dtype=float)
     sized = np.asarray(sized, dtype=bool)
@@ -103,6 +173,11 @@ def leader_weights(
     if not np.isfinite(book).all() or not (book > 0).all():
         raise ValueError("Finite positive trailing closes for every sized name")
     multipliers = point_in_time.TILTS["leader"](book, strength)
+    if extra is not None:
+        # A per-name multiplier on the leader slot (the P/E-history tilt):
+        # a missing or non-positive value leaves the slot as it is.
+        x = np.asarray(extra, dtype=float)[sized]
+        multipliers = multipliers * np.where(np.isfinite(x) & (x > 0), x, 1.0)
     slots = multipliers / multipliers.sum()
     basket = np.diff(np.log(book), axis=0).mean(axis=1)
     realised = forecast_volatility(basket)
@@ -141,7 +216,15 @@ def size_report(report, names, blocked, current):
         [name not in blocked or current.get(name, 0) > 0 for name in names],
         dtype=bool,
     )
-    weights, certificate = leader_weights(closes, sized)
+    tilt = report_pe_tilt(report)
+    columns = [report.panel.index(name) for name in names]
+    extra = tilt[columns]
+    weights, certificate = leader_weights(closes, sized, extra=extra)
+    certificate["pe_history_tilt"] = {
+        "strength": PE_HISTORY_TILT,
+        "window": PE_HISTORY_WINDOW,
+        "multipliers": dict(zip(names, extra.tolist(), strict=True)),
+    }
     sizes = {
         name: min(weight, current.get(name, 0.0)) if name in blocked else weight
         for name, weight in zip(names, weights.tolist(), strict=True)
@@ -161,15 +244,14 @@ class GradeLedLeaderFundedPolicy(funded.GradeLedFundedPolicy):
     protocol = PROTOCOL
     sizing_reason = BASIS
     target_basis = BASIS
-    # A name is admitted at B or better and held while it keeps at least B.
-    # On the point-in-time scorecard the B cut earned 26.0% a year against
-    # the A cut's 22.0% at the same worst drawdown (-34.3% against -34.2%),
-    # ahead in both windows, and the grade read behind it is that B names
-    # outran A names over the next sixty sessions while A+ led both: the A
-    # cut kept the weakest upper grade and left a better one out.
+    # A name is admitted at A or better and held while it keeps at least B
+    # (ENTRY_GRADE, HOLD_GRADE). The scorecard that once preferred the B cut
+    # graded with the research fundamentals mode, not the nightly's; on the
+    # nightly's grades the A entry with a B hold leads in both windows.
     entry_grade = ENTRY_GRADE
-    minimum_held_grade = ENTRY_GRADE
+    minimum_held_grade = HOLD_GRADE
     exit_letter = "B"
+    min_trade = MIN_TRADE
 
     # Bind the sizing source beside the funded policy source the parent already pins;
     # the installed subclass passes its release arguments through unchanged.
