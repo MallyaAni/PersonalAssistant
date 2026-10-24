@@ -151,16 +151,38 @@ def book_eligibility(panel, window: int = leader.WINDOW) -> np.ndarray:
 # `leader_weights` on that close's trailing window, exactly as `size_report`
 # does for the nightly (live cap after the volatility scale, the 63-return
 # EWMA), so the chart cannot drift from the scorecard arm's approximations.
-def live_leader_targets(restricted, mask: np.ndarray) -> np.ndarray:
+# A name the band (exit) analyst signals at a close is buy-blocked that night
+# (`market_daily._band_blocked`): it is not sized unless already held, and a
+# held one may not grow past what it holds (`size_report`). `current` is the
+# book's target from the previous close.
+def leader_target(restricted, mask, t: int, blocked=None, current=None) -> np.ndarray:
     panel = restricted.panel
-    closes = np.asarray(panel.adj_close, dtype=float)
-    grades = np.asarray(restricted.graded.grades)
     window = leader.WINDOW
-    weights = np.zeros(closes.shape)
-    for t in range(window, len(panel.dates)):
-        sized = mask[t] & (grades[t] >= leader.ENTRY_GRADE)
-        weights[t], _ = leader.leader_weights(closes[t - window : t + 1], sized)
+    if t < window:
+        return np.zeros(len(panel.tickers))
+    closes = np.asarray(panel.adj_close[t - window : t + 1], dtype=float)
+    sized = mask[t] & (np.asarray(restricted.graded.grades[t]) >= leader.ENTRY_GRADE)
+    if blocked is None:
+        weights, _ = leader.leader_weights(closes, sized)
+        return weights
+    held = np.asarray(current, dtype=float) > 0
+    weights, _ = leader.leader_weights(closes, sized & (~blocked[t] | held))
+    return np.where(blocked[t], np.minimum(weights, current), weights)
+
+
+def live_leader_targets(restricted, mask: np.ndarray, blocked=None) -> np.ndarray:
+    weights = np.zeros((len(restricted.panel.dates), len(restricted.panel.tickers)))
+    for t in range(len(weights)):
+        current = weights[t - 1] if t else weights[0]
+        weights[t] = leader_target(restricted, mask, t, blocked, current)
     return weights
+
+
+# The band analyst's buy block on every close, read causally from the panel.
+def band_blocked(panel) -> np.ndarray:
+    from backend.agents.trading.desk import exit as exit_analyst
+
+    return np.asarray(exit_analyst.evidence(panel).signalled(), dtype=bool)
 
 
 # The FOMC rule the nightly runs instead of the leader plan in the guidance
@@ -172,16 +194,22 @@ def live_leader_targets(restricted, mask: np.ndarray) -> np.ndarray:
 # A cycle that starts on the eve itself cuts at the decision open and restores
 # at the following open, as the live state machine does. Returns the adjusted
 # targets and, per session index, the FOMC step that set them.
-def fomc_overlay(panel, weights: np.ndarray) -> tuple[np.ndarray, dict[int, str]]:
+# `ordinary` is the plan the nightly would run at each close outside a cycle:
+# a (T, N) array, or a callable (t, previous targets) -> targets, so a rule that
+# reads the book (the band block) sees the book the FOMC cycle left.
+def fomc_overlay(panel, ordinary) -> tuple[np.ndarray, dict[int, str]]:
     from datetime import date as _date
 
     factor = event_risk.live_path(panel)
     meetings = fomc_decisions()
     days = [_date.fromisoformat(str(d)[:10]) for d in panel.dates]
-    out = np.array(weights, dtype=float, copy=True)
+    plan = ordinary if callable(ordinary) else (lambda t, previous: ordinary[t])
+    width = len(panel.tickers) if callable(ordinary) else np.shape(ordinary)[1]
+    out = np.zeros((len(days), width))
     steps: dict[int, str] = {}
     cycle = None
     for t, day in enumerate(days):
+        out[t] = plan(t, out[t - 1] if t else np.zeros(out.shape[1]))
         if cycle is None:
             if t == 0 or factor[t] != event_risk.REDUCED:
                 continue
@@ -226,7 +254,11 @@ def replay(
     steps: dict[int, str] = {}
     if arm_name in INSTALLED_ARMS.values():
         # The installed policy: its own sizing and its FOMC rule, not the arm.
-        weights, steps = fomc_overlay(panel, live_leader_targets(restricted, mask))
+        blocked = band_blocked(panel)
+        weights, steps = fomc_overlay(
+            panel,
+            lambda t, current: leader_target(restricted, mask, t, blocked, current),
+        )
     else:
         allocator = scorecard.ARMS[arm_name](restricted, mask)
         weights = np.zeros((len(dates), len(panel.tickers)))

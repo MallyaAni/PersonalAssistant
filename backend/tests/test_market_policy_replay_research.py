@@ -152,3 +152,22 @@ def test_written_targets_stay_within_dust(history):  # noqa: F811
             last = trade["target"]
         # The final close has no next open to trade at, but its row is written.
         assert abs(stock["rows"][-1]["weight"] - stock["latest_target"]) < research.DUST
+
+
+# A band-blocked name is not bought, and a held one may not grow past its target.
+def test_band_block_stops_buys_and_growth(history):  # noqa: F811
+    import numpy as np
+
+    report = _report()
+    mask = research.book_eligibility(report.panel)
+    restricted = research.point_in_time.restrict(report, mask)
+    free = research.live_leader_targets(restricted, mask)
+    blocked = np.zeros_like(mask)
+    blocked[:, :] = True
+    held = research.live_leader_targets(restricted, mask, blocked)
+    assert not held.any()
+    first = next(t for t in range(len(free)) if free[t].any())
+    current = free[first]
+    after = research.leader_target(restricted, mask, first + 1, blocked, current)
+    assert (after <= current + 1e-15).all()
+    assert ((after > 0) <= (current > 0)).all()
