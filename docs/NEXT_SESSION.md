@@ -6,7 +6,7 @@
   from each name's first full 64-close window (`book_eligibility`), using the live
   `leader_weights`, the band buy block, the FOMC cycle (`fomc_overlay`) and the nightly's
   `FUNDAMENTALS_CURRENT` grades. It used to mask names to C before their membership date,
-  so CRWV, IREN, AAPL, META and others never bought. Regenerate it after each nightly:
+  so CRWV, IREN, AAPL, META and others never bought. Cron runs ~/desk_replay.sh at 20:40 ET weekdays (waits for the record; log ~/desk_replay.log). By hand:
   `cd ~/dspark-commit && PYTHONPATH=. ~/research-venv/bin/python -m backend.cli.market_policy_replay_research --root /home/animallya96/deploy/anios/data/market` (~6 min).
 - Each stock file carries `realised` (fills at the next open, 10 bp a side, SPY at the same weights,
   round trips); `signal_outcomes` are measured from the fill. The chart prints the P&L line.
