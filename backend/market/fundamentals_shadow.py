@@ -1,11 +1,13 @@
 """The desk on as-of fundamentals, recorded beside the desk on the frozen path.
 
 Stage one of correcting the desk's fundamental data. The production value
-analyst reads `levels_pit`: one facts snapshot per session, the tag
-chosen for the whole history, restatements dropped. `fundamentals_asof`
-keeps every filed version and gives each session the version that was
-actually available, which on the research ladder moved the valuation
-rule's backtest materially. Before the live analyst switches inputs the
+analyst reads `levels_pit`: each fundamental's tag chosen per session from
+the stored filing versions on file then, each period's first-filed value,
+the latest quarter annualised and share counts split-adjusted.
+`fundamentals_asof.levels` gives each session the latest version then
+available (restatements included) and trailing four-quarter sums, which on
+the research ladder moved the valuation rule's backtest materially.
+Before the live analyst switches inputs the
 difference has to be seen on real nights, so every record now carries the
 plain rule run twice on the same session, frozen and as-of, and the
 names whose grade, score or book weight differ. Nothing here sizes a

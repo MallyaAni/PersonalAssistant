@@ -3,8 +3,11 @@
 `edgar.edgar_features` turns the filings into ratios and growth rates. The
 valuation analyst needs the levels themselves, dated the same way: the
 value that had been filed and was public at each session, never a later
-restatement. This reads the stored frames and returns those levels, so
-nothing else has to know how the filing store is shaped.
+restatement. `point_in_time_levels` reads the stored filing versions and
+chooses each fundamental's tag per session from what had been filed by
+then (the stored facts frame only for a name with no versions on file);
+`trailing_levels` still reads the stored facts frame. Nothing else has to
+know how the filing store is shaped.
 """
 
 from datetime import date, datetime
@@ -197,51 +200,235 @@ def split_adjusted_shares(
     return out
 
 
+# The valuation levels, point in time, from the stored filing versions.
+#
+# The stored facts frame (`edgar.parse_company_facts`) keeps ONE tag per
+# fundamental, chosen over the whole history by its latest period end:
+# hindsight. A filer that moved to the ASC 606 revenue tag in 2018 had its
+# revenue chosen from that tag, which holds nothing before about 2017, so
+# the valuation analyst saw no revenue (no P/S) for most of the market
+# before then. The versions frame (`fundamentals_asof.KIND`) keeps every
+# filing of every candidate tag, so the choice can be made at each session
+# from what had been filed by then: the tag with the latest period end on
+# file, then the most periods, then table order (`fundamentals_asof`'s
+# `_ranked_tags` key). Every value still comes from one tag at a time, so
+# growth compares a quarter with the year-ago quarter filed under the same
+# tag. Values keep the frames path's semantics: each period's first-filed
+# value, a fourth quarter derived from the year once its parts were all
+# filed, and a value never rewritten once a session has seen it.
+_PIT_NAMES = ("revenue", "net_income", "equity", "shares")
+_PIT_FLOWS = frozenset({"revenue", "net_income"})
+
+
+class _TagSeries:
+    """One candidate tag of one fundamental, from the versions filed so far."""
+
+    __slots__ = ("spans", "by_end", "filed_by_end", "key")
+
+    def __init__(self) -> None:
+        self.spans: dict = {}  # (start, end) -> first-filed Version
+        self.by_end: dict[date, float] = {}  # first value known per period end
+        self.filed_by_end: dict[date, date] = {}
+        self.key: tuple = (date.min, 0)  # (latest end, count) for the ranking
+
+    # Keep the version if it is the first filed for its period.
+    def add(self, version) -> bool:
+        span = (version.start, version.end)
+        held = self.spans.get(span)
+        if held is not None and held.filed <= version.filed:
+            return False
+        self.spans[span] = version
+        return True
+
+    # Extend the period values (never rewriting one already known) and the
+    # rank key, after new versions were added.
+    def refresh(self, flow: bool) -> None:
+        from backend.market import fundamentals_asof as fa
+
+        if flow:
+            facts = _flow_facts(self.spans)
+        else:
+            facts = [(e, v.value, v.filed) for (_s, e), v in self.spans.items()]
+        for end, value, filed in sorted(facts, key=lambda f: (f[2], f[0])):
+            if end not in self.by_end:
+                self.by_end[end] = value
+                self.filed_by_end[end] = filed
+        dated = {k: v for k, v in self.spans.items() if fa._dated_consistently(v)}
+        ends = set(fa._quarters(dated, False)) if flow else {e for _, e in dated}
+        self.key = (max(ends) if ends else date.min, len(ends))
+
+
+# One tag's quarters as the frozen parser builds them: each reported quarter,
+# plus a fourth quarter from a year whose first three quarters are on file,
+# stamped with the latest filing of its parts.
+def _flow_facts(spans: dict) -> list[tuple[date, float, date]]:
+    from backend.market import fundamentals_asof as fa
+
+    quarters = {k: v for k, v in spans.items() if fa.span_kind(*k) == "quarter"}
+    years = {k: v for k, v in spans.items() if fa.span_kind(*k) == "year"}
+    out = [(e, v.value, v.filed) for (_s, e), v in quarters.items()]
+    ends = {e for _s, e in quarters}
+    for (start, end), year in years.items():
+        if end in ends:
+            continue
+        inside = [v for (s, e), v in quarters.items() if s >= start and e < end]
+        if len(inside) != 3:
+            continue
+        filed = max([year.filed] + [v.filed for v in inside])
+        out.append((end, year.value - sum(v.value for v in inside), filed))
+    return out
+
+
+# The best ranked tag holding any filing: (latest end, count), then table order.
+def _best_tag(by_tag: dict, order: list[str]) -> str | None:
+    best = None
+    for rank, tag in enumerate(order):
+        series = by_tag[tag]
+        if not series.spans:
+            continue
+        key = (*series.key, -rank)
+        if best is None or key > best[0]:
+            best = (key, tag)
+    return None if best is None else best[1]
+
+
+# One company's levels at each session from its filing versions. Returns
+# {name: (latest, four quarters back, source filing date)} of (T,) arrays
+# for revenue, net_income, equity and shares; NaN / NaT where unknown. A
+# version counts from its filing date (strictly after it when
+# `strict_publication`), the clock the frames path uses. Like the frames
+# path, a level is carried however old its period is; `max_flow_age_days`
+# (off by default) instead leaves revenue and earnings unknown once their
+# latest quarter ended longer ago than that: a tag the filer stopped using
+# (JNJ's lone `Revenues` quarters of 2014, read as 2016 revenue) or a metric
+# it now reports under a tag the table does not list.
+def versions_levels(
+    versions,
+    dates: np.ndarray,
+    *,
+    strict_publication: bool = False,
+    max_flow_age_days: int | None = None,
+) -> dict[str, tuple[np.ndarray, np.ndarray, np.ndarray]]:
+    """Return the per-session levels of one company, tag chosen per session."""
+    from backend.market import fundamentals_asof as fa
+
+    size = len(dates)
+    calendar = np.asarray(dates).astype("datetime64[D]").astype(object)
+    rows = sorted(
+        (v for v in versions if v.name in _PIT_NAMES),
+        key=lambda v: (v.filed, v.accession, v.tag, v.end),
+    )
+    order = {name: fa._tag_order(name) for name in _PIT_NAMES}
+    state = {name: {tag: _TagSeries() for tag in order[name]} for name in _PIT_NAMES}
+    out = {
+        name: (
+            np.full(size, np.nan),
+            np.full(size, np.nan),
+            np.full(size, np.datetime64("NaT", "D")),
+        )
+        for name in _PIT_NAMES
+    }
+    chosen: dict[str, str | None] = {}
+    pointer = 0
+    for t in range(size):
+        session = calendar[t]
+        dirty: dict[str, set[str]] = {}
+        while pointer < len(rows) and (
+            rows[pointer].filed < session
+            or (not strict_publication and rows[pointer].filed == session)
+        ):
+            version = rows[pointer]
+            pointer += 1
+            series = state[version.name].get(version.tag)
+            if series is not None and series.add(version):
+                dirty.setdefault(version.name, set()).add(version.tag)
+        for name, tags in dirty.items():
+            for tag in tags:
+                state[name][tag].refresh(name in _PIT_FLOWS)
+            chosen[name] = _best_tag(state[name], order[name])
+        for name in _PIT_NAMES:
+            tag = chosen.get(name)
+            if tag is None or not state[name][tag].by_end:
+                continue
+            series = state[name][tag]
+            ends = sorted(series.by_end)
+            last = ends[-1]
+            if (
+                max_flow_age_days is not None
+                and name in _PIT_FLOWS
+                and (session - last).days > max_flow_age_days
+            ):
+                continue
+            out[name][0][t] = series.by_end[last]
+            out[name][1][t] = edgar._quarters_back(series.by_end, ends, last, 4)
+            out[name][2][t] = np.datetime64(series.filed_by_end[last], "D")
+    return out
+
+
 # Read valuation inputs with optional strict publication and source share-basis bounds.
+# Each name is read from its stored filing versions, the tag chosen per
+# session; a name with no versions frame on file falls back to the stored
+# facts frame (`_frames_levels`), so a store without versions behaves as before.
 def point_in_time_levels(
     store: MarketStore, panel: Panel, asof=None, *, strict_publication: bool = False
 ) -> dict[str, np.ndarray]:
     """Return {"revenue", "earnings", "equity", "shares", "revenue_growth"}."""
+    from backend.market import fundamentals_asof as fa
+
     shape = (len(panel.dates), len(panel.tickers))
     out = {
         name: np.full(shape, np.nan)
         for name in ("revenue", "earnings", "equity", "shares", "revenue_growth")
     }
     for column, ticker in enumerate(panel.tickers):
-        events = store.read_frame(EVENTS, ticker, asof)
-        facts = store.read_frame(FACTS, ticker, asof)
-        if events is None or facts is None:
-            continue
-        meta = facts[1]
-        stamp = meta.get("source_time")
-        record = edgar.record_from_frames(
-            ticker,
-            int(meta.get("cik", "0")),
-            events[0],
-            facts[0],
-            datetime.fromisoformat(stamp) if stamp else datetime.now(),
-        )
-        known = {
-            name: edgar._known_quarters(
-                record.facts,
-                name,
-                panel.dates,
-                strict_before_session=strict_publication,
+        found = store.read_frame(fa.KIND, ticker, asof)
+        versions = fa.versions_from_frame(found[0]) if found is not None else []
+        if versions:
+            known = versions_levels(
+                versions, panel.dates, strict_publication=strict_publication
             )
-            for name in ("revenue", "net_income", "equity", "shares")
-        }
-        series = {name: values[0] for name, values in known.items()}
+        else:
+            known = _frames_known(store, ticker, panel.dates, asof, strict_publication)
+            if known is None:
+                continue
         with np.errstate(all="ignore"):
-            out["revenue"][:, column] = series["revenue"][0] * QUARTERS
-            out["earnings"][:, column] = series["net_income"][0] * QUARTERS
-            out["equity"][:, column] = series["equity"][0]
+            out["revenue"][:, column] = known["revenue"][0] * QUARTERS
+            out["earnings"][:, column] = known["net_income"][0] * QUARTERS
+            out["equity"][:, column] = known["equity"][0]
             out["shares"][:, column] = split_adjusted_shares(
-                series["shares"][0],
+                known["shares"][0],
                 panel.dates,
                 _splits(store, ticker, asof),
                 basis_dates=known["shares"][2] if strict_publication else None,
             )
             out["revenue_growth"][:, column] = (
-                series["revenue"][0] / series["revenue"][4] - 1.0
+                known["revenue"][0] / known["revenue"][1] - 1.0
             )
+    return out
+
+
+# The same per-session levels from the stored facts frame (one tag per
+# fundamental, chosen over the snapshot), for a name with no versions frame.
+def _frames_known(
+    store: MarketStore, ticker: str, dates: np.ndarray, asof, strict_publication: bool
+) -> dict[str, tuple[np.ndarray, np.ndarray, np.ndarray]] | None:
+    events = store.read_frame(EVENTS, ticker, asof)
+    facts = store.read_frame(FACTS, ticker, asof)
+    if events is None or facts is None:
+        return None
+    meta = facts[1]
+    stamp = meta.get("source_time")
+    record = edgar.record_from_frames(
+        ticker,
+        int(meta.get("cik", "0")),
+        events[0],
+        facts[0],
+        datetime.fromisoformat(stamp) if stamp else datetime.now(),
+    )
+    out = {}
+    for name in _PIT_NAMES:
+        series, _filed_at, source = edgar._known_quarters(
+            record.facts, name, dates, strict_before_session=strict_publication
+        )
+        out[name] = (series[0], series[4], source)
     return out

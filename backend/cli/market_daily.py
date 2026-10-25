@@ -216,15 +216,18 @@ def refresh(
     print(f"tone: {scored} new releases scored")
 
 
-# Every filed version of the book's facts, for the as-of comparison the
-# record carries (`fundamentals_shadow`). A failure here is named and never
-# stops the desk: the comparison is evidence, not an input to the book.
+# Every filed version of every stock member's facts: the fundamental
+# analyst's input, the valuation levels (`levels_pit.point_in_time_levels`,
+# also read by the expectations gap over the whole research universe) and
+# the as-of comparison the record carries (`fundamentals_shadow`). A failure
+# here is named and never stops the desk: a name that failed keeps its last
+# stored versions.
 def _refresh_versions(store: MarketStore, asof: date, versions=None) -> list[str]:
     if versions is None:
         from backend.cli.market_fundamentals_asof import refresh as versions
 
     try:
-        failed = list(versions(store, book_tickers(), asof) or ())
+        failed = list(versions(store, research_tickers(), asof) or ())
     except Exception as exc:  # noqa: BLE001 - the desk runs on what is stored
         print(f"filing versions: not refreshed ({type(exc).__name__}: {exc})")
         return []

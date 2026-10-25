@@ -77,6 +77,9 @@ class FrameStore:
             "edgar_facts": facts,
             language.TONE_KIND: language.tone_frame(self.tones),
         }
+        # No filing-versions frame: the valuation levels read the facts frame.
+        if kind not in frames:
+            return None
         return frames[kind], {"cik": "0", "source_time": STAMP.isoformat()}
 
     # Supply only the declared split actions to the actual valuation reader.

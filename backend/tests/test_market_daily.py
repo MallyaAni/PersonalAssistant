@@ -58,10 +58,11 @@ def test_refresh_order_and_tickers(tmp_path):
         tone=tone,
         versions=versions,
     )
-    # The filing versions follow the filings and cover the book; their
-    # failure is named and does not stop the tone step or the desk.
+    # The filing versions follow the filings and cover the same stock
+    # members (the valuation levels read them); their failure is named and
+    # does not stop the tone step or the desk.
     assert [c[0] for c in calls] == ["bars", "filings", "versions", "tone"]
-    assert set(calls[2][1]) == set(market_daily.book_tickers())
+    assert set(calls[2][1]) == set(market_daily.research_tickers())
     calls = [c for c in calls if c[0] != "versions"]
     bar_tickers = calls[0][1]
     assert MARKET_BENCHMARK in bar_tickers

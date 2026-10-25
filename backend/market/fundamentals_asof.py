@@ -27,7 +27,9 @@ growth compares a quarter with the year-ago comparative filed under the same
 tag, and stays missing, never borrowed from the old tag, where none was filed.
 
 The level outputs retain the vocabulary consumed by `opportunity_learning.ratios`.
-The separate frozen `edgar`/`levels_pit` paths remain for their existing callers.
+`levels_pit.point_in_time_levels` (the valuation analyst's levels) reads these
+versions with the same per-session tag rank; `levels_pit.trailing_levels` and
+the frozen `edgar` feature block remain on the stored facts frame.
 """
 
 from __future__ import annotations
