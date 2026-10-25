@@ -243,7 +243,9 @@ def _validated(source):
 
 # State dimensions explicitly without inferring any reporting or price currency.
 def _expected_unit(name):
-    return "shares" if name == "shares" else "USD/shares" if name == "eps" else "USD"
+    if name in ("shares", "weighted_shares"):
+        return "shares"
+    return "USD/shares" if name == "eps" else "USD"
 
 
 # Project only explicitly compatible units, retaining every excluded source reference.

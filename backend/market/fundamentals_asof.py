@@ -165,6 +165,13 @@ def _candidates() -> list[tuple[str, str, str, bool]]:
         out.extend((name, "us-gaap", tag, False) for tier in tiers for tag in tier)
     for name, pairs in edgar.INSTANT_TAGS.items():
         out.extend((name, taxonomy, tag, True) for taxonomy, tag in pairs)
+    # The weighted-average share counts, durations under their own name: read
+    # only by `levels_pit.versions_levels` as a fallback share count, never by
+    # the levels here (`levels_for` keeps only FLOW_NAMES and INSTANT_NAMES).
+    out.extend(
+        (edgar.WEIGHTED_SHARES_NAME, "us-gaap", tag, False)
+        for tag in edgar.SHARE_COUNT_FALLBACK_TAGS
+    )
     return out
 
 

@@ -113,6 +113,24 @@ FALLBACK_FACT_TAGS: dict[str, tuple[tuple[str, ...], ...]] = {
     ),
 }
 
+# Share counts read only by `levels_pit.versions_levels`, one tier below the
+# cover-page and balance-sheet counts (`INSTANT_TAGS["shares"]`), never by the
+# frozen `parse_company_facts`. The company-facts feed carries no dimensional
+# facts, so a filer that reports its cover count per share class (META, NET,
+# TEAM, CRWV, MA, V ...) has no undimensioned count at all, or only one from
+# before it split its classes (ACN's of 2010, WDAY's of 2018, CMCSA's of
+# 2009), and its market capitalisation was missing or a decade stale. The
+# weighted-average diluted count is reported undimensioned for the whole
+# company every quarter, on the basis of the diluted earnings per share.
+# They are durations, stored in the versions frame under their own name
+# (`WEIGHTED_SHARES_NAME`), so every reader of the instant "shares" versions
+# (`fundamentals_asof.levels_for`, `neural_price_basis`) is untouched.
+WEIGHTED_SHARES_NAME = "weighted_shares"
+SHARE_COUNT_FALLBACK_TAGS: tuple[str, ...] = (
+    "WeightedAverageNumberOfDilutedSharesOutstanding",
+    "WeightedAverageNumberOfShareOutstandingBasicAndDiluted",
+)
+
 # Balance-sheet facts are instants (a value at a date, no span). Shares
 # outstanding live in the dei taxonomy on the cover page; the us-gaap tag
 # is the balance-sheet count. Either serves for growth in the share count.

@@ -45,8 +45,8 @@ def switch_versions():
         quarter(OLD, "2017-01-01", "2017-03-31", 130, "2017-05-01"),
         quarter(NEW, "2017-01-01", "2017-03-31", 125, "2018-05-01"),
         quarter(NEW, "2018-01-01", "2018-03-31", 150, "2018-05-01"),
-        version("shares", SHARES, None, "2016-04-20", 10, "2016-05-01"),
-        version("shares", SHARES, None, "2018-04-20", 12, "2018-05-01"),
+        version("shares", SHARES, None, "2016-04-20", 10e6, "2016-05-01"),
+        version("shares", SHARES, None, "2018-04-20", 12e6, "2018-05-01"),
     ]
 
 
@@ -156,10 +156,10 @@ def test_versions_share_counts_stay_split_adjusted():
         switch_versions(), actions=(CorporateAction(date(2017, 1, 3), "split", 2.0),)
     )
     out = levels_pit.point_in_time_levels(store, panel)
-    np.testing.assert_array_equal(out["shares"][:, 0], [20.0, 20.0, 20.0, 12.0, 12.0])
+    np.testing.assert_array_equal(out["shares"][:, 0], [20e6, 20e6, 20e6, 12e6, 12e6])
     strict = levels_pit.point_in_time_levels(store, panel, strict_publication=True)
     np.testing.assert_array_equal(
-        strict["shares"][:, 0], [20.0, 20.0, 20.0, 20.0, 12.0]
+        strict["shares"][:, 0], [20e6, 20e6, 20e6, 20e6, 12e6]
     )
 
 
