@@ -67,8 +67,14 @@ CITED_CORRECTED = (
 # choice by count alone kept the pre-2018 revenue tags of names that moved to
 # the ASC 606 tags, and the reporting-period safeguard then withheld them for
 # years (55 of 94 book names; 17 scored names a session in 2019).
-CORRECTED_SOURCE = "fundamentals-features/5"
-CURRENT_SOURCE = "fundamentals-features/4"
+# /6 and /7 are /4 and /5 with the fallback revenue and net-income tags
+# (edgar.FALLBACK_FACT_TAGS) ranked below the main table: a filer whose
+# revenue or net income moved to a tag the table did not list (banks' revenue
+# net of interest expense, the pre-2018 goods and services revenue tags,
+# income available to common stockholders) is read from its fresh tag rather
+# than carried at its last listed quarter or left out.
+CORRECTED_SOURCE = "fundamentals-features/7"
+CURRENT_SOURCE = "fundamentals-features/6"
 QUALIFIED_SOURCE = "fundamentals-qualified/1"
 LEGACY_SOURCE = "edgar-frozen"
 

@@ -298,5 +298,71 @@
   "to": "8b12394b21e8755ec996270fa971162be9be96a6f604a41a1212c91d162207e6",
   "declared": "2026-10-24",
   "reason": "levels_pit.point_in_time_levels (the valuation analyst's levels) now reads the stored filing versions and chooses each fundamental's tag per session from the filings on file then, instead of the stored facts frame's whole-history tag choice. levels_pit.trailing_levels, the only levels_pit function the shadow reads (through opportunity_learning), is unchanged, as are the model bundle and every other hashed module; the shadow continues unchanged. Archived observations are not rewritten."
+ },
+ {
+  "from": "8b12394b21e8755ec996270fa971162be9be96a6f604a41a1212c91d162207e6",
+  "to": "5a70556f0cbfa85acd0969d6d6bcd195a367e8fc798ef6c23e72e4bc9c58ed45",
+  "declared": "2026-10-24",
+  "reason": "edgar.FALLBACK_FACT_TAGS adds tiered fallback revenue and net-income tags read only by the per-session as-of selectors (fundamentals_asof and levels_pit.versions_levels / point_in_time_levels); a fallback tag is chosen only on a session when its latest filed quarter is later than every better-tier tag's. edgar.FACT_TAGS, edgar.parse_company_facts, the stored facts frame, edgar.edgar_features and levels_pit.trailing_levels, which are all the shadow reads (through opportunity_learning), are unchanged, as are the model bundle and every other hashed module; the shadow continues unchanged. Archived observations are not rewritten."
+ },
+ {
+  "from": "19f933ffc785a21c1275fe3f00e822fb755184e234f41fcee466c3128e5bd34f",
+  "to": "5a70556f0cbfa85acd0969d6d6bcd195a367e8fc798ef6c23e72e4bc9c58ed45",
+  "declared": "2026-10-24",
+  "reason": "edgar.FALLBACK_FACT_TAGS adds tiered fallback revenue and net-income tags read only by the per-session as-of selectors (fundamentals_asof and levels_pit.versions_levels / point_in_time_levels); a fallback tag is chosen only on a session when its latest filed quarter is later than every better-tier tag's. edgar.FACT_TAGS, edgar.parse_company_facts, the stored facts frame, edgar.edgar_features and levels_pit.trailing_levels, which are all the shadow reads (through opportunity_learning), are unchanged, as are the model bundle and every other hashed module; the shadow continues unchanged. Archived observations are not rewritten."
+ },
+ {
+  "from": "39a7f99d0a31e284798eae906d262a98fad4b4f0d7b22da84087cb9b1fa802a8",
+  "to": "5a70556f0cbfa85acd0969d6d6bcd195a367e8fc798ef6c23e72e4bc9c58ed45",
+  "declared": "2026-10-24",
+  "reason": "edgar.FALLBACK_FACT_TAGS adds tiered fallback revenue and net-income tags read only by the per-session as-of selectors (fundamentals_asof and levels_pit.versions_levels / point_in_time_levels); a fallback tag is chosen only on a session when its latest filed quarter is later than every better-tier tag's. edgar.FACT_TAGS, edgar.parse_company_facts, the stored facts frame, edgar.edgar_features and levels_pit.trailing_levels, which are all the shadow reads (through opportunity_learning), are unchanged, as are the model bundle and every other hashed module; the shadow continues unchanged. Archived observations are not rewritten."
+ },
+ {
+  "from": "4b5e711070e9ecbad73f179de89a5aac68a9d8d4bde4796dc29088c11477baac",
+  "to": "5a70556f0cbfa85acd0969d6d6bcd195a367e8fc798ef6c23e72e4bc9c58ed45",
+  "declared": "2026-10-24",
+  "reason": "edgar.FALLBACK_FACT_TAGS adds tiered fallback revenue and net-income tags read only by the per-session as-of selectors (fundamentals_asof and levels_pit.versions_levels / point_in_time_levels); a fallback tag is chosen only on a session when its latest filed quarter is later than every better-tier tag's. edgar.FACT_TAGS, edgar.parse_company_facts, the stored facts frame, edgar.edgar_features and levels_pit.trailing_levels, which are all the shadow reads (through opportunity_learning), are unchanged, as are the model bundle and every other hashed module; the shadow continues unchanged. Archived observations are not rewritten."
+ },
+ {
+  "from": "884a9418c7d1fda8768755494162ddcc8ce0123d3442396dd9aabf1df10bbdf1",
+  "to": "5a70556f0cbfa85acd0969d6d6bcd195a367e8fc798ef6c23e72e4bc9c58ed45",
+  "declared": "2026-10-24",
+  "reason": "edgar.FALLBACK_FACT_TAGS adds tiered fallback revenue and net-income tags read only by the per-session as-of selectors (fundamentals_asof and levels_pit.versions_levels / point_in_time_levels); a fallback tag is chosen only on a session when its latest filed quarter is later than every better-tier tag's. edgar.FACT_TAGS, edgar.parse_company_facts, the stored facts frame, edgar.edgar_features and levels_pit.trailing_levels, which are all the shadow reads (through opportunity_learning), are unchanged, as are the model bundle and every other hashed module; the shadow continues unchanged. Archived observations are not rewritten."
+ },
+ {
+  "from": "95a54c5804a2d85610a8f2c069bfd87e6fc5d5a543002d1e57c5dc9c2842a551",
+  "to": "5a70556f0cbfa85acd0969d6d6bcd195a367e8fc798ef6c23e72e4bc9c58ed45",
+  "declared": "2026-10-24",
+  "reason": "edgar.FALLBACK_FACT_TAGS adds tiered fallback revenue and net-income tags read only by the per-session as-of selectors (fundamentals_asof and levels_pit.versions_levels / point_in_time_levels); a fallback tag is chosen only on a session when its latest filed quarter is later than every better-tier tag's. edgar.FACT_TAGS, edgar.parse_company_facts, the stored facts frame, edgar.edgar_features and levels_pit.trailing_levels, which are all the shadow reads (through opportunity_learning), are unchanged, as are the model bundle and every other hashed module; the shadow continues unchanged. Archived observations are not rewritten."
+ },
+ {
+  "from": "b4f79c63590649b915942b8f79a57e6539207d5e0381e5a9043b6008c5ba0486",
+  "to": "5a70556f0cbfa85acd0969d6d6bcd195a367e8fc798ef6c23e72e4bc9c58ed45",
+  "declared": "2026-10-24",
+  "reason": "edgar.FALLBACK_FACT_TAGS adds tiered fallback revenue and net-income tags read only by the per-session as-of selectors (fundamentals_asof and levels_pit.versions_levels / point_in_time_levels); a fallback tag is chosen only on a session when its latest filed quarter is later than every better-tier tag's. edgar.FACT_TAGS, edgar.parse_company_facts, the stored facts frame, edgar.edgar_features and levels_pit.trailing_levels, which are all the shadow reads (through opportunity_learning), are unchanged, as are the model bundle and every other hashed module; the shadow continues unchanged. Archived observations are not rewritten."
+ },
+ {
+  "from": "be46b5658114c94291bcba114ee5a3562491c685570ef0dab58ddf5650559c66",
+  "to": "5a70556f0cbfa85acd0969d6d6bcd195a367e8fc798ef6c23e72e4bc9c58ed45",
+  "declared": "2026-10-24",
+  "reason": "edgar.FALLBACK_FACT_TAGS adds tiered fallback revenue and net-income tags read only by the per-session as-of selectors (fundamentals_asof and levels_pit.versions_levels / point_in_time_levels); a fallback tag is chosen only on a session when its latest filed quarter is later than every better-tier tag's. edgar.FACT_TAGS, edgar.parse_company_facts, the stored facts frame, edgar.edgar_features and levels_pit.trailing_levels, which are all the shadow reads (through opportunity_learning), are unchanged, as are the model bundle and every other hashed module; the shadow continues unchanged. Archived observations are not rewritten."
+ },
+ {
+  "from": "dc1d5fa6a445b8d0fcfaddc0886fcd13d2025f26b771ece3a6fb37aab574fbed",
+  "to": "5a70556f0cbfa85acd0969d6d6bcd195a367e8fc798ef6c23e72e4bc9c58ed45",
+  "declared": "2026-10-24",
+  "reason": "edgar.FALLBACK_FACT_TAGS adds tiered fallback revenue and net-income tags read only by the per-session as-of selectors (fundamentals_asof and levels_pit.versions_levels / point_in_time_levels); a fallback tag is chosen only on a session when its latest filed quarter is later than every better-tier tag's. edgar.FACT_TAGS, edgar.parse_company_facts, the stored facts frame, edgar.edgar_features and levels_pit.trailing_levels, which are all the shadow reads (through opportunity_learning), are unchanged, as are the model bundle and every other hashed module; the shadow continues unchanged. Archived observations are not rewritten."
+ },
+ {
+  "from": "df47189d60dd11b108a0e29ece29a07f452ea8bece337baba9326b549aa7665a",
+  "to": "5a70556f0cbfa85acd0969d6d6bcd195a367e8fc798ef6c23e72e4bc9c58ed45",
+  "declared": "2026-10-24",
+  "reason": "edgar.FALLBACK_FACT_TAGS adds tiered fallback revenue and net-income tags read only by the per-session as-of selectors (fundamentals_asof and levels_pit.versions_levels / point_in_time_levels); a fallback tag is chosen only on a session when its latest filed quarter is later than every better-tier tag's. edgar.FACT_TAGS, edgar.parse_company_facts, the stored facts frame, edgar.edgar_features and levels_pit.trailing_levels, which are all the shadow reads (through opportunity_learning), are unchanged, as are the model bundle and every other hashed module; the shadow continues unchanged. Archived observations are not rewritten."
+ },
+ {
+  "from": "e8f98a4324df6172abcd6b1d5b9c45ecd6e5bbe46a7f91588d532862ea74e22e",
+  "to": "5a70556f0cbfa85acd0969d6d6bcd195a367e8fc798ef6c23e72e4bc9c58ed45",
+  "declared": "2026-10-24",
+  "reason": "edgar.FALLBACK_FACT_TAGS adds tiered fallback revenue and net-income tags read only by the per-session as-of selectors (fundamentals_asof and levels_pit.versions_levels / point_in_time_levels); a fallback tag is chosen only on a session when its latest filed quarter is later than every better-tier tag's. edgar.FACT_TAGS, edgar.parse_company_facts, the stored facts frame, edgar.edgar_features and levels_pit.trailing_levels, which are all the shadow reads (through opportunity_learning), are unchanged, as are the model bundle and every other hashed module; the shadow continues unchanged. Archived observations are not rewritten."
  }
 ]

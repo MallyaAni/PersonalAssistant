@@ -159,6 +159,10 @@ def _candidates() -> list[tuple[str, str, str, bool]]:
     for name, tags in edgar.FACT_TAGS.items():
         for taxonomy in ("us-gaap", "ifrs-full"):
             out.extend((name, taxonomy, tag, False) for tag in tags)
+    # The fallback tiers are us-gaap concepts; `ifrs-full:ProfitLoss` would be
+    # profit including the noncontrolling interest under another name.
+    for name, tiers in edgar.FALLBACK_FACT_TAGS.items():
+        out.extend((name, "us-gaap", tag, False) for tier in tiers for tag in tier)
     for name, pairs in edgar.INSTANT_TAGS.items():
         out.extend((name, taxonomy, tag, True) for taxonomy, tag in pairs)
     return out
@@ -182,15 +186,25 @@ def parse_versions(payload: Mapping[str, Any]) -> list[Version]:
     )
 
 
-# The candidate tags of a name in the table's order, which breaks ties.
+# The candidate tags of a name in the table's order, which breaks ties: the
+# `FACT_TAGS` (or `INSTANT_TAGS`) tags, then each fallback tier's.
 def _tag_order(name: str) -> list[str]:
+    return list(_tag_tiers(name))
+
+
+# Every candidate tag of a name with its tier: 0 for the main table, 1, 2 ...
+# for `edgar.FALLBACK_FACT_TAGS`, in table order.
+def _tag_tiers(name: str) -> dict[str, int]:
     if name in edgar.FACT_TAGS:
-        return [
-            f"{tx}:{tag}"
+        out = {
+            f"{tx}:{tag}": 0
             for tx in ("us-gaap", "ifrs-full")
             for tag in edgar.FACT_TAGS[name]
-        ]
-    return [f"{tx}:{tag}" for tx, tag in edgar.INSTANT_TAGS.get(name, ())]
+        }
+        for tier, tags in enumerate(edgar.FALLBACK_FACT_TAGS.get(name, ()), 1):
+            out.update({f"us-gaap:{tag}": tier for tag in tags})
+        return out
+    return {f"{tx}:{tag}": 0 for tx, tag in edgar.INSTANT_TAGS.get(name, ())}
 
 
 # Preserve quarterly spans and original YTD priority without changing arithmetic.
@@ -340,17 +354,19 @@ def _dated_consistently(version: Version) -> bool:
 
 
 # The candidate tags holding data now, best first: the latest available period
-# end (quarter end for a flow, instant date otherwise), then the number of
-# periods, then table order. Only the versions passed in are read, so a tag
-# the filer adopts later cannot change an earlier session; a tag with no
-# consistently dated period still ranks, last, so a lone tag is still read.
+# end (quarter end for a flow, instant date otherwise), then the better tier
+# (a fallback tag wins only with a later period than every better-tier tag),
+# then the number of periods, then table order. Only the versions passed in
+# are read, so a tag the filer adopts later cannot change an earlier session;
+# a tag with no consistently dated period still ranks, last, so a lone tag is
+# still read.
 def _ranked_tags(
     name: str,
     by_tag: Mapping[str, Mapping[tuple[date | None, date], Version]],
     use_ytd: bool = True,
 ) -> list[str]:
     ranked = []
-    for order, tag in enumerate(_tag_order(name)):
+    for order, (tag, tier) in enumerate(_tag_tiers(name).items()):
         spans = by_tag.get(tag)
         if not spans:
             continue
@@ -360,7 +376,9 @@ def _ranked_tags(
             if name in FLOW_NAMES
             else {e for _, e in dated}
         )
-        ranked.append((max(ends) if ends else date.min, len(ends), -order, tag))
+        ranked.append(
+            (max(ends) if ends else date.min, -tier, len(ends), -order, tag)
+        )
     ranked.sort(reverse=True)
     return [tag for *_, tag in ranked]
 

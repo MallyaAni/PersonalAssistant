@@ -286,8 +286,9 @@ const PERIOD_CHECK_REASONS: Record<string, string> = {
 }
 
 // The fundamental sources that carry the reporting-period safeguard's evidence: /4 is /3 with
-// the revenue tag chosen by the latest reported period.
-const PERIOD_CHECKED_SOURCES = ['fundamentals-features/4', 'fundamentals-features/3']
+// the revenue tag chosen by the latest reported period; /6 is /4 with the fallback revenue and
+// net-income tags.
+const PERIOD_CHECKED_SOURCES = ['fundamentals-features/6', 'fundamentals-features/4', 'fundamentals-features/3']
 
 // Admit only complete, internally consistent /3 or /4 evidence without coercing dates or flags.
 const recordedPeriodEligibility = (fundamental: DeskRecord['fundamental'], ticker: string) => {
@@ -380,17 +381,25 @@ const EveningAnalysis = ({grade, session, written, fundamental, ticker}: {grade:
 const describeFundamentalSource = (source?: string) => {
   const title = `Recorded fundamental source: ${source || 'not recorded'}.`
   switch (source) {
-    case 'fundamentals-features/4':
+    case 'fundamentals-features/6':
       return {title, current: true, known: true,
         notice: 'Fundamentals: stored filing versions; reporting-period safeguard applied.',
         simulationNote: ''}
+    case 'fundamentals-features/4':
+      return {title, current: false, known: true,
+        notice: 'Fundamentals: stored filing versions; reporting-period safeguard applied (previous tag table).',
+        simulationNote: 'Read revenue and net income only under the main tags, so names that moved to other tags were carried at old quarters or left out. Not measured with the current tag table.'}
     case 'fundamentals-features/3':
       return {title, current: false, known: true,
         notice: 'Fundamentals: stored filing versions; reporting-period safeguard applied (previous revenue-tag choice).',
         simulationNote: 'Chose each name\'s revenue tag by the most history, so names that moved to new revenue tags in 2018 were left out for years. Not measured with the current tag choice.'}
-    case 'fundamentals-features/5':
+    case 'fundamentals-features/7':
       return {title, current: false, known: true,
         notice: 'Fundamentals: stored filing versions; margin period dates checked (research calculation).',
+        simulationNote: 'Checks margin period dates, but does not exclude inputs from older reporting periods. Not measured with the reporting-period safeguard.'}
+    case 'fundamentals-features/5':
+      return {title, current: false, known: true,
+        notice: 'Fundamentals: stored filing versions; margin period dates checked (previous research calculation).',
         simulationNote: 'Checks margin period dates, but does not exclude inputs from older reporting periods. Not measured with the reporting-period safeguard.'}
     case 'fundamentals-features/2':
       return {title, current: false, known: true,

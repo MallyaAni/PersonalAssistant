@@ -322,7 +322,7 @@ def test_stored_frames_change_actual_fundamental_scoring_without_touching_other_
     assert (
         opinion.meta["source"]
         == fundamental.CORRECTED_SOURCE
-        == "fundamentals-features/5"
+        == "fundamentals-features/7"
     )
     assert {
         str(path.relative_to(store.root)): path.read_bytes()

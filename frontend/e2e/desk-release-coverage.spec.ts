@@ -38,7 +38,7 @@ async function installRecord(page: Page, frontendURL: string, recorded: Record<s
   const market = {exchange: 'XNYS', as_of: NOW, session: '2026-10-01', calendar_known: true, is_session: true, open: true, phase: 'open', opens_at: null, closes_at: null}
   const latest = {
     ...recorded,
-    session: SESSION, written: WRITTEN, provenance: {rule: {inputs: ['expectations-gap']}, data: {fundamentals: 'fundamentals-features/4'}},
+    session: SESSION, written: WRITTEN, provenance: {rule: {inputs: ['expectations-gap']}, data: {fundamentals: 'fundamentals-features/6'}},
     regime: {ai_participation: .5, software_participation: .5, participation_percentile: .5, ai_vs_software_correlation: 0, correlation_z: 0, novelty_z: 0, rotation_leader: 'none', rotation_spread: 0, ai_drawdown: .1, selection_confidence: .6, exposure: 1, flags: []},
     grades: {
       AAPL: {grade: 'A', votes: 3, stances: STANCES, ranks: {}, score: .82, side: 'ai', headline: 'Recorded headline.', reason: 'Recorded reason.', reads: {}},

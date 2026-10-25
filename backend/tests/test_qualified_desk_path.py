@@ -184,7 +184,7 @@ def test_qualified_record_rejects_mismatched_source(tmp_path):
     report = replace(
         _report(),
         opinions={fundamental.NAME: opinion},
-        fundamentals_source="fundamentals-features/4",
+        fundamentals_source="fundamentals-features/6",
     )
     with pytest.raises(ValueError, match="source"):
         market_daily.record(report)
@@ -198,8 +198,8 @@ def test_qualified_cli_is_explicit_and_existing_modes_keep_their_identity():
     )
     assert parser.parse_args([]).fundamentals == "corrected"
     assert desk.run.__defaults__[-1] == "corrected"
-    assert desk._fundamental_source_id("current") == "fundamentals-features/4"
-    assert desk._fundamental_source_id("corrected") == "fundamentals-features/5"
+    assert desk._fundamental_source_id("current") == "fundamentals-features/6"
+    assert desk._fundamental_source_id("corrected") == "fundamentals-features/7"
 
 
 # A new profile cannot silently activate a learner trained on different inputs.

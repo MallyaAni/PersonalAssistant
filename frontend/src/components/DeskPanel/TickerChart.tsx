@@ -371,7 +371,7 @@ const replayRealisedLine = (replay: DeskPolicyReplay, ticker: string): string =>
   if (!r || !r.sessions_held) return ''
   const points = (value: number) => `${value >= 0 ? '+' : '−'}${Math.abs(value * 100).toFixed(2)}%`
   const verdict = r.net > 0 ? (r.excess > 0 ? 'made money and beat' : 'made money but trailed') : (r.excess > 0 ? 'lost money but beat' : 'lost money and trailed')
-  const trips = r.round_trips ? ` ${r.round_trips} round trip${r.round_trips === 1 ? '' : 's'}: ${r.winning_trips} made money, ${r.trips_beating_benchmark} beat ${r.benchmark}${r.short_trips ? `; ${r.short_trips} lasted two sessions or less (${points(r.short_trip_pnl)} of the book)` : ''}.` : ''
+  const trips = r.round_trips ? ` ${r.round_trips} round trip${r.round_trips === 1 ? '' : 's'}: ${r.winning_trips} made money, ${r.trips_beating_benchmark} beat ${r.benchmark}${r.short_trips ? `; ${r.short_trips} lasted two sessions or less (${Math.abs(r.short_trip_pnl * 100) < 0.005 ? 'about break-even' : `${points(r.short_trip_pnl)} of the book`})` : ''}.` : ''
   return `Traded by the rule, ${ticker} ${verdict} ${r.benchmark}: ${points(r.net)} of the book after ${points(r.costs).slice(1)} costs (${r.cost_bps} bp a side), against ${points(r.benchmark_same_weights)} for ${r.benchmark} at the same weights.${trips}${r.open_since ? ` Held since ${r.open_since}.` : ''}`
 }
 

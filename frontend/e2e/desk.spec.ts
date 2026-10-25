@@ -1435,7 +1435,7 @@ test('renders the desk at a glance with the track record', async ({ page }) => {
 test('names the fundamental data source and flags older fundamental-input curves', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
   const latest = deskRecord()
-  latest.provenance = { data: { fundamentals: 'fundamentals-features/4' } }
+  latest.provenance = { data: { fundamentals: 'fundamentals-features/6' } }
   // The simulation is of the strategy the record says the account runs
   // (`targets.policy`), so it reads as the policy simulation.
   latest.targets = { policy: 'graded-equal-weight/4', weights: { AAPL: 0.06 } }
@@ -1444,7 +1444,7 @@ test('names the fundamental data source and flags older fundamental-input curves
     backtest: {
       ...latest.curve!.backtest,
       strategy_policy: 'graded-equal-weight/4',
-      fundamentals_source: 'fundamentals-features/4',
+      fundamentals_source: 'fundamentals-features/6',
     },
   }
   await page.route('**/api/v1/conversations/**', route => route.request().method() === 'GET' ? route.fulfill({json: {messages: [], conversations: []}}) : route.fulfill({json: {}}))
@@ -1485,14 +1485,14 @@ test('names the fundamental data source and flags older fundamental-input curves
 test('a /5 record reads its /5 simulation as the policy simulation', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
   const latest = deskRecord()
-  latest.provenance = { data: { fundamentals: 'fundamentals-features/4' } }
+  latest.provenance = { data: { fundamentals: 'fundamentals-features/6' } }
   latest.targets = { policy: 'graded-equal-weight/5', weights: { AAPL: 0.25 } }
   latest.curve = {
     ...latest.curve!,
     backtest: {
       ...latest.curve!.backtest,
       strategy_policy: 'graded-equal-weight/5',
-      fundamentals_source: 'fundamentals-features/4',
+      fundamentals_source: 'fundamentals-features/6',
     },
   }
   await page.route('**/api/v1/conversations/**', route => route.request().method() === 'GET' ? route.fulfill({json: {messages: [], conversations: []}}) : route.fulfill({json: {}}))

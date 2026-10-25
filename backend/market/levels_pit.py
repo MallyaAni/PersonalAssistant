@@ -279,14 +279,17 @@ def _flow_facts(spans: dict) -> list[tuple[date, float, date]]:
     return out
 
 
-# The best ranked tag holding any filing: (latest end, count), then table order.
-def _best_tag(by_tag: dict, order: list[str]) -> str | None:
+# The best ranked tag holding any filing: the latest end, then the better tier
+# (`fundamentals_asof._tag_tiers`: a fallback tag only with a later quarter
+# than every better-tier tag), then the count, then table order.
+def _best_tag(by_tag: dict, order: list[str], tiers: dict | None = None) -> str | None:
     best = None
     for rank, tag in enumerate(order):
         series = by_tag[tag]
         if not series.spans:
             continue
-        key = (*series.key, -rank)
+        latest, count = series.key
+        key = (latest, -(tiers or {}).get(tag, 0), count, -rank)
         if best is None or key > best[0]:
             best = (key, tag)
     return None if best is None else best[1]
@@ -319,6 +322,7 @@ def versions_levels(
         key=lambda v: (v.filed, v.accession, v.tag, v.end),
     )
     order = {name: fa._tag_order(name) for name in _PIT_NAMES}
+    tiers = {name: fa._tag_tiers(name) for name in _PIT_NAMES}
     state = {name: {tag: _TagSeries() for tag in order[name]} for name in _PIT_NAMES}
     out = {
         name: (
@@ -345,7 +349,7 @@ def versions_levels(
         for name, tags in dirty.items():
             for tag in tags:
                 state[name][tag].refresh(name in _PIT_FLOWS)
-            chosen[name] = _best_tag(state[name], order[name])
+            chosen[name] = _best_tag(state[name], order[name], tiers[name])
         for name in _PIT_NAMES:
             tag = chosen.get(name)
             if tag is None or not state[name][tag].by_end:

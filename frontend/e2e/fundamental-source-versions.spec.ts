@@ -1,7 +1,7 @@
 import {expect, test, type Page, type TestInfo} from '@playwright/test'
 
 const USER = 'fundamental-source-fixture'
-const CURRENT = 'fundamentals-features/4'
+const CURRENT = 'fundamentals-features/6'
 const PRIOR = 'fundamentals-features/2'
 // The strategy the record says the account runs (`targets.policy`), and
 // the strip's label for a simulation of it.
@@ -109,10 +109,12 @@ const cases: Case[] = [
   {name: 'current record and simulation', record: CURRENT, backtest: CURRENT, notice: CURRENT_NOTICE, curveLabel: LABEL, curveNote: 'cash capped after costs'},
   {name: 'previous tag-choice record beside current simulation', record: 'fundamentals-features/3', backtest: CURRENT, notice: 'Fundamentals: stored filing versions; reporting-period safeguard applied (previous revenue-tag choice).', curveLabel: LABEL, curveNote: 'cash capped after costs'},
   {name: 'current record retains previous tag-choice simulation', record: CURRENT, backtest: 'fundamentals-features/3', notice: CURRENT_NOTICE, curveLabel: OLDER_INPUTS, curveNote: 'Chose each name\'s revenue tag by the most history, so names that moved to new revenue tags in 2018 were left out for years. Not measured with the current tag choice.'},
+  {name: 'previous tag-table record beside current simulation', record: 'fundamentals-features/4', backtest: CURRENT, notice: 'Fundamentals: stored filing versions; reporting-period safeguard applied (previous tag table).', curveLabel: LABEL, curveNote: 'cash capped after costs'},
+  {name: 'current record retains previous tag-table simulation', record: CURRENT, backtest: 'fundamentals-features/4', notice: CURRENT_NOTICE, curveLabel: OLDER_INPUTS, curveNote: 'Read revenue and net income only under the main tags, so names that moved to other tags were carried at old quarters or left out. Not measured with the current tag table.'},
   {name: 'prior record and simulation', record: PRIOR, backtest: PRIOR, notice: PRIOR_NOTICE, curveLabel: OLDER_INPUTS, curveNote: PRIOR_NOTE},
   {name: 'earlier record and simulation', record: 'fundamentals-features/1', backtest: 'fundamentals-features/1', notice: 'Fundamentals: stored filing versions (earlier margin calculation).', curveLabel: OLDER_INPUTS, curveNote: 'Uses the earlier stored-filing calculation, before margin period dates were checked.'},
   {name: 'legacy record and simulation', record: 'edgar-frozen', backtest: 'edgar-frozen', notice: LEGACY_NOTICE, curveLabel: OLDER_INPUTS, curveNote: 'Uses the frozen EDGAR snapshot, not the current stored-filing calculation.'},
-  {name: 'unrecognized record and simulation', record: 'fundamentals-features/4', backtest: 'fundamentals-features/4', notice: UNKNOWN_NOTICE, curveLabel: UNVERIFIED_INPUTS, curveNote: 'The recorded fundamental source is not recognized; its inputs cannot be verified.'},
+  {name: 'unrecognized record and simulation', record: 'fundamentals-features/99', backtest: 'fundamentals-features/99', notice: UNKNOWN_NOTICE, curveLabel: UNVERIFIED_INPUTS, curveNote: 'The recorded fundamental source is not recognized; its inputs cannot be verified.'},
   {name: 'absent record and simulation source', notice: ABSENT_NOTICE, curveLabel: UNVERIFIED_INPUTS, curveNote: 'The simulation did not record its fundamental data source; its inputs cannot be verified.'},
   {name: 'current record retains prior simulation', record: CURRENT, backtest: PRIOR, notice: CURRENT_NOTICE, curveLabel: OLDER_INPUTS, curveNote: PRIOR_NOTE},
   {name: 'prior record beside current simulation', record: PRIOR, backtest: CURRENT, notice: PRIOR_NOTICE, curveLabel: LABEL, curveNote: 'cash capped after costs'},

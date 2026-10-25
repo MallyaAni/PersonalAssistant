@@ -83,6 +83,36 @@ FACT_TAGS: dict[str, tuple[str, ...]] = {
     "gross_profit": ("GrossProfit",),
 }
 
+# Further tags for revenue and net income, read only by the per-session as-of
+# selectors (`fundamentals_asof` and `levels_pit.versions_levels`), never by
+# the frozen `parse_company_facts` above. Each inner tuple is a tier below
+# `FACT_TAGS` (tier 0): a tier's tag is chosen only on a session when its
+# latest filed quarter is later than that of every tag in a better tier, so a
+# filer that reports under a listed tag keeps exactly its present reading, and
+# one that stopped (AEP's and AVGO's `NetIncomeLoss` in 2024, JPM's revenue
+# reported net of interest expense, JNJ's `SalesRevenueGoodsNet` to 2017) is no
+# longer carried at its last listed quarter for years.
+#
+# revenue: tier 1 are whole-company totals by definition (a bank's revenue
+# net of interest expense, a utility's regulated plus unregulated operating
+# revenue); tier 2 are the pre-2018 goods / services / real-estate revenue
+# tags, which some filers used for their total and some for one component,
+# so they rank below every total.
+# net_income: the parent's net income first (`FACT_TAGS`), then the income
+# available to common stockholders (the parent's less preferred dividends),
+# then profit including the noncontrolling interest only when neither is
+# reported any longer.
+FALLBACK_FACT_TAGS: dict[str, tuple[tuple[str, ...], ...]] = {
+    "revenue": (
+        ("RevenuesNetOfInterestExpense", "RegulatedAndUnregulatedOperatingRevenue"),
+        ("SalesRevenueGoodsNet", "SalesRevenueServicesNet", "RealEstateRevenueNet"),
+    ),
+    "net_income": (
+        ("NetIncomeLossAvailableToCommonStockholdersBasic",),
+        ("ProfitLoss",),
+    ),
+}
+
 # Balance-sheet facts are instants (a value at a date, no span). Shares
 # outstanding live in the dei taxonomy on the cover page; the us-gaap tag
 # is the balance-sheet count. Either serves for growth in the share count.
