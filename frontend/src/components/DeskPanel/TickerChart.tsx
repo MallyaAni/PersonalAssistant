@@ -943,9 +943,11 @@ export const TickerChart = ({
   const [receivedData, setData] = useState<DeskChart | null>(null)
   const [refreshFailed, setRefreshFailed] = useState(false)
   // A timeframe or ticker switch must not reinterpret the previous response while the next loads.
+  // A different number of fifteen-minute sessions for the same name is the same bars over a
+  // shorter or longer window, so the last picture stays up, labelled, until the new read lands.
   const requestedSessions = strategy && timeframe === '15m' && fullHistory ? 60 : intradaySessions
-  const data = receivedData?.ticker === ticker && receivedData.timeframe === timeframe
-    && (timeframe !== '15m' || receivedData.sessions_requested == null || receivedData.sessions_requested === requestedSessions) ? receivedData : null
+  const data = receivedData?.ticker === ticker && receivedData.timeframe === timeframe ? receivedData : null
+  const loadingSessions = timeframe === '15m' && data?.sessions_requested != null && data.sessions_requested !== requestedSessions ? requestedSessions : null
   const [error, setError] = useState<string | null>(null)
   // The picture failed to draw but the readings below it are still good.
   const [drawFailed, setDrawFailed] = useState(false)
@@ -1101,7 +1103,12 @@ export const TickerChart = ({
     setData(null)
     setError(null)
     setRefreshFailed(false)
-  }, [userId, ticker, timeframe, requestedSessions])
+  }, [userId, ticker, timeframe])
+
+  useEffect(() => {
+    setError(null)
+    setRefreshFailed(false)
+  }, [requestedSessions])
 
   useEffect(() => {
     let live = true
@@ -1318,7 +1325,9 @@ export const TickerChart = ({
     // Retain the last observed viewport before a refresh tears down the chart, and reveal older sessions at its edge.
     const observeRange = (range: LogicalRange | null) => {
       if (!range || !holder.current) return
-      savedView.current = {scope, first: Number(barStamp(merged.bars[0], timeframe)), range: {...range}}
+      // The shorter window drawn while a wider read loads must not become the view the wider
+      // window restores (Full history would otherwise open framed on the old bars only).
+      if (loadingSessions == null) savedView.current = {scope, first: Number(barStamp(merged.bars[0], timeframe)), range: {...range}}
       wideIntraday.current = range.to - range.from > WIDE_INTRADAY_BARS
       holder.current.dataset.chartFrom = String(range.from)
       holder.current.dataset.chartVisibleBars = String(range.to - range.from)
@@ -1340,7 +1349,7 @@ export const TickerChart = ({
       candlesRef.current = null
       drawn.length = 0
     }
-  }, [data, merged, timeframe, fullHistory, rangeReset, userId, ticker, requestedSessions, strategy])
+  }, [data, merged, timeframe, fullHistory, rangeReset, userId, ticker, requestedSessions, loadingSessions, strategy])
 
   // The board's levels as horizontal lines labelled on the price axis, on
   // every timeframe (the 15m view draws no daily indicator, so this is the
@@ -1644,6 +1653,7 @@ export const TickerChart = ({
       </div>
       {drawFailed && <p role="alert" className="text-xs text-[#b42318]">Chart unavailable</p>}
       {refreshFailed && <p role="status" className="text-xs text-[#9a6700]">Refresh failed · last snapshot</p>}
+      {loadingSessions != null && !error && <p role="status" aria-label="Chart sessions loading" className="text-xs text-[#6e6e73]">Loading {loadingSessions} sessions · showing the last {data!.sessions_requested}</p>}
       {data.data_status && data.data_status !== 'complete' && <p role="status" className="text-xs text-[#9a6700]">Price history {data.data_status}</p>}
       {simulationError && <p role="status" className="text-xs text-[#6e6e73]" title={simulationError}>Size history unavailable</p>}
       {showFills && <p className="sr-only" aria-label={`${ticker} target chart markers`} data-marker-times={targetMarkers.map(marker => marker.time).join(',')}>{targetMarkers.map(marker => marker.text).join(' · ')}</p>}
@@ -1797,6 +1807,7 @@ export const TickerChart = ({
               The chart could not be drawn from this data. The readings below are unaffected.
             </p>
           )}
+          {loadingSessions != null && !error && <p role="status" aria-label="Chart sessions loading" className="text-xs text-[#6e6e73]">Loading {loadingSessions} sessions · showing the last {data!.sessions_requested}</p>}
           {timeframe === '15m'
             ? <p className="mt-1 text-[11px] text-[#6e6e73]" aria-label="Fifteen-minute chart caption">
               Latest session: {data.bars[data.bars.length - 1]?.date ?? 'unavailable'}.{' '}

@@ -251,3 +251,41 @@ test('the chart draws the board’s levels on the fifteen-minute bars', async ({
     await chart.screenshot({path: testInfo.outputPath('chart-15m-levels.png')})
   } finally {await finish(testInfo, fixture)}
 })
+
+// A wider fifteen-minute window is the same bars over more sessions, so the last picture stays up,
+// labelled as the shorter window, while the wider read is in flight; it is replaced when the read lands.
+test('the fifteen-minute chart keeps the last picture while more sessions load', async ({page, baseURL}, testInfo) => {
+  await page.setViewportSize({width: 1280, height: 900})
+  const fixture = await install(page, baseURL!)
+  let release!: () => void
+  const held = new Promise<void>(resolve => {release = resolve})
+  // Registered after the fixture, so it sees the wider read first and holds it before the fixture serves it.
+  let widerRequested = false
+  await page.route(url => url.pathname.endsWith('/desk/chart/AAPL') && url.searchParams.get('timeframe') === '15m' && url.searchParams.get('sessions') === '20',
+    async route => {widerRequested = true; await held; await route.fallback()})
+  try {
+    await page.goto('/?deskView=paper#desk')
+    await page.getByRole('table', {name: 'Ranked stocks and cash'}).getByRole('button', {name: /^AAPL/}).click()
+    const chart = page.getByRole('region', {name: 'AAPL price chart'})
+    await expect(chart).toContainText('6 sessions loaded')
+    await chart.getByRole('button', {name: '15m', exact: true}).click()
+    const caption = chart.locator('[aria-label="Fifteen-minute chart caption"]')
+    const canvas = chart.getByTestId('ticker-chart-canvas')
+    const loading = chart.getByRole('status', {name: 'Chart sessions loading'})
+    await expect(caption).toContainText('54 bars')
+    await expect(loading).toHaveCount(0)
+    await chart.getByRole('group', {name: 'Chart sessions'}).getByRole('button', {name: '20', exact: true}).click()
+    await expect.poll(() => widerRequested).toBe(true)
+    // While the wider read is held the canvas and its caption stay, and the status names both windows.
+    await expect(loading).toHaveText('Loading 20 sessions · showing the last 10')
+    await expect(canvas).toHaveAttribute('data-bar-count', '54')
+    await expect(caption).toContainText('54 bars')
+    await expect(chart).not.toContainText('Loading the chart…')
+    await expect.poll(() => drawn(page, '15m')).toContain('BUY 70 sh')
+    release()
+    await expect.poll(() => intradayReads(fixture).some(read => read.includes('sessions=20'))).toBe(true)
+    await expect(loading).toHaveCount(0)
+    await expect(canvas).toHaveAttribute('data-bar-count', '54')
+    await chart.screenshot({path: testInfo.outputPath('chart-15m-loading-more.png')})
+  } finally {release(); await finish(testInfo, fixture)}
+})
