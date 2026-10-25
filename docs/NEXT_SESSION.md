@@ -9,7 +9,12 @@
   G1+G2 but the selected one (f3 t2 s0.5 v1) fails the placebo (value 62% and sentiment 74% in IT; technical 88% in
   IT+Comm). Walk-forward loses on all-S&P at 25 bp; book loses 2023-26. Installed weights stay. "Fundamental up, value
   down" is a new hypothesis needing its own pre-registration on the refreshed deploy store.
-- Open: estimate-revision analyst (after AV backfill ~10-29); 15m chart blank while loading more sessions (F6);
+- F6 fixed (54908830): the 15m chart keeps the last picture while a wider session window loads.
+- TTM vs latest-quarter x4 valuation levels tested (~/dsv41/ttm, PREREGISTRATION.md, non-inferiority gate): implementation
+  correct, no look-ahead, but fails (all -0.86 pt 2023-26 and DD -2.3 pt; itc -1.55 pt). Kept x4. One-offs (GOOGL Q2-26,
+  ECHO spectrum gain) still read cheap under x4; known and accepted. Rejected patch: ~/dsv41/ttm/candidate_rejected.diff.
+- No share count at all: BRK-B, ERIE, STZ (multi-class, no weighted fallback in companyfacts).
+- Open: estimate-revision analyst (after AV backfill ~10-29);
   TSM ADR ratio; V/BRK multi-class; regional-bank revenue; FOMC checks 10-27/10-28 need the Windows PC on.
 
 ## CURRENT 2026-10-24 late — data fixes live (16e291f9); research findings; nightly research jobs
