@@ -1,5 +1,17 @@
 # Next session
 
+## CURRENT 2026-10-25 — share-count fallback live (74b797d1, deploy ADMITTED); weight re-check v2: keep weights
+
+- levels_pit falls back to the weighted-average diluted share count (edgar.SHARE_COUNT_FALLBACK_TAGS, stored as
+  weighted_shares) when the cover count is missing, stale or implausible (EPS sanity check, >=1M shares). META, NET,
+  TEAM, CRWV, ACN, WDAY, DDOG now get valuations. Deploy store gains the weighted_shares rows at Monday's versions refresh.
+- Analyst weight search re-run on the final corrected data (~/dsv41/wts2/v2, PREREGISTRATION_v2.md): 6 variants pass
+  G1+G2 but the selected one (f3 t2 s0.5 v1) fails the placebo (value 62% and sentiment 74% in IT; technical 88% in
+  IT+Comm). Walk-forward loses on all-S&P at 25 bp; book loses 2023-26. Installed weights stay. "Fundamental up, value
+  down" is a new hypothesis needing its own pre-registration on the refreshed deploy store.
+- Open: estimate-revision analyst (after AV backfill ~10-29); 15m chart blank while loading more sessions (F6);
+  TSM ADR ratio; V/BRK multi-class; regional-bank revenue; FOMC checks 10-27/10-28 need the Windows PC on.
+
 ## CURRENT 2026-10-24 late — data fixes live (16e291f9); research findings; nightly research jobs
 
 - Live data fixes (not bound except market_daily via release 7ccf0250): revenue tag ranked per session by latest period
