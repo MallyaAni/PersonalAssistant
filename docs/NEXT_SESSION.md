@@ -1,5 +1,23 @@
 # Next session
 
+## CURRENT 2026-10-24 late — data fixes live (16e291f9); research findings; nightly research jobs
+
+- Live data fixes (not bound except market_daily via release 7ccf0250): revenue tag ranked per session by latest period
+  (fundamentals-features/4), valuation levels from filing versions with per-session tags (levels_pit), fallback revenue /
+  net-income tags (now fundamentals-features/6 current, /7 research), versions refreshed for the research universe nightly.
+- Research verdicts (all on the honest S&P 500 point-in-time universe, pre-registered gates, placebos):
+  sector rotation/peer/sector-relative value (none), crash brakes (none; protection costs more than it saves),
+  momentum entries/composites (none), analyst re-weighting on corrected data (none, 192 variants), technical analyst
+  rebuild or re-weight (none; trend helps only in rising markets). Docs: docs/research/point-in-time-universe-2026-10-24.md;
+  scratch evidence ~/dsv41/{sector,brake,select,tech,wts2,tagfix,valfix,tags2,audit_fund}.
+- Honest universe result: installed rule ~15% (all S&P) / ~21-23% (tech) a year vs 37.6% on the hindsight book.
+- Nightly research jobs (crontab): 20:40 replay (charts), 20:50 forward shadow (~/dsv41/forward: installed vs f3 on
+  book and honest IT+Comm), 21:15 Yahoo estimates snapshot (data/market/estimates), 06:20 Alpha Vantage backfill
+  (24/day, ~130 names; key in ~/dsv41/estimates/.alphavantage_key), 22:10 LLM shadow analyst (~/dsv41/llm_shadow,
+  record-only, deepseek-v4-flash on :8000).
+- Open: estimate-revision analyst (after backfill ~10-29); multi-class share counts (META, NET, TEAM, CRWV, ACN, WDAY...);
+  15m chart blank while loading more sessions; FOMC checks 10-27/10-28 need the Windows PC on.
+
 ## CURRENT 2026-10-24 — account-simulator rule INSTALLED (ac891d78); backtest = charts = live
 
 - `backend/market/policy_book.py` is the one engine: backtest, strategy-chart replay (`market_policy_replay_research.installed_book`)
