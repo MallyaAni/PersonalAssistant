@@ -17,6 +17,13 @@ budget updates it in the same change, with what was tried and rejected.
 
 ## 1. The reply model: DeepSeek-V4-Flash on two DGX Sparks
 
+> **Superseded runtime, 2026-10-27.** What runs now is DeepSeek-V4.1-Flash-1017 (EXL3 2.75 bpw, image `ghcr.io/henryous/deepseek-v41-1017-dgx-spark:v4i`, vLLM `0.31.1.dev0+g6e517b15.dsv41gb10`, units `ds41-head` on spark1 `:8000` and `ds41-worker` on spark2, tensor-parallel 2, `max_model_len` 262,144), served as `deepseek-v4.1-flash-1017` with the compatibility aliases `deepseek-v4-flash` and `qwen3-vl-8b`.
+> It reads images, so it also serves the vision role and the separate Qwen3-VL-8B
+> (and its memory reservation on spark2) is gone; the cutover and its smoke and memory
+> probes are `scripts/spark-dsv41-cutover.sh`. The decisions and measurements below are
+> for V4-Flash FP8 and have not been re-measured for V4.1; re-measure before relying on
+> any of them for the current server.
+
 **Decision.** DeepSeek-V4-Flash (284B total, 13B active MoE), the official
 **FP8** checkpoint, served by vLLM (`ghcr.io/anemll/dspark-vllm-gx10:0.1.1`,
 vLLM 0.25.2) tensor-parallel across spark1 and spark2 (`--tensor-parallel-size

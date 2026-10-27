@@ -219,7 +219,9 @@ ds4-server and 400s on every vLLM request, and a reasoning model under a small
 `max_tokens` returns an empty string rather than a short answer.
 
 **Never decide a model swap from published benchmarks.** They describe
-unquantised weights, and the DeepSeek deployed here is the **official FP8**
+unquantised weights. The DeepSeek deployed here is now **DeepSeek-V4.1-Flash-1017
+EXL3 2.75 bpw** (still `deepseek-v4-flash` as an alias; it also reads images and
+serves the vision role); before that it was the **official FP8**
 checkpoint — ~156 GB for ~284B parameters, tensor-parallel across both DGX
 Sparks (vLLM, port 8000, model id `deepseek-v4-flash`). The earlier 2-bit
 IQ2_XXS GGUF served by `ds4-server` is retired; `docs/MODEL_EVALUATION.md` and

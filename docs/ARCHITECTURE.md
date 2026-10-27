@@ -45,14 +45,15 @@ any other. The stored conversation, the memory, and every model stay put.
 | Machine | Address | What it holds | When it is on |
 | --- | --- | --- | --- |
 | **spark1** (NVIDIA DGX Spark) | `172.16.8.3` | Every application container, PostgreSQL (+pgvector), Redis, the Cloudflare tunnel, the text-embedding service, the reranker service, and half of the main language model | Always |
-| **spark2** (NVIDIA DGX Spark) | `172.16.8.5` | The other half of the main language model, the vision model, and the first backup mirror | Always |
+| **spark2** (NVIDIA DGX Spark) | `172.16.8.5` | The other half of the main language model (which also reads images), a transitional `:8001` forwarder for the vision role, and the first backup mirror | Always |
 | **Mac** (MacBook Pro) | `172.16.8.2` | The iMessage bridge - the only thing that can send or read texts - and the second backup mirror (ciphertext only) | Always |
 | **Desktop** (Windows, RTX 5080, 16 GB) | `172.16.8.6` | ComfyUI running FLUX.2 Klein for image generation and editing | Sometimes; when it is off, image requests get an honest "try again later" |
 
 Each Spark is a GB10 with 121.7 GiB of unified memory. The main model needs
 roughly 97 GiB on *each* of them, which is why it is split across the two
-(tensor-parallel 2) and why the vision model lives on spark2 rather than
-alongside it. The Sparks have no remote management controller and no
+(tensor-parallel 2). Since the DeepSeek-V4.1 cutover the main model also reads
+images, so the separate vision model that used to live on spark2 (Qwen3-VL-8B,
+unit `anios-vlm`) is stopped and only returns on a cutover rollback. The Sparks have no remote management controller and no
 wake-on-LAN: a Spark that is powered off needs a person to press its button.
 Over-allocating GPU memory hangs a Spark outright, so memory headroom is
 treated as a hard safety margin rather than an optimisation.
@@ -106,8 +107,8 @@ whole path is drawn in
 
 | Role | Model | Where | Why this one, here |
 | --- | --- | --- | --- |
-| Conversation, routing, structured output, diagrams, decks, memory classification | **DeepSeek-V4-Flash** (vLLM, tensor-parallel across spark1+spark2, 1M-token context with an NVFP4 KV cache) | Sparks | Chosen by a blind read-off against Qwen and Nemotron, then kept after a measured comparison (see `MODEL_EVALUATION.md`). Routing and classification decode at temperature 0 so the same question always routes the same way. |
-| Vision (looking at photos) | **Qwen3-VL-8B** | spark2 `:8001` | DeepSeek is text-only, so a second model must stay resident to read pixels. It sits on spark2 because that node has the headroom. |
+| Conversation, routing, structured output, diagrams, decks, memory classification | **DeepSeek-V4.1-Flash-1017** (EXL3 2.75 bpw, vLLM, tensor-parallel across spark1+spark2, 262K-token context; also answers to `deepseek-v4-flash`) | Sparks | DeepSeek-V4-Flash was chosen by a blind read-off against Qwen and Nemotron, then kept after a measured comparison (see `MODEL_EVALUATION.md`); V4.1-Flash-1017 replaced it through `scripts/spark-dsv41-cutover.sh`. Routing and classification decode at temperature 0 so the same question always routes the same way. |
+| Vision (looking at photos and charts) | **DeepSeek-V4.1-Flash-1017** (the same server, under the alias `qwen3-vl-8b`) | spark1 `:8000`, reached through the spark2 `:8001` forwarder until the app's vision URL is repointed | V4.1 reads pixels (a chart probe on 2026-10-27 read the trend and a labelled level correctly), so no second model has to stay resident. The previous vision model, Qwen3-VL-8B, existed only because V4-Flash was text-only. |
 | Text embeddings | **nomic-embed-text-v1.5** (768-d) | spark1 `vllm-embedding` | Shares one vector space with the image embedder below, so a sentence can find a picture. That alignment is why the text embedder cannot be swapped alone. |
 | Image embeddings | **nomic-embed-vision-v1.5** (ONNX, CPU) | spark1, in-process | Aligned to the text model above; small enough to run without a GPU. |
 | Reranking (second opinion on retrieved candidates) | **ms-marco-MiniLM-L6-v2**, ONNX | CPU, in-process | A cross-encoder reads query and candidate *together*, which is where retrieval precision comes from. Fail-soft: absent weights leave the first-pass order standing. The served Qwen3 reranker it replaced scored 2/5 against this model's 5/5 and held 3.6 GB (2026-09-03). |
@@ -229,7 +230,8 @@ or rewritten searches are reported, not silent.
    *pixels plus your instruction* to the editor; a new revision is written
    beside the original, never over it, with parent, seed, steps, and the exact
    feedback recorded.
-4. A question about a picture goes to the vision model on spark2, with the
+4. A question about a picture goes to the vision role (DeepSeek-V4.1 on the
+   Sparks, through spark2's `:8001` forwarder), with the
    bounded prior thread replayed; the answer is stored as a thread on that
    image.
 5. Every image gets an aligned embedding, so a sentence can find it later; the
@@ -1648,9 +1650,10 @@ never silently moves another.
 **Why the split is shaped this way.** DeepSeek answers conversationally because
 a blind six-prompt read put it ahead of both Qwen and Nemotron with no failures
 (2026-08-14; full evidence in `ROADMAP.md` Milestone 9 and
-`MODEL_EVALUATION.md`, "DeepSeek stays", 2026-08-20). The DeepSeek build is
-text-only and cannot read pixels, which alone keeps a second, vision model
-resident. On the single-GPU profile that preceded the Sparks, routing and the
+`MODEL_EVALUATION.md`, "DeepSeek stays", 2026-08-20). The DeepSeek-V4-Flash build was
+text-only, which alone kept a second vision model (Qwen3-VL-8B) resident;
+DeepSeek-V4.1-Flash-1017 reads images, so since its cutover the vision role is
+the same server under an alias and the second model is stopped. On the single-GPU profile that preceded the Sparks, routing and the
 structured roles stayed on Qwen 4B - routing for latency (Qwen returned in
 about a second where DeepSeek added five to ten) and structured output because
 DeepSeek then returned unparseable JSON for short classifications; with the

@@ -86,3 +86,11 @@ memory hangs a node outright.
 - A future multimodal generation model would need its own headroom decision
   under rule 4; the capability-registry brief (ADR 0013) is the place that
   decision would be designed.
+
+## Update 2026-10-27
+
+The runtime is now DeepSeek-V4.1-Flash-1017 (EXL3 2.75 bpw, image `ghcr.io/henryous/deepseek-v41-1017-dgx-spark:v4i`, vLLM `0.31.1.dev0+g6e517b15.dsv41gb10`, units `ds41-head` on spark1 `:8000` and `ds41-worker` on spark2, tensor-parallel 2, `max_model_len` 262,144), served as `deepseek-v4.1-flash-1017` with the compatibility aliases `deepseek-v4-flash` and `qwen3-vl-8b`. Unlike the V4-Flash build this ADR describes,
+V4.1 reads images: the vision role is the same server under the alias `qwen3-vl-8b`, the
+resident Qwen3-VL-8B (`anios-vlm`) is stopped, and spark2 `:8001` forwards to spark1 `:8000`
+until the app's vision URL is repointed. The decision itself (one DeepSeek deployment on
+both Sparks carrying every text role) stands; "text-only" in the context above is historical.

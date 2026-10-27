@@ -10,6 +10,11 @@ offers.
 
 ## What is actually running
 
+**Current as of 2026-10-27:** DeepSeek-V4.1-Flash-1017 (EXL3 2.75 bpw, image `ghcr.io/henryous/deepseek-v41-1017-dgx-spark:v4i`, vLLM `0.31.1.dev0+g6e517b15.dsv41gb10`, units `ds41-head` on spark1 `:8000` and `ds41-worker` on spark2, tensor-parallel 2, `max_model_len` 262,144), served as `deepseek-v4.1-flash-1017` with the compatibility aliases `deepseek-v4-flash` and `qwen3-vl-8b`. It reads images, so the vision role is this
+server too (the old Qwen3-VL-8B unit `anios-vlm` is stopped; spark2 `:8001` is a socat
+forwarder to spark1 `:8000` until `.env` `VISION_LLM_BASE_URL` is repointed). The survey
+below describes the V4-Flash runtime it replaced and is kept for its measurements.
+
 One vLLM process, tensor-parallel across both Sparks — spark1 is rank 0 and
 serves `:8000`, spark2 is rank 1 and headless.
 
