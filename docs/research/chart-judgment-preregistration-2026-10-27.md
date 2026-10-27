@@ -79,3 +79,13 @@ Per entry: improvement_bp = 1e4 * (ln P_A - ln P_B) - (cost_B - cost_A) for arm 
 ## What passing buys
 Only the next step: an account-level replay through policy_book with B's fills, then a forward
 shadow on live data. No live change on this result alone.
+
+## Clarification, 2026-10-27, before any model call (implementation detail, no change of intent)
+- The window's last checkpoint is 15:00 ET of session t+5; its order lives until that session's
+  regular close (16:00), where B-forced buys at the close if still unfilled. "Through the 16:15
+  checkpoint of t+5" above should read "through the 15:00 checkpoint of t+5": a 16:15 check after the
+  forced close would be meaningless.
+- The 20:00 checkpoint exists from 2024-09-16 (first BOATS overnight bar in the data), not on earlier nights.
+- A decision whose interval until the next checkpoint has no bars (thin early extended hours) simply
+  does not fill; the next checkpoint decides again.
+- An unparseable reply counts as "wait" and is recorded with its raw text.
