@@ -378,6 +378,9 @@ def test_the_desk_loader_applies_the_flag_and_nothing_else(book, monkeypatch):
     store = _Store(records)
     plain = language.tone_features(panel, records)
     strict = language.tone_features(panel, records, strict_before_session=True)
+    # The desk default is HARD (aged); the loader is unchanged only with the
+    # flag off, which is the first case this test names.
+    monkeypatch.setattr(te, "TONE_EXPIRY", None)
     assert np.array_equal(model.load_tone_features(store, panel), plain)
     found = te.ages(panel.dates, panel.tickers, book, "SPY")
     for mode in te.MODES:

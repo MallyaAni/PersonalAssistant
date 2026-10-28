@@ -161,11 +161,13 @@ change without the release ceremony.
 
 ### P5 — Reliability (parallel, no performance claim)
 
-Fix the data and board defects that can make a grade wrong: the TSM ADR ratio,
-multi-class share counts (BRK-B, ERIE, STZ), the 6-K classifier's refusals,
-stale intraday prints shown as current, grade-parity drift banners, and
-date-pinned test fixtures. These do not add return; they remove ways the live
-loop can be wrong.
+Fix the data defects that can make a grade wrong: multi-class share counts
+(BRK-B, ERIE, STZ) and the remaining stale test fixtures (the tone loader
+test assumed the expiry flag starts off; the desk default is `HARD`). The
+refactored freshness path already marks a newly fetched old print stale
+(`desk_freshness.quote_status`; `test_market_desk_freshness.py`), and the
+parity banners are covered by `test_grade_parity.py`; both suites pass. These
+do not add return; they remove ways the live loop can be wrong.
 
 The TSM unit defect is fixed. Its NYSE close is per ADS representing five
 common shares (20-F, accession 0001628280-26-025362), and its filings report
@@ -173,6 +175,30 @@ TWD. `levels_pit` now divides the filed count by the ADS ratio and withholds
 revenue, earnings and equity for a non-USD reporter, because no FX series is
 on file. The live value analyst already had no multiple for TSM, so no grade
 moved. Tests: `backend/tests/test_listed_share_basis.py`.
+
+The 6-K classifier refused genuine quarterly releases. ASML's results
+releases for Q2 2013, Q4 2013, Q4 2015, Q1 2016, Q3 2018, Q4 2018, Q2 2019,
+Q3 2019 and Q4 2019 were refused because the headline window around the
+reporting verb also carried a dividend or buyback line, because the headline
+said "sales" without "results" or "net sales", because a title outlook word
+("raises full-year sales outlook") hid the dateline that publishes the
+quarter's results, or because the period was a bare year before "results"
+("reports 2013 results as guided"); the Q4 2010 and Q4 2014 releases were
+refused the same way. `results_headline` now reads plain "sales" as a result
+and as a period word, accepts a year before the figure ("2013 results"),
+searches for the published-results phrase in the whole head so the dateline
+can rescue an outlook title, and refuses a dividend or buyback word only
+when no result word precedes it, so a standalone dividend or buyback
+announcement is still refused. Re-decided against the real filings, the rule
+admits eleven more ASML releases, restores four a year for every year from
+2007 through 2026, and leaves no year above four; 2004-2006 remain short.
+Tests: `backend/tests/test_market_edgar_6k.py`. Stored 6-K decisions are
+cached, so the correction reaches the store only through a one-time
+`python -m backend.cli.market_edgar --refresh --reclassify-6k --tickers ASML`
+(and the other filers) run after this fix is deployed and before the 19:30
+ET nightly; a partition is immutable, so a name today's partition already
+holds is reported as failed and is not reclassified. After that the nightly
+carries the corrected decisions forward.
 
 The multi-class names remain open. The company-facts feed drops class
 dimensions; BRK-B's only undimensioned count is from 2011 and below the

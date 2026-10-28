@@ -17,9 +17,11 @@ Three things are read per company:
   reporting verb, a period and a result together, and no word of another
   kind of filing (`results_headline`, `classify_6k`); the many other 6-Ks
   such issuers file (monthly revenue, full statements a month later,
-  call-date notices, dividends, financings) are refused, and so are the
-  filings that sit beside a quarter's release without being it (a month's
-  sales, a preliminary figure, the audited year restated later:
+  call-date notices, financings) are refused, a dividend or buyback is
+  refused when it is what the release announces but not when it closes a
+  results headline, and so are the filings that sit beside a quarter's
+  release without being it (a month's sales, a preliminary figure, the
+  audited year restated later:
   `BESIDE_THE_RELEASE`; a guidance update or outlook that reports no
   results: `OUTLOOK_ONLY`); each decision
   is cached so a refresh reads only the filings it has not seen.
@@ -257,13 +259,16 @@ PERIOD_WORDS = re.compile(
     r"|(?:quarter(?:ly)?(?: period)?|period|year|months)\s+ended"
     r"|full[- ]year|half[- ]year|fiscal (?:year|20\d\d)"
     r"|(?:three|six|nine|twelve) months"
-    # "net income in 2024": a full-year figure named by its year.
-    r"|(?:net sales|net income|net profit|revenues?|results)[^.]{0,20}?"
-    r"\b(?:in|for) (?:fiscal |fy ?)?20\d\d\b)",
+    # "net income in 2024": a full-year figure named by its year. "sales"
+    # alone is a figure too: "ASML reports record sales for 2015". The year
+    # can also precede the figure: "ASML reports 2013 results as guided".
+    r"|(?:net sales|sales|net income|net profit|revenues?|results)[^.]{0,20}?"
+    r"\b(?:in|for) (?:fiscal |fy ?)?20\d\d\b"
+    r"|\b20\d\d\s+(?:annual\s+|full[- ]year\s+)?(?:results|sales|revenues?)\b)",
     re.I,
 )
 RESULT_WORDS = re.compile(
-    r"\b(?:results|earnings|eps|net sales|net income|net profit|net loss"
+    r"\b(?:results|earnings|eps|net sales|sales|net income|net profit|net loss"
     r"|revenues?)\b",
     re.I,
 )
@@ -276,7 +281,7 @@ RESULT_WORDS = re.compile(
 NOT_A_RELEASE = re.compile(
     r"\b(?:conference call|earnings call|webcast"
     r"|(?:will|plans? to|to) (?:announce|report|release|host|hold|publish)"
-    r"|dividends?|buy-?backs?|repurchases?|annual general meeting|general meeting"
+    r"|annual general meeting|general meeting"
     r"|agm|annual report|investor day|prospectus"
     r"|(?:public|private|secondary|notes?|debt|equity|share|ads|follow-on) offering"
     r"|offering of|private placement|convertible|notes due"
@@ -285,6 +290,16 @@ NOT_A_RELEASE = re.compile(
     r"|interim report|revenue report|monthly|board of directors|resolutions?)\b",
     re.I,
 )
+# A dividend or a buyback named as the thing the release announces is
+# another kind of filing ("Silicon Motion Announces Annual Cash Dividend
+# Payable Quarterly", "ASML reports on share buyback transactions"). The
+# same words also close a genuine results headline ("ASML reports EUR 10.9
+# billion net sales and EUR 2.6 billion net income in 2018 ... proposes to
+# raise dividend by 50%"; "ASML reports €11.8 billion sales and €2.6
+# billion net income in 2019 ... announces a three-year share buyback
+# program"), so they refuse only a headline that names no result before
+# them.
+NOT_A_RESULTS = re.compile(r"\b(?:dividends?|buy-?backs?|repurchases?)\b", re.I)
 # A calendar month's name, for a month's sales ("March 2006 Sales Report").
 _MONTH = (
     r"(?:january|february|march|april|may|june|july|august|september|october"
@@ -318,8 +333,9 @@ BESIDE_THE_RELEASE = re.compile(
 # Fourth Quarter and Full Year 2015 Revenue Outlook"). These words also
 # appear in real releases ("ASML confirms 2013 outlook ... today publishes
 # 2013 third-quarter results", "Nebius reports second quarter financial
-# results and raises ARR guidance"), so they refuse only a headline that
-# does not also say results are published (`RESULTS_REPORTED`).
+# results and raises ARR guidance"), so they refuse only a head that does
+# not also say results are published (`RESULTS_REPORTED`), including in the
+# dateline after the title ("today publishes 2013 second-quarter results").
 OUTLOOK_ONLY = re.compile(
     r"\b(?:(?:updates?|update to|updated|revises?|revised|confirms?|confirmed"
     r"|reaffirms?|reaffirmed)\b[^.]{0,60}?\bguidance"
@@ -328,9 +344,11 @@ OUTLOOK_ONLY = re.compile(
 )
 # A headline that says the period's results are out: a reporting verb with
 # "results" a few words on ("today publishes 2013 third-quarter results",
-# "announced its unaudited financial results"), or "EPS of".
+# "announced its unaudited financial results"), or "EPS of". Only finite
+# forms count: "ahead of reporting its results" is a notice, not a release.
 RESULTS_REPORTED = re.compile(
-    r"\b(?:(?:publish|report|announc|releas)\w*\s+(?:\S+\s+){0,6}?results"
+    r"\b(?:(?:publishes|published|reports|reported|announces|announced"
+    r"|releases|released)\s+(?:\S+\s+){0,6}?results"
     r"|eps of)\b",
     re.I,
 )
@@ -551,6 +569,36 @@ def strip_form_cover(text: str) -> str:
     return text[marks[-1].end() :].lstrip() if marks else text
 
 
+# Pure: the first dividend or buyback word in `text` when no result word
+# precedes it, so a mention that is the announcement itself can be told
+# from one that closes an otherwise genuine results headline. None when
+# the text names no such word or names a result first.
+def _money_before_results(text: str) -> re.Match[str] | None:
+    """Return the dividend/buyback match that no result word precedes."""
+    money = NOT_A_RESULTS.search(text)
+    if money is None:
+        return None
+    result = RESULT_WORDS.search(text)
+    if result is not None and result.start() < money.start():
+        return None
+    return money
+
+
+# Pure: the first word in `text` that names another kind of filing, taking
+# the earlier of an unconditional marker ("Resolutions", "Annual Report")
+# and a dividend or buyback that is the announcement itself. The earlier
+# word is what the filing is about: a board-resolution title with a
+# dividend inside it is a resolution, while a dividend title that mentions
+# the board is a dividend.
+def _other_kind(text: str) -> re.Match[str] | None:
+    """Return the earliest other-kind match in `text`, or None."""
+    money = _money_before_results(text)
+    other = NOT_A_RELEASE.search(text)
+    if money is None or (other is not None and other.start() < money.start()):
+        return other
+    return money
+
+
 # Pure: whether a release's text opens with a results headline, and why
 # not. The headline is the text around the first reporting verb in the
 # head of the document; it must name a period and a result, and neither
@@ -564,13 +612,13 @@ def results_headline(text: str) -> tuple[bool, str]:
     headline = head[
         max(0, verb.start() - HEADLINE_BEFORE) : verb.end() + HEADLINE_AFTER
     ]
-    other = NOT_A_RELEASE.search(headline) or NOT_A_RELEASE.search(head[:TITLE_CHARS])
+    other = _other_kind(headline) or _other_kind(head[:TITLE_CHARS])
     if other is not None:
         return False, f"not a results release: {other.group(0)!r}"
     beside = BESIDE_THE_RELEASE.search(headline) or BESIDE_THE_RELEASE.search(
         head[:TITLE_CHARS]
     )
-    if beside is None and RESULTS_REPORTED.search(headline) is None:
+    if beside is None and RESULTS_REPORTED.search(head) is None:
         beside = OUTLOOK_ONLY.search(headline) or OUTLOOK_ONLY.search(
             head[:TITLE_CHARS]
         )

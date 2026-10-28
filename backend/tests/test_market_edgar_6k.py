@@ -9,12 +9,14 @@ Quarter EPS", "ASML reports ... net income in 2024", "Nebius reports second
 quarter financial results", "Silicon Motion Announces Results for the Fourth
 Quarter and Year Ended"); the monthly revenue note, the statements, the
 interim report, the call-date notice, a dividend, a buyback, a financing and
-a board resolution are refused; an HTML entity inside a title does not
-break it; a 6-K without an exhibit is read from its own document after the
-cover page; an unlisted CIK admits no 6-K; a refused page fails the name
-rather than caching "not a release"; a cached decision is not re-read
-unless the refresh reclassifies; the audit counts four a year for each
-filer on these fixtures.
+a board resolution are refused; a dividend or buyback named as the
+announcement itself is refused even when a figure follows it, while the same
+words in a genuine results headline do not refuse it; an HTML entity inside
+a title does not break it; a 6-K without an exhibit is read from its own
+document after the cover page; an unlisted CIK admits no 6-K; a refused page
+fails the name rather than caching "not a release"; a cached decision is not
+re-read unless the refresh reclassifies; the audit counts four a year for
+each filer on these fixtures.
 """
 
 import json
@@ -133,6 +135,100 @@ HEADS = {
         "ASML reports Q2 results in line with guidance, on track for record 2015 "
         "sales VELDHOVEN, the Netherlands, 15 July 2015 - ASML Holding N.V. (ASML) "
         "today publishes its 2015 second-quarter results."
+    ),
+    # ASML's own releases that the shape test refused until 2026-10-28: the
+    # second headline line names a dividend or a buyback beside the figures
+    # (0000937966-19-000003, 0000937966-20-000003, 0000937966-16-000010),
+    # or the headline says "sales" without "results" or "net sales"
+    # (0000937966-19-000016, 0000937966-19-000019, 0000937966-18-000019,
+    # 0000937966-16-000020). The text is the filings' own, cut short.
+    "asml_q4_2018": (
+        "ASML reports EUR 10.9 billion net sales and EUR 2.6 billion net income "
+        "in 2018 ASML expects sales growth in 2019 despite challenging environment "
+        "and proposes to raise dividend by 50% VELDHOVEN, the Netherlands, January "
+        "23, 2019 - ASML Holding N.V. (ASML) today publishes its 2018 fourth-quarter "
+        "and full-year results."
+    ),
+    "asml_q4_2019": (
+        "ASML reports €11.8 billion sales and €2.6 billion net income in 2019 "
+        "Strong EUV demand and Installed Base business support expected growth in "
+        "2020 ASML announces a three-year share buyback program up to €6 billion "
+        "and proposes 14% annualized dividend increase VELDHOVEN, the Netherlands, "
+        "January 22, 2020 - today ASML Holding N.V. (ASML) publishes its 2019 "
+        "fourth-quarter and full-year results."
+    ),
+    "asml_q4_2015": (
+        "EX-99.1 2 pressreleasequarterlyresul.htm EXHIBIT 99.1 Exhibit Exhibit "
+        "99.1 Media Relations Contacts Lucas van Grinsven - Corporate "
+        "Communications - +31 6 101 99 532 - Veldhoven, the Netherlands Niclas "
+        "Mika - Corporate Communications - +31 6 201 528 63 - Veldhoven, the "
+        "Netherlands Investor Relations Contacts Craig DeYoung - Investor "
+        "Relations - +1 480 696 2762 - Chandler, Arizona, USA Marcel Kemp - "
+        "Investor Relations - +31 40 268 6494 - Veldhoven, the Netherlands ASML "
+        "reports record sales for 2015 Proposes to raise dividend by 50% and "
+        "announces plan for additional EUR 1 billion share repurchases VELDHOVEN, "
+        "the Netherlands, January 20, 2016 - ASML Holding N.V. (ASML) today "
+        "publishes its 2015 fourth-quarter and full-year results."
+    ),
+    "asml_q1_2016": (
+        "EX-99.1 2 pressreleasequarterlyresul.htm EXHIBIT 99.1 Exhibit Exhibit "
+        "99.1 Media Relations Contacts Lucas van Grinsven - Corporate "
+        "Communications - +31 6 101 99 532 - Veldhoven, the Netherlands Niclas "
+        "Mika - Corporate Communications - +31 6 201 528 63 - Veldhoven, the "
+        "Netherlands Investor Relations Contacts Craig DeYoung - Investor "
+        "Relations - +1 480 696 2762 - Chandler, Arizona, USA Marcel Kemp - "
+        "Investor Relations - +31 40 268 6494 - Veldhoven, the Netherlands ASML "
+        "reports first-quarter sales and gross margin in line with guidance "
+        "Strong Q2 outlook underpinned by 10 nanometer logic ramp VELDHOVEN, the "
+        "Netherlands, April 20, 2016 - ASML Holding N.V. (ASML) today publishes "
+        "its 2016 first-quarter results."
+    ),
+    "asml_q2_2019": (
+        "ASML reports EUR 2.6 billion sales at 43.0% gross margin in Q2 Stronger "
+        "Logic compensates for Memory weakness; 2019 total sales view unchanged "
+        "VELDHOVEN, the Netherlands, July 17, 2019 - today ASML Holding N.V. "
+        "(ASML) publishes its 2019 second-quarter results."
+    ),
+    "asml_q3_2019": (
+        "ASML reports EUR 3.0 billion sales at 43.7% gross margin in Q3 23 EUV "
+        "orders reiterate customers' manufacturing plans in Logic and Memory "
+        "VELDHOVEN, the Netherlands, October 16, 2019 - today ASML Holding N.V. "
+        "(ASML) publishes its 2019 third-quarter results."
+    ),
+    "asml_q3_2018": (
+        "ASML reports EUR 2.8 billion sales in Q3, expects EUR 3 billion sales "
+        "in Q4 ASML sees further growth for 2019 VELDHOVEN, the Netherlands, "
+        "October 17, 2018 - ASML Holding N.V. (ASML) today publishes its 2018 "
+        "third-quarter results."
+    ),
+    # Two releases refused for a second reason: an outlook word in the title
+    # ("raises full-year sales outlook") whose dateline publishes the quarter's
+    # results, and a period that is a bare year before "results" ("reports 2013
+    # results as guided"). Filings 0001193125-13-292463 and 0001193125-14-016872,
+    # text cut short.
+    "asml_q2_2013": (
+        "ASML reports second quarter 2013 as guided and raises full-year sales "
+        "outlook Cymer consolidated for month of June VELDHOVEN, the Netherlands, "
+        "17 July 2013 - ASML Holding N.V. (ASML) today publishes 2013 "
+        "second-quarter results."
+    ),
+    "asml_q4_2013": (
+        "ASML reports 2013 results as guided, reiterates H1 2014 expectation "
+        "Continued strong demand underpins solid start of 2014 VELDHOVEN, the "
+        "Netherlands, January 22, 2014 - ASML Holding N.V. (ASML) today publishes "
+        "2013 fourth-quarter results."
+    ),
+    # A notice that results are still to come names them with a participle,
+    # not a finite reporting verb, so it does not rescue its outlook title.
+    "asml_outlook_notice": (
+        "ASML reports its 2025 sales outlook ahead of reporting its "
+        "fourth-quarter results next week."
+    ),
+    # A dividend announcement that names a figure after the dividend is still
+    # not a results release: the dividend is what the verb announces.
+    "asml_dividend_with_income": (
+        "ASML announces a dividend of €6.40 per share for 2024; net income for "
+        "the year was €7.6 billion."
     ),
     "asml_buyback": (
         "ASML reports on share buyback transactions in the week of 13 January 2025 "
@@ -376,6 +472,17 @@ HEADS = {
         ("asml_2020", True, ""),
         ("asml_2017", True, ""),
         ("asml_2015", True, ""),
+        ("asml_q4_2018", True, ""),
+        ("asml_q4_2019", True, ""),
+        ("asml_q4_2015", True, ""),
+        ("asml_q1_2016", True, ""),
+        ("asml_q2_2019", True, ""),
+        ("asml_q3_2019", True, ""),
+        ("asml_q3_2018", True, ""),
+        ("asml_q2_2013", True, ""),
+        ("asml_q4_2013", True, ""),
+        ("asml_outlook_notice", False, "sales outlook"),
+        ("asml_dividend_with_income", False, "dividend"),
         ("asml_buyback", False, "buyback"),
         ("asml_annual", False, "Annual Report"),
         ("asml_investor_day", False, "no reporting verb"),
