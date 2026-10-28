@@ -78,6 +78,12 @@ AI-and-software mandate; that is a deliberate bet, not alpha.
   pre-registered gate (20-session NW t 1.79 against 2.0; 60-session IC
   −0.016; 2024-2026 negative). The secondary S-added and S-blend arms were
   not run. Closed; not retried without a new pre-registration.
+- **The no-chase guard.** The book's point-in-time Sharpe gain did not
+  transfer to the honest S&P 500 PIT universe: choosing-window Sharpe
+  +0.00004 at 25 bp against a +0.05 gate, below the random-deferral placebo's
+  95th percentile; reported CAGR 26.29% to 23.45%, full period 14.27% to
+  13.71%. The 0.40 sensitivity is worse. Closed; not retried without a new
+  pre-registration (`chase-guard-results-2026-10-28.md`).
 
 ## Objective
 
@@ -194,6 +200,9 @@ loop can be wrong.
    before 252 sessions.
 4. The risk dial is measured (`risk-dial-2026-10-28.md`); the owner's
    choice of 0.25 or 0.20 is pending.
+5. The chase guard is run and failed on the honest universe
+   (`chase-guard-results-2026-10-28.md`); do not retry it without a new
+   pre-registration.
 
 ## What this program refuses
 

@@ -49,6 +49,12 @@ class Rule:
     cost_bps: float = 10.0
     floor: float = leader.EXPOSURE_FLOOR
     target: float = leader.TARGET
+    # Research only: defer an entry while the name's trailing 63-session
+    # return exceeds this fraction. None is the installed rule.
+    chase: float | None = None
+    # Research placebo: defer the guard's count of entering names at random,
+    # seeded. Requires `chase`.
+    chase_random: int | None = None
 
 
 @dataclass
@@ -133,6 +139,13 @@ def simulate(
     meetings = fomc_decisions()
     days = [date.fromisoformat(d) for d in dates]
     cost = rule.cost_bps / 1e4
+    if rule.chase_random is not None and rule.chase is None:
+        raise ValueError("chase_random requires chase")
+    rng = (
+        np.random.default_rng(rule.chase_random)
+        if rule.chase_random is not None
+        else None
+    )
     window = leader.WINDOW
     shares = np.zeros(N)
     cash = capital
@@ -225,7 +238,7 @@ def simulate(
             if planned is None:
                 planned = _ordinary(
                     rule, mask[t], g, below, shares, band[t], adj_close, t, held,
-                    None if tilt is None else tilt[t],
+                    None if tilt is None else tilt[t], rng,
                 )
             break
         # 2. Tonight's plan, from this close only.
@@ -273,7 +286,7 @@ def simulate(
             continue
         target, protected = plan_target(
             rule, mask[t], g, below, shares, band[t], adj_close, t, held,
-            None if tilt is None else tilt[t],
+            None if tilt is None else tilt[t], rng,
         )
         sells, buys = plan_orders(rule, target, shares, adj_close[t], value, protected)
         if sells or buys:
@@ -281,9 +294,31 @@ def simulate(
     return Book(dates, tickers, equity, weights, trades, costs_paid, planned, cash_close, cash_open)
 
 
+# True where an unheld name has already run more than `threshold` over the
+# trailing `window` sessions. The caller intersects this with the names it is
+# about to enter; a held name is never deferred.
+def chase_defer(adj_close, shares, t, window=leader.WINDOW, threshold=0.25):
+    """Return the (N,) mask of unheld names whose trailing return is hot."""
+    defer = np.zeros(len(shares), dtype=bool)
+    if threshold is None or t < window:
+        return defer
+    then = adj_close[t - window]
+    now = adj_close[t]
+    with np.errstate(invalid="ignore", divide="ignore"):
+        hot = (
+            np.isfinite(then)
+            & np.isfinite(now)
+            & (then > 0)
+            & (now / then - 1.0 > threshold)
+        )
+    return hot & (shares == 0)
+
+
 # The ordinary nightly plan at close t: the leader weights over the names the
 # grades admit (or keep, while held at the hold grade), the band block on buys.
-def _ordinary(rule, mask_t, g, below, shares, band_t, adj_close, t, held, tilt_t=None):
+def _ordinary(
+    rule, mask_t, g, below, shares, band_t, adj_close, t, held, tilt_t=None, rng=None
+):
     window = leader.WINDOW
     keep = (shares > 0) & (below <= rule.exit_grace) & (g >= 0)
     sized = mask_t & ((g >= rule.entry_grade) | keep)
@@ -296,7 +331,18 @@ def _ordinary(rule, mask_t, g, below, shares, band_t, adj_close, t, held, tilt_t
         target=rule.target,
         extra=tilt_t,
     )
-    return np.where(blocked, np.minimum(target, held), target)
+    target = np.where(blocked, np.minimum(target, held), target)
+    if rule.chase is not None:
+        entering = (shares == 0) & (target > 0)
+        defer = chase_defer(adj_close, shares, t, threshold=rule.chase) & entering
+        if rule.chase_random is not None and defer.any():
+            count = int(defer.sum())
+            candidates = np.flatnonzero(entering)
+            pick = rng.choice(candidates, size=count, replace=False)
+            defer = np.zeros(len(target), dtype=bool)
+            defer[pick] = True
+        target = np.where(defer, 0.0, target)
+    return target
 
 
 # Tonight's ordinary target at close t on the book's own holdings: the leader
@@ -305,10 +351,10 @@ def _ordinary(rule, mask_t, g, below, shares, band_t, adj_close, t, held, tilt_t
 # the (N,) target weights and the (N,) protected mask. The simulator and the
 # nightly plan check (`plan_parity`) both plan through this.
 def plan_target(
-    rule, mask_t, g, below, shares, band_t, adj_close, t, held, tilt_t=None
+    rule, mask_t, g, below, shares, band_t, adj_close, t, held, tilt_t=None, rng=None
 ):
     target = _ordinary(
-        rule, mask_t, g, below, shares, band_t, adj_close, t, held, tilt_t
+        rule, mask_t, g, below, shares, band_t, adj_close, t, held, tilt_t, rng
     )
     protected = (shares > 0) & (g < 0)
     if protected.any():

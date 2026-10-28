@@ -79,9 +79,10 @@ identical.
    window. The random arm uses the same engine, the same held definition and
    the same cash treatment; only the choice of names differs.
 4. **Off null.** `Rule(chase=None)` must reproduce the installed book exactly.
-5. **All-defer null.** `Rule(chase=0.0)` defers every entering name. It is run
-   once and reported with its deferred count and its book; it is not read as a
-   neutral score.
+5. **All-defer null.** `Rule(chase=-1.0)` defers every entering name, because
+   every positive-price simple return is greater than −1.0. It is run once and
+   reported with its deferred count and its book; it is not read as a neutral
+   score.
 
 ## The gate
 
@@ -110,7 +111,7 @@ Before any arm is read, the implementation must reproduce the incumbent:
 - `Rule(chase=None)` produces equity, weights, trades, cash and the final plan
   byte-identical to the installed rule on the frozen cache and on the unit
   market.
-- `Rule(chase=0.0)` defers every entering name; the study reports the count
+- `Rule(chase=-1.0)` defers every entering name; the study reports the count
   and the book. If the book still enters names, the guard is not deferring
   entries and the study stops.
 - The random arm with a fixed seed defers exactly the guard's count per
@@ -157,5 +158,6 @@ A failure stops the study.
 
 ## Amendments
 
-None. If an amendment is needed before the first result, it is written here
-and dated; after the first result, no amendment is allowed.
+**2026-10-28, before the first run.** The all-defer null is `chase=-1.0`, not
+`chase=0.0`: a simple return above −1.0 is the only threshold that defers every
+entering name on positive prices. No gate, arm or window changed.

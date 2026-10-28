@@ -186,3 +186,93 @@ def test_leaving_the_universe_sells_without_freezing():
     assert (book.weights[122:, 0] == 0).all()
     later = [t for t in book.trades if t["decided"] > book.dates[121] and t["ticker"] != "XXX"]
     assert later
+
+
+# The chase guard defers an unheld name that has already run more than the
+# threshold; a held name is never deferred.
+def test_chase_guard_defers_only_unheld_hot_names():
+    window = leader.WINDOW
+    adj = np.full((window + 1, 3), 100.0)
+    adj[:, 0] = np.linspace(100, 200, window + 1)
+    adj[:, 1] = np.linspace(100, 110, window + 1)
+    adj[:, 2] = np.linspace(100, 200, window + 1)
+    shares = np.array([0, 0, 10])
+    defer = pb.chase_defer(adj, shares, window, threshold=0.25)
+    assert defer.tolist() == [True, False, False]
+
+
+# The guard reads only closes on or before the decision session.
+def test_chase_guard_reads_only_past_closes():
+    window = leader.WINDOW
+    adj = np.full((window + 20, 2), 100.0)
+    adj[:, 0] = np.linspace(100, 200, window + 20)
+    shares = np.zeros(2)
+    t = window + 10
+    before = pb.chase_defer(adj, shares, t, threshold=0.25)
+    changed = adj.copy()
+    changed[t + 1 :] *= 10.0
+    after = pb.chase_defer(changed, shares, t, threshold=0.25)
+    assert np.array_equal(before, after)
+    changed[t, 0] = 50.0
+    moved = pb.chase_defer(changed, shares, t, threshold=0.25)
+    assert moved[0] != before[0]
+
+
+# The random placebo defers exactly the guard's count, drawn from entering names.
+def test_random_deferral_defers_the_guard_count():
+    window = leader.WINDOW
+    adj = np.full((window + 1, 3), 100.0)
+    adj[:, 0] = np.linspace(100, 200, window + 1)
+    adj[:, 1] = np.linspace(100, 110, window + 1)
+    adj[:, 2] = np.linspace(100, 300, window + 1)
+    mask = np.ones(3, dtype=bool)
+    grades = np.full(3, 2, dtype=int)
+    shares = np.zeros(3)
+    below = np.zeros(3, dtype=int)
+    band = np.zeros(3, dtype=bool)
+    held = np.zeros(3)
+    unguarded = pb._ordinary(
+        pb.Rule(fomc=False), mask, grades, below, shares, band, adj, window, held
+    )
+    guard = pb._ordinary(
+        pb.Rule(fomc=False, chase=0.25),
+        mask, grades, below, shares, band, adj, window, held,
+    )
+    rng = np.random.default_rng(7)
+    random_target = pb._ordinary(
+        pb.Rule(fomc=False, chase=0.25, chase_random=7),
+        mask, grades, below, shares, band, adj, window, held, rng=rng,
+    )
+    entering = set(np.flatnonzero(unguarded > 0))
+    hot = set(np.flatnonzero(guard == 0))
+    zeroed = set(np.flatnonzero(random_target == 0))
+    assert hot == {0, 2}
+    assert len(zeroed) == len(hot)
+    assert zeroed <= entering
+
+
+# The guard is off by default: the installed book is reproduced exactly.
+def test_chase_off_reproduces_the_installed_book():
+    grades = np.full((160, len(TICKERS)), 2, dtype=int)
+    grades[:, 3] = 0
+    base = _run(grades)
+    off = _run(grades, rule=pb.Rule(fomc=False, chase=None))
+    assert np.array_equal(base.equity, off.equity, equal_nan=True)
+    assert np.array_equal(base.weights, off.weights)
+    assert base.trades == off.trades
+
+
+# The all-defer null never enters a name.
+def test_all_defer_guard_never_enters():
+    grades = np.full((160, len(TICKERS)), 2, dtype=int)
+    grades[:, 3] = 0
+    book = _run(grades, rule=pb.Rule(fomc=False, chase=-1.0))
+    assert not [t for t in book.trades if t["action"] == "BUY"]
+
+
+# A random placebo without a threshold is a configuration error, not a silent
+# no-op.
+def test_chase_random_requires_chase():
+    grades = np.full((160, len(TICKERS)), 2, dtype=int)
+    with pytest.raises(ValueError):
+        _run(grades, rule=pb.Rule(fomc=False, chase_random=1))
