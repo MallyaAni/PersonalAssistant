@@ -1,0 +1,109 @@
+{
+ "arm": "S-only",
+ "by_horizon": {
+  "20": {
+   "choosing": {
+    "hit": 0.5346534653465347,
+    "mean_ic": 0.03523432836113974,
+    "n": 101,
+    "t": 1.7122501767652871,
+    "t_nw": 1.7864107786246977
+   },
+   "reported": {
+    "hit": 0.5,
+    "mean_ic": -0.031073990786893154,
+    "n": 34,
+    "t": -0.9518507429584391,
+    "t_nw": -0.9829026331461399
+   }
+  },
+  "60": {
+   "choosing": {
+    "hit": 0.4117647058823529,
+    "mean_ic": -0.01626063097657944,
+    "n": 34,
+    "t": -0.4182859364999609,
+    "t_nw": -0.4170689179686542
+   },
+   "reported": {
+    "hit": 0.09090909090909091,
+    "mean_ic": -0.1532623895544229,
+    "n": 11,
+    "t": -3.726770925900708,
+    "t_nw": -4.783178782347911
+   }
+  }
+ },
+ "caveats": [
+  "The release reader is a modern model reading historical text.",
+  "The store holds bars only for today's names; the book membership is point in time but the universe is still survivor-biased.",
+  "A name's first release has no previous release and no view."
+ ],
+ "coverage": 0.9919366482668236,
+ "inputs": {
+  "draws": 200,
+  "membership": "/home/animallya96/scratch/fixes-20261028/backend/market/data/membership_history.csv",
+  "root": "/home/animallya96/deploy/anios/data/market",
+  "seed": 20261028
+ },
+ "null": {
+  "hit": null,
+  "mean_ic": null,
+  "n": 0,
+  "t": null,
+  "t_nw": null
+ },
+ "perturbation": {
+  "future_identical": true,
+  "name": "AAOI",
+  "newest_changes": true
+ },
+ "placebo": {
+  "20": {
+   "draws": 200,
+   "mean_ic": -0.0009104427851733976,
+   "p95": 0.034091357018875786
+  },
+  "60": {
+   "draws": 200,
+   "mean_ic": -0.002740885262844489,
+   "p95": 0.049948543891905686
+  }
+ },
+ "releases": 3622,
+ "signal": "sum of five tone changes from the previous release",
+ "strict": {
+  "20": {
+   "choosing": {
+    "hit": 0.5445544554455446,
+    "mean_ic": 0.030331699258977423,
+    "n": 101,
+    "t": 1.5278661570310956,
+    "t_nw": 1.5637696037401347
+   },
+   "reported": {
+    "hit": 0.47058823529411764,
+    "mean_ic": -0.03432361404235346,
+    "n": 34,
+    "t": -1.0285449240835536,
+    "t_nw": -1.0260019600131034
+   }
+  },
+  "60": {
+   "choosing": {
+    "hit": 0.4411764705882353,
+    "mean_ic": -0.004584965935688928,
+    "n": 34,
+    "t": -0.11922681426262852,
+    "t_nw": -0.12483649220422835
+   },
+   "reported": {
+    "hit": 0.2727272727272727,
+    "mean_ic": -0.1448818002444243,
+    "n": 11,
+    "t": -3.3739497645424046,
+    "t_nw": -5.147597102428009
+   }
+  }
+ }
+}

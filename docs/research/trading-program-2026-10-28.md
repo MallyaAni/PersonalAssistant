@@ -71,6 +71,10 @@ AI-and-software mandate; that is a deliberate bet, not alpha.
   conviction top-decile.** All measured and failed on the honest universe.
 - **The B cut outside the theme.** It adds theme breadth on the book but loses
   on the broad market; the installed A entry / B hold is the compromise.
+- **Tone surprise.** The five-field release-tone change failed its
+  pre-registered gate (20-session NW t 1.79 against 2.0; 60-session IC
+  −0.016; 2024-2026 negative). The secondary S-added and S-blend arms were
+  not run. Closed; not retried without a new pre-registration.
 
 ## Objective
 
@@ -110,17 +114,19 @@ performance decisions; the protocol's review is after 252 completed sessions.
 This is the highest-priority workstream because everything else is a
 hypothesis until it survives here.
 
-### P2 — One selection bet: tone surprise (registered now)
+### P2 — One selection bet: tone surprise (run, failed)
 
 The only analyst with a measured edge is valuation; the sentiment analyst's
 tone level carries rank IC 0.039 at 20 sessions. The release-tone layer already
 stores the change from the previous release for five fields, but the analyst
-uses only the guidance change. The next registered study asks whether the
-five-field surprise predicts 20/60-session excess returns and whether adding
-it to the grade improves the honest book. Pre-registration:
-`tone-surprise-preregistration-2026-10-28.md`. Historical test on 2016-2023,
-placebo, 2024-2026 reported only. Passing buys a forward shadow, not a live
-change.
+uses only the guidance change. The registered study asked whether the
+five-field surprise predicts 20/60-session excess returns. It was run on
+2016-2023 with the placebo and 2024-2026 reported only:
+`tone-surprise-results-2026-10-28.md`. The twenty-session IC is +0.035, but
+the Newey-West t is 1.79 against a 2.0 gate, the sixty-session choosing IC is
+−0.016, and 2024-2026 is negative at both horizons. **S-only failed; the
+secondary arms were not run.** The signal is not in the grade, the board, or
+any prompt. Pre-registration: `tone-surprise-preregistration-2026-10-28.md`.
 
 ### P3 — Estimate revisions (forward only)
 
@@ -174,8 +180,8 @@ loop can be wrong.
 
 1. After 15:45 ET today: install the FOMC retirement release, then confirm
    admission and the 19:30 nightly.
-2. Commit the tone-surprise pre-registration before its first run; run the
-   historical arm and write the result beside it.
+2. The tone-surprise study is run and failed; its result is written beside
+   the pre-registration. Do not retry it without a new pre-registration.
 3. Keep the estimate snapshots recording nightly; do not read them as evidence
    before 252 sessions.
 4. Present the risk dial to the owner with the measured trade-off.
