@@ -9,6 +9,7 @@ from datetime import date
 import numpy as np
 
 from backend.market import calendar, entry_timing
+from backend.market.labels import OrderSide
 from backend.market.learned_execution_timing import replay_account
 
 POLICY = "crossfitted-session-continuation/1"
@@ -51,7 +52,7 @@ def gate(opened, observed, delta, known, pending, final, counts):
     available = np.isfinite(opened) & (opened > 0)
     acting = np.zeros(len(delta), dtype=bool)
     for stock in np.flatnonzero(pending & known & available):
-        side = "buy" if delta[stock] > 0 else "sell"
+        side = OrderSide.BUY if delta[stock] > 0 else OrderSide.SELL
         acting[stock] = entry_timing.crosses(observed[stock], opened[stock], side)
     counts["waiting_decisions"] += int((pending & known & available & ~acting).sum())
     counts["opening_unavailable"] += int((pending & known & ~available).sum())

@@ -15,6 +15,7 @@ from backend.agents.trading.desk import (
     live_policy,
     paper,
 )
+from backend.market.labels import PlanDay
 
 
 # Tag ordinary orders on the current board clock while preserving event priorities.
@@ -110,6 +111,9 @@ def plan(
         orders = on_the_boards_clock(orders)
     if holding_policy is not None:
         new_state.policy_version = holding_policy.version
-    elif not live_policy.needs_rebalance(state.policy_version) or what == "rebalance":
+    elif (
+        not live_policy.needs_rebalance(state.policy_version)
+        or what == PlanDay.REBALANCE
+    ):
         new_state.policy_version = live_policy.ACTIVE
     return orders, new_state, what

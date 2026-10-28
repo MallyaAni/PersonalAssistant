@@ -85,11 +85,12 @@ from backend.market import candidate_stats, fill_timing
 from backend.market import stage4_decisions as sd
 from backend.market import stage4_labels as lab
 from backend.market import stage4_orders as so
+from backend.market.labels import OrderSide
 from backend.market.sip_cube import FULL_SESSION_SLOTS, SessionCube
 
 PLAN = "docs/research/adaptive-entry-plan-2026-09-30.md"
 STUDY = "adaptive_entry"
-SIDE = "buy"
+SIDE = OrderSide.BUY
 CONTROL = lab.CONTROL
 SIGMA_HALF = "sigma_half"
 SIGMA_ONE = "sigma_one"

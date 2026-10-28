@@ -22,6 +22,7 @@ from backend.market import (
     strategy_publication,
 )
 from backend.market import strategy_verdict as verdicts
+from backend.market.labels import TimingState
 
 router = APIRouter(
     prefix="/market/{user_id}",
@@ -115,7 +116,7 @@ def _with_verdicts(assessment, snapshot, *, reason_key, held_key=None):
             target_weight=target,
             held_weight=row.get(held_key) if held_key else 0,
             quote_available=row.get("quote_at") is not None,
-            distribution_available=row.get("state") != "unavailable"
+            distribution_available=row.get("state") != TimingState.UNAVAILABLE
             or "distribution" not in str(row.get("reason", "")).lower(),
             mandatory=row.get("reason") == "mandatory_grade_exit",
             resolved=bool(row.get("attempt_resolved")),

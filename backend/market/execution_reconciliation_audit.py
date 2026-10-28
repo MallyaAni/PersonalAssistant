@@ -11,6 +11,8 @@ from datetime import UTC, datetime
 from decimal import Decimal, InvalidOperation
 from pathlib import Path
 
+from backend.market.labels import ExecutionTiming, OrderSide
+
 SCHEMA = "saved-execution-reconciliation/1"
 
 
@@ -187,10 +189,11 @@ def original_orders(record, state, receipt):
             and saved["execution_timing"] == timing[identity],
             "Original leg timing differs",
         )
-        require(row["side"] in ("buy", "sell"), "Original side invalid")
+        require(row["side"] in OrderSide, "Original side invalid")
         if row["symbol"] in receipt["company_exits"]:
             require(
-                timing[identity] == "next_open" and row["side"] == "sell",
+                timing[identity] == ExecutionTiming.NEXT_OPEN
+                and OrderSide(row["side"]) is OrderSide.SELL,
                 "Company exit routing differs",
             )
     return orders, pending
@@ -254,7 +257,7 @@ def order_outcome(identity, row, pending, queued, later, prices, close_published
         "broker_outcome": "UNVERIFIED_MISSING_ORDER",
         "filled_qty": None,
     }
-    if original["execution_timing"] == "next_open":
+    if original["execution_timing"] == ExecutionTiming.NEXT_OPEN:
         trace["learned_timing"] = "NOT_EXERCISED_NEXT_OPEN"
     broker = later.get(identity)
     if broker is None:
@@ -313,7 +316,7 @@ def account_delta(positions, before, later, traces):
     cash = number(before["account"]["cash"])
     for row in traces:
         filled = number(row["filled_qty"])
-        sign = 1 if row["side"] == "buy" else -1
+        sign = 1 if OrderSide(row["side"]) is OrderSide.BUY else -1
         expected[row["symbol"]] = (
             expected.get(row["symbol"], Decimal(0)) + sign * filled
         )
@@ -418,7 +421,7 @@ def audit_documents(record, state, before, later, close_receipt, later_state=Non
         if later_state
         else "UNVERIFIED_NO_LATER_STATE",
         "learned_intraday_path": "UNVERIFIED_NOT_EXERCISED"
-        if all(row["execution_timing"] == "next_open" for row in traces)
+        if all(row["execution_timing"] == ExecutionTiming.NEXT_OPEN for row in traces)
         else "UNVERIFIED_REQUIRES_AUTHENTICATED_FORECAST_AND_SENDER_RECEIPTS",
         "original_parity": {
             "ok": record["grade_parity"]["ok"],

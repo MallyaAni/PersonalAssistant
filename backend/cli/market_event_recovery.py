@@ -11,6 +11,7 @@ from backend.agents.trading.desk import event_execution, event_risk, paper
 from backend.agents.trading.desk.desk import book_panel
 from backend.cli import market_daily
 from backend.market import alpaca_trading, calendar, desk_freshness
+from backend.market.labels import OrderSide
 from backend.market.store import MarketStore
 
 
@@ -132,7 +133,7 @@ def recover(root, latest, snapshot, policy, client, now):  # noqa: C901 - one br
     if missing:
         expected_event = state.event_cycle.get("id")
         if not expected_event or any(
-            row.get("event_id") != expected_event or row["side"] != "sell"
+            row.get("event_id") != expected_event or row["side"] != OrderSide.SELL
             for row in state.pending
         ):
             return {**result, "status": "waiting for existing orders"}
@@ -191,7 +192,7 @@ def recover(root, latest, snapshot, policy, client, now):  # noqa: C901 - one br
         "status": "reduction pending" if state.pending else "reduction settled",
         "pending_orders": len(state.pending),
         "refused_orders": len(refused),
-        "sold": event_execution.filled(state, "sell"),
+        "sold": event_execution.filled(state, OrderSide.SELL),
         "cycle": state.event_cycle,
     }
 
@@ -215,7 +216,7 @@ def after_decision(root, state, policy, client, result, today):
             **result,
             "status": "restoration orders working at the broker",
             "pending_orders": len(state.pending),
-            "sold": event_execution.filled(state, "sell"),
+            "sold": event_execution.filled(state, OrderSide.SELL),
             "cycle": state.event_cycle,
         }
     held = {p.symbol: p.qty for p in client.positions()}
@@ -229,14 +230,14 @@ def after_decision(root, state, policy, client, result, today):
             "active": False,
             "status": "restoration filled; the cycle is closed",
             "pending_orders": 0,
-            "bought": event_execution.filled(state, "buy"),
+            "bought": event_execution.filled(state, OrderSide.BUY),
             "cycle": {},
         }
     return {
         **result,
         "status": "awaiting nightly restoration",
         "pending_orders": 0,
-        "sold": event_execution.filled(state, "sell"),
+        "sold": event_execution.filled(state, OrderSide.SELL),
         "cycle": state.event_cycle,
     }
 

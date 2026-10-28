@@ -21,6 +21,7 @@ from datetime import UTC, date, datetime, timedelta
 
 import numpy as np
 
+from backend.market.labels import ExchangePhase
 from backend.market.store import MarketStore
 from backend.market.universe import STALE_AFTER_DAYS
 from backend.market.yahoo import (
@@ -176,7 +177,10 @@ def _repair_sessions(history, asof):
     ):
         raise MarketDataUnavailableError("fresh source time is undated")
     status = calendar.exchange_status(stamp)
-    if status["session"] != asof.isoformat() or status["phase"] != "post-market":
+    if (
+        status["session"] != asof.isoformat()
+        or status["phase"] != ExchangePhase.POST_MARKET
+    ):
         raise MarketDataUnavailableError(
             "repair requires today's completed exchange session"
         )

@@ -19,6 +19,7 @@ from pathlib import Path
 import numpy as np
 
 from backend.market import calendar
+from backend.market.labels import OrderSide, wire
 
 POLICY = "actual-policy-timing/1-research"
 PROTOCOL = "docs/research/actual-policy-timing-plan-2026-10-04.md"
@@ -106,7 +107,11 @@ def read_json(path, expected=None):
 
 
 # Compare nested saved values while retaining exact null, boolean and schema boundaries.
+# A label is a `StrEnum` in memory and its wire string on disk; it is compared
+# as that string, so a recomputed member and its saved spelling are the same
+# value, while a different spelling or a non-string still differs.
 def same(actual, expected, context="evidence"):
+    actual, expected = wire(actual), wire(expected)
     if isinstance(expected, dict):
         require(
             isinstance(actual, dict) and set(actual) == set(expected),
@@ -974,7 +979,7 @@ def validate_attempts(attempts, dates, data):
         require(
             str(dates[0]) <= receipt_day(row) <= str(dates[-1])
             and row["symbol"] in data["names"]
-            and row["side"] in ("buy", "sell"),
+            and row["side"] in OrderSide,
             "Attempt outside account/source bounds",
         )
         whole(row["qty"])
@@ -1382,7 +1387,7 @@ def fold_fills(fills, cash, held, basis):
         )
         if not qty:
             continue
-        if fill["side"] == "buy":
+        if fill["side"] == OrderSide.BUY:
             before = held.get(symbol, 0)
             prior_basis = basis.get(symbol, 0)
             basis[symbol] = (
@@ -1411,7 +1416,10 @@ def fold_fills(fills, cash, held, basis):
 def check_benchmark_entry(account, spec, data, dates):
     fills, attempts = account["fills"], account["attempts"]
     require(
-        all(fill["symbol"] == spec["arm"] and fill["side"] == "buy" for fill in fills)
+        all(
+            fill["symbol"] == spec["arm"] and fill["side"] == OrderSide.BUY
+            for fill in fills
+        )
         and len(fills) <= 1,
         "Benchmark is not buy-and-hold",
     )
@@ -1455,7 +1463,7 @@ def check_policy_receipts(account, data, dates):
         whole(row["qty"])
         require(
             row["symbol"] in data["names"]
-            and row["side"] in ("buy", "sell")
+            and row["side"] in OrderSide
             and str(dates[0]) <= row["session"] <= str(dates[-1]),
             "Intent source/date bounds differ",
         )

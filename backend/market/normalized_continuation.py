@@ -8,6 +8,7 @@ from threadpoolctl import threadpool_limits
 
 from backend.market import learned_entry_models as base
 from backend.market import sequential_execution_models as teacher
+from backend.market.labels import OrderSide
 
 POLICY = "normalized-nonlinear-continuation/1"
 TEACHER_SHA = "21afa50d2d36c1f03c20fa50dd4c18b05538865559ee80f7bf7ea553373a4c00"
@@ -61,7 +62,7 @@ def identity(dataset, teacher_manifest):
         ),
         normalization="prior_volatility20_times_sqrt_remaining24_minus_clock_over26",
         target="held_fold_stop_minus_suffix_execution_over_observed_close",
-        estimator_heads=["buy", "sell"],
+        estimator_heads=[OrderSide.BUY, OrderSide.SELL],
     )
     return json.loads(json.dumps(result))
 

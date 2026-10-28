@@ -40,12 +40,14 @@ from __future__ import annotations
 import math
 from datetime import date
 
+from backend.market.labels import AllocationAction, parse
+
 # The version both the stored metadata and the served payload report.
 VERSION = "portfolio-allocation-view/1"
 
 # The only instrument kinds and actions the payload can name.
 KINDS = ("stock", "index", "cash")
-ACTIONS = ("BUY", "HOLD", "SELL")
+ACTIONS = tuple(AllocationAction)
 STATUSES = ("available", "unavailable", "blocked")
 
 # A composition is still one when its buckets total this close to 1.
@@ -126,9 +128,9 @@ def _row_entry(symbol, entry):
     kind = entry.get("kind")
     if kind not in KINDS:
         raise ValueError(f"row {symbol} has an unknown kind")
-    action = entry.get("action")
-    if action not in ACTIONS:
-        raise ValueError(f"row {symbol} has an unknown action")
+    action = parse(
+        AllocationAction, entry.get("action"), f"row {symbol} has an unknown action"
+    )
     reason = entry.get("reason")
     if not isinstance(reason, str):
         raise ValueError(f"row {symbol} lacks a reason")

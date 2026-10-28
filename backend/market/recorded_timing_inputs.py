@@ -18,6 +18,7 @@ import pyarrow.parquet as pq
 
 from backend.market import calendar
 from backend.market import sequential_shadow_context as history
+from backend.market.labels import OrderSide
 from backend.market.sip_cube import SessionCube
 
 REFERENCE_BASIS = "raw_SIP_last_regular_close_proxy_not_official_close"
@@ -94,7 +95,7 @@ def _intent(row, index, session, digest):
     if not isinstance(row, dict):
         raise ValueError("Every planned row must be an object")
     _symbol(row.get("symbol"))
-    if row.get("side") not in ("buy", "sell"):
+    if row.get("side") not in OrderSide:
         raise ValueError("Every planned row needs an explicit buy or sell side")
     if row.get("execute_on") != session.isoformat():
         raise ValueError("Every planned row must execute on the actual session")

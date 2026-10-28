@@ -12,6 +12,7 @@ import numpy as np
 
 from backend.agents.trading.desk import intraday_orders
 from backend.market import live_probability_timing as guards
+from backend.market.labels import OrderSide, TimingState
 from backend.market.sequential_execution_models import decision
 
 POLICY = "live-self-continuation/1-research"
@@ -32,7 +33,7 @@ def build_reader(provider, symbols, day, clock, session, now, snapshot, pending,
     marks = {name: guards._quote(quote, start, now, session)
              for name, quote in quotes.items()}
     account_reason, nav, budget, held = guards._account(broker, marks, now)
-    buys = [row for row in identities if row[2] == "buy"]
+    buys = [row for row in identities if row[2] == OrderSide.BUY]
     missing_buy = any(marks.get(row[1]) is None for row in buys)
     spend = None if missing_buy else sum(
         row[3] * marks[row[1]] for row in buys
@@ -56,24 +57,26 @@ def build_reader(provider, symbols, day, clock, session, now, snapshot, pending,
             "unsupported continuation clock" if clock >= 24 else
             "missing or stale completed raw quote"
             if mark is None or quote != quotes.get(symbol) else
-            "unknown pending buy price" if side == "buy" and missing_buy else ""
+            "unknown pending buy price" if side == OrderSide.BUY and missing_buy else ""
         )
         observed_qty = (
-            min(qty, math.floor(held.get(symbol, 0))) if side == "sell" else qty
+            min(qty, math.floor(held.get(symbol, 0)))
+            if side == OrderSide.SELL
+            else qty
         )
         weight = 0.0 if reason else (
-            observed_qty * mark / nav * (fraction if side == "buy" else 1.0)
+            observed_qty * mark / nav * (fraction if side == OrderSide.BUY else 1.0)
         )
-        mean, state = None, "unavailable"
+        mean, state = None, TimingState.UNAVAILABLE
         if not reason and weight == 0:
-            state, reason = "no_trade", "no funded quantity"
+            state, reason = TimingState.NO_TRADE, "no funded quantity"
         elif not reason:
             supplied = provider(int(day), int(clock), symbols.index(symbol))
             values = np.asarray(supplied) if supplied is not None else np.array([])
             if values.shape != (2,) or values.dtype.kind not in "fiu":
                 reason = "missing or malformed continuation means"
             else:
-                selected = float(values[0 if side == "buy" else 1])
+                selected = float(values[0 if side == OrderSide.BUY else 1])
                 if not np.isfinite(selected):
                     reason = "unavailable side continuation mean"
                 else:
@@ -90,7 +93,8 @@ def build_reader(provider, symbols, day, clock, session, now, snapshot, pending,
             "at": now.isoformat(),
         }
         trace.append(deepcopy(evidence))
-        return {"send": intraday_orders.MARKET if state == "execute" else None,
+        executing = state is TimingState.EXECUTE
+        return {"send": intraday_orders.MARKET if executing else None,
                 "timed": {**evidence, "open": (quote or {}).get("open"),
                           "trigger_bar": start.isoformat(), "trigger_price": mark}}
 

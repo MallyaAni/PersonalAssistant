@@ -13,6 +13,7 @@ from backend.market import historical_broker_checkpoint as codec
 from backend.market import historical_packet_demand as demand
 from backend.market import historical_request_admission as identities
 from backend.market import replay_broker as native
+from backend.market.labels import OrderSide
 
 SCHEMA = 'synthetic-reconciliation-static-inputs/1'
 CAP = 262144
@@ -38,7 +39,7 @@ def _static_request_inputs(prior, orders, observed):
     by_id = {row["client_order_id"]: row for row in orders}
     for row in prior.pending:
         codec.symbol(row.get("symbol"))
-        if row.get("side") not in ("buy", "sell"):
+        if row.get("side") not in OrderSide:
             raise ValueError("Original buy/sell request side required")
         if type(row.get("qty")) is not int or row["qty"] <= 0:
             raise ValueError("Original positive whole desired quantity required")
@@ -135,7 +136,7 @@ def read_descriptor(value, input_binding, requests, resolution_at):
                 raise ValueError('Original input identity required')
             ids.append(cid)
             codec.symbol(row['symbol'])
-            if row['side'] not in ('buy', 'sell'):
+            if row['side'] not in OrderSide:
                 raise ValueError('Original input side required')
         if len(ids) != len(set(ids)):
             raise ValueError('Original unique input identities required')

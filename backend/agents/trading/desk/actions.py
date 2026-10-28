@@ -31,6 +31,7 @@ from dataclasses import dataclass
 import numpy as np
 
 from backend.agents.trading.desk import grading, paper, plainly
+from backend.market.labels import DeskAction
 
 # The book's weight reset, which belongs to the paper book and is declared
 # there. This was a second hard-coded 20 while the book ran 120, and it is the
@@ -43,7 +44,13 @@ HIGH_WINDOW = 20
 STOPS = (0.08, 0.12, 0.20)
 # A change below this fraction of equity is not worth an order.
 DELTA_FLOOR = 0.005
-ORDER = {"sell": 0, "trim": 1, "buy": 2, "add": 3, "hold": 4}
+ORDER = {
+    DeskAction.SELL: 0,
+    DeskAction.TRIM: 1,
+    DeskAction.BUY: 2,
+    DeskAction.ADD: 3,
+    DeskAction.HOLD: 4,
+}
 
 
 @dataclass(frozen=True)
@@ -88,19 +95,19 @@ def grade_margin(
 # only the target and the holding.
 def action_for(
     target: float, held: float, grade: str | None = None, exiting: bool = False
-) -> str:
+) -> DeskAction:
     """Return buy, add, trim, sell or hold."""
     if target <= 0 and held > 0:
         if grade in paper.ENTRY_MIN_GRADE and not exiting:
-            return "hold"
-        return "sell"
+            return DeskAction.HOLD
+        return DeskAction.SELL
     if target > 0 and held <= 0:
-        return "buy"
+        return DeskAction.BUY
     if target - held > DELTA_FLOOR:
-        return "add"
+        return DeskAction.ADD
     if held - target > DELTA_FLOOR:
-        return "trim"
-    return "hold"
+        return DeskAction.TRIM
+    return DeskAction.HOLD
 
 
 # The plain-English headline and reason for a name, or nothing where the
@@ -186,7 +193,7 @@ def build(
                     "the grade falls below A"
                     if target > 0
                     else "the next rebalance, or the grade falls below A first"
-                    if action == "hold" and holding.weight > 0
+                    if action is DeskAction.HOLD and holding.weight > 0
                     else "already outside the book"
                 ),
                 "high_20": high,

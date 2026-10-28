@@ -44,6 +44,13 @@ from backend.market import (
     ticker_chart_intraday,
 )
 from backend.market import calendar as exchange_calendar
+from backend.market.labels import (
+    ExecutionTiming,
+    FundingPreviewMode,
+    Grade,
+    OrderSide,
+    parse,
+)
 from backend.market.store import MarketStore
 
 router = APIRouter(
@@ -1080,19 +1087,21 @@ async def desk_funding_preview(user_id: UserId, inputs: dict) -> dict[str, objec
         snap = _live_snapshot() or {}
         quotes = snap.get("quotes") or {}
         held = holdings.load(_root())
-        mode = inputs.get("mode", "evening")
+        mode = parse(
+            FundingPreviewMode,
+            inputs.get("mode", FundingPreviewMode.EVENING),
+            "Unknown preview mode",
+        )
         decision = None
-        if mode == "intraday_research":
+        if mode is FundingPreviewMode.INTRADAY_RESEARCH:
             decision = intraday_research.load(_root(), latest["session"])
             sizing_record = intraday_research.candidate_record(latest, decision)
             quotes = {
                 name: {"last": price, "bar": decision["bar"]}
                 for name, price in decision["prices"].items()
             }
-        elif mode == "evening":
-            sizing_record = latest
         else:
-            raise ValueError("Unknown preview mode")
+            sizing_record = latest
         from backend.market import event_status
 
         sizing_record = event_status.for_planning(sizing_record, _root())
@@ -1276,11 +1285,10 @@ def _paper_plan(
         or (
             intraday_orders.INTRADAY_TIMING
             if intraday_orders.INTRADAY_EXECUTION
-            else "next_open"
+            else ExecutionTiming.NEXT_OPEN
         ),
         "rule_text": {
-            side: observed_text or intraday_orders.rule_text(side)
-            for side in ("buy", "sell")
+            side: observed_text or intraday_orders.rule_text(side) for side in OrderSide
         },
         "orders": orders,
         "until_rebalance": max(
@@ -1439,7 +1447,7 @@ async def desk_entries(user_id: UserId, grades: str = "A+,A") -> dict[str, objec
                 "bar": quote.get("bar"),
             }
         )
-    grade_rank = {"A+": 0, "A": 1, "B": 2, "C": 3}
+    grade_rank = {Grade.A_PLUS: 0, Grade.A: 1, Grade.B: 2, Grade.C: 3}
     rows.sort(
         key=lambda r: (
             order.get(r["trigger"], 2),

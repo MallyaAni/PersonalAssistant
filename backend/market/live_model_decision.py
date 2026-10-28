@@ -20,6 +20,14 @@ from backend.market import (
     learned_live_holding,
     learned_live_timing,
 )
+from backend.market.labels import (
+    DeskAction,
+    ExecutionTiming,
+    Grade,
+    GradeSignal,
+    OrderSide,
+    as_member,
+)
 from backend.market.live_probability_timing import POLICY as TIMING_POLICY
 
 VERSION = "live-model-decisions/1"
@@ -68,7 +76,7 @@ def _order_identity(identity, symbol, side, session):
         or not symbol
         or len(symbol) > 16
         or any(letter not in "ABCDEFGHIJKLMNOPQRSTUVWXYZ.-" for letter in symbol)
-        or side not in ("buy", "sell")
+        or as_member(OrderSide, side) is None
         or not isinstance(identity, str)
     ):
         raise ValueError("Original order identity required")
@@ -474,13 +482,15 @@ def _basket(paper, names, receipt):
             or not isinstance(identity, str)
             or not identity
             or identity in identities
-            or side not in ("buy", "sell")
+            or as_member(OrderSide, side) is None
             or qty <= 0
-            or timing.get(identity) not in ("next_open", INTRADAY_TIMING)
+            or as_member(ExecutionTiming, timing.get(identity))
+            not in (ExecutionTiming.NEXT_OPEN, ExecutionTiming.DIP_OR_CLOSE)
         ):
             raise ValueError("Unique original whole-share order basket required")
         if name in receipt["company_exits"] and (
-            side != "sell" or timing[identity] != "next_open"
+            OrderSide(side) is not OrderSide.SELL
+            or ExecutionTiming(timing[identity]) is not ExecutionTiming.NEXT_OPEN
         ):
             raise ValueError("Original company exit routing required")
         basket[name] = order
@@ -500,7 +510,7 @@ def _actions(record, config, receipt, held, basket, names):
         signal = receipt["grade_signals"][name]
         grade = record["grades"][name]["grade"]
         if (
-            grade not in ("A+", "A", "B", "C", None)
+            (grade is not None and as_member(Grade, grade) is None)
             or grade != signal["grade"]
             or row.get("grade") != grade
             or row.get("policy") != config["policy"]
@@ -514,23 +524,26 @@ def _actions(record, config, receipt, held, basket, names):
             )
         order = basket.get(name)
         if not qty:
-            if order is not None or row.get("action") != "hold":
+            if (
+                order is not None
+                or as_member(DeskAction, row.get("action")) is not DeskAction.HOLD
+            ):
                 raise ValueError("Zero quantity cannot claim an original funded order")
             continue
         if order is None or order["qty"] != qty:
             raise ValueError(
                 "Model action quantity differs from original funded basket"
             )
-        side = order["side"]
+        side = OrderSide(order["side"])
         expected = (
-            ("add" if held.get(name, 0) else "buy")
-            if side == "buy"
-            else "sell"
+            (DeskAction.ADD if held.get(name, 0) else DeskAction.BUY)
+            if side is OrderSide.BUY
+            else DeskAction.SELL
             if qty == held.get(name, 0)
-            else "trim"
+            else DeskAction.TRIM
         )
-        if row.get("action") != expected or (
-            side == "sell" and qty > held.get(name, 0)
+        if as_member(DeskAction, row.get("action")) is not expected or (
+            side is OrderSide.SELL and qty > held.get(name, 0)
         ):
             raise ValueError(
                 "Saved direction differs from original whole-share holdings"
@@ -573,7 +586,7 @@ def _validate(record, config, report):
             Path(__file__).with_name("live_probability_timing.py").read_bytes()
         ).hexdigest()
         or receipt["execution_timing"]["ordinary"] != TIMING_POLICY
-        or receipt["execution_timing"]["company_exit"] != "next_open"
+        or receipt["execution_timing"]["company_exit"] != ExecutionTiming.NEXT_OPEN
     ):
         raise ValueError("Original numeric policy source and cost required")
     grade_parity._grade_led_targets(record, report)
@@ -695,6 +708,12 @@ def _executions(plan, record, config, receipt):
     return result
 
 
+# The grade signal a receipt recorded for one name, parsed from its wire word.
+def _signal(receipt, name) -> GradeSignal:
+    """Return the receipt's GradeSignal for `name`."""
+    return GradeSignal(receipt["grade_signals"][name]["action"])
+
+
 # Display an original numeric action while suppressing every concluded or unknown order.
 def _row(name, saved, receipt, held, execution, session, concluded=False):
     qty = int(saved["order_quantity"])
@@ -727,22 +746,25 @@ def _row(name, saved, receipt, held, execution, session, concluded=False):
         ):
             state, reason = "unavailable", "Recorded execution state is unavailable"
         else:
-            action = "buy" if saved["action"] in ("buy", "add") else saved["action"]
+            saved_action = DeskAction(saved["action"])
+            action = (
+                DeskAction.BUY
+                if saved_action in (DeskAction.BUY, DeskAction.ADD)
+                else saved_action
+            )
             state, when, execute_on = (
                 "planned",
                 execution["when"],
                 execution["execute_on"],
             )
             reason = execution.get("status") or reason
-    elif target > current + 1e-10 or receipt["grade_signals"][name]["action"] == "buy":
-        action, state = "buy", "blocked"
+    elif target > current + 1e-10 or _signal(receipt, name) is GradeSignal.BUY:
+        action, state = DeskAction.BUY, "blocked"
     elif held.get(name, 0) and target < current - 1e-10:
-        action, state = "trim", "blocked"
-    elif held.get(name, 0) and receipt["grade_signals"][name]["action"] == "hold":
-        action, state = "hold", "no_new_order"
-    elif (
-        held.get(name, 0) and receipt["grade_signals"][name]["action"] == "unavailable"
-    ):
+        action, state = DeskAction.TRIM, "blocked"
+    elif held.get(name, 0) and _signal(receipt, name) is GradeSignal.HOLD:
+        action, state = DeskAction.HOLD, "no_new_order"
+    elif held.get(name, 0) and _signal(receipt, name) is GradeSignal.UNAVAILABLE:
         state, reason = "unavailable", receipt["grade_signals"][name]["reason"]
     return {
         "grade": receipt["grade_signals"][name]["grade"],

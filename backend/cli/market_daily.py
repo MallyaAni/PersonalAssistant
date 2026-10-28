@@ -29,6 +29,15 @@ from backend.cli import market_edgar, market_tone
 from backend.cli.market_desk import _print_book, _print_grades, _print_regime
 from backend.config.settings import settings
 from backend.market import deskrecord, prose, snapshot, tone_revisions
+from backend.market.labels import (
+    DeskAction,
+    ExecutionTiming,
+    Grade,
+    GradeSignal,
+    OrderSide,
+    PlanDay,
+    as_member,
+)
 from backend.market.macro import SERIES
 from backend.market.store import MarketStore
 from backend.market.universe import (
@@ -495,7 +504,7 @@ def _submit(
             print(line + "  REFUSED: market clock unavailable")
             continue
         if intraday_event_reduction and (
-            not market_open or order.side != "sell" or not order.event_id
+            not market_open or order.side != OrderSide.SELL or not order.event_id
         ):
             refused.append(
                 f"{order.symbol}: catch-up requires event sells in the regular session"
@@ -508,17 +517,21 @@ def _submit(
             )
             print(line + "  REFUSED: the market is open")
             continue
+        # The broker client (Alpaca, or the replayed broker whose state is
+        # checkpointed as exact JSON primitives) is handed the side's wire
+        # string, as an API would be, never the enum member.
+        side = str(OrderSide(order.side))
         try:
             if (
-                order.side == "sell"
+                side == OrderSide.SELL
                 and not order.event_id
                 and not order.priority
-                and order.execution_timing != "next_open"
+                and order.execution_timing != ExecutionTiming.NEXT_OPEN
             ):
                 response = client.submit_market_on_close(
                     order.symbol,
                     order.qty,
-                    order.side,
+                    side,
                     order.client_order_id
                     or paper.order_id(session, order.symbol, order.side),
                 )
@@ -526,7 +539,7 @@ def _submit(
                 response = client.submit_market_on_open(
                     order.symbol,
                     order.qty,
-                    order.side,
+                    side,
                     order.client_order_id
                     or paper.order_id(session, order.symbol, order.side),
                 )
@@ -733,7 +746,7 @@ def _price_entries(report) -> dict[str, float]:
 
 
 # The ordinal the grader stores, back to the letter the paper rules name.
-_GRADE_LETTER = {3: "A+", 2: "A", 1: "B", 0: "C"}
+_GRADE_LETTER = {3: Grade.A_PLUS, 2: Grade.A, 1: Grade.B, 0: Grade.C}
 
 
 def _band_blocked(report) -> tuple[set[str], dict[str, bool]]:
@@ -780,8 +793,12 @@ def _idle_cash_share(orders, prices, cash, equity) -> float | None:
     """Return (cash - planned buys + planned sells) / equity, or None."""
     if not equity or equity <= 0:
         return None
-    buys = sum(o.qty * prices.get(o.symbol, 0.0) for o in orders if o.side == "buy")
-    sells = sum(o.qty * prices.get(o.symbol, 0.0) for o in orders if o.side == "sell")
+    buys = sum(
+        o.qty * prices.get(o.symbol, 0.0) for o in orders if o.side == OrderSide.BUY
+    )
+    sells = sum(
+        o.qty * prices.get(o.symbol, 0.0) for o in orders if o.side == OrderSide.SELL
+    )
     return float(min(1.0, max(0.0, (cash - buys + sells) / equity)))
 
 
@@ -978,9 +995,9 @@ def _holding_metadata(policy, event_plan, state, targets):
         .get("orders", {})
     )
     execution_rule = (
-        getattr(policy, "execution_rule", "next_open")
-        if "dip_or_close" in timings.values()
-        else "next_open"
+        getattr(policy, "execution_rule", ExecutionTiming.NEXT_OPEN)
+        if ExecutionTiming.DIP_OR_CLOSE in timings.values()
+        else ExecutionTiming.NEXT_OPEN
     )
     return (
         dict((state.allocation_state or {}).get("targets", {})),
@@ -1002,7 +1019,7 @@ def _holding_plan_metadata(
         wanted = dict(held)
         for order in orders:
             wanted[order.symbol] = wanted.get(order.symbol, 0) + (
-                order.qty if order.side == "buy" else -order.qty
+                order.qty if order.side == OrderSide.BUY else -order.qty
             )
         targets = {
             name: qty * prices[name] / equity
@@ -1042,14 +1059,18 @@ def _holding_actions(
         order = by_name.get(name)
         current = holdings.get(name, actions.Holding(0.0)).weight
         delta = 0.0
-        action = "hold"
+        action = DeskAction.HOLD
         if order is not None:
             delta = order.qty * prices[name] / equity
-            if order.side == "buy":
-                action = "add" if held.get(name, 0) > 0 else "buy"
+            if order.side == OrderSide.BUY:
+                action = DeskAction.ADD if held.get(name, 0) > 0 else DeskAction.BUY
             else:
                 delta = -delta
-                action = "sell" if order.qty >= held.get(name, 0) else "trim"
+                action = (
+                    DeskAction.SELL
+                    if order.qty >= held.get(name, 0)
+                    else DeskAction.TRIM
+                )
         row.update(
             policy=policy.version,
             decision_source=(
@@ -1079,20 +1100,23 @@ def _holding_actions(
                 row["model_target_weight"] = receipt["sizing_model_targets"][name]
             known = (receipt.get("grade_signals") or {}).get(name, {})
             grade = row.get("grade")
+            # A missing or unrecognised grade reads as unavailable, as before.
+            letter = as_member(Grade, grade)
+            admitted = letter in (Grade.A_PLUS, Grade.A)
             signal = (
-                "unavailable"
-                if grade not in ("A+", "A", "B", "C")
+                GradeSignal.UNAVAILABLE
+                if letter is None
                 else (
-                    "hold"
-                    if grade in ("A+", "A") and held.get(name, 0) > 0
-                    else "buy"
-                    if grade in ("A+", "A")
-                    else "sell"
+                    GradeSignal.HOLD
+                    if admitted and held.get(name, 0) > 0
+                    else GradeSignal.BUY
+                    if admitted
+                    else GradeSignal.SELL
                     if held.get(name, 0) > 0
-                    else "avoid"
+                    else GradeSignal.AVOID
                 )
             )
-            signal = known.get("action", signal)
+            signal = GradeSignal(known.get("action", signal))
             execution = receipt.get("execution") or {}
             blockers = [
                 value
@@ -1126,24 +1150,24 @@ def _holding_actions(
                 signal_status="planned"
                 if order
                 else "blocked"
-                if signal in ("buy", "sell")
+                if signal in (GradeSignal.BUY, GradeSignal.SELL)
                 else "no_new_order",
                 signal_reason=order.reason
                 if order
                 else (
                     blocker
-                    if signal in ("buy", "sell")
+                    if signal in (GradeSignal.BUY, GradeSignal.SELL)
                     else "Grade remains A/A+; holding retained despite the model's zero size"
                     if name in receipt.get("grade_preserved_holdings", [])
                     else "A/A+ holding; learned quantities may resize it"
-                    if signal == "hold"
+                    if signal is GradeSignal.HOLD
                     else "Grade below A; no entry"
-                    if signal == "avoid"
+                    if signal is GradeSignal.AVOID
                     else "Grade unavailable"
                 ),
                 leaves_if="Grade below A or explicit event exit",
             )
-            if signal == "sell" and held.get(name, 0) <= 0 and order is None:
+            if signal is GradeSignal.SELL and held.get(name, 0) <= 0 and order is None:
                 row.update(
                     signal_status="no_position",
                     signal_reason="No shares held; no sell order needed",
@@ -1311,7 +1335,9 @@ def _paper_trade(
         f"equity {account.equity:,.0f}:"
     )
     held_back = sum(
-        1 for o in orders if o.side == "buy" and o.symbol in blocked and not o.event_id
+        1
+        for o in orders
+        if o.side == OrderSide.BUY and o.symbol in blocked and not o.event_id
     )
     if held_back:
         print(
@@ -1340,7 +1366,7 @@ def _paper_trade(
             decision_at=decision_at,
             timing_policy=timing_policy,
         )
-        if what == "rebalance":
+        if what == PlanDay.REBALANCE:
             new_state.unconfirmed_rebalance = session
         paper.save_state(store_root, new_state)
     submitted, refused = _submit(
@@ -1356,7 +1382,7 @@ def _paper_trade(
     # just failed to reach. The session is still recorded as seen, so
     # nothing is submitted twice; only the rebalance clock is rolled back,
     # and the next session plans the rebalance again.
-    if refused and what == "rebalance":
+    if refused and what == PlanDay.REBALANCE:
         new_state.last_rebalance = state.last_rebalance
         new_state.sessions_since_rebalance = state.sessions_since_rebalance
         new_state.policy_version = state.policy_version
@@ -1390,7 +1416,7 @@ def _paper_trade(
     entry["execution_rule"] = (
         intraday_orders.INTRADAY_TIMING
         if intraday_orders.INTRADAY_EXECUTION
-        else "next_open"
+        else ExecutionTiming.NEXT_OPEN
     )
     entry["refused"] = refused
     entry["plan"] = what
@@ -2040,7 +2066,7 @@ def curve_block(report, store) -> dict | None:
         "live_execution_timing": (
             intraday_orders.INTRADAY_TIMING
             if intraday_orders.INTRADAY_EXECUTION
-            else "next_open"
+            else ExecutionTiming.NEXT_OPEN
         ),
         # The `simulate.run` flags this line was actually priced with. Under
         # the graded equal-weight policy (`/4`, `/5` since 2026-09-29) they

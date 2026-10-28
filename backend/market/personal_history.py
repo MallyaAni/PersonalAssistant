@@ -18,6 +18,7 @@ from sqlalchemy import delete, select, tuple_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.core.crypto import EncryptionKeyError, get_field_cipher
+from backend.market.labels import Action
 from backend.models.personal_decision import PersonalDecisionReceipt
 
 ACKNOWLEDGED_DAYS = 90
@@ -232,7 +233,7 @@ def project(decisions: dict, record: dict, snapshot: dict, entries: dict) -> dic
 def acknowledgement_deadline(payload: dict, generated: datetime) -> datetime:
     deadline = generated + timedelta(seconds=60)
     for row in payload["rows"].values():
-        if row["executable"] and row["action"] in ("Buy", "Sell"):
+        if row["executable"] and row["action"] in (Action.BUY, Action.SELL):
             if not row["valid_until"]:
                 return generated
             deadline = min(deadline, _instant(row["valid_until"]))

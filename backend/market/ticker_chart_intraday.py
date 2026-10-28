@@ -38,6 +38,7 @@ from typing import Any
 from backend.agents.trading.desk import live_policy
 from backend.market import intraday_sip
 from backend.market.alpaca import IntradayBar
+from backend.market.labels import DeskAction, OrderSide, as_member
 from backend.market.store import MarketStore
 
 TIMEFRAME = "15m"
@@ -45,9 +46,9 @@ DEFAULT_SESSIONS = 10
 MIN_SESSIONS, MAX_SESSIONS = 1, 60
 BASIS = "raw prices as printed (consolidated SIP)"
 # The actions the daily chart draws; a hold is no marker.
-TRADED_ACTIONS = ("buy", "sell", "add", "trim")
+TRADED_ACTIONS = (DeskAction.BUY, DeskAction.SELL, DeskAction.ADD, DeskAction.TRIM)
 # The actions the executor sends market-on-open; the rest go market-on-close.
-OPEN_FILLED = ("buy", "add")
+OPEN_FILLED = (DeskAction.BUY, DeskAction.ADD)
 # The fill-row keys an explicit fill instant may sit under.
 FILL_INSTANT_KEYS = ("filled_at", "time", "at")
 
@@ -163,7 +164,7 @@ def percent_text(weight: float | None) -> str:
 # places ("Rebalance +2.5%"); under a sizing policy it is the level it
 # leads to ("Add →20%"). None for a hold or an unknown action.
 def decision_text(
-    action: str,
+    action: DeskAction,
     target_weight: float | None,
     delta_weight: float | None = None,
     policy: str | None = None,
@@ -171,11 +172,11 @@ def decision_text(
     """Return "BUY signal 14%", "RESET +2.5%", "ADD signal →20%", "SELL signal"."""
     # The board's vocabulary: the trading words in capitals, and "signal" on
     # a strategy decision so it never reads as one of the paper account's trades.
-    if action == "buy":
+    if action == DeskAction.BUY:
         return f"BUY signal {percent_text(target_weight)}"
-    if action == "sell":
+    if action == DeskAction.SELL:
         return "SELL signal"
-    if action not in ("add", "trim"):
+    if action not in (DeskAction.ADD, DeskAction.TRIM):
         return None
     if policy in EQUAL_WEIGHT_POLICIES:
         delta = delta_weight
@@ -183,7 +184,7 @@ def decision_text(
             return f"RESET →{percent_text(target_weight)}"
         sign = "+" if delta >= 0 else "\u2212"
         return f"RESET {sign}{percent_text(abs(float(delta)))}"
-    arrow = "ADD" if action == "add" else "TRIM"
+    arrow = "ADD" if action == DeskAction.ADD else "TRIM"
     return f"{arrow} signal →{percent_text(target_weight)}"
 
 
@@ -255,7 +256,9 @@ def _decision_markers(
     for row in (history or {}).get("rows") or []:
         if not isinstance(row, dict):
             continue
-        action = str(row.get("action") or "")
+        # A row whose action is a hold, missing or not a desk action draws no
+        # marker, as before.
+        action = as_member(DeskAction, str(row.get("action") or ""))
         session = str(row.get("date") or "")[:10]
         if action not in TRADED_ACTIONS or session not in by_date:
             continue
@@ -313,9 +316,10 @@ def _fill_markers(
     for fill in (history or {}).get("fills") or []:
         if not isinstance(fill, dict):
             continue
-        side = str(fill.get("side") or "").lower()
+        # A fill without a recognised side is not drawn, as before.
+        side = as_member(OrderSide, str(fill.get("side") or "").lower())
         session = str(fill.get("date") or "")[:10]
-        if side not in ("buy", "sell") or session not in by_date:
+        if side is None or session not in by_date:
             continue
         try:
             qty = int(fill.get("qty") or 0)
@@ -328,7 +332,7 @@ def _fill_markers(
         instant = _fill_instant(fill)
         bar = _bar_containing(instant, regular, auction) if instant else None
         if bar is None:
-            bar = regular[0] if side == "buy" else regular[-1]
+            bar = regular[0] if side is OrderSide.BUY else regular[-1]
         # The plan leg the fill belongs to ("redeploy" on a redeploy buy),
         # carried through so the chart can tell it from an entry or a
         # rotation; absent on a fill that names none.

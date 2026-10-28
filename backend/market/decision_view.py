@@ -2,7 +2,6 @@
 
 import math
 from datetime import UTC, datetime
-from enum import StrEnum
 
 import numpy as np
 
@@ -16,6 +15,7 @@ from backend.market import (
     opportunity,
     personal_risk,
 )
+from backend.market.labels import Action, OrderSide
 
 VERSION = "desk-decision-view/2"
 
@@ -92,7 +92,7 @@ def apply_account_plan(result, record, snapshot, entries, paused, now):
     moves = {}
     for order in orders:
         moves[order.symbol] = moves.get(order.symbol, 0) + order.qty * (
-            1 if order.side == "buy" else -1
+            1 if order.side == OrderSide.BUY else -1
         )
     reasons = {o.symbol: o.reason for o in orders}
     for symbol, row in result.items():
@@ -395,7 +395,9 @@ def _personal_midcycle_orders(
         qty = shares.get(symbol, 0.0)
         price = prices.get(symbol) or 0.0
         if qty > 0 and price > 0:
-            orders.append(paper.PaperOrder(symbol, "sell", qty, finished[symbol]))
+            orders.append(
+                paper.PaperOrder(symbol, OrderSide.SELL, qty, finished[symbol])
+            )
     entry_reason = "price entry: breakout through its own 20-day band"
     buys: list[tuple[str, float, float, str]] = []
     for symbol in sorted(entries):
@@ -420,7 +422,7 @@ def _personal_midcycle_orders(
             # cannot create an actionable buy below the policy's minimum.
             if scaled <= 0 or scaled * prices[symbol] < paper.MIN_TRADE * equity:
                 continue
-            orders.append(paper.PaperOrder(symbol, "buy", scaled, reason))
+            orders.append(paper.PaperOrder(symbol, OrderSide.BUY, scaled, reason))
     return orders
 
 
@@ -457,7 +459,7 @@ def _fold_personal_orders(result, orders, prices, equity, shares):
     moves: dict[str, float] = {}
     reasons: dict[str, str] = {}
     for order in orders:
-        sign = 1 if order.side == "buy" else -1
+        sign = 1 if order.side == OrderSide.BUY else -1
         moves[order.symbol] = moves.get(order.symbol, 0.0) + order.qty * sign
         reasons[order.symbol] = order.reason
     for symbol, row in result.items():
@@ -532,17 +534,10 @@ def _account_prices(held, snapshot, record) -> dict[str, float]:
     return prices
 
 
-# The three things the operator can do about a name. A fixed set, so it is a
-# type rather than a string literal repeated at a dozen call sites: the old
-# vocabulary had seven spellings across the backend, the API contract and the
-# page, and "Buy eligible" against "Buy tonight" against "buy" was a bug
-# waiting to happen. The str mixin keeps it a plain string over the wire.
-class Action(StrEnum):
-    """What to do about a name right now."""
-
-    BUY = "Buy"
-    SELL = "Sell"
-    HOLD = "Hold"
+# The three things the operator can do about a name, `Action` (Buy, Sell or
+# Hold), lives with the system's other closed vocabularies in
+# `backend.market.labels` and is imported above, so `decision_view.Action`
+# remains the same class every caller already names.
 
 
 # Whether a row can be acted on right now, as opposed to what the desk wants
@@ -982,21 +977,23 @@ def _at_the_close(row):
 
 # Which side of the timing rule a row's decision is on: its action when it
 # is a Buy or a Sell, else its strategy intent; None when neither trades.
-def _timed_side(row) -> str | None:
-    """Return "buy", "sell" or None for the row."""
+def _timed_side(row) -> OrderSide | None:
+    """Return OrderSide.BUY, OrderSide.SELL or None for the row."""
     said = row["action"] if row["action"] is not Action.HOLD else row["strategy_action"]
     if said is Action.BUY:
-        return "buy"
+        return OrderSide.BUY
     if said is Action.SELL:
-        return "sell"
+        return OrderSide.SELL
     return None
 
 
 # The word the board prints for a timed row: a sell that keeps a positive
-# target is a trim (the page's `actionWord` reads it the same way).
-def _timed_word(row, side) -> str:
+# target is a trim (the page's `actionWord` reads it the same way). This is
+# display text written into a sentence, not a label any code compares, so it
+# stays a word rather than a member.
+def _timed_word(row, side: OrderSide) -> str:
     """Return "Buy", "Sell" or "Trim"."""
-    if side == "buy":
+    if side == OrderSide.BUY:
         return "Buy"
     return "Trim" if (row.get("target_weight") or 0) > 0 else "Sell"
 
@@ -1042,7 +1039,7 @@ def _time_the_board(result, record, snapshot, readings, intents, latch, now):
             session,
         )
         row["timing"] = timed
-        if side == "buy" and gate == REJECTING:
+        if side == OrderSide.BUY and gate == REJECTING:
             intent = intents.get(symbol)
             row.update(
                 action=Action.HOLD,
@@ -1109,7 +1106,7 @@ def _plan_personal_board(
             timed = entry_timing.timing(
                 entry_timing.row_for(timing_latch, symbol, session),
                 quotes.get(symbol),
-                "buy",
+                OrderSide.BUY,
                 now,
                 session,
             )

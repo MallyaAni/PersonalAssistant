@@ -19,8 +19,9 @@ import pyarrow as pa
 import pyarrow.parquet as pq
 
 from backend.market import calendar
+from backend.market.labels import Grade
 
-GRADE_CODES = {"C": 0, "B": 1, "A": 2, "A+": 3}
+GRADE_CODES = {Grade.C: 0, Grade.B: 1, Grade.A: 2, Grade.A_PLUS: 3}
 DAILY_BASIS = "yahoo_split_and_dividend_adjusted_close"
 PRIOR_CLOSE_BASIS = "yahoo_split_adjusted_as_of_prior_session_fetch"
 

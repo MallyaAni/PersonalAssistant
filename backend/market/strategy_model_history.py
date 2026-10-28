@@ -15,6 +15,7 @@ import numpy as np
 
 from backend.market import calendar, grade_led_policy
 from backend.market import probabilistic_execution as timing
+from backend.market.labels import OrderSide, TimingState, TradeAction
 
 SCHEMA = "latest-strategy-simulation/1"
 VERSION = "strategy-model-history/1"
@@ -48,7 +49,10 @@ def action_row(name, at, side, size, remaining, sequence):
     return {"id": f"{VERSION}:{sequence}:{name}", "ticker": name,
             "date": at.date().isoformat(), "at": at.isoformat(),
             "valid_until": (at + timedelta(minutes=15)).isoformat(),
-            "action": "BUY" if side == "buy" else "SELL", "weight": float(size),
+            "action": TradeAction.BUY
+            if OrderSide(side) is OrderSide.BUY
+            else TradeAction.SELL,
+            "weight": float(size),
             "target_weight": float(remaining), "state": "recommended",
             "counterfactual": True}
 
@@ -116,7 +120,7 @@ def replay(policy, panel, grades, blocked, observations, execution_opens, provid
             if shares[i] <= 0 or not 0 <= codes[names[i]] < 2:
                 continue
             sequence += 1
-            row = action_row(names[i], instant(dates[day], 0), "sell", shares[i] * prior[i] / nav, 0.0, sequence)
+            row = action_row(names[i], instant(dates[day], 0), OrderSide.SELL, shares[i] * prior[i] / nav, 0.0, sequence)
             row['evidence'] = {**(daily_evidence(day - 1, i) if daily_evidence else {}), 'grade': grade_led_policy.LETTERS[codes[names[i]]], 'reason': 'Grade below A; exit the simulated position', 'timing_reason': 'mandatory_grade_exit'}
             price = panel.open[day, i]
             if np.isfinite(price) and price > 0:
@@ -147,14 +151,19 @@ def replay(policy, panel, grades, blocked, observations, execution_opens, provid
                 weight = abs(delta[i]) * observed[i] / nav * (funded if buying else 1.0)
                 if not 0 < weight <= 1:
                     continue
-                choice = timing.Decision("execute", reason="shared_terminal_deadline") if clock == 24 else timing.decision(provider(day, clock, i), "buy" if buying else "sell", weight, policy.cost_bps, horizon=timing.HORIZON)
-                counters["unavailable_timing"] += int(choice.state == "unavailable")
-                if choice.state == "execute":
+                side = OrderSide.BUY if buying else OrderSide.SELL
+                choice = timing.Decision(TimingState.EXECUTE, reason="shared_terminal_deadline") if clock == 24 else timing.decision(provider(day, clock, i), side, weight, policy.cost_bps, horizon=timing.HORIZON)
+                # The engine's decision states its word; it is read through the type.
+                state = TimingState(choice.state)
+                unavailable = state is TimingState.UNAVAILABLE
+                counters["unavailable_timing"] += int(unavailable)
+                if state is TimingState.EXECUTE:
+
                     ready.append((i, buying, float(weight), float(delta[i]), choice))
             # Only now may the counterfactual ledger read the selected subsequent open.
             for i, buying, weight, change, choice in sorted(ready, key=lambda item: item[1]):
                 sequence += 1
-                row = action_row(names[i], instant(dates[day], 15 * (clock + 1)), "buy" if buying else "sell", weight, weights.get(names[i], 0.0), sequence)
+                row = action_row(names[i], instant(dates[day], 15 * (clock + 1)), OrderSide.BUY if buying else OrderSide.SELL, weight, weights.get(names[i], 0.0), sequence)
                 row["timing"] = policy.timing_policy
                 row['evidence'] = {**(daily_evidence(day - 1, i) if daily_evidence else {}), 'grade': grade_led_policy.LETTERS[codes[names[i]]], 'reason': 'Grade-permitted model allocation increase' if buying else 'Model allocation reduction', 'observed_price': float(observed[i]), 'timing_reason': choice.reason, 'waiting_log_utility': choice.expected_log_utility, 'completed_candle_at': row['at']}
                 price = float(execution_opens[day, clock, i])

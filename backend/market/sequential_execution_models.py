@@ -11,6 +11,7 @@ import numpy as np
 from threadpoolctl import threadpool_limits
 
 from backend.market import learned_entry_models as original
+from backend.market.labels import OrderSide, TimingState
 from backend.market.learned_intraday_moments import certify_ridge
 
 SCHEMA = "sequential-execution/1"
@@ -18,7 +19,7 @@ TARGET_SCHEMA = {
     "target": "stop_minus_prediction_selected_future_price_over_observed_close",
     "clocks": list(range(24)),
     "terminal": 24,
-    "sides": ["buy", "sell"],
+    "sides": [OrderSide.BUY, OrderSide.SELL],
     "folds": "global_source_calendar_day_index_modulo_3",
     "unavailable_selected_price": "locked_missing_no_fallback",
     "ridge_precision": "float64",
@@ -27,13 +28,18 @@ TARGET_SCHEMA = {
 
 
 # Convert a conditional price difference into an action without realized future prices.
-def decision(predicted_difference, side):
-    if side not in ("buy", "sell", 0, 1):
+# The side may be an `OrderSide` or its model-head index (0 buy, 1 sell).
+def decision(predicted_difference, side) -> TimingState:
+    if side not in (OrderSide.BUY, OrderSide.SELL, 0, 1):
         raise ValueError("Side must be buy or sell")
     if not np.isfinite(predicted_difference):
-        return "unavailable"
-    wait = predicted_difference > 0 if side in ("buy", 0) else predicted_difference < 0
-    return "wait" if wait else "execute"
+        return TimingState.UNAVAILABLE
+    wait = (
+        predicted_difference > 0
+        if side in (OrderSide.BUY, 0)
+        else predicted_difference < 0
+    )
+    return TimingState.WAIT if wait else TimingState.EXECUTE
 
 
 # Select a separate stopping suffix for every start without reading outcome prices.

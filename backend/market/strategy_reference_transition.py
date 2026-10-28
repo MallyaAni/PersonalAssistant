@@ -19,6 +19,7 @@ from backend.market import probabilistic_execution as timing
 from backend.market import strategy_model_history as history
 from backend.market import strategy_publication as publication
 from backend.market import strategy_entry_context, strategy_history_installation
+from backend.market.labels import Action, Grade, OrderSide, TimingState
 
 VERSION = "strategy-reference-transition/1"
 BASIS = "counterfactual_model_reference_not_viewer_holdings"
@@ -125,7 +126,7 @@ def prepare(snapshot, reference, now):
         raise ValueError("Explicit typed model reference required")
     nav = reference.validate(snapshot)
     current = {name: units * mark / nav for name, units, mark in reference.positions if units > 0}
-    ordinals = {None: -1, "C": 0, "B": 1, "A": 2, "A+": 3}
+    ordinals = {None: -1, Grade.C: 0, Grade.B: 1, Grade.A: 2, Grade.A_PLUS: 3}
     grades = {name: ordinals[row["evidence"]["grade"]] for name, row in snapshot["rows"].items()}
     weights = history.continuous_targets(
         {name: row["target_weight"] for name, row in snapshot["rows"].items()}, current, grades)
@@ -164,18 +165,20 @@ def project(plan, marks, distributions, *, evidence_sha256, price_basis, termina
         buying = delta > 0
         amount = (delta * funded if buying else min(-delta, units)) if abs(delta) > 1e-12 else 0.0
         size = amount * marks[name] / nav if amount > 0 else 0.0
-        mandatory = grade in ("B", "C") and units > 0
+        mandatory = grade in (Grade.B, Grade.C) and units > 0
         if mandatory:
             amount, size = units, units * marks[name] / nav
-            choice = timing.Decision("execute", reason="mandatory_grade_exit")
+            choice = timing.Decision(TimingState.EXECUTE, reason="mandatory_grade_exit")
         elif amount <= 0:
-            choice = timing.Decision("no_trade", reason="No funded model reference change")
+            choice = timing.Decision(TimingState.NO_TRADE,
+                                     reason="No funded model reference change")
         elif terminal:
-            choice = timing.Decision("execute", reason="shared_terminal_deadline")
+            choice = timing.Decision(TimingState.EXECUTE,
+                                     reason="shared_terminal_deadline")
         else:
-            choice = timing.decision(distributions.get(name), "buy" if buying else "sell",
+            choice = timing.decision(distributions.get(name), OrderSide.BUY if buying else OrderSide.SELL,
                                      size, plan.reference.cost_bps, horizon=timing.HORIZON)
-        rows[name] = {"action": ("Sell" if mandatory or delta < 0 else "Buy") if amount > 0 else None,
+        rows[name] = {"action": (Action.SELL if mandatory or delta < 0 else Action.BUY) if amount > 0 else None,
                       "state": choice.state, "trade_weight": size, "reference_units": units,
                       "proposed_units": amount, "model_position_weight": target,
                       "reference_position_weight": units * marks[name] / nav if units > 0 else 0.0,

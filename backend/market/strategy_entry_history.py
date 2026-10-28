@@ -17,6 +17,7 @@ from uuid import uuid4
 
 from backend.market import calendar, execution_quotes, learned_live_holding
 from backend.market import strategy_entries as entries, strategy_publication as publication
+from backend.market.labels import Action, TimingState
 
 MAX_RECORD_BYTES = 131072
 INDEX_SCHEMA = 'strategy-recorded-entry-index/1'
@@ -67,7 +68,8 @@ def read(root, ticker, completed_at, snapshot_id, now):
     at=_instant(original['at'])
     if (original['ticker']!=ticker or original['completed_at']!=completed.isoformat()
             or original['snapshot_id']!=snapshot_id or original['recommendation_not_fill'] is not True
-            or original['state']!='execute' or original['action'] not in (('Buy','Sell') if reference else ('Buy',))
+            or original['state']!=TimingState.EXECUTE
+            or original['action'] not in ((Action.BUY,Action.SELL) if reference else (Action.BUY,))
             or publication._digest({k:v for k,v in original.items() if k!='receipt_sha256'})!=original['receipt_sha256']
             or not completed<=at<=now or at>=completed+timedelta(minutes=15)):
         raise ValueError('Original first recommendation identity differs')
@@ -145,7 +147,8 @@ def _index(raw, ticker, day, key):
         'valid_until','original_bytes_sha256','original_receipt_sha256','indexed_view_at','indexed_view_sha256','receipt_sha256'}
     reference = value.get('schema') == 'strategy-recorded-entry-index/2'
     if (set(value)!=fields or value['schema'] not in (INDEX_SCHEMA,'strategy-recorded-entry-index/2') or value['ticker']!=ticker or value['id']!=key
-            or value['action'] not in (('Buy','Sell') if reference else ('Buy',)) or type(value['size_weight']) not in (int,float)
+            or value['action'] not in ((Action.BUY,Action.SELL) if reference else (Action.BUY,))
+            or type(value['size_weight']) not in (int,float)
             or not math.isfinite(value['size_weight']) or not 0<value['size_weight']<=1
             or publication._digest({name:item for name,item in value.items() if name!='receipt_sha256'})!=value['receipt_sha256']
             or _instant(value['completed_at']).astimezone(calendar.NEW_YORK).date().isoformat()!=day
@@ -265,7 +268,7 @@ def remember_latest(root, now):
         for ticker,row in value['rows'].items():
             reference = value['version'] in entries.reference_entries.VERSIONS
             first = row.get('original_intent') if reference else None
-            if (reference and first is None) or (not reference and row['state']!='execute'):
+            if (reference and first is None) or (not reference and row['state']!=TimingState.EXECUTE):
                 continue
             recorded_completed = first['completed_at'] if reference else value['completed_at']
             recorded_size = first['size_weight'] if reference else row['size_weight']

@@ -20,6 +20,7 @@ from dataclasses import asdict, replace
 from datetime import date
 
 from backend.agents.trading.desk import decision_close, event_risk, intraday_orders, paper
+from backend.market.labels import OrderSide, PlanDay
 
 # The opening-price allowance a next-open restoration reserves, and the wider
 # one for a restoration sent a session later at the decision-day close.
@@ -28,12 +29,14 @@ CLOSE_ALLOWANCE = 0.03
 
 
 # Sum the latest confirmed fills of this event, including terminal partial fills.
-def filled(state: paper.PaperState, side: str) -> dict[str, int]:
+def filled(state: paper.PaperState, side: OrderSide) -> dict[str, int]:
+    side = OrderSide(side)
     quantities: dict[str, int] = {}
     for row in state.journal:
+        # Only this event's rows are read; every journal row carries its side.
         if (
             row.get("event_id") != state.event_cycle.get("id")
-            or row.get("side") != side
+            or OrderSide(row["side"]) is not side
         ):
             continue
         symbol = row["symbol"]
@@ -60,10 +63,10 @@ def plan(session, state, held, prices, cash, policy, *, advance_clock=True):
             "baseline": {s: float(q) for s, q in held.items() if q > 0},
         }
     if not new.event_cycle:
-        return [], new, "hold"
+        return [], new, PlanDay.HOLD
     # A later meeting must never extend the previous meeting's unfinished cycle.
     reducing = session < new.event_cycle["decision_date"]
-    sold, bought = filled(new, "sell"), filled(new, "buy")
+    sold, bought = filled(new, OrderSide.SELL), filled(new, OrderSide.BUY)
     # On the eve of the decision with the cut filled, plan the restoration now,
     # for the decision session's close, instead of waiting for that night.
     at_close = (
@@ -85,12 +88,12 @@ def plan(session, state, held, prices, cash, policy, *, advance_clock=True):
                 0, int(baseline * (1 - event_risk.REDUCED)) - sold.get(symbol, 0)
             )
             qty = min(current, wanted)
-            side = "sell"
+            side = OrderSide.SELL
         else:
             wanted = max(0, sold.get(symbol, 0) - bought.get(symbol, 0))
             # Do not buy above the snapshot if positions changed outside this cycle.
             qty = min(wanted, max(0, int(baseline - current)))
-            side = "buy"
+            side = OrderSide.BUY
             unrestored[symbol] = qty
         price = float(prices.get(symbol) or 0)
         if not math.isfinite(price) or price <= 0:
@@ -167,7 +170,7 @@ def _advance_clock(state, session):
 
 # Reserve cash for each restoration with a price allowance over the last close.
 def _cash_limit(side, qty, price, available, allowance=OPEN_ALLOWANCE):
-    if side == "buy":
+    if side is OrderSide.BUY:
         qty = min(qty, int(available / (price * (1 + allowance))))
         available -= qty * price * (1 + allowance)
     return qty, available

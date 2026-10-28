@@ -11,6 +11,7 @@ import numpy as np
 
 from backend.agents.trading.desk import policy_v5
 from backend.market import adaptive_growth_policy, allocation_controls
+from backend.market.labels import OrderSide
 
 POLICY = "daily-arithmetic-funded-bridge/1"
 METHODS = ("calibrated", "mean", "equal")
@@ -229,7 +230,7 @@ def _execute(
                 "decision_session": plan["decision_session"],
                 "execution_session": str(session),
                 "symbol": names[column],
-                "side": "buy" if delta[column] > 0 else "sell",
+                "side": OrderSide.BUY if delta[column] > 0 else OrderSide.SELL,
                 "requested_delta": float(delta[column]),
                 "filled_delta": float(executed[column]),
                 "unfilled_delta": float(delta[column] - executed[column]),
@@ -487,7 +488,7 @@ def benchmark_account(panel, *, ticker, cost_bps, first):
             "decision_session": str(dates[first]),
             "execution_session": str(dates[first + 1]),
             "symbol": ticker,
-            "side": "buy",
+            "side": OrderSide.BUY,
             "requested_delta": quantity,
             "filled_delta": quantity,
             "unfilled_delta": 0.0,

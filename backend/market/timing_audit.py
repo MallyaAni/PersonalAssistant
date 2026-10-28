@@ -10,6 +10,7 @@ from collections import Counter
 from statistics import median
 
 from backend.market import entry_timing
+from backend.market.labels import EntryTimingState, Grade, OrderSide
 
 
 # Summarize exposure to old buy permissions once per stock/session and per observation.
@@ -17,11 +18,13 @@ def summarize(rows):
     available = [
         row for row in rows if row["status"] in ("available", "conditional_open")
     ]
-    triggered = [row for row in available if row["buy_state"] == "triggered"]
+    triggered = [
+        row for row in available if row["buy_state"] == EntryTimingState.TRIGGERED
+    ]
     eligible = [
         row
         for row in triggered
-        if row["nightly_grade"] in ("A+", "A") and not row["event_paused"]
+        if row["nightly_grade"] in (Grade.A_PLUS, Grade.A) and not row["event_paused"]
     ]
     recovered = [row for row in eligible if row["price_above_buy_level_bp"] > 0]
     return {
@@ -66,7 +69,7 @@ def unavailable(stamp, bar, valid, latch, price, cutoff, mode):
     opened = entry_timing._price(latch.get("open"))
     session = bar.astimezone(entry_timing.NEW_YORK).date()
     past = (
-        entry_timing._observed_trigger(latch, opened, "buy", stamp, session)
+        entry_timing._observed_trigger(latch, opened, OrderSide.BUY, stamp, session)
         if opened
         else None
     )
@@ -120,7 +123,7 @@ def measure(record, symbol, stamp, bar, valid, session, payload, cutoff):
     )
     if row["status"] not in ("available", "conditional_open"):
         return row
-    timed = entry_timing.timing(latch, None, "buy", stamp, session)
+    timed = entry_timing.timing(latch, None, OrderSide.BUY, stamp, session)
     triggered = entry_timing._instant(timed.get("trigger_bar"))
     row.update(
         buy_state=timed["state"],

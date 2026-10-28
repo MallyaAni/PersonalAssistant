@@ -26,14 +26,15 @@ from dataclasses import dataclass
 import numpy as np
 
 from backend.agents.trading.desk.opinions import BEARISH, BULLISH, Opinion
+from backend.market.labels import Grade
 
-A_PLUS = "A+"
-A = "A"
-B = "B"
-C = "C"
-GRADES: tuple[str, ...] = (A_PLUS, A, B, C)
+A_PLUS = Grade.A_PLUS
+A = Grade.A
+B = Grade.B
+C = Grade.C
+GRADES: tuple[Grade, ...] = (A_PLUS, A, B, C)
 # Ordinal for ranking: higher is better.
-ORDINAL: dict[str, int] = {A_PLUS: 3, A: 2, B: 1, C: 0}
+ORDINAL: dict[Grade, int] = {A_PLUS: 3, A: 2, B: 1, C: 0}
 # How much of a full position each grade earns. The grade SELECTS - a C is not
 # a candidate at all - and above that line it does not size.
 #
@@ -78,7 +79,7 @@ ORDINAL: dict[str, int] = {A_PLUS: 3, A: 2, B: 1, C: 0}
 # rotation was about to sell. The gain is a function of the cadence: at a
 # long reset there is nothing to win, because a downgraded name is carried
 # to the next reset either way.
-SIZE_MULTIPLIER: dict[str, float] = {A_PLUS: 1.0, A: 1.0, B: 0.0, C: 0.0}
+SIZE_MULTIPLIER: dict[Grade, float] = {A_PLUS: 1.0, A: 1.0, B: 0.0, C: 0.0}
 ROTATION_WEIGHT = 0.5
 # The weight each analyst carries in the desk's sum: equal, rotation at
 # half. A ridge fit toward these (`market_weights`, shrink 1) wanted
@@ -139,7 +140,7 @@ class Graded:
     conviction: np.ndarray | None = None
 
     # The letter grade of one name on one session.
-    def letter(self, t: int, column: int) -> str:
+    def letter(self, t: int, column: int) -> Grade:
         """Return "A+", "A", "B" or "C"."""
         return GRADES[3 - int(self.grades[t, column])]
 

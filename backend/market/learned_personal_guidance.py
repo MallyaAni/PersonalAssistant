@@ -30,6 +30,7 @@ from backend.market import forward_probability_timing as timing
 from backend.market.grade_led_leader_policy import POLICY as LEADER_POLICY
 from backend.market.grade_led_policy import POLICY as GRADE_LED_POLICY
 from backend.market.joint_funded_policy import MARKET_TIMED_POLICY
+from backend.market.labels import Action, Grade, GradeSignal, OrderSide
 from backend.market.live_probability_timing import POLICY
 
 VERSION = "learned-personal-guidance/1"
@@ -78,9 +79,9 @@ def _neutral(record, held, equity, snapshot, quoted, now, account):
         ):
             row.pop(key, None)
         row.update(
-            action="Hold",
+            action=Action.HOLD,
             move_weight=0.0,
-            strategy_action="Hold",
+            strategy_action=Action.HOLD,
             strategy_move_weight=0.0,
             executable=False,
             valid_until=None,
@@ -204,7 +205,7 @@ def _personal_targets(record, weights, shares, prices, equity, cash):
                     if desired.get(name, 0) <= 0
                     else max(desired[name], min(current, prices[name] / equity))
                 )
-            elif grade in ("B", "C"):
+            elif grade in (Grade.B, Grade.C):
                 desired[name] = 0.0
             elif current > 0:
                 desired[name] = current
@@ -241,7 +242,8 @@ def _basket(
     for name, row in result["rows"].items():
         current = shares.get(name, 0) * prices.get(name, 0) / equity
         target = desired.get(name, current)
-        if name in desired and (record["grades"].get(name) or {}).get("grade") == "C":
+        grade = (record["grades"].get(name) or {}).get("grade")
+        if name in desired and grade == Grade.C:
             target = 0.0
         row.update(
             target_weight=target, current_weight=current, delta_weight=target - current
@@ -261,11 +263,11 @@ def _basket(
         row.update(blocker=blocker, reason=blocker or "At learned target")
         gap = target - current
         row.update(
-            strategy_action=decision_view.Action.BUY
+            strategy_action=Action.BUY
             if gap > 0
-            else decision_view.Action.SELL
+            else Action.SELL
             if gap < 0
-            else decision_view.Action.HOLD,
+            else Action.HOLD,
             strategy_move_weight=gap,
         )
         decision_view._apply_risk_budget(
@@ -365,7 +367,7 @@ def _plan(
     intents = _intents(basket, record, account, now)
     ordered = {intent["symbol"] for intent in intents}
     for name, row in result["rows"].items():
-        if name not in ordered and row["strategy_action"] != "Hold":
+        if name not in ordered and row["strategy_action"] is not Action.HOLD:
             row.update(reason=row["blocker"] or "No funded whole-share adjustment")
     return shares, intents
 
@@ -376,8 +378,8 @@ def _ordinary(intents, record):
         intent
         for intent in intents
         if not (
-            intent["side"] == "sell"
-            and record["grades"][intent["symbol"]].get("grade") == "C"
+            OrderSide(intent["side"]) is OrderSide.SELL
+            and record["grades"][intent["symbol"]].get("grade") == Grade.C
         )
     ]
 
@@ -474,11 +476,12 @@ def _apply(result, record, intents, reader, snapshot, now, equity, cost):
     clock = entry_timing.session_clock(now.date())
     quotes = snapshot.get("quotes") or {}
     for intent in intents:
-        name, side = intent["symbol"], intent["side"]
+        name, side = intent["symbol"], OrderSide(intent["side"])
         row = result["rows"][name]
         quote = row["quote"]
         mandatory = (
-            side == "sell" and (record["grades"].get(name) or {}).get("grade") == "C"
+            side is OrderSide.SELL
+            and (record["grades"].get(name) or {}).get("grade") == Grade.C
         )
         final = clock["final"] <= now < clock["close"]
         if mandatory or final:
@@ -498,14 +501,14 @@ def _apply(result, record, intents, reader, snapshot, now, equity, cost):
                 if execute
                 else evidence["reason"] or "Learned timing waiting"
             )
-        price = quote["ask"] if side == "buy" else quote["bid"]
-        move = intent["qty"] * price / equity * (1 if side == "buy" else -1)
+        price = quote["ask"] if side is OrderSide.BUY else quote["bid"]
+        move = intent["qty"] * price / equity * (1 if side is OrderSide.BUY else -1)
         row.update(
-            action="Buy"
-            if execute and side == "buy"
-            else "Sell"
+            action=Action.BUY
+            if execute and side is OrderSide.BUY
+            else Action.SELL
             if execute
-            else "Hold",
+            else Action.HOLD,
             move_weight=move if execute else 0.0,
             executable=execute,
             blocker=None if execute else reason,
@@ -663,7 +666,7 @@ def build(
     ) as exc:
         for row in result["rows"].values():
             row.update(
-                action="Hold",
+                action=Action.HOLD,
                 move_weight=0.0,
                 executable=False,
                 valid_until=None,
@@ -676,16 +679,17 @@ def build(
         for name, row in result["rows"].items():
             grade = (record.get("grades", {}).get(name) or {}).get("grade")
             admitted = grade_led_policy.admitted_for(record["targets"]["policy"])
+            below = grade in (Grade.B, Grade.C) and grade not in admitted
             signal = (
-                "hold"
+                GradeSignal.HOLD
                 if grade in admitted and name in owned
-                else "buy"
+                else GradeSignal.BUY
                 if grade in admitted
-                else "sell"
-                if grade in ("B", "C") and grade not in admitted and name in owned
-                else "avoid"
-                if grade in ("B", "C") and grade not in admitted
-                else "unavailable"
+                else GradeSignal.SELL
+                if below and name in owned
+                else GradeSignal.AVOID
+                if below
+                else GradeSignal.UNAVAILABLE
             )
             row.update(
                 grade_signal=signal,
@@ -694,7 +698,7 @@ def build(
                 signal_status="executable"
                 if row.get("executable")
                 else "blocked"
-                if signal in ("buy", "sell")
+                if signal in (GradeSignal.BUY, GradeSignal.SELL)
                 else "no_new_order",
                 signal_reason=row.get("blocker") or row.get("reason"),
             )

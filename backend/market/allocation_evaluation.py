@@ -51,6 +51,7 @@ import numpy as np
 
 from backend.agents.trading.desk import allocation, event_risk, paper, simulate
 from backend.market.allocation_controls import constant_exposure
+from backend.market.labels import OrderSide
 
 # The fixed evaluation window and conventions.
 COMMON_START = np.datetime64("2016-01-04")
@@ -680,10 +681,10 @@ def trace_checks(  # noqa: C901 - independent chronological and ledger invariant
                     violations.append(
                         f"fill notional disagrees for {symbol} at {stamp}"
                     )
-                if fill["side"] == "buy":
+                if fill["side"] == OrderSide.BUY:
                     buy += notional
                     filled = qty
-                elif fill["side"] == "sell":
+                elif fill["side"] == OrderSide.SELL:
                     sell += notional
                     filled = -qty
                 else:

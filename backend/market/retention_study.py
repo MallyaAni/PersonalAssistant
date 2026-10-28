@@ -20,6 +20,7 @@ from backend.agents.trading.desk import event_risk, paper, policy_v5, simulate
 from backend.market import learned_retention_models as heads
 from backend.market import retention_inputs
 from backend.market.allocation_evaluation import metrics
+from backend.market.labels import Grade
 from backend.market.learned_entry_models import _array_hash, _write_json
 from backend.market.research_journal import ResearchJournal
 from backend.market.research_journal_replay import verify_snapshot
@@ -46,7 +47,7 @@ class _Grades:
 
     # Translate exactly one available grade for the shared simulator trade log.
     def letter(self, t, column):
-        return {3: "A+", 2: "A", 1: "B", 0: "C"}.get(
+        return {3: Grade.A_PLUS, 2: Grade.A, 1: Grade.B, 0: Grade.C}.get(
             int(self.grades[t, column]), "unknown"
         )
 

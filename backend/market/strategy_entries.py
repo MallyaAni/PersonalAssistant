@@ -25,6 +25,7 @@ from backend.market import forward_probability_timing as inference
 from backend.market import learned_live_timing, probabilistic_execution as probability
 from backend.market import strategy_entry_context, strategy_publication as publication
 from backend.market import strategy_reference_entries as reference_entries
+from backend.market.labels import Action, OrderSide, TimingState
 
 VERSION = 'strategy-numerical-entries/1'
 DIRECTORY = 'desk/strategy-entries'
@@ -171,16 +172,17 @@ def project(snapshot, cache, quotes, now):
             quote = {}
         pair = inference._quote(quote, completed-timedelta(minutes=15), completed, now)
         distribution = forecast.distributions.get(name)
-        choice = probability.Decision('no_trade', reason='No new model allocation')
+        choice = probability.Decision(TimingState.NO_TRADE,
+                                      reason='No new model allocation')
         shifted = None
         if weight > 0:
             if pair is None or distribution is None:
-                choice = probability.Decision('unavailable', reason='Current compatible quote or calibrated timing distribution unavailable')
+                choice = probability.Decision(TimingState.UNAVAILABLE, reason='Current compatible quote or calibrated timing distribution unavailable')
             else:
                 midpoint, anchor = pair
                 shifted = probability.Distribution(distribution.mean + math.log(midpoint/anchor), distribution.scale,
                     distribution.residuals, distribution.weights, distribution.horizon)
-                choice = probability.decision(shifted, 'buy', weight, cache['config']['cost_bps'], horizon=probability.HORIZON)
+                choice = probability.decision(shifted, OrderSide.BUY, weight, cache['config']['cost_bps'], horizon=probability.HORIZON)
         evidence = deepcopy(allocation['evidence'])
         evidence.update(timing_reason=choice.reason, waiting_log_utility=choice.expected_log_utility,
             completed_candle_at=completed.isoformat(), observed_price=pair[0] if pair else None,
@@ -188,7 +190,7 @@ def project(snapshot, cache, quotes, now):
         if shifted is not None:
             evidence['waiting_advantage_mean'] = shifted.mean
             evidence['waiting_advantage_quantiles'] = probability.weighted_quantiles(shifted.mean+shifted.scale*shifted.residuals, shifted.weights).tolist()
-        rows[name] = {'state':choice.state, 'action':'Buy' if weight > 0 else None, 'size_weight':weight,
+        rows[name] = {'state':choice.state, 'action':Action.BUY if weight > 0 else None, 'size_weight':weight,
             'quote_at':quote.get('as_of') if pair else None,
             'valid_until':min(completed+timedelta(minutes=15), datetime.fromisoformat(quote['as_of'])+timedelta(seconds=execution_quotes.MAX_AGE_SECONDS)).isoformat() if pair else now.isoformat(),
             'evidence':evidence}
@@ -232,7 +234,7 @@ def publish(root, value):
             row['original_intent'] = {'id':key, 'completed_at':original['completed_at'], 'at':original['at'],
                 'size_weight':original['size_weight'], 'action':original['action'], 'receipt_sha256':original['receipt_sha256']}
             continue
-        if row['state'] != 'execute':
+        if TimingState(row['state']) is not TimingState.EXECUTE:
             continue
         original = {'ticker':name, **row, 'at':value['generated_at'], 'completed_at':value['completed_at'],
             'snapshot_id':value['snapshot_id'], 'publication_receipt_sha256':value['publication_receipt_sha256'],
@@ -289,8 +291,9 @@ def read(root, snapshot, now):
             return value
         for name, row in value['rows'].items():
             if (row['size_weight'] != snapshot['rows'][name]['target_weight']
-                    or row['state'] not in ('execute','wait','unavailable','no_trade')
-                    or row['state'] == 'execute' and not row['size_weight'] > 0):
+                    or row['state'] not in TimingState
+                    or row['state'] == TimingState.EXECUTE
+                    and not row['size_weight'] > 0):
                 raise ValueError('Numerical entry size differs from original model')
         return value
     except (OSError, ValueError, KeyError, TypeError):

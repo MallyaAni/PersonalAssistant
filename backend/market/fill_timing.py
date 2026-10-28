@@ -220,6 +220,7 @@ from backend.market import (
     stage3_io,
     stage3_verdict,
 )
+from backend.market.labels import OrderSide
 from backend.market.sip_cube import FULL_SESSION_SLOTS, SessionCube
 from backend.market.vol_forecast import Aligned, sigma
 
@@ -519,10 +520,10 @@ def _filled_at_bar(
 # below it, a sell's at or above it. Returns whether any close got there
 # and the first slot that did (0 where none did).
 def _first_past(
-    cube: SessionCube, side: str, level: np.ndarray
+    cube: SessionCube, side: OrderSide, level: np.ndarray
 ) -> tuple[np.ndarray, np.ndarray]:
     """Return ((N,) reached, (N,) first slot) for a close-triggered level."""
-    if side == "buy":
+    if side == OrderSide.BUY:
         hit = cube.close <= level[:, None]
     else:
         hit = cube.close >= level[:, None]
@@ -535,7 +536,7 @@ def _first_past(
 # fill) for every session. Every order fills. With `next_bar` the fill
 # moves to the next bar's open (`_bar_price`).
 def _first_close_past(
-    cube: SessionCube, side: str, level: np.ndarray, next_bar: bool = False
+    cube: SessionCube, side: OrderSide, level: np.ndarray, next_bar: bool = False
 ) -> tuple[np.ndarray, np.ndarray]:
     """Return ((N,) fill price, (N,) reached) for a close-triggered level."""
     any_hit, first = _first_past(cube, side, level)
@@ -549,17 +550,17 @@ def _first_close_past(
 # The board's 1% level per session: open * (1 - DIP) for a buy, open *
 # (1 + DIP) for a sell. One expression, shared by dip_or_close and the T-I
 # filter's trigger.
-def _dip_level(cube: SessionCube, side: str) -> np.ndarray:
+def _dip_level(cube: SessionCube, side: OrderSide) -> np.ndarray:
     """Return (N,) the dip (buy) or pop (sell) level of every session."""
     open0 = cube.open[:, 0]
-    return open0 * (1.0 - DIP) if side == "buy" else open0 * (1.0 + DIP)
+    return open0 * (1.0 - DIP) if side == OrderSide.BUY else open0 * (1.0 + DIP)
 
 
 # The dip-or-close fill and whether the dip was reached: buys wait for a
 # close at or below open * (1 - DIP), sells for one at or above
 # open * (1 + DIP), else the official close.
 def _dip_or_close_fill(
-    cube: SessionCube, side: str, next_bar: bool = False
+    cube: SessionCube, side: OrderSide, next_bar: bool = False
 ) -> tuple[np.ndarray, np.ndarray]:
     """Return ((N,) fill price, (N,) reached) for dip_or_close."""
     return _first_close_past(cube, side, _dip_level(cube, side), next_bar)
@@ -568,7 +569,9 @@ def _dip_or_close_fill(
 # The first bar close at or past the dip threshold per session, else the
 # official close. Buys wait for a fall below open * (1 - DIP); sells for a
 # rise above open * (1 + DIP). Every order fills.
-def _dip_or_close(cube: SessionCube, side: str, next_bar: bool = False) -> np.ndarray:
+def _dip_or_close(
+    cube: SessionCube, side: OrderSide, next_bar: bool = False
+) -> np.ndarray:
     """Return (N,) the dip-or-close fill price for `side`."""
     return _dip_or_close_fill(cube, side, next_bar)[0]
 
@@ -578,10 +581,10 @@ def _dip_or_close(cube: SessionCube, side: str, next_bar: bool = False) -> np.nd
 # bare touch is not a fill), a sell when some bar's high is strictly above
 # it; otherwise the order fills at the official close.
 def _resting_limit(
-    cube: SessionCube, side: str, level: np.ndarray
+    cube: SessionCube, side: OrderSide, level: np.ndarray
 ) -> tuple[np.ndarray, np.ndarray]:
     """Return ((N,) fill price, (N,) crossed) for a resting limit at `level`."""
-    if side == "buy":
+    if side == OrderSide.BUY:
         hit = (cube.low < level[:, None]).any(axis=1)
     else:
         hit = (cube.high > level[:, None]).any(axis=1)
@@ -592,12 +595,12 @@ def _resting_limit(
 # open * exp(+k * sigma) for a sell. One expression, so a test's bar can
 # sit exactly on it.
 def entry_level(
-    open0: np.ndarray | float, sig: np.ndarray | float, k: float, side: str
+    open0: np.ndarray | float, sig: np.ndarray | float, k: float, side: OrderSide
 ) -> np.ndarray:
     """Return the level k * sigma (log terms) below (buy) or above (sell) the open."""
-    if side not in ("buy", "sell"):
+    if side not in OrderSide:
         raise ValueError(f"side must be buy or sell, not {side!r}")
-    sign = -1.0 if side == "buy" else 1.0
+    sign = -1.0 if side == OrderSide.BUY else 1.0
     return np.asarray(open0, dtype=float) * np.exp(
         sign * k * np.asarray(sig, dtype=float)
     )
@@ -614,25 +617,25 @@ def entry_level(
 def sr_fills(
     cube: SessionCube,
     convention: str,
-    side: str,
+    side: OrderSide,
     zones: sr_levels.CloseZones | None,
     next_bar: bool = False,
 ) -> tuple[np.ndarray, np.ndarray]:
     """Return ((N,) fill price, (N,) filled at a level) for an SR convention."""
-    if side not in ("buy", "sell"):
+    if side not in OrderSide:
         raise ValueError(f"side must be buy or sell, not {side!r}")
     if convention not in SR_CONVENTIONS:
         raise ValueError(f"{convention!r} is not an SR convention")
     if zones is None:
         raise ValueError(f"{convention} needs the close zones of every session")
-    grid = np.asarray(zones.support if side == "buy" else zones.resistance)
+    grid = np.asarray(zones.support if side == OrderSide.BUY else zones.resistance)
     if grid.shape != cube.close.shape:
         raise ValueError(
             f"close zones have shape {grid.shape}; "
             f"the cube's bars are {cube.close.shape}"
         )
     open0 = cube.open[:, :1]
-    beyond = cube.close < open0 if side == "buy" else cube.close > open0
+    beyond = cube.close < open0 if side == OrderSide.BUY else cube.close > open0
     late_enough = np.arange(FULL_SESSION_SLOTS) >= sr_levels.FIRST_SLOT
     hit = (grid >= SR_MIN_CONFLUENCE[convention]) & beyond & late_enough[None, :]
     any_hit = hit.any(axis=1)
@@ -669,12 +672,12 @@ class TiFills:
 def ti_fills(
     cube: SessionCube,
     convention: str,
-    side: str,
+    side: OrderSide,
     yhat: np.ndarray | None,
     next_bar: bool = False,
 ) -> TiFills:
     """Return the TiFills of a T-I convention on every session of `cube`."""
-    if side not in ("buy", "sell"):
+    if side not in OrderSide:
         raise ValueError(f"side must be buy or sell, not {side!r}")
     if convention not in TI_RULES:
         raise ValueError(f"{convention!r} is not a stage-3 T-I convention")
@@ -694,12 +697,12 @@ def ti_fills(
             reached, first = _first_past(cube, side, _dip_level(cube, side))
             modelled = reached & (first < stage3_io.TI_SLOTS)
             at = yhat[rows, np.minimum(first, stage3_io.TI_SLOTS - 1)]
-            agrees = at > 0.0 if side == "buy" else at < 0.0
+            agrees = at > 0.0 if side == OrderSide.BUY else at < 0.0
             veto = modelled & np.isfinite(at) & ~agrees
             filled = reached & ~veto
             late = reached & (first >= stage3_io.TI_SLOTS)
         else:
-            agrees = yhat > 0.0 if side == "buy" else yhat < 0.0
+            agrees = yhat > 0.0 if side == OrderSide.BUY else yhat < 0.0
             filled = agrees.any(axis=1)
             first = np.argmax(agrees, axis=1)
             late = np.zeros(len(cube), dtype=bool)
@@ -726,14 +729,14 @@ def ti_fills(
 def waiting_fills(
     cube: SessionCube,
     convention: str,
-    side: str,
+    side: OrderSide,
     sig: np.ndarray | None = None,
     zones: sr_levels.CloseZones | None = None,
     yhat: np.ndarray | None = None,
     next_bar: bool = False,
 ) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """Return ((N,) price, (N,) reached, (N,) no sigma) for a WAITING convention."""
-    if side not in ("buy", "sell"):
+    if side not in OrderSide:
         raise ValueError(f"side must be buy or sell, not {side!r}")
     if convention in SR_CONVENTIONS:
         price, hit = sr_fills(cube, convention, side, zones, next_bar)
@@ -777,14 +780,14 @@ def waiting_fills(
 def session_prices(
     cube: SessionCube,
     convention: str,
-    side: str,
+    side: OrderSide,
     sig: np.ndarray | None = None,
     zones: sr_levels.CloseZones | None = None,
     yhat: np.ndarray | None = None,
     next_bar: bool = False,
 ) -> np.ndarray:
     """Return (N,) raw-basis fill prices for `convention` and `side`."""
-    if side not in ("buy", "sell"):
+    if side not in OrderSide:
         raise ValueError(f"side must be buy or sell, not {side!r}")
     if len(cube) == 0:
         return np.zeros(0)
@@ -821,7 +824,7 @@ def session_prices(
 def fill_price(
     row: dict[str, Any],
     convention: str,
-    side: str,
+    side: OrderSide,
     blocked: bool = False,
     sig: float = math.nan,
     zones: sr_levels.CloseZones | None = None,
@@ -829,7 +832,7 @@ def fill_price(
     next_bar: bool = False,
 ) -> float:
     """Return the fill price for one session, NaN when the order is deferred."""
-    if convention == "breakout_gate" and side == "buy" and blocked:
+    if convention == "breakout_gate" and side == OrderSide.BUY and blocked:
         return math.nan
     cube = SessionCube(
         ticker="row",
@@ -1077,10 +1080,10 @@ def cube_prices(  # noqa: C901 - one pass per name: scale, price, detail
     _check_zones(convention, zones)
     _check_ti(convention, ti)
     if waiting:
-        hits = {side: np.zeros((rows, names), dtype=bool) for side in ("buy", "sell")}
-        gains = {side: np.full((rows, names), np.nan) for side in ("buy", "sell")}
+        hits = {side: np.zeros((rows, names), dtype=bool) for side in OrderSide}
+        gains = {side: np.full((rows, names), np.nan) for side in OrderSide}
         no_sigma = np.zeros((rows, names), dtype=bool)
-        late = {side: np.zeros((rows, names), dtype=bool) for side in ("buy", "sell")}
+        late = {side: np.zeros((rows, names), dtype=bool) for side in OrderSide}
     for j, ticker in enumerate(panel.tickers):
         cube = cubes.get(ticker)
         if cube is None or len(cube) == 0:
@@ -1089,10 +1092,12 @@ def cube_prices(  # noqa: C901 - one pass per name: scale, price, detail
         scale = per_session[ok]
         if not waiting:
             buy[pos[ok], j] = (
-                session_prices(cube, convention, "buy", next_bar=next_bar)[ok] * scale
+                session_prices(cube, convention, OrderSide.BUY, next_bar=next_bar)[ok]
+                * scale
             )
             sell[pos[ok], j] = (
-                session_prices(cube, convention, "sell", next_bar=next_bar)[ok] * scale
+                session_prices(cube, convention, OrderSide.SELL, next_bar=next_bar)[ok]
+                * scale
             )
             available[pos[ok], j] = np.isfinite(scale)
             continue
@@ -1112,7 +1117,7 @@ def cube_prices(  # noqa: C901 - one pass per name: scale, price, detail
             assert ti is not None  # _check_ti refused a run without it
             cube_yhat = ti_grid(ti, ticker, cube.dates)
         close = _official_close(cube)
-        for side, out in (("buy", buy), ("sell", sell)):
+        for side, out in ((OrderSide.BUY, buy), (OrderSide.SELL, sell)):
             if ti_on:
                 fills = ti_fills(cube, convention, side, cube_yhat, next_bar)
                 price, hit, missing = fills.price, fills.hit, fills.no_forecast
@@ -1124,7 +1129,7 @@ def cube_prices(  # noqa: C901 - one pass per name: scale, price, detail
             out[pos[ok], j] = price[ok] * scale
             hits[side][pos[ok], j] = hit[ok]
             with np.errstate(all="ignore"):
-                better = (close - price) if side == "buy" else (price - close)
+                better = (close - price) if side == OrderSide.BUY else (price - close)
                 gain = np.where(close > 0, better / close * BP, np.nan)
             gains[side][pos[ok], j] = gain[ok]
             no_sigma[pos[ok], j] |= missing[ok]
@@ -1132,13 +1137,13 @@ def cube_prices(  # noqa: C901 - one pass per name: scale, price, detail
     if not waiting:
         return FillPrices(convention, buy, sell, available)
     detail = WaitDetail(
-        hits["buy"],
-        hits["sell"],
-        gains["buy"],
-        gains["sell"],
+        hits[OrderSide.BUY],
+        hits[OrderSide.SELL],
+        gains[OrderSide.BUY],
+        gains[OrderSide.SELL],
         no_sigma,
-        late["buy"] if ti_on else None,
-        late["sell"] if ti_on else None,
+        late[OrderSide.BUY] if ti_on else None,
+        late[OrderSide.SELL] if ti_on else None,
     )
     return FillPrices(convention, buy, sell, available, detail)
 
@@ -2336,7 +2341,7 @@ def _ti_order_fields(
 ) -> dict[str, dict[str, Any]]:
     """Return {side: order fields} for a waiting convention's log in the window."""
     out: dict[str, dict[str, Any]] = {}
-    for side in ("all", "buy", "sell"):
+    for side in ("all", *OrderSide):
         if log is None:
             out[side] = {
                 "orders": 0,
@@ -2350,7 +2355,7 @@ def _ti_order_fields(
             continue
         inside = keep[log.session]
         if side != "all":
-            inside = inside & (log.buy if side == "buy" else ~log.buy)
+            inside = inside & (log.buy if side == OrderSide.BUY else ~log.buy)
         orders = int(inside.sum())
         filled = log.hit & inside
         late = log.late if log.late is not None else np.zeros(len(inside), dtype=bool)
@@ -2395,7 +2400,7 @@ def _ti_versus(
         or candidate.detail is None
         or control.detail is None
     ):
-        return {side: dict(empty) for side in ("all", "buy", "sell")}
+        return {side: dict(empty) for side in ("all", *OrderSide)}
     s, j, buying = log.session, log.column, log.buy
     ours = np.where(buying, candidate.buy[s, j], candidate.sell[s, j])
     theirs = np.where(buying, control.buy[s, j], control.sell[s, j])
@@ -2409,10 +2414,10 @@ def _ti_versus(
     valid = np.isfinite(diff) & np.isfinite(ours) & np.isfinite(theirs)
     differs = valid & (ours != theirs)
     out: dict[str, dict[str, Any]] = {}
-    for side in ("all", "buy", "sell"):
+    for side in ("all", *OrderSide):
         inside = keep[s] & valid
         if side != "all":
-            inside = inside & (buying if side == "buy" else ~buying)
+            inside = inside & (buying if side == OrderSide.BUY else ~buying)
         chosen = inside & differs
         orders = int(inside.sum())
         out[side] = {

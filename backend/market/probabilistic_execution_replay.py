@@ -11,6 +11,7 @@ from __future__ import annotations
 import numpy as np
 
 from backend.market import probabilistic_execution as probability
+from backend.market.labels import OrderSide, TimingState
 from backend.market.learned_execution_timing import replay_account, validate_replay
 from backend.market.sequential_execution_replay import supported_sessions
 
@@ -47,7 +48,9 @@ def select(
         weight = float(abs(delta[stock]) * observed[stock] / nav)
         weight *= fraction if buying else 1.0
         if final:
-            chosen = probability.Decision("execute", reason="shared_terminal_deadline")
+            chosen = probability.Decision(
+                TimingState.EXECUTE, reason="shared_terminal_deadline"
+            )
         else:
             distribution = provider(day, clock, int(stock))
             if distribution is not None and not isinstance(
@@ -56,15 +59,18 @@ def select(
                 raise ValueError("Provider must return a Distribution or explicit None")
             chosen = probability.decision(
                 distribution,
-                "buy" if buying else "sell",
+                OrderSide.BUY if buying else OrderSide.SELL,
                 weight,
                 cost,
                 horizon=probability.HORIZON,
             )
-        acting[stock] = chosen.state == "execute"
-        counts["waiting_decisions"] += int(chosen.state == "wait")
-        counts["distribution_unavailable"] += int(chosen.state == "unavailable")
-        counts["unfunded_decisions"] += int(chosen.state == "no_trade")
+        # The engine's decision carries its state as the wire word; read it
+        # through the type, so a state outside it fails here.
+        state = TimingState(chosen.state)
+        acting[stock] = state is TimingState.EXECUTE
+        counts["waiting_decisions"] += int(state is TimingState.WAIT)
+        counts["distribution_unavailable"] += int(state is TimingState.UNAVAILABLE)
+        counts["unfunded_decisions"] += int(state is TimingState.NO_TRADE)
         counts["cash_limited_decisions"] += int(buying and fraction < 1)
         trace.append(
             {
@@ -74,7 +80,7 @@ def select(
                 "clock": int(clock),
                 "stock": int(stock),
                 "symbol": symbols[stock],
-                "side": "buy" if buying else "sell",
+                "side": OrderSide.BUY if buying else OrderSide.SELL,
                 "pending_quantity": float(abs(delta[stock])),
                 "observed_price": float(observed[stock]),
                 "nav": float(nav),

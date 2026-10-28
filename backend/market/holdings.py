@@ -21,6 +21,7 @@ from datetime import date
 from pathlib import Path
 
 from backend.agents.trading.desk import actions, grading
+from backend.market.labels import DeskAction
 from backend.agents.trading.desk.opinions import (
     BEARISH,
     BULLISH,
@@ -218,7 +219,7 @@ def board(
         # lack of coverage is not a sell. It gets an explicit review state
         # until the person assigns it to the strategy or closes it by hand.
         action = (
-            "uncovered"
+            DeskAction.UNCOVERED
             if (holding is not None and not in_book)
             else actions.action_for(target, current)
         )
@@ -228,9 +229,12 @@ def board(
         # for it back, so presenting it as an actionable buy would tell the
         # person to place an order the strategy itself will not place. The
         # board carries the blocker's own verdict instead.
-        blocked = bool(level.get("rejecting_band", False)) and action in ("buy", "add")
+        blocked = bool(level.get("rejecting_band", False)) and action in (
+            DeskAction.BUY,
+            DeskAction.ADD,
+        )
         if blocked:
-            action = "blocked"
+            action = DeskAction.BLOCKED
         # The paper book's countdown to its next rebalance, from the record's
         # paper block or the levels when it is absent.
         countdown = until if until is not None else level.get("until_rebalance")

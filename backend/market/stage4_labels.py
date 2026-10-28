@@ -66,6 +66,7 @@ import numpy as np
 
 from backend.market import fill_timing, stage3_features, technical
 from backend.market import stage3_io as io
+from backend.market.labels import OrderSide
 from backend.market.sip_cube import FULL_SESSION_SLOTS, SessionCube
 
 PLAN = "docs/research/stage4-plan-2026-09-29.md"
@@ -81,7 +82,7 @@ LEVEL = "level"
 TURN = "turn"
 SQUEEZE = "squeeze"
 CONVENTIONS = (CONTROL, LEVEL, TURN, SQUEEZE)
-SIDES = ("buy", "sell")
+SIDES = tuple(OrderSide)
 
 
 @dataclass(frozen=True)
@@ -225,7 +226,7 @@ def name_fills(
     out: dict[tuple[str, str], Fills] = {}
     t_all = np.arange(T)
     for side in SIDES:
-        sign = -1.0 if side == "buy" else 1.0
+        sign = -1.0 if side == OrderSide.BUY else 1.0
         # The control, session t+1.
         raw, hit = fill_timing._dip_or_close_fill(cube, side, next_bar)
         price = np.full(T, np.nan)
@@ -248,7 +249,7 @@ def name_fills(
                 break
             crow = ahead[idx, j]
             closes = cube.close[crow] * scale_ahead[idx, j][:, None]
-            touch = closes <= level[idx, None] if side == "buy" else closes >= level[idx, None]
+            touch = closes <= level[idx, None] if side == OrderSide.BUY else closes >= level[idx, None]
             anyhit = touch.any(axis=1)
             slot = np.argmax(touch, axis=1)
             filled = idx[anyhit]
@@ -264,7 +265,7 @@ def name_fills(
         out[(LEVEL, side)] = Fills(lv_price, lv_days, lv_reached, np.ones(T, dtype=bool))
         # D2 (turn) and D3 (squeeze): daily closes against a daily trigger.
         with np.errstate(invalid="ignore"):
-            turn_active = series.close < series.ema10 if side == "buy" else series.close > series.ema10
+            turn_active = series.close < series.ema10 if side == OrderSide.BUY else series.close > series.ema10
         prior_high = np.full((T, window), np.nan)
         prior_low = np.full((T, window), np.nan)
         band = np.full((T, window), np.nan)
@@ -272,10 +273,10 @@ def name_fills(
             # Session t+1+j's prior session is t+j.
             prior_high[: T - j, j] = series.high[j:]
             prior_low[: T - j, j] = series.low[j:]
-            src = series.upper if side == "buy" else series.lower
+            src = series.upper if side == OrderSide.BUY else series.lower
             band[: T - j - 1, j] = src[j + 1 :]
         with np.errstate(invalid="ignore"):
-            if side == "buy":
+            if side == OrderSide.BUY:
                 turn_trigger = official_ahead > prior_high
                 squeeze_trigger = official_ahead > band
             else:
@@ -331,7 +332,7 @@ def gain(control: np.ndarray, candidate: np.ndarray, side: str) -> np.ndarray:
     control = np.asarray(control, dtype=float)
     candidate = np.asarray(candidate, dtype=float)
     with np.errstate(all="ignore"):
-        ratio = control / candidate if side == "buy" else candidate / control
+        ratio = control / candidate if side == OrderSide.BUY else candidate / control
         return 1e4 * np.log(ratio)
 
 
@@ -364,7 +365,7 @@ def label_rows(
     g_buy = np.full(len(data), np.nan)
     g_sell = np.full(len(data), np.nan)
     counts = {"rows": int(len(data)), "no_cube": 0, "not_on_panel": 0}
-    reached = {"buy": [0, 0], "sell": [0, 0]}
+    reached = {OrderSide.BUY: [0, 0], OrderSide.SELL: [0, 0]}
     for ticker in np.unique(row_tickers):
         mine = np.flatnonzero(row_tickers == ticker)
         j = column.get(ticker)
@@ -382,7 +383,7 @@ def label_rows(
         counts["not_on_panel"] += int((~on_panel).sum())
         rows = mine[on_panel]
         t = at[on_panel]
-        for side, target in (("buy", g_buy), ("sell", g_sell)):
+        for side, target in ((OrderSide.BUY, g_buy), (OrderSide.SELL, g_sell)):
             ctrl = fills[(CONTROL, side)].price[t]
             cand = fills[(LEVEL, side)].price[t]
             target[rows] = gain(ctrl, cand, side)
@@ -396,7 +397,7 @@ def label_rows(
         "plan": PLAN,
         "window": WINDOW,
         "counts": counts,
-        "priced": {s: int(np.isfinite(v).sum()) for s, v in (("buy", g_buy), ("sell", g_sell))},
+        "priced": {s: int(np.isfinite(v).sum()) for s, v in ((OrderSide.BUY, g_buy), (OrderSide.SELL, g_sell))},
         "level_reached_share": {s: (v[1] / v[0] if v[0] else float("nan")) for s, v in reached.items()},
         "seconds": time.perf_counter() - began,
     }

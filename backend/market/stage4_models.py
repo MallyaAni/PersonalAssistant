@@ -111,10 +111,11 @@ import numpy as np
 from backend.market import stage3_io as io
 from backend.market import stage3_nn as nn3
 from backend.market import stage3_trees as trees
+from backend.market.labels import OrderSide
 
 MODULE = "backend.market.stage4_models"
 PLAN = "docs/research/stage4-plan-2026-09-29.md"
-SIDES = ("buy", "sell")
+SIDES = tuple(OrderSide)
 # The three families, as stage3_io names them.
 FAMILIES = (io.LGBM, io.CNN_I20, io.SEQ)
 MODELS = {io.LGBM: "M1", io.CNN_I20: "M2", io.SEQ: "M3"}
@@ -192,9 +193,9 @@ def timing_data(
     if data.kind != io.S1:
         raise ValueError(f"stage 4 trains on the T-S1 rows, not {data.kind!r} rows")
     if side not in SIDES:
-        raise ValueError(f"side must be one of {SIDES}, not {side!r}")
+        raise ValueError(f"side must be one of {tuple(map(str, SIDES))}, not {side!r}")
     check_keys(data, dates, tickers)
-    label = np.asarray(g_buy if side == "buy" else g_sell, dtype=np.float64)
+    label = np.asarray(g_buy if side == OrderSide.BUY else g_sell, dtype=np.float64)
     if label.shape != (len(data),):
         raise ValueError(
             f"the {side} labels are {label.shape}; expected ({len(data)},)"

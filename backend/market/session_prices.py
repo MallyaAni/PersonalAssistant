@@ -10,6 +10,7 @@ from threading import Lock
 from urllib.parse import urlencode
 
 from backend.market import alpaca, calendar, desk_freshness
+from backend.market.labels import QuoteFeed, QuoteSession
 
 MAX_AGE_SECONDS = 60
 CACHE_SECONDS = 10
@@ -38,27 +39,27 @@ def session_window(now):
         datetime.combine(target, day_time(12), calendar.NEW_YORK)
     )
     if not status["calendar_known"]:
-        return "unknown", None, None
+        return QuoteSession.UNKNOWN, None, None
     if not status["is_session"]:
-        return "closed", None, None
+        return QuoteSession.CLOSED, None, None
     if wall >= day_time(20) or wall < day_time(4):
         start = datetime.combine(
             target - timedelta(days=1), day_time(20), calendar.NEW_YORK
         )
         end = datetime.combine(target, day_time(4), calendar.NEW_YORK)
-        return "overnight", start, end
+        return QuoteSession.OVERNIGHT, start, end
     opening = datetime.combine(day, day_time(9, 30), calendar.NEW_YORK)
     closing = datetime.combine(day, calendar.session_close(day), calendar.NEW_YORK)
     if local < opening:
         return (
-            "pre-market",
+            QuoteSession.PRE_MARKET,
             datetime.combine(day, day_time(4), calendar.NEW_YORK),
             opening,
         )
     if local < closing:
-        return "regular", opening, closing
+        return QuoteSession.REGULAR, opening, closing
     return (
-        "post-market",
+        QuoteSession.POST_MARKET,
         closing,
         datetime.combine(day, day_time(20), calendar.NEW_YORK),
     )
@@ -69,15 +70,17 @@ def session_window(now):
 def describe(raw, feed, now):
     try:
         stamp = desk_freshness.timestamp(raw.get("t"))
-        observation_session = session_window(stamp)[0] if stamp else "unknown"
+        observation_session = (
+            session_window(stamp)[0] if stamp else QuoteSession.UNKNOWN
+        )
     except (ValueError, OverflowError):
-        stamp, observation_session = None, "unknown"
+        stamp, observation_session = None, QuoteSession.UNKNOWN
     result = {
         "price": None,
         "at": stamp.isoformat() if stamp else None,
         "feed": feed,
         "session": observation_session,
-        "indicative": feed == "overnight",
+        "indicative": feed == QuoteFeed.OVERNIGHT,
         "status": "unavailable",
         "reason": "No fresh quote from available feeds",
         "valid_until": None,
@@ -101,7 +104,9 @@ def describe(raw, feed, now):
     return {
         **observed,
         "status": "fresh",
-        "reason": "Indicative midpoint" if feed == "overnight" else "Quoted midpoint",
+        "reason": "Indicative midpoint"
+        if feed == QuoteFeed.OVERNIGHT
+        else "Quoted midpoint",
     }
 
 
@@ -174,12 +179,18 @@ def _feed_pair(now):
     phase = session_window(now)[0]
     wall = now.astimezone(calendar.NEW_YORK).time().replace(tzinfo=None)
     night = wall >= day_time(20) or wall < day_time(4)
-    if phase == "unknown":
+    if phase == QuoteSession.UNKNOWN:
         # No calendar for the year: the clock is the only guide.
-        return ("boats", "overnight") if night else ("sip", "iex")
-    if phase == "overnight" or (phase == "pre-market" and wall < day_time(8)):
-        return ("boats", "overnight")
-    return ("sip", "iex")
+        return (
+            (QuoteFeed.BOATS, QuoteFeed.OVERNIGHT)
+            if night
+            else (QuoteFeed.SIP, QuoteFeed.IEX)
+        )
+    if phase == QuoteSession.OVERNIGHT or (
+        phase == QuoteSession.PRE_MARKET and wall < day_time(8)
+    ):
+        return (QuoteFeed.BOATS, QuoteFeed.OVERNIGHT)
+    return (QuoteFeed.SIP, QuoteFeed.IEX)
 
 
 # Fetch a bounded display batch without purchasing data or sending orders.

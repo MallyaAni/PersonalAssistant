@@ -20,6 +20,7 @@ from backend.agents.trading.desk import (
 )
 from backend.agents.trading.desk.regime import TIGHTENING_EXPOSURE
 from backend.market import desk_freshness, holdings
+from backend.market.labels import EntryState, InflationPressure
 from backend.market.panel import Panel
 
 VERSION = "intraday-macro-candidate/2"
@@ -44,7 +45,12 @@ def macro_budget(
         or not 0 <= (now - observed).total_seconds() < 36 * 3600
         or assessment.get("status") != "model_assessment"
         or assessment.get("prompt_version") != economist.VERSION
-        or assessment.get("pressure") not in ("easing", "building", "mixed")
+        or assessment.get("pressure")
+        not in (
+            InflationPressure.EASING,
+            InflationPressure.BUILDING,
+            InflationPressure.MIXED,
+        )
     ):
         raise ValueError("Fresh, known economic assessment required")
     benchmark = snapshot.get("technical_detail", {}).get("SPY") or {}
@@ -56,7 +62,12 @@ def macro_budget(
     exposure = float(source.get("exposure", float("nan")))
     if not np.isfinite(exposure) or not 0 <= exposure <= 1:
         raise ValueError("Valid evening exposure budget required")
-    defensive = assessment["pressure"] == "building" and daily < 0 and weekly < 0
+    defensive = (
+        InflationPressure(assessment["pressure"]) is InflationPressure.BUILDING
+        and daily < 0
+        and weekly < 0
+    )
+
     capped = min(exposure, TIGHTENING_EXPOSURE) if defensive else exposure
     return Budget(capped, bool(source.get("tightening", False))), {
         "pressure": assessment["pressure"],
@@ -129,7 +140,8 @@ def calculate(
         else "compatible intraday value",
         "grades": live,
         "entry_states": {
-            name: entries.kind(len(panel.dates) - 1, panel.index(name)) or "wait"
+            name: entries.kind(len(panel.dates) - 1, panel.index(name))
+            or EntryState.WAIT
             for name in sorted(names)
         },
         "correlation_candidate": overlap,

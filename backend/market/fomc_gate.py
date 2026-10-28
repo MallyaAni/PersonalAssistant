@@ -27,6 +27,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from backend.market import report_files
+from backend.market.labels import OrderSide
 
 VERSION = "fomc-gate/1"
 FIRST_MEETING = "2026-09-16"
@@ -78,7 +79,7 @@ def overlay_difference(
         qty = float(row.get("filled_qty") or 0)
         price = float(row.get("filled_price") or 0)
         gain_kept = qty * (mark - price)  # what holding on would have earned
-        total += -gain_kept if row.get("side") == "sell" else gain_kept
+        total += -gain_kept if row.get("side") == OrderSide.SELL else gain_kept
     return total
 
 
@@ -89,7 +90,9 @@ def unrestored(fills: list[dict]) -> dict[str, int]:
     for row in fills:
         qty = int(row.get("filled_qty") or 0)
         symbol = row["symbol"]
-        net[symbol] = net.get(symbol, 0) + (qty if row.get("side") == "sell" else -qty)
+        net[symbol] = net.get(symbol, 0) + (
+            qty if row.get("side") == OrderSide.SELL else -qty
+        )
     return {s: q for s, q in net.items() if q > 0}
 
 

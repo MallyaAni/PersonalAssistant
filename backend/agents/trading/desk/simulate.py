@@ -50,6 +50,7 @@ import numpy as np
 from backend.agents.trading.desk import exit as exit_analyst
 from backend.agents.trading.desk import funded_execution, grading, planner, risk
 from backend.agents.trading.desk import trend_brake as trend_brake_rule
+from backend.market.labels import OrderSide
 from backend.market.panel import Panel
 
 REBALANCE = 20
@@ -217,10 +218,10 @@ def _variant_entry_orders(
         orders.append(
             paper.PaperOrder(
                 symbol,
-                "buy",
+                OrderSide.BUY,
                 want * equity / price,
                 reason,
-                client_order_id=paper.order_id(session, symbol, "buy", seq),
+                client_order_id=paper.order_id(session, symbol, OrderSide.BUY, seq),
             )
         )
     return orders
@@ -242,14 +243,14 @@ def _sweep_orders(
 
     if equity <= 0:
         return []
-    planned = sum(o.qty * prices[o.symbol] for o in orders if o.side == "buy")
+    planned = sum(o.qty * prices[o.symbol] for o in orders if o.side == OrderSide.BUY)
     idle_share = max(0.0, 1.0 - float(sum(today.values())))
     spare = max(0.0, cash - planned - idle_share * equity)
     if spare < paper.MIN_TRADE * equity:
         return []
     projected = dict(reserved)
     for order in orders:
-        if order.side == "buy":
+        if order.side == OrderSide.BUY:
             projected[order.symbol] = projected.get(order.symbol, 0.0) + order.qty
     takers = {
         s: float(q) * float(prices.get(s) or 0.0)
@@ -277,10 +278,10 @@ def _sweep_orders(
         out.append(
             paper.PaperOrder(
                 symbol,
-                "buy",
+                OrderSide.BUY,
                 qty,
                 "sweep: spare cash redeployed pro rata to the held names",
-                client_order_id=paper.order_id(session, symbol, "buy", seq),
+                client_order_id=paper.order_id(session, symbol, OrderSide.BUY, seq),
             )
         )
     return out
@@ -307,13 +308,13 @@ def _redeploy_orders(  # noqa: C901 - the takers, their room and the fill in one
 
     if equity <= 0:
         return []
-    planned = sum(o.qty * prices[o.symbol] for o in orders if o.side == "buy")
+    planned = sum(o.qty * prices[o.symbol] for o in orders if o.side == OrderSide.BUY)
     spare = max(0.0, cash - planned - float(buffer) * equity)
     if spare < paper.MIN_TRADE * equity:
         return []
     projected = dict(reserved)
     for order in orders:
-        if order.side == "buy":
+        if order.side == OrderSide.BUY:
             projected[order.symbol] = projected.get(order.symbol, 0.0) + order.qty
     candidates = {s for s, q in projected.items() if q > 0} | {
         s
@@ -349,10 +350,10 @@ def _redeploy_orders(  # noqa: C901 - the takers, their room and the fill in one
         out.append(
             paper.PaperOrder(
                 symbol,
-                "buy",
+                OrderSide.BUY,
                 qty,
                 "redeploy: cash beyond the buffer put back to its target weights",
-                client_order_id=paper.order_id(session, symbol, "buy", seq),
+                client_order_id=paper.order_id(session, symbol, OrderSide.BUY, seq),
             )
         )
     return out
@@ -377,7 +378,7 @@ def _variant_midcycle_orders(
     )
     projected = dict(held)
     for order in orders:
-        if order.side == "buy":
+        if order.side == OrderSide.BUY:
             projected[order.symbol] = projected.get(order.symbol, 0) + order.qty
     if mode == MIDCYCLE_BREAKOUT:
         eligible = {
@@ -641,7 +642,7 @@ def _live_midcycle(
     wanted = book.shares.copy()
     for order in orders:
         wanted[panel.index(order.symbol)] += order.qty * (
-            1 if order.side == "buy" else -1
+            1 if order.side == OrderSide.BUY else -1
         )
     for symbol, qty in retained_caps.items():
         column = panel.index(symbol)
@@ -1775,7 +1776,7 @@ def run(  # noqa: C901 - explicit chronological order and event/fill boundaries
                 if not np.isfinite(price) or price <= 0:
                     continue
                 entry["fills"][symbol] = {
-                    "side": "buy" if delta > 0 else "sell",
+                    "side": OrderSide.BUY if delta > 0 else OrderSide.SELL,
                     "qty": abs(delta),
                     "fill_price": price,
                     "notional": abs(delta) * price,
@@ -2327,7 +2328,10 @@ class _Book:
         return np.maximum(wanted, 0.0)
 
     # The share target of one shared funded plan: current shares moved by the
-    # plan's own continuous orders, for the same `_Book` to fill.
+    # plan's own continuous orders, for the same `_Book` to fill. The two
+    # `o.side == "buy"` tests in `_Book` stay as literals although
+    # `planner.Order.side` is an `OrderSide`: equality is unchanged, and the
+    # adaptive timing study pins this class's syntax tree (`BOOK_AST_SHA`).
     def funded_order(self, plan) -> np.ndarray:
         """Return the share target the shared funded plan wants held."""
         wanted = np.array(self.shares, dtype=float)

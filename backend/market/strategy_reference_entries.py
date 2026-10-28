@@ -25,6 +25,7 @@ from backend.market import strategy_publication as publication
 from backend.market import strategy_reference_transition as transition
 from backend.market import strategy_history_publication as history
 from backend.market import strategy_reference_book as reference_book
+from backend.market.labels import Action, TimingState
 
 VERSION = 'strategy-numerical-entries/2'
 BASIS = 'standing_counterfactual_reference_transition_not_viewer_order'
@@ -186,12 +187,12 @@ def project(snapshot, cache, quotes, now):
     rows = {}
     for name, row in value['rows'].items():
         pair = pairs.get(name)
-        state = row['state'] if pair is not None or row['action'] is None else 'unavailable'
+        state = row['state'] if pair is not None or row['action'] is None else TimingState.UNAVAILABLE
         evidence = deepcopy(snapshot['rows'][name]['evidence'])
         evidence['grade_permission_reason'] = evidence.get('reason')
         evidence['reason'] = ('Grade below A; exit the model reference position' if row['reason']=='mandatory_grade_exit'
-            else 'Model position reduction' if row['action']=='Sell'
-            else 'Model position increase' if row['action']=='Buy' else 'No additional model reference trade')
+            else 'Model position reduction' if row['action']==Action.SELL
+            else 'Model position increase' if row['action']==Action.BUY else 'No additional model reference trade')
         evidence.update(model_position_size=row['model_position_weight'], trade_size=row['trade_weight'],
             reference_position_size=row['reference_position_weight'], timing_reason=row['reason'] if pair else 'Fresh compatible IEX quote required',
             waiting_log_utility=row['waiting_log_utility'], completed_candle_at=completed.isoformat(),
@@ -277,16 +278,16 @@ def validate(value, snapshot, forecast=None):
         quoted = json.loads(body)['quotes']
     for name, row in value['rows'].items():
         saved = calculation['rows'][name]
-        if (row['action'] not in ('Buy', 'Sell', None) or row['state'] not in ('execute', 'wait', 'unavailable', 'no_trade')
+        if (row['action'] not in (Action.BUY, Action.SELL, None) or row['state'] not in TimingState
                 or type(row['size_weight']) not in (int, float) or not math.isfinite(row['size_weight']) or not 0 <= row['size_weight'] <= 1
                 or row['size_weight'] != saved['trade_weight'] or row['action'] != saved['action']
                 or row['model_position_weight'] != original[name][3] or row['model_position_weight'] != saved['model_position_weight']
                 or row['proposed_units'] != saved['proposed_units'] or row['reference_units'] != saved['reference_units']
-                or (row['action'] == 'Sell' and not 0 < row['proposed_units'] <= row['reference_units'])
-                or (row['state'] == 'execute' and not row['size_weight'] > 0)
+                or (row['action'] == Action.SELL and not 0 < row['proposed_units'] <= row['reference_units'])
+                or (row['state'] == TimingState.EXECUTE and not row['size_weight'] > 0)
                 or row['evidence']['model_position_size'] != row['model_position_weight']
                 or row['evidence']['trade_size'] != row['size_weight']
-                or row['state'] != (saved['state'] if row['quote_at'] is not None or row['action'] is None else 'unavailable')
+                or row['state'] != (saved['state'] if row['quote_at'] is not None or row['action'] is None else TimingState.UNAVAILABLE)
                 or any(row['evidence'][key] != snapshot['rows'][name]['evidence'][key] for key in ('grade','inputs_as_of','features'))):
             raise ValueError('Original reference action amount or position differs')
         if progressing and (row['attempt_resolved']!=(name in dict(book.resolved))
@@ -304,7 +305,8 @@ def validate(value, snapshot, forecast=None):
                     or datetime.fromisoformat(row['valid_until']) != until or not at<=stamp<=observed<until
                     or datetime.fromisoformat(row['evidence']['completed_candle_at']) != at):
                 raise ValueError('Original reference quote or expiry differs')
-        elif quoted is not None and row['state'] in ('execute','wait'):
+        elif quoted is not None and row['state'] in (TimingState.EXECUTE,
+                                                      TimingState.WAIT):
             raise ValueError('Fresh original quote required for reference action')
     return plan
 
@@ -360,7 +362,7 @@ def original_intent(root, value, name):
                 or original['receipt_sha256'] != publication._digest({k:v for k,v in original.items() if k != 'receipt_sha256'})):
             raise ValueError('Original standing reference intent differs')
         return original
-    if row['state'] != 'execute':
+    if TimingState(row['state']) is not TimingState.EXECUTE:
         return None
     original = {'ticker': name, **row, 'entry_version': value['version'], 'at': value['generated_at'], 'completed_at': value['completed_at'],
                 **{key:value[key] for key in ('snapshot_id', 'publication_receipt_sha256', 'forecast_receipt_sha256',

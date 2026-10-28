@@ -11,12 +11,16 @@ from backend.cli import market_release_admission as admission
 
 DAILY = "backend/cli/market_daily.py"
 VIEW = "backend/market/live_model_decision.py"
-# Pinned to the FOMC decision-close tree (the nightly holds decision-close
+# Pinned to the closed-label tree (order sides, desk actions, grade signals,
+# grades, execution timings and plan words compared and built as the
+# `backend.market.labels` enums; same wire strings, same decisions); before it
+# 46975df3... (the FOMC decision-close tree: the nightly holds decision-close
 # restorations for the balancer, gives them their session, and hands a released
-# cycle back to the ordinary planner the same night); before it b451c481...
-# (the grade-led-leader-weight/1 tree), and before that abff0526... and 3e894a1f....
-UNCHANGED = "46975df3d420de7df0570344b572f09053f6fa1b44011b46076f7f6f878c9fab"
-UNCHANGED_VIEW = "56d62816c0631178871341d0b064990b8ee82dbcbbaee710442326224b4df2f3"
+# cycle back to the ordinary planner the same night), b451c481... (the
+# grade-led-leader-weight/1 tree), and before that abff0526... and 3e894a1f....
+# The view pin was 56d62816... before the closed-label tree.
+UNCHANGED = "113d9cb402fcfb570100377b2215d5bbe473651fa23570dd02c9a972a0e6990e"
+UNCHANGED_VIEW = "aa9134c3b5401051f38a2702d2f672cfd7e8cf59be624eff40145d47e23649b2"
 
 
 # Build a synthetic approval transition around the actual candidate CLI source.

@@ -37,6 +37,7 @@ from zoneinfo import ZoneInfo
 
 from backend.agents.trading.desk import execution_evidence
 from backend.market import report_files
+from backend.market.labels import OrderSide
 
 VERSION = "execution-quality/2"
 NAME = "execution.json"
@@ -57,7 +58,7 @@ def benchmark_kind(row: dict) -> str:
     """Return "reference", "close" or "open" for the row's order type."""
     if (row.get("execution") or {}).get("reference_source") == INTRADAY_SOURCE:
         return "reference"
-    if row.get("side") == "sell" and not row.get("event_id"):
+    if row.get("side") == OrderSide.SELL and not row.get("event_id"):
         return "close"
     return "open"
 
@@ -145,7 +146,7 @@ def fill_rows(state, store=None) -> list[dict]:
         # and reports no split; the plan session's bar is always on file and
         # would produce a confident, wrong answer.
         mark = benchmark_price(row, store, filled, reference)
-        sign = 1 if row.get("side") == "buy" else -1
+        sign = 1 if row.get("side") == OrderSide.BUY else -1
         drift = None if mark is None else sign * qty * (mark - reference)
         slip = None if mark is None else sign * qty * (float(fill) - mark)
         out.append(
@@ -225,7 +226,7 @@ def report(state, now: datetime | None = None, store=None) -> dict:
         },
         "by_side": {
             side: aggregate([r for r in rows if r["side"] == side])
-            for side in ("buy", "sell")
+            for side in OrderSide
         },
         "series": series,
         # The worst fills are the worst *trades*: a name that gapped is not

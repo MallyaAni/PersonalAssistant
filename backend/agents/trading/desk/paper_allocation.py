@@ -54,6 +54,7 @@ import numpy as np
 
 from backend.agents.trading.desk import allocation, funded_execution, paper
 from backend.agents.trading.desk.allocation import QQQ, SPY
+from backend.market.labels import AllocationAction, OrderSide
 
 # The view version the shared metadata schema names.
 VIEW_VERSION = "portfolio-allocation-view/1"
@@ -189,7 +190,7 @@ def _projected_nav(
         if not _price_ok(price_map.get(order.symbol)):
             continue
         remaining[order.symbol] = remaining.get(order.symbol, 0.0) + (
-            order.qty if order.side == "buy" else -order.qty
+            order.qty if order.side == OrderSide.BUY else -order.qty
         )
     remaining = {
         symbol: qty
@@ -227,7 +228,7 @@ def _projected_cash(cash, orders, price_map, cost_bps: float) -> float:
         price = price_map.get(order.symbol)
         if not _price_ok(price):
             continue
-        if order.side == "buy":
+        if order.side == OrderSide.BUY:
             balance -= order.qty * price * (1.0 + cost)
         else:
             balance += order.qty * price * (1.0 - cost)
@@ -237,7 +238,7 @@ def _projected_cash(cash, orders, price_map, cost_bps: float) -> float:
 # The funded plan's risk-cut marker: the binding constraint, when a sell is one.
 def _risk_priority(order, decision) -> str | None:
     """Return the binding reason when `order` is a risk cut, else None."""
-    if order.side == "sell" and str(order.reason).startswith("risk reduction"):
+    if order.side == OrderSide.SELL and str(order.reason).startswith("risk reduction"):
         return decision.binding
     return None
 
@@ -276,7 +277,9 @@ def _rows(
     rows: dict = {}
     for symbol in symbols:
         delta = sum(
-            order.qty if order.symbol == symbol and order.side == "buy" else -order.qty
+            order.qty
+            if order.symbol == symbol and order.side == OrderSide.BUY
+            else -order.qty
             for order in orders
             if order.symbol == symbol
         )
@@ -292,7 +295,11 @@ def _rows(
             "current_weight": current_weight,
             "target_weight": target.get(symbol, 0.0) if target is not None else None,
             "projected_weight": projected_weights.get(symbol, 0.0),
-            "action": "BUY" if delta > 0 else "SELL" if delta < 0 else "HOLD",
+            "action": AllocationAction.BUY
+            if delta > 0
+            else AllocationAction.SELL
+            if delta < 0
+            else AllocationAction.HOLD,
             "reason": order_reason
             or (
                 "retain current position"
@@ -305,7 +312,7 @@ def _rows(
         "current_weight": current_cash_fraction,
         "target_weight": target_cash,
         "projected_weight": projected_cash_fraction,
-        "action": "HOLD",
+        "action": AllocationAction.HOLD,
         "reason": "cash residual; display asset, never an order",
     }
     return rows
@@ -579,12 +586,12 @@ def _paper_orders(new, session, plan, decision, blocked_names, excluded):
     held_back: list[str] = []
     orders: list[paper.PaperOrder] = []
     for order in plan.orders:
-        if order.side == "buy" and order.symbol in blocked_names:
+        if order.side == OrderSide.BUY and order.symbol in blocked_names:
             held_back.append(order.symbol)
             continue
         reason = (
             "explicit company exit (excluded_symbols)"
-            if order.side == "sell" and order.symbol in excluded
+            if order.side == OrderSide.SELL and order.symbol in excluded
             else order.reason
         )
         seq = new.order_seq
@@ -617,7 +624,7 @@ def _status_and_what(plan, decision, rebalance: bool) -> tuple[str, str]:
 def _excluded_reason(plan_reason, orders, excluded) -> str:
     """Return `plan_reason`, extended with the explicitly exited names."""
     exited = sorted(
-        {o.symbol for o in orders if o.side == "sell" and o.symbol in excluded}
+        {o.symbol for o in orders if o.side == OrderSide.SELL and o.symbol in excluded}
     )
     if not exited:
         return plan_reason
@@ -644,7 +651,7 @@ def _mark_planned(new, state, session, orders, rebalance):
     else:
         new.sessions_since_rebalance = state.sessions_since_rebalance + 1
     for order in orders:
-        if order.side == "buy":
+        if order.side == OrderSide.BUY:
             new.opened.setdefault(order.symbol, session)
 
 

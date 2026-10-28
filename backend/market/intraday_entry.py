@@ -88,6 +88,7 @@ from datetime import time as day_time
 from zoneinfo import ZoneInfo
 
 from backend.market import calendar
+from backend.market.labels import IntradayEntryState
 
 NEW_YORK = ZoneInfo("America/New_York")
 SESSION_OPEN = day_time(9, 30)
@@ -101,14 +102,14 @@ CANDLE = timedelta(minutes=BAR_MINUTES)
 RULE_NAME = "reclaim_above_level"
 RULE_VERSION = "1"
 
-UNAVAILABLE = "unavailable"
-WAIT = "wait"
-SETUP = "setup"
-ENTRY_READY = "entry_ready"
-INVALIDATED = "invalidated"
-AMBIGUOUS = "ambiguous"
-HISTORICAL = "historical"
-EXPIRED = "expired"
+UNAVAILABLE = IntradayEntryState.UNAVAILABLE
+WAIT = IntradayEntryState.WAIT
+SETUP = IntradayEntryState.SETUP
+ENTRY_READY = IntradayEntryState.ENTRY_READY
+INVALIDATED = IntradayEntryState.INVALIDATED
+AMBIGUOUS = IntradayEntryState.AMBIGUOUS
+HISTORICAL = IntradayEntryState.HISTORICAL
+EXPIRED = IntradayEntryState.EXPIRED
 
 
 # One completed 15-minute bar: time, OHLC and volume.
@@ -148,7 +149,7 @@ class EntrySignal:
     symbol: str
     session: date
     rule: str
-    state: str
+    state: IntradayEntryState
     identity: str
     recommendation: bool
     reason: str
@@ -305,7 +306,7 @@ def _identity(
 class _Walk:
     """The causal resolution plus session aggregates over every completed bar."""
 
-    state: str
+    state: IntradayEntryState
     setup_start: datetime | None
     trigger_time: datetime | None
     trigger_bar_start: datetime | None
@@ -451,7 +452,7 @@ def _walk(completed: list[Bar], levels: Levels) -> _Walk:
 
 # Explain the resolved state in the causal vocabulary of the rule.
 def _reason(
-    state: str,
+    state: IntradayEntryState,
     session_over: bool,
     levels: Levels,
     setup_start: datetime | None,

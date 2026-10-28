@@ -13,6 +13,7 @@ from datetime import date
 
 from backend.market import historical_timing_packet as packets
 from backend.market import replay_broker as native
+from backend.market.labels import OrderSide
 
 
 # Reject corrupt financial evidence while preserving native fractional holdings.
@@ -37,7 +38,7 @@ def _order(identifier, row, index):
         or row.get("client_order_id") != identifier
         or row.get("id") != f"private-replay-{index}"
         or row.get("status") != "accepted"
-        or row.get("side") not in ("buy", "sell")
+        or row.get("side") not in OrderSide
         or not isinstance(row.get("symbol"), str)
         or not row["symbol"]
         or row.get("type") != "market"
@@ -63,7 +64,7 @@ def _order(identifier, row, index):
     if date.fromisoformat(row["execute_on"]).isoformat() != row["execute_on"]:
         raise ValueError("Original execution session required")
     reserved = _number(row.get("reserved_cash"))
-    if row["side"] == "sell" and reserved != 0:
+    if row["side"] == OrderSide.SELL and reserved != 0:
         raise ValueError("Native sell cannot reserve cash")
     return int(quantity), reserved
 
@@ -92,7 +93,9 @@ def _attempt(broker, identifier, row, quantity, reserved):
         raise ValueError("Original accepted attempt binding differs")
     price = _number(attempt.get("observed_price"), positive=True)
     expected = (
-        quantity * price * (1 + broker.cost_bps / 1e4) if row["side"] == "buy" else 0.0
+        quantity * price * (1 + broker.cost_bps / 1e4)
+        if row["side"] == OrderSide.BUY
+        else 0.0
     )
     if not math.isfinite(expected) or reserved != expected:
         raise ValueError("Original observed-price cash reservation differs")
@@ -110,7 +113,7 @@ def _orders(broker, session):
         _market_session(broker, row, session)
         _attempt(broker, identifier, row, quantity, reserved)
         total_reserved += reserved
-        if row["side"] == "sell":
+        if row["side"] == OrderSide.SELL:
             name = row["symbol"]
             sell_reserved[name] = sell_reserved.get(name, 0) + quantity
         if row["execution_phase"] == "market" and row["execute_on"] == session:

@@ -53,6 +53,7 @@ import numpy as np
 
 from backend.agents.trading.desk import live_policy, point_in_time
 from backend.market import deskrecord, universe
+from backend.market.labels import DeskAction, OrderSide, PlanDay, as_member
 
 # The policy the history replays: the one the account runs, so the chart's
 # markers are the live policy's (`live_policy.ACTIVE`).
@@ -64,7 +65,13 @@ POLICY = live_policy.ACTIVE
 # five names or more and below any real add or trim.
 ADD_TRIM_MIN = 0.025
 DECISION_NOTE = "signals at each close; sizes are % of the account"
-ACTIONS = ("buy", "sell", "add", "trim", "hold")
+ACTIONS = (
+    DeskAction.BUY,
+    DeskAction.SELL,
+    DeskAction.ADD,
+    DeskAction.TRIM,
+    DeskAction.HOLD,
+)
 
 
 # The policy's target weight for every (session, name) of the report, on
@@ -97,22 +104,22 @@ def target_matrix(
 # a move of at least ADD_TRIM_MIN is the add or trim the rebalance places,
 # and on any other session every move is a hold, because the executor
 # does not follow the denominator between resets.
-def classify(previous: float, target: float, reset: bool | None = None) -> str:
+def classify(previous: float, target: float, reset: bool | None = None) -> DeskAction:
     """Return one of ACTIONS for a move from `previous` to `target`."""
     if previous <= 0.0 < target:
-        return "buy"
+        return DeskAction.BUY
     if target <= 0.0 < previous:
-        return "sell"
+        return DeskAction.SELL
     if reset is False:
-        return "hold"
+        return DeskAction.HOLD
     delta = target - previous
     # The threshold is inclusive; the epsilon keeps 0.10 -> 0.125 an add
     # whatever floating point makes of the subtraction.
     if delta >= ADD_TRIM_MIN - 1e-9:
-        return "add"
+        return DeskAction.ADD
     if delta <= -ADD_TRIM_MIN + 1e-9:
-        return "trim"
-    return "hold"
+        return DeskAction.TRIM
+    return DeskAction.HOLD
 
 
 # One name's decision on every session from `since`: the target weight,
@@ -201,7 +208,7 @@ def reset_sessions(root: Path) -> tuple[set[str], str]:
         except (OSError, ValueError):
             continue
         block = record.get("paper") if isinstance(record, dict) else None
-        if not isinstance(block, dict) or block.get("plan") != "rebalance":
+        if not isinstance(block, dict) or block.get("plan") != PlanDay.REBALANCE:
             continue
         try:
             until = int(block.get("until_rebalance", paper.REBALANCE_EVERY))
@@ -268,8 +275,10 @@ def fills(root: Path, ticker: str) -> list[dict]:
                 price = float(row.get("filled_price") or 0.0)
             except (TypeError, ValueError):
                 continue
-            side = str(row.get("side") or "").lower()
-            if qty <= 0 or price <= 0 or side not in ("buy", "sell"):
+            # A settled row whose side is missing or unrecognised is not a
+            # fill this history can draw, and is skipped as before.
+            side = as_member(OrderSide, str(row.get("side") or "").lower())
+            if qty <= 0 or price <= 0 or side is None:
                 continue
             when = row.get("completion_session") or record.get("session") or session
             identity = row.get("client_order_id")

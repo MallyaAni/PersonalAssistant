@@ -16,6 +16,7 @@ from datetime import datetime, time, timedelta
 import numpy as np
 
 from backend.market import calendar
+from backend.market.labels import ExchangePhase, MarketPhase
 
 # Brokers' after-hours sessions end at 20:00 New York; past that the night is
 # "overnight" rather than "after-hours" so the words match what a person sees
@@ -68,12 +69,16 @@ def describe(now: datetime) -> dict[str, object]:
     status = calendar.exchange_status(now)
     local = now.astimezone(calendar.NEW_YORK)
     phase = {
-        "pre-market": "pre_market" if local.time() >= PRE_MARKET_START else "overnight",
-        "open": "regular",
-        "post-market": "after_hours" if local.time() < AFTER_HOURS_END else "overnight",
-        "closed": "closed",
-        "unknown": "unknown",
-    }[str(status["phase"])]
+        ExchangePhase.PRE_MARKET: MarketPhase.PRE_MARKET
+        if local.time() >= PRE_MARKET_START
+        else MarketPhase.OVERNIGHT,
+        ExchangePhase.OPEN: MarketPhase.REGULAR,
+        ExchangePhase.POST_MARKET: MarketPhase.AFTER_HOURS
+        if local.time() < AFTER_HOURS_END
+        else MarketPhase.OVERNIGHT,
+        ExchangePhase.CLOSED: MarketPhase.CLOSED,
+        ExchangePhase.UNKNOWN: MarketPhase.UNKNOWN,
+    }[ExchangePhase(status["phase"])]
     opens_next = next_open_at(now)
     return {
         "phase": phase,
@@ -87,10 +92,10 @@ def describe(now: datetime) -> dict[str, object]:
         # The desk acts only in the regular session, so the next action is
         # the next open whenever the session is not in progress.
         "next_action_at": status["opens_at"]
-        if phase == "pre_market"
+        if phase == MarketPhase.PRE_MARKET
         else (
             now.isoformat()
-            if phase == "regular"
+            if phase == MarketPhase.REGULAR
             else (opens_next.isoformat() if opens_next else None)
         ),
         "next_publication_at": next_publication_at(now).isoformat(),

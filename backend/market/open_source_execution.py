@@ -17,6 +17,7 @@ from types import SimpleNamespace
 from backend.agents.trading.desk import intraday_orders
 from backend.market import bounded_execution as bounded
 from backend.market import entry_timing
+from backend.market.labels import OrderSide
 
 ENGINE_VERSION = "1.231.0"
 SCHEMA = "nautilus-quote-replay/1"
@@ -296,18 +297,20 @@ def submit_native(strategy, api, ctx, data, row, quote, receipt):
         if ctx.mode == "bounded"
         else float(quote["ask"])
     )
-    if row["side"] == "buy":
+    if row["side"] == OrderSide.BUY:
         qty = min(row["qty"], math.floor(cash / (price * (1 + float(ctx.rate)))))
     else:
         qty = min(
             row["qty"], max(0, int(strategy.portfolio.net_position(instrument.id)))
         )
     if qty <= 0:
-        receipt["state"] = "unfunded" if row["side"] == "buy" else "no_holding"
+        receipt["state"] = "unfunded" if row["side"] == OrderSide.BUY else "no_holding"
         return
     args = dict(
         instrument_id=instrument.id,
-        order_side=api.OrderSide.BUY if row["side"] == "buy" else api.OrderSide.SELL,
+        order_side=api.OrderSide.BUY
+        if row["side"] == OrderSide.BUY
+        else api.OrderSide.SELL,
         quantity=instrument.make_qty(qty),
         client_order_id=api.ClientOrderId(data.cid),
         time_in_force=api.TimeInForce.IOC,

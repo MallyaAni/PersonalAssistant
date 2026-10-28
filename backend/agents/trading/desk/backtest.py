@@ -25,6 +25,7 @@ import numpy as np
 from backend.agents.trading.desk.entry import Entries
 from backend.agents.trading.desk.grading import ORDINAL, SIZE_MULTIPLIER, A, B, C
 from backend.market import levels
+from backend.market.labels import BacktestPending
 
 STOP_BUFFER = 0.03
 # Measured on eight names since 2024 and six since mid-2021: every price
@@ -114,7 +115,7 @@ class _Position:
     worst: float = 0.0
     highest: float = float("nan")
     c_streak: int = 0
-    pending: str | None = None  # "enter" or an exit reason, acted on next open
+    pending: BacktestPending | None = None  # acted on at the next open
 
 
 # Run one name through the rules from `since`.
@@ -225,7 +226,7 @@ def _act_at_open(
     rules,
     trades,
 ) -> float:
-    if pos.pending == "enter" and pos.held == 0.0:
+    if pos.pending is BacktestPending.ENTER and pos.held == 0.0:
         state = report.regime.states[t - 1]
         letter = _letter(int(report.graded.grades[t - 1, column]))
         pos.held = SIZE_MULTIPLIER[letter] * state.exposure
@@ -248,7 +249,7 @@ def _act_at_open(
         if rules.stop_kind == CHANDELIER:
             pos.stop_level = float("nan")  # set from the first close
         return -pos.held * rules.cost_bps / 1e4
-    if pos.pending not in (None, "enter") and pos.held > 0:
+    if pos.pending not in (None, BacktestPending.ENTER) and pos.held > 0:
         ret = float(np.log(price_open / pos.entry_price))
         contribution = pos.held * ret - pos.held * rules.cost_bps / 1e4
         trades.append(
@@ -276,13 +277,13 @@ def _decide_at_close(pos, grade, price_close, triggered, rules, can_enter) -> No
     if pos.held > 0:
         pos.c_streak = pos.c_streak + 1 if grade < ORDINAL[rules.hold_grade] else 0
         if rules.stop and np.isfinite(pos.stop_level) and price_close < pos.stop_level:
-            pos.pending = "stop"
+            pos.pending = BacktestPending.STOP
         elif rules.grade_exit and pos.c_streak >= rules.patience:
-            pos.pending = "grade"
+            pos.pending = BacktestPending.GRADE
         return
     qualifies = grade >= ORDINAL[rules.min_entry_grade]
     if qualifies and ((not rules.entry_trigger) or triggered) and can_enter:
-        pos.pending = "enter"
+        pos.pending = BacktestPending.ENTER
 
 
 # Average true range over `n` sessions, in adjusted price units.

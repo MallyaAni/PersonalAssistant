@@ -23,6 +23,13 @@ from backend.market import (
     sequential_execution_models,
     sequential_execution_replay,
 )
+from backend.market.labels import (
+    OrderSide,
+    ShadowForecastState,
+    TimingState,
+    as_member,
+    parse,
+)
 from backend.market.sip_cube import SessionCube
 
 MANIFEST_SHA = "21afa50d2d36c1f03c20fa50dd4c18b05538865559ee80f7bf7ea553373a4c00"
@@ -131,7 +138,7 @@ def observe(panel, grades, eligible, cube, clock, received_at, *, published_at, 
                 entry_timing.crosses(value, bars["open"][0, 0], side)
                 for value in bars["close"][0, : clock + 1]
             )
-            for side in ("buy", "sell")
+            for side in OrderSide
         },
     )
 
@@ -177,13 +184,12 @@ def load_model(directory):
 
 # Score an observed prefix without looking at prices or labels after its receipt.
 def decide(observation, model, side):
-    if side not in ("buy", "sell"):
-        raise ValueError("Buy/sell side required")
+    side = parse(OrderSide, side, "Buy/sell side required")
     if observation.session < f"{MODEL_MONTH}-01":
         raise ValueError("Frozen model cannot score before its actual fitting date")
     result = {
         "policy": POLICY,
-        "state": "unavailable",
+        "state": ShadowForecastState.UNAVAILABLE,
         "predicted_difference": None,
         "model_month": MODEL_MONTH,
         "max_training_label_end": model.max_label_end,
@@ -197,9 +203,9 @@ def decide(observation, model, side):
     if not observation.supported or observation.raw_price is None:
         return result
     if observation.clock == 24:
-        result["state"] = "terminal_attempt"
+        result["state"] = ShadowForecastState.TERMINAL_ATTEMPT
         return result
-    head = model.heads.get(f"{observation.clock}_{int(side == 'sell')}")
+    head = model.heads.get(f"{observation.clock}_{int(side is OrderSide.SELL)}")
     if not observation.valid or head is None:
         return result
     predicted = sequential_execution_models._predict(head, observation.features[None])[
@@ -207,7 +213,9 @@ def decide(observation, model, side):
     ]
     predicted = float(np.float32(predicted))
     result.update(
-        state=sequential_execution_models.decision(predicted, side),
+        state=ShadowForecastState(
+            sequential_execution_models.decision(predicted, side)
+        ),
         predicted_difference=predicted if np.isfinite(predicted) else None,
     )
     return result
@@ -230,7 +238,7 @@ def _exclusion(row, state, opened, session):
     if row.get("execute_on") != str(session):
         return "different_execution_session"
     if (
-        row.get("side") not in ("buy", "sell")
+        as_member(OrderSide, row.get("side")) is None
         or not isinstance(row.get("symbol"), str)
         or not row.get("symbol")
         or isinstance(row.get("qty"), bool)
@@ -330,8 +338,12 @@ def inspect_intents(snapshot, observations, model, *, attempted_ids=()):
             state = forecast["state"]
             price = observation.raw_price
             capacity = 0
-            if state in ("execute", "terminal_attempt") and price is not None:
-                if order["side"] == "buy":
+            if (
+                state
+                in (ShadowForecastState.EXECUTE, ShadowForecastState.TERMINAL_ATTEMPT)
+                and price is not None
+            ):
+                if OrderSide(order["side"]) is OrderSide.BUY:
                     capacity = min(order["qty"], int(cash // price))
                     cash = max(0.0, cash - capacity * price)
                 else:
@@ -348,21 +360,21 @@ def inspect_intents(snapshot, observations, model, *, attempted_ids=()):
                 "forecast": forecast,
                 "conditional_whole_share_capacity_at_observed_price": capacity,
                 "current_gate_state": (
-                    "unavailable"
+                    TimingState.UNAVAILABLE
                     if observation is None
                     or not observation.supported
                     or observation.raw_price is None
-                    else "execute"
+                    else TimingState.EXECUTE
                     if observation.clock == 24
                     or observation.legacy_triggered[order["side"]]
-                    else "wait"
+                    else TimingState.WAIT
                 ),
                 "first_available_state": (
-                    "execute"
+                    TimingState.EXECUTE
                     if observation is not None
                     and observation.supported
                     and observation.raw_price is not None
-                    else "unavailable"
+                    else TimingState.UNAVAILABLE
                 ),
                 "order_submission": False,
                 "actual_fill": False,

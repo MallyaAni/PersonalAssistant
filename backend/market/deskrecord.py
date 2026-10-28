@@ -13,8 +13,10 @@ import json
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from backend.market.labels import DeskAction, Grade
+
 DESK_KIND = "desk"
-GRADE_ORDER = {"A+": 3, "A": 2, "B": 1, "C": 0}
+GRADE_ORDER = {Grade.A_PLUS: 3, Grade.A: 2, Grade.B: 1, Grade.C: 0}
 
 
 # The sessions with a record, oldest first.
@@ -86,7 +88,7 @@ class Order:
     """One thing to do at the next open, with the reason."""
 
     ticker: str
-    action: str  # "buy", "sell", "add", "trim"
+    action: DeskAction  # buy, sell, add or trim
     weight_from: float
     weight_to: float
     grade_from: str | None
@@ -162,14 +164,15 @@ def changes(latest: dict, previous: dict | None, min_trade: float = 0.005) -> Ch
         if abs(w1 - w0) < min_trade:
             continue
         if w0 == 0.0:
-            action, reason = "buy", f"enters the book at grade {after.get(ticker, '?')}"
+            action = DeskAction.BUY
+            reason = f"enters the book at grade {after.get(ticker, '?')}"
         elif w1 == 0.0:
-            action = "sell"
+            action = DeskAction.SELL
             reason = f"leaves the book (grade {after.get(ticker, '?')})"
         elif w1 > w0:
-            action, reason = "add", "weight raised on the rebalance"
+            action, reason = DeskAction.ADD, "weight raised on the rebalance"
         else:
-            action, reason = "trim", "weight lowered on the rebalance"
+            action, reason = DeskAction.TRIM, "weight lowered on the rebalance"
         orders.append(
             Order(ticker, action, w0, w1, before.get(ticker), after.get(ticker), reason)
         )
@@ -189,7 +192,7 @@ def changes(latest: dict, previous: dict | None, min_trade: float = 0.005) -> Ch
 # A compact summary of a record for a card: counts, gross, the top names.
 def summary(record: dict) -> dict:
     """Return the headline facts of a record."""
-    counts: dict[str, int] = {"A+": 0, "A": 0, "B": 0, "C": 0}
+    counts: dict[str, int] = {grade: 0 for grade in Grade}
     for g in record.get("grades", {}).values():
         counts[g["grade"]] = counts.get(g["grade"], 0) + 1
     book = record.get("book", [])

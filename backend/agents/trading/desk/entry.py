@@ -22,13 +22,14 @@ from dataclasses import dataclass
 import numpy as np
 
 from backend.market import levels, technical
+from backend.market.labels import EntryState
 from backend.market.panel import Panel
 
 DIP_BELOW_EMA = -0.08
 BAND_Z = -1.0
 BREAKOUT_RANGE = 0.8
-DIP = "dip"
-BREAKOUT = "breakout"
+DIP = EntryState.DIP
+BREAKOUT = EntryState.BREAKOUT
 
 
 @dataclass(frozen=True)
@@ -46,7 +47,7 @@ class Entries:
         return self.dip | self.breakout
 
     # Which trigger fired for one name on one session, or None.
-    def kind(self, t: int, column: int) -> str | None:
+    def kind(self, t: int, column: int) -> EntryState | None:
         """Return "dip", "breakout" or None."""
         if self.dip[t, column]:
             return DIP

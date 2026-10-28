@@ -43,6 +43,7 @@ import numpy as np
 from backend.agents.trading.desk import allocation, planner
 from backend.agents.trading.desk.allocation import AllocationDecision
 from backend.agents.trading.desk.paper import ENTRY_NAME_CAP
+from backend.market.labels import OrderSide
 
 
 # The version the optional execution path reports for each policy.
@@ -493,7 +494,7 @@ def _continuous_orders(
         orders.append(
             planner.Order(
                 symbol,
-                "sell",
+                OrderSide.SELL,
                 qty,
                 priced[symbol],
                 _sell_reason(decision, symbol, want, risk_cut),
@@ -506,7 +507,7 @@ def _continuous_orders(
         orders.append(
             planner.Order(
                 symbol,
-                "buy",
+                OrderSide.BUY,
                 scaled,
                 priced[symbol],
                 "funded allocation toward target",
@@ -605,7 +606,7 @@ def _whole_share_bound(
     buys: list[tuple[planner.Order, int]] = []
     sells: list[tuple[planner.Order, int]] = []
     for o in orders:
-        if o.side == "sell":
+        if o.side == OrderSide.SELL:
             qty = _whole_share_sell(
                 o,
                 held.get(o.symbol, 0.0),
@@ -739,7 +740,7 @@ def plan_funded(
     result = dict(held)
     for o in orders:
         result[o.symbol] = result.get(o.symbol, 0.0) + (
-            o.qty if o.side == "buy" else -o.qty
+            o.qty if o.side == OrderSide.BUY else -o.qty
         )
     # The actual projected balances of the returned order basket at the
     # reference prices: cash is the pre-trade cash moved by the net sale
@@ -748,8 +749,12 @@ def plan_funded(
     # executable and cash - use this NAV as their denominator, so the fee-free
     # complement of the executable weights is never presented as the projected
     # cash.
-    buy_notional = sum(o.qty * priced[o.symbol] for o in orders if o.side == "buy")
-    sell_notional = sum(o.qty * priced[o.symbol] for o in orders if o.side == "sell")
+    buy_notional = sum(
+        o.qty * priced[o.symbol] for o in orders if o.side == OrderSide.BUY
+    )
+    sell_notional = sum(
+        o.qty * priced[o.symbol] for o in orders if o.side == OrderSide.SELL
+    )
     # Buys are scaled to the cash on hand, so the projected cash can only land
     # below zero through float rounding of that scale; report the nonnegative
     # balance the basket actually leaves, the same guard the paper path's own

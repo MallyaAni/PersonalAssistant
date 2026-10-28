@@ -39,6 +39,7 @@ from backend.agents.trading.desk import desk as trading_desk
 from backend.agents.trading.desk import event_risk, planner, scorecard, simulate
 from backend.agents.trading.desk.simulate import SimResult
 from backend.market import challenger, deskrecord
+from backend.market.labels import OrderSide
 from backend.market.store import MarketStore
 
 
@@ -156,7 +157,7 @@ def _forward_walk(
                 notional = o.qty * ob
                 traded += notional
                 cost = notional * (COST_BPS / 1e4)
-                if o.side == "buy":
+                if o.side == OrderSide.BUY:
                     cash -= notional + cost
                     held[o.symbol] = held.get(o.symbol, 0.0) + o.qty
                 else:

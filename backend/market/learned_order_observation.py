@@ -8,6 +8,7 @@ from pathlib import Path
 from backend.agents.trading.desk import paper
 from backend.market import calendar, entry_timing, execution_quotes, learned_live_timing
 from backend.market import forward_probability_timing as timing
+from backend.market.labels import TimingState
 from backend.market.live_probability_timing import POLICY
 
 CONTRACT = "learned-order-observation/1"
@@ -63,8 +64,8 @@ def retain(root, observations, now):
             or timed["side"] != row["side"]
             or timed["desired_qty"] != row["qty"]
             or entry_timing._instant(timed["at"]) != now
-            or timed["state"] not in ("execute", "wait", "unavailable", "no_trade")
-            or (verdict["send"] is not None) != (timed["state"] == "execute")
+            or timed["state"] not in TimingState
+            or (verdict["send"] is not None) != (timed["state"] == TimingState.EXECUTE)
             or digest != timing._digest(receipt)
             or cid in verdicts
             or (shared is not None and shared != receipt)
@@ -188,7 +189,8 @@ def for_rows(root, rows, now, *, held, equity, budget, prices):
                 or timed["policy"] != POLICY
                 or timed["intent_id"] != row["client_order_id"]
                 or timed["at"] != batch["observed_at"]
-                or timed["state"] not in ("execute", "wait", "unavailable", "no_trade")
+                # A batch row in any other state is skipped, as before.
+                or timed["state"] not in TimingState
             ):
                 continue
             result[row["client_order_id"]] = {
@@ -241,7 +243,7 @@ def clock_status(observation, now):
         return "waiting", "Learned forecast unavailable"
     if not observation["current"]:
         return "waiting", "Awaiting current learned decision"
-    if observation["state"] == "execute":
+    if observation["state"] == TimingState.EXECUTE:
         return "due", "Learned timing ready; submission unconfirmed"
     return "waiting", observation["reason"] or "Learned timing waiting"
 

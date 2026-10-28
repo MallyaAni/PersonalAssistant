@@ -99,6 +99,7 @@ from backend.market import stage3_io as io
 from backend.market import stage4_labels as lab
 from backend.market import stage4_orders as so
 from backend.market.fill_timing import clustered_t
+from backend.market.labels import OrderSide
 from backend.market.sip_cube import SessionCube
 
 PLAN = lab.PLAN
@@ -217,8 +218,8 @@ def oracle_prices(
     idx = np.flatnonzero((ahead >= 0).all(axis=1) & np.isfinite(factor).all(axis=1))
     if len(idx):
         closes = cube.close[ahead[idx]] * factor[idx][:, :, None]
-        out["buy"][idx] = closes.min(axis=(1, 2))
-        out["sell"][idx] = closes.max(axis=(1, 2))
+        out[OrderSide.BUY][idx] = closes.min(axis=(1, 2))
+        out[OrderSide.SELL][idx] = closes.max(axis=(1, 2))
     return out
 
 
@@ -597,7 +598,7 @@ def price_book(
         acted = np.ones(len(rows), dtype=bool)
     elif decider == "D1":
         acted = ~market.recent[t, j]
-        if side == "buy":
+        if side == OrderSide.BUY:
             with np.errstate(invalid="ignore"):
                 acted &= market.vix[t] < VIX_STRESS
     elif decider in ("D2", "D3"):
@@ -675,7 +676,7 @@ def session_window(
 # holds the stock) and -1 for a buy (waiting holds cash), μ in bp a session.
 def drift_adjusted(book: Book, mu_bp: float) -> np.ndarray:
     """Return the (K,) drift-adjusted gains in bp."""
-    sign = 1.0 if book.side == "sell" else -1.0
+    sign = 1.0 if book.side == OrderSide.SELL else -1.0
     return book.gain - sign * float(mu_bp) * book.wait
 
 
@@ -808,8 +809,8 @@ def group_values(side: str) -> dict[str, tuple[str, ...]]:
     """Return {group: labels} for `side`."""
     return {
         "kind": so.KINDS,
-        "detail": so.BUY_DETAILS if side == "buy" else so.SELL_DETAILS,
-        "grade": BUY_GRADES if side == "buy" else SELL_GRADES,
+        "detail": so.BUY_DETAILS if side == OrderSide.BUY else so.SELL_DETAILS,
+        "grade": BUY_GRADES if side == OrderSide.BUY else SELL_GRADES,
         "vix": VIX_REGIMES,
     }
 

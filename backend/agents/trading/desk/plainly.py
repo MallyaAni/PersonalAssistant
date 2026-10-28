@@ -32,6 +32,7 @@ from __future__ import annotations
 
 import numpy as np
 
+from backend.market.labels import Grade
 from backend.market.levels import (
     KIND_EMA50,
     KIND_EMA200,
@@ -210,11 +211,11 @@ SCORED_BY_ANALYST: dict[str, tuple[str, ...]] = {
 SCORE_CONTEXT_ANALYSTS = frozenset({"fundamental", "sentiment", "value"})
 
 # What the desk does at each grade, in the operator's own words.
-ACTION: dict[str, str] = {
-    "A+": "own it",
-    "A": "own it",
-    "B": "wait",
-    "C": "avoid it",
+ACTION: dict[Grade, str] = {
+    Grade.A_PLUS: "own it",
+    Grade.A: "own it",
+    Grade.B: "wait",
+    Grade.C: "avoid it",
 }
 
 # How many measurements to name per analyst. Two is a sentence; nine is

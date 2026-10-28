@@ -9,6 +9,7 @@ from __future__ import annotations
 import numpy as np
 
 from backend.agents.trading.desk import paper, policy_v5
+from backend.market.labels import Grade, OrderSide
 from backend.market.learned_retention import (
     RetentionPlan,
     plan_retention,
@@ -133,12 +134,12 @@ class RetentionAdapter:
             symbol
             for symbol, reason in finished.items()
             if reason == "grade rotation"
-            and grades.get(symbol) == "B"
+            and grades.get(symbol) == Grade.B
             and held.get(symbol, 0) > 0
         }
         if not ordinary:
             return dict(finished), set(excluded), {}
-        ordinal = {"C": 0, "B": 1, "A": 2, "A+": 3}
+        ordinal = {Grade.C: 0, Grade.B: 1, Grade.A: 2, Grade.A_PLUS: 3}
         values = np.array([prices.get(s, np.nan) for s in self.symbols], dtype=float)
         quantities = np.array([held.get(s, 0) for s in self.symbols], dtype=float)
         grade_values = np.array([ordinal.get(grades.get(s), -1) for s in self.symbols])
@@ -149,11 +150,13 @@ class RetentionAdapter:
         proposal = paper._rotation_orders(
             finished, held, prices, equity, str(t), paper.PaperState(), excluded, False
         )
-        released = sum(o.qty * prices[o.symbol] for o in proposal if o.side == "sell")
+        released = sum(
+            o.qty * prices[o.symbol] for o in proposal if o.side == OrderSide.SELL
+        )
         weights = np.zeros(len(self.symbols))
         if released > 0:
             for order in proposal:
-                if order.side == "buy":
+                if order.side == OrderSide.BUY:
                     weights[self.symbols.index(order.symbol)] += (
                         order.qty * prices[order.symbol] / released
                     )

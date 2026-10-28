@@ -20,6 +20,7 @@ from backend.market import (
     forward_actions,
     holdings,
 )
+from backend.market.labels import Action, OrderSide
 
 VERSION = "board-paper/2"
 SLIPPAGE = 0.001  # Additional 10 bp per side beyond the observed bid/ask.
@@ -133,13 +134,14 @@ def transition(state, decisions, research, now):
         if abs(gap) < MIN_TRADE:
             continue
         eligible[ticker] = {
-            "action": "Buy" if gap > 0 else "Sell",
+            "action": Action.BUY if gap > 0 else Action.SELL,
             "weight": targets[ticker],
         }
     buy_cash = cash
     # Sales cannot fund buys during the same observation.
     for ticker, intent in sorted(
-        state["pending"].items(), key=lambda item: item[1]["action"] != "Sell"
+        state["pending"].items(),
+        key=lambda item: Action(item[1]["action"]) is not Action.SELL,
     ):
         current = eligible.get(ticker)
         if not current or current["action"] != intent["action"]:
@@ -156,7 +158,7 @@ def transition(state, decisions, research, now):
                 "entry_date": now.date().isoformat(),
             },
         )
-        buying = intent["action"] == "Buy"
+        buying = Action(intent["action"]) is Action.BUY
         weight = (
             min(intent["weight"], current["weight"])
             if buying
@@ -199,7 +201,7 @@ def transition(state, decisions, research, now):
         fills.append(
             {
                 "ticker": ticker,
-                "side": "buy" if buying else "sell",
+                "side": OrderSide.BUY if buying else OrderSide.SELL,
                 "shares": quantity,
                 "price": price,
                 "quote_at": quote["at"],

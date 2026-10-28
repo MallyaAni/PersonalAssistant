@@ -81,6 +81,7 @@ from typing import Any, TextIO
 from backend.agents.trading.desk import point_in_time
 from backend.cli.market_session_anatomy import DEFAULT_WORKERS, load_cubes
 from backend.market import fill_timing, stage3_io, universe, vol_forecast
+from backend.market.labels import OrderSide
 from backend.market.session_anatomy import json_ready
 from backend.market.store import MarketStore
 
@@ -452,8 +453,8 @@ def _render_ti(payload: dict[str, Any]) -> list[str]:
                 f"{_num(row['mean_daily_bp_vs_dip'], 1):>7}"
                 f"{_num(row['hac_t_vs_dip']):>8}{row['offsets_above_dip']:>6}"
                 f"{_pct(orders['all']['before_close_share']):>7}"
-                f"{_pct(orders['buy']['before_close_share']):>7}"
-                f"{_pct(orders['sell']['before_close_share']):>7}"
+                f"{_pct(orders[OrderSide.BUY]['before_close_share']):>7}"
+                f"{_pct(orders[OrderSide.SELL]['before_close_share']):>7}"
                 f"{_num(orders['all']['gain_bp_per_fill'], 1):>8}"
                 f"{_num(versus['bp_per_differing_order'], 1):>9}"
                 f"{_num(versus['clustered_t']):>9}{versus['differing']:>7}"

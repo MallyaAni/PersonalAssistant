@@ -13,6 +13,7 @@ from datetime import datetime
 from decimal import ROUND_CEILING, ROUND_FLOOR, Decimal, InvalidOperation
 
 from backend.market import entry_timing
+from backend.market.labels import ExecutionIntent, OrderSide, as_member
 
 VERSION = "bounded-execution/1"
 LIMIT_IOC = "limit_ioc"
@@ -58,13 +59,14 @@ def instant(value):
 
 # Round toward a stricter price bound using the broker's equity price increments.
 def limit_text(value, side):
-    if positive(value) is None or side not in ("buy", "sell"):
+    side = as_member(OrderSide, side)
+    if positive(value) is None or side is None:
         raise ValueError("invalid limit price or side")
     try:
         price = Decimal(str(value))
         tick = Decimal("0.01") if price >= 1 else Decimal("0.0001")
         rounded = price.quantize(
-            tick, rounding=ROUND_FLOOR if side == "buy" else ROUND_CEILING
+            tick, rounding=ROUND_FLOOR if side is OrderSide.BUY else ROUND_CEILING
         )
     except InvalidOperation as exc:
         raise ValueError("invalid limit price") from exc
@@ -96,9 +98,9 @@ def contract_error(row, cfg):
         return "Execution identity and quote source required"
     intent = cfg["intent"]
     if (cfg["side"], intent) not in (
-        ("buy", "entry"),
-        ("sell", "trim"),
-        ("sell", "exit"),
+        (OrderSide.BUY, ExecutionIntent.ENTRY),
+        (OrderSide.SELL, ExecutionIntent.TRIM),
+        (OrderSide.SELL, ExecutionIntent.EXIT),
     ):
         return "Explicit entry, trim or exit intent required"
     if (
@@ -203,10 +205,16 @@ def evaluate(row, timed, quote, now, today):
         out.update(state="expired", reason="Execution permission expired")
     elif not timed.get("trading_day") or not clock["open"] <= now < clock["close"]:
         out.update(state="closed", reason="Outside the regular session")
-    elif cfg["intent"] != "exit" and timed["state"] not in entry_timing.ACTING:
+    elif (
+        ExecutionIntent(cfg["intent"]) is not ExecutionIntent.EXIT
+        and timed["state"] not in entry_timing.ACTING
+    ):
         out.update(state="waiting", reason="Waiting for an entry or trim trigger")
     else:
-        if cfg["intent"] != "exit" and timed["state"] == entry_timing.TRIGGERED:
+        if (
+            ExecutionIntent(cfg["intent"]) is not ExecutionIntent.EXIT
+            and timed["state"] == entry_timing.TRIGGERED
+        ):
             bar = instant(timed.get("trigger_bar"))
             ended = bar + entry_timing.BAR if bar else None
             if (
@@ -235,12 +243,11 @@ def evaluate(row, timed, quote, now, today):
                 "source": quote["source"],
                 "price_basis": quote["price_basis"],
             }
-            executable = quote["ask"] if cfg["side"] == "buy" else quote["bid"]
+            buying = OrderSide(cfg["side"]) is OrderSide.BUY
+            executable = quote["ask"] if buying else quote["bid"]
             limit = float(out["limit_price"])
             within = (
-                float(executable) <= limit
-                if cfg["side"] == "buy"
-                else float(executable) >= limit
+                float(executable) <= limit if buying else float(executable) >= limit
             )
             out.update(
                 state="due" if within else "price_blocked",

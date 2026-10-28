@@ -11,6 +11,7 @@ from pathlib import Path
 import numpy as np
 
 from backend.cli.market_learned_entry import sha256, write_json
+from backend.market.labels import OrderSide, TimingState
 from backend.market.learned_entry_models import _array_hash
 
 SCHEMA = "verified-continuation-bank/1"
@@ -280,7 +281,7 @@ def execute(config):
 
 # Verify side decisions against saved means without fitting or resimulating trades.
 def check_trace(account, bank):
-    counts = dict.fromkeys(("execute", "wait", "unavailable", "no_trade"), 0)
+    counts = dict.fromkeys(tuple(TimingState), 0)
     intents = {row["client_order_id"]: row for row in account["intents"]}
     for row in account["forecast_decisions"]:
         day, clock = row["day"], row["clock"]
@@ -299,14 +300,14 @@ def check_trace(account, bank):
             or row["session"] != str(bank.dates[day])
         ):
             raise ValueError("Original continuation decision identity differs")
-        state, mean = row["state"], row["continuation_mean"]
-        if state in ("execute", "wait"):
+        state, mean = TimingState(row["state"]), row["continuation_mean"]
+        if state in (TimingState.EXECUTE, TimingState.WAIT):
             stock = bank.symbols.index(row["symbol"])
-            side = 0 if row["side"] == "buy" else 1
+            side = 0 if OrderSide(row["side"]) is OrderSide.BUY else 1
             saved = bank.means[day, clock, stock, side]
             waiting = saved > 0 if side == 0 else saved < 0
             if not np.isfinite(saved) or mean != saved or row["reason"] or (
-                state != ("wait" if waiting else "execute")
+                state is not (TimingState.WAIT if waiting else TimingState.EXECUTE)
                 or row["trade_fraction"] <= 0
             ):
                 raise ValueError("Saved continuation side decision differs")

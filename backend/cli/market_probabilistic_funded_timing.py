@@ -21,6 +21,7 @@ from backend.market import learned_entry_models as original
 from backend.market import probabilistic_execution as probability
 from backend.market import probabilistic_execution_replay as replay
 from backend.market import probabilistic_execution_saved as restored
+from backend.market.labels import OrderSide
 
 METHODS = ("boosting", "ridge")
 REPORT_SHA = "67084f65042a1defe87cfc5372ef5dd1de9e18e86a50b8c9d94b9d223681bf34"
@@ -148,7 +149,7 @@ def fixed_quantity_attribution(control, candidate, cost):
             )
             gain = quantity * (
                 (old["realized_price"] - new["realized_price"]) * (1 + rate)
-                if old["side"] == "buy"
+                if old["side"] == OrderSide.BUY
                 else (new["realized_price"] - old["realized_price"]) * (1 - rate)
             )
         rows.append(

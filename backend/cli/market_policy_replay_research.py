@@ -43,6 +43,7 @@ from backend.agents.trading.desk import desk, point_in_time
 from backend.cli import market_pit_scorecard as scorecard
 from backend.market import grade_led_leader_policy as leader
 from backend.market import policy_book, universe
+from backend.market.labels import ExecutionTiming, TradeAction
 from backend.market.store import MarketStore
 
 DIRECTORY = "research/policy-replay"
@@ -169,8 +170,12 @@ def realised(panel, column: int, trades: list[dict]) -> dict:
     for t in range(n):
         held = weight
         fills = by_session.get(t, [])
-        opening = [x for x in fills if x.get("timing") != "decision_close"]
-        closing = [x for x in fills if x.get("timing") == "decision_close"]
+        opening = [
+            x for x in fills if x.get("timing") != ExecutionTiming.DECISION_CLOSE
+        ]
+        closing = [
+            x for x in fills if x.get("timing") == ExecutionTiming.DECISION_CLOSE
+        ]
         middle = opening[-1]["target"] if opening else held
         weight = closing[-1]["target"] if closing else middle
         costs[t] = COST_BPS / 1e4 * (abs(middle - held) + abs(weight - middle))
@@ -429,7 +434,7 @@ def _arm_trades(path: np.ndarray, dates: list[str]) -> list[dict]:
                 {
                     "decided": dates[t],
                     "date": dates[t + 1],
-                    "action": "BUY" if delta > 0 else "SELL",
+                    "action": TradeAction.BUY if delta > 0 else TradeAction.SELL,
                     "size": abs(delta),
                     "target": weight,
                 }

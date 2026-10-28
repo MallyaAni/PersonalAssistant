@@ -8,6 +8,8 @@ import math
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
+from backend.market.labels import OrderSide, as_member
+
 TIMESTAMPS = (
     "created_at",
     "submitted_at",
@@ -54,7 +56,9 @@ def completion_session(execution):
 
 # Measure aggregate fill drift from the recorded decision price; positive is adverse.
 def decision_shortfall_bps(side, filled_price, reference):
-    if side not in ("buy", "sell"):
+    # A row without a recognised side is not measured, deliberately.
+    side = as_member(OrderSide, side)
+    if side is None:
         return None
     try:
         fill, price = float(filled_price), float(reference)
@@ -62,4 +66,4 @@ def decision_shortfall_bps(side, filled_price, reference):
         return None
     if not all(math.isfinite(p) and p > 0 for p in (fill, price)):
         return None
-    return (1 if side == "buy" else -1) * (fill / price - 1) * 1e4
+    return (1 if side is OrderSide.BUY else -1) * (fill / price - 1) * 1e4

@@ -26,6 +26,7 @@ from pathlib import Path
 from zoneinfo import ZoneInfo
 
 from backend.market import alpaca, deskrecord, holdings, live_quotes, live_technical
+from backend.market.labels import ExecutionTiming, OrderSide
 from backend.market.store import MarketStore
 
 # The plan and its audit trail, both under the desk data root.
@@ -152,10 +153,10 @@ def _green_day_skip_locked(
     pending_sells = [
         p
         for p in state.pending
-        if p.get("side") == "sell"
+        if p.get("side") == OrderSide.SELL
         and not p.get("event_id")
         and not p.get("priority")
-        and p.get("execution_timing") != "next_open"
+        and p.get("execution_timing") != ExecutionTiming.NEXT_OPEN
         and p.get("execution_timing") != intraday_orders.INTRADAY_TIMING
     ]
     action_rows = {r.get("ticker"): r for r in latest.get("actions") or []}

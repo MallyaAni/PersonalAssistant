@@ -12,6 +12,7 @@ from zoneinfo import ZoneInfo
 import numpy as np
 
 from backend.market import technical
+from backend.market.labels import TimingEntryRule, TimingExitRule
 from backend.market.alpaca import IntradayBar
 
 NY = ZoneInfo("America/New_York")
@@ -116,11 +117,12 @@ def readings(bars, history):
 
 # Require agreement from completed daily and hourly trends before a chart entry.
 def entry_signal(row, kind):
+    kind = TimingEntryRule(kind)
     aligned = (
         row["daily_close"] > row["daily_ema21"] > row["daily_ema50"]
         and row["hourly_close"] > row["hourly_ema21"]
     )
-    if kind == "trend_pullback":
+    if kind is TimingEntryRule.TREND_PULLBACK:
         return (
             aligned
             and row["bullish"]
@@ -137,25 +139,27 @@ def entry_signal(row, kind):
 
 # Exit on confirmed structure failure, with an optional half trim on band rejection.
 def exit_fraction(row, kind, trimmed):
+    kind = TimingExitRule(kind)
     failed = row["close"] < row["ema21"] and row["hourly_close"] < row["hourly_ema21"]
-    if kind != "hold" and failed:
+    if kind is not TimingExitRule.HOLD and failed:
         return 1.0, "15-minute and completed hourly EMA21 failure"
     rejection = (
         row["bearish"]
         and row["high"] >= row["upper_band"]
         and row["close"] < row["ema9"]
     )
-    if kind == "band_trim_then_structure" and not trimmed and rejection:
+    if kind is TimingExitRule.BAND_TRIM_THEN_STRUCTURE and not trimmed and rejection:
         return 0.5, "upper-band rejection with a close below EMA9"
     return 0.0, "hold"
 
 
 # Walk actual entry and exit timestamps, keeping an unfilled candidate in cash.
 def evaluate(bars, rows, published, entry_kind, exit_kind, cost_bps=10):
+    entry_kind, exit_kind = TimingEntryRule(entry_kind), TimingExitRule(exit_kind)
     eligible = [i for i, b in enumerate(bars) if b.start >= published]
     if not eligible:
         return {"status": "no post-publication bars", "return": None}
-    if entry_kind == "first_open":
+    if entry_kind is TimingEntryRule.FIRST_OPEN:
         opened = eligible[0]
     else:
         fired = next(
@@ -198,7 +202,7 @@ def evaluate(bars, rows, published, entry_kind, exit_kind, cost_bps=10):
         "entry_at": bars[opened].start,
         "entry_price": paid,
         "entry_signal_at": rows[opened - 1]["at"]
-        if entry_kind != "first_open"
+        if entry_kind is not TimingEntryRule.FIRST_OPEN
         else published,
         "return": proceeds * (1 - cost) / (paid * (1 + cost)) - 1,
         "exits": fills,
@@ -214,6 +218,6 @@ def compare(bars, history, published):
         return {}
     return {
         f"{entry}/{exit}": evaluate(bars, rows, published, entry, exit)
-        for entry in ("first_open", "trend_pullback", "breakout_retest")
-        for exit in ("hold", "structure", "band_trim_then_structure")
+        for entry in TimingEntryRule
+        for exit in TimingExitRule
     }

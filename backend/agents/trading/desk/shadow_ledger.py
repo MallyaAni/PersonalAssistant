@@ -56,6 +56,7 @@ from pathlib import Path
 import numpy as np
 
 from backend.agents.trading.desk import live_policy, paper, planner
+from backend.market.labels import OrderSide
 
 VERSION = "shadow-ledger/1"
 START_CASH = 100_000.0
@@ -244,7 +245,9 @@ def _legs(
 
 
 # One fill's journal line.
-def _fill_row(ticker: str, side: str, shares: int, price: float, fee: float) -> dict:
+def _fill_row(
+    ticker: str, side: OrderSide, shares: int, price: float, fee: float
+) -> dict:
     return {
         "ticker": ticker,
         "side": side,
@@ -275,7 +278,7 @@ def _fill(
         held[ticker] = int(held.get(ticker, 0)) - qty
         if held[ticker] <= 0:
             held.pop(ticker, None)
-        fills.append(_fill_row(ticker, "sell", qty, price, fee))
+        fills.append(_fill_row(ticker, OrderSide.SELL, qty, price, fee))
     spend = sum(qty * opens[t] * (1.0 + cost) for t, qty in buys.items())
     scale = min(1.0, max(0.0, cash) / spend) if spend > 0 else 1.0
     for ticker, qty in buys.items():
@@ -295,7 +298,7 @@ def _fill(
         fee = affordable * price * cost
         cash -= affordable * price + fee
         held[ticker] = int(held.get(ticker, 0)) + affordable
-        fills.append(_fill_row(ticker, "buy", affordable, price, fee))
+        fills.append(_fill_row(ticker, OrderSide.BUY, affordable, price, fee))
     return max(cash, 0.0), held, fills, refusals
 
 
@@ -347,7 +350,9 @@ def _orders(
         if qty <= 0:
             continue
         have = int(shares.get(move.symbol, 0))
-        orders[move.symbol] = have + qty if move.side == "buy" else max(have - qty, 0)
+        orders[move.symbol] = (
+            have + qty if move.side == OrderSide.BUY else max(have - qty, 0)
+        )
     return orders
 
 

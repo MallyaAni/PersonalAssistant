@@ -19,6 +19,7 @@ from uuid import uuid4
 from backend.market import calendar, execution_quotes, forward_market_evidence as market
 from backend.market import strategy_publication as publication
 from backend.market import strategy_reference_transition as transition
+from backend.market.labels import Action, OrderSide, TimingState
 
 VERSION = 'strategy-observed-hypothetical-book/1'
 EXECUTION_BASIS = 'later_observed_IEX_bid_ask_proxy_not_actual_fill'
@@ -113,16 +114,16 @@ def project(book, marks, distributions, *, evidence_sha256, terminal=False):
     funded=min(1.0,book.buy_budget/spend) if spend>0 else 1.0
     for name,row in value['rows'].items():
         if name in resolved:
-            row.update(action=None,state='no_trade',proposed_units=0.0,trade_weight=0.0,waiting_log_utility=None,
+            row.update(action=None,state=TimingState.NO_TRADE,proposed_units=0.0,trade_weight=0.0,waiting_log_utility=None,
                 reason='Original hypothetical attempt already resolved; no repeated trade')
-        elif row['action']=='Buy':
+        elif row['action'] is not None and Action(row['action']) is Action.BUY:
             original=next(item for item in rows if item[0]==name)
             amount=(original[2]-original[1])*funded
             weight=amount*marks[name]/value['reference_equity'] if amount>0 else 0.0
-            choice=(transition.timing.Decision('no_trade',reason='No original daily buy cash remaining') if amount<=0
-                else transition.timing.Decision('execute',reason='shared_terminal_deadline') if terminal
-                else transition.timing.decision(distributions.get(name),'buy',weight,reference.cost_bps,horizon=transition.timing.HORIZON))
-            row.update(action='Buy' if amount>0 else None,proposed_units=amount,trade_weight=weight,state=choice.state,
+            choice=(transition.timing.Decision(TimingState.NO_TRADE,reason='No original daily buy cash remaining') if amount<=0
+                else transition.timing.Decision(TimingState.EXECUTE,reason='shared_terminal_deadline') if terminal
+                else transition.timing.decision(distributions.get(name),OrderSide.BUY,weight,reference.cost_bps,horizon=transition.timing.HORIZON))
+            row.update(action=Action.BUY if amount>0 else None,proposed_units=amount,trade_weight=weight,state=choice.state,
                 reason=choice.reason,waiting_log_utility=choice.expected_log_utility)
     value.update(version=VERSION,calculation_basis='derived_daily_cash_budget_over_native_reference_projection',
         native_projection_sha256=native_receipt,buy_funding_factor=funded,original_daily_buy_budget=book.buy_budget,
@@ -148,21 +149,22 @@ def observe(book, intents, quote_page, anchors, observed_at):
         regular=False
     cash,budget,fees=book.cash,book.buy_budget,book.fees;results={}
     reference_marks={name:mark for name,_,mark in book.plan.reference.positions}
-    order=sorted(intents,key=lambda name:(intents[name]['action']=='Buy',name))
+    order=sorted(intents,key=lambda name:(intents[name]['action']==Action.BUY,name))
     for name in order:
         if name in resolved:
             continue
         intent=intents[name];at=datetime.fromisoformat(intent['at']);until=datetime.fromisoformat(intent['valid_until'])
         expected=publication._digest({'day_id':book.day_id(),'ticker':name})
         if (intent['intent_id']!=expected or intent['snapshot_id']!=book.plan.snapshot_id
-                or intent['strategy_identity']!=book.plan.reference.strategy_identity or intent['state']!='execute'
-                or intent['action'] not in ('Buy','Sell') or not transition._number(intent['proposed_units'],positive=True)
+                or intent['strategy_identity']!=book.plan.reference.strategy_identity or intent['state']!=TimingState.EXECUTE
+                or intent['action'] not in (Action.BUY,Action.SELL) or not transition._number(intent['proposed_units'],positive=True)
                 or intent['receipt_sha256']!=publication._digest({key:item for key,item in intent.items() if key!='receipt_sha256'})
                 or at.utcoffset() is None or until.utcoffset() is None
                 or not at<until or at>observed_at):
             raise ValueError('Original published hypothetical intent required')
         wanted=next(row[2] for row in book.plan.rows if row[0]==name)
-        if ((intent['action']=='Buy')!=(wanted>units[name])
+        buying=Action(intent['action']) is Action.BUY
+        if (buying!=(wanted>units[name])
                 or intent['proposed_units']>abs(wanted-units[name])):
             raise ValueError('Original hypothetical amount exceeds the pending owned-unit objective')
         quote=quotes.get(name);described=execution_quotes.describe(quote,'iex',True,observed_at) if isinstance(quote,dict) else {}
@@ -177,8 +179,8 @@ def observe(book, intents, quote_page, anchors, observed_at):
             anchor=anchors[name]
             if not transition._number(anchor,positive=True) or anchor!=intent['price_anchor']:
                 raise ValueError('Original split-attested IEX anchor changed')
-            price=reference_marks[name]*(described['ask'] if intent['action']=='Buy' else described['bid'])/anchor
-            buying=intent['action']=='Buy';cost=book.plan.reference.cost_bps/10000
+            price=reference_marks[name]*(described['ask'] if buying else described['bid'])/anchor
+            cost=book.plan.reference.cost_bps/10000
             quantity=(min(intent['proposed_units'],max(0.0,min(cash,budget))/(price*(1+cost))) if buying
                 else min(intent['proposed_units'],units[name]))
             amount=quantity*price;fee=amount*cost
@@ -211,7 +213,7 @@ def _result_matches(before, after, evidence):
     units=dict(before.positions);resolved=dict(before.resolved);cash,budget,fees=before.cash,before.buy_budget,before.fees
     for name in evidence['execution_order']:
         result=evidence['results'][name];quantity=result['quantity'];price=result['price'];fee=result['fee']
-        if (name not in units or name in resolved or result['action'] not in ('Buy','Sell')
+        if (name not in units or name in resolved or result['action'] not in (Action.BUY,Action.SELL)
                 or not transition._number(quantity) or not transition._number(fee)
                 or price is not None and not transition._number(price,positive=True)
                 or quantity>0 and price is None):
@@ -219,7 +221,7 @@ def _result_matches(before, after, evidence):
         amount=quantity*price if price is not None else 0.0
         if fee!=amount*(before.plan.reference.cost_bps/10000):
             raise ValueError('Original hypothetical fee differs')
-        buying=result['action']=='Buy'
+        buying=Action(result['action']) is Action.BUY
         if (not buying and quantity>units[name]) or (buying and amount+fee>min(cash,budget)):
             raise ValueError('Original hypothetical result borrows or sells unowned units')
         cash+=-amount-fee if buying else amount-fee

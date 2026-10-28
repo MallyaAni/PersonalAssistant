@@ -28,6 +28,7 @@ import numpy as np
 from backend.agents.trading.desk import event_risk
 from backend.market import grade_led_leader_policy as leader
 from backend.market.calendar import fomc_decisions
+from backend.market.labels import ExecutionTiming, TradeAction
 
 INDICES = ("SPY", "QQQ")
 
@@ -162,7 +163,7 @@ def simulate(
                 "ticker": tickers[j],
                 "decided": decided,
                 "date": dates[t],
-                "action": "BUY" if qty > 0 else "SELL",
+                "action": TradeAction.BUY if qty > 0 else TradeAction.SELL,
                 "shares": int(abs(qty)),
                 "price": float(price),
                 "size": float(abs(notional) / value_equity),
@@ -179,7 +180,7 @@ def simulate(
         if pending is not None:
             decided, sells, buys, reason, timing = pending
             pending = None
-            at_close = timing == "decision_close"
+            at_close = timing == ExecutionTiming.DECISION_CLOSE
             prices = adj_close[t] if at_close else opens[t]
             value, px = mark(t - 1)
             before = shares * px / value if value > 0 else np.zeros(N)
@@ -255,7 +256,7 @@ def simulate(
                         {},
                         buys,
                         "fomc_restoration_decision_close",
-                        "decision_close",
+                        ExecutionTiming.DECISION_CLOSE,
                     )
                     cycle["restored"] = True
                 elif not cycle["cut"]:

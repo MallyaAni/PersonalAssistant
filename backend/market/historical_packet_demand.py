@@ -6,6 +6,7 @@ from types import MappingProxyType
 
 from backend.market import historical_packet_registry as reg
 from backend.market.historical_timing_packet import _digest, schedule
+from backend.market.labels import OrderSide
 
 BUDGET = MappingProxyType(
     {
@@ -65,7 +66,7 @@ def _coverage(held, legs, window):
         cids.add(cid)
         reg.symbol(leg["symbol"])
         if (
-            leg["side"] not in {"buy", "sell"}
+            leg["side"] not in OrderSide
             or type(leg["qty"]) is not int
             or leg["qty"] <= 0
             or leg["phase"] != "market"

@@ -28,6 +28,7 @@ import numpy as np
 
 from backend.market import stage3_io as io
 from backend.market import stage4_labels as lab
+from backend.market.labels import OrderSide
 from backend.market.store import MarketStore
 
 
@@ -93,17 +94,18 @@ def run(
             g_sell=labels.g_sell.astype(np.float32),
             meta=np.asarray(json.dumps(io.clean_json(meta), sort_keys=True)),
         )
+    sides = ((OrderSide.BUY, labels.g_buy), (OrderSide.SELL, labels.g_sell))
     summary = {
         **io.clean_json(meta),
         "file": str(args.out),
         "sha256": _sha256(args.out),
         "quantiles_bp": {
             side: [float(np.nanquantile(v, q)) for q in (0.01, 0.1, 0.5, 0.9, 0.99)]
-            for side, v in (("buy", labels.g_buy), ("sell", labels.g_sell))
+            for side, v in sides
         },
-        "mean_bp": {side: float(np.nanmean(v)) for side, v in (("buy", labels.g_buy), ("sell", labels.g_sell))},
+        "mean_bp": {side: float(np.nanmean(v)) for side, v in sides},
         "positive_share": {
-            side: float(np.nanmean(v[np.isfinite(v)] > 0)) for side, v in (("buy", labels.g_buy), ("sell", labels.g_sell))
+            side: float(np.nanmean(v[np.isfinite(v)] > 0)) for side, v in sides
         },
     }
     args.out.with_suffix(".json").write_text(json.dumps(summary, indent=2, sort_keys=True))

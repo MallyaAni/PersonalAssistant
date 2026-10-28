@@ -16,6 +16,7 @@ from backend.agents.trading.desk import policy_v5
 from backend.agents.trading.desk.simulate import _Book
 from backend.market import learned_entry_evaluation as replay
 from backend.market.fill_timing import session_scale
+from backend.market.labels import OrderSide, TimingState, parse
 
 HORIZON = "one_decision_log_price_advantage"
 POLICY = "learned-execution-risk/1"
@@ -24,16 +25,23 @@ POLICY = "learned-execution-risk/1"
 # Carry an explicit decision and its expected utility rather than a price target.
 @dataclass(frozen=True)
 class TimingDecision:
-    state: str
+    state: TimingState
     waiting_utility: float | None = None
     variance: float | None = None
     reason: str = ""
 
+    # A state given as its wire word is parsed, so every decision carries a
+    # `TimingState` and an unknown state fails where the decision is made.
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "state", TimingState(self.state))
+
 
 # Compare waiting's stock-specific expected saving with its funded portfolio risk.
 def decision(mean, second_moment, side, trade_fraction, cost_bps, *, horizon):
-    if side not in ("buy", "sell") or horizon != HORIZON:
-        raise ValueError("buy/sell and matching one-decision risk horizon required")
+    message = "buy/sell and matching one-decision risk horizon required"
+    side = parse(OrderSide, side, message)
+    if horizon != HORIZON:
+        raise ValueError(message)
     if any(
         isinstance(value, (bool, np.bool_))
         for value in (
@@ -43,30 +51,42 @@ def decision(mean, second_moment, side, trade_fraction, cost_bps, *, horizon):
             cost_bps,
         )
     ):
-        return TimingDecision("unavailable", reason="invalid numeric forecast")
+        return TimingDecision(
+            TimingState.UNAVAILABLE, reason="invalid numeric forecast"
+        )
     try:
         mu, second, weight, cost = map(
             float, (mean, second_moment, trade_fraction, cost_bps)
         )
     except (TypeError, ValueError, OverflowError):
-        return TimingDecision("unavailable", reason="invalid numeric forecast")
+        return TimingDecision(
+            TimingState.UNAVAILABLE, reason="invalid numeric forecast"
+        )
     if not np.isfinite([mu, second, weight, cost]).all():
-        return TimingDecision("unavailable", reason="missing forecast or funding")
+        return TimingDecision(
+            TimingState.UNAVAILABLE, reason="missing forecast or funding"
+        )
     if weight < 0 or weight > 1 or cost < 0 or cost >= 1e4:
-        return TimingDecision("unavailable", reason="invalid funded trade or cost")
+        return TimingDecision(
+            TimingState.UNAVAILABLE, reason="invalid funded trade or cost"
+        )
     if second < 0 or second < mu * mu:
-        return TimingDecision("unavailable", reason="inconsistent forecast moments")
+        return TimingDecision(
+            TimingState.UNAVAILABLE, reason="inconsistent forecast moments"
+        )
     if weight == 0:
-        return TimingDecision("no_trade", reason="no funded trade")
+        return TimingDecision(TimingState.NO_TRADE, reason="no funded trade")
     variance = second - mu * mu
-    direction = 1 if side == "buy" else -1
+    direction = 1 if side is OrderSide.BUY else -1
     factor = 1 + direction * cost / 1e4
     effective = weight * factor
     saving = direction * (mu - 0.5 * second)
     utility = effective * saving - 0.5 * effective * effective * variance
     if not np.isfinite(utility):
-        return TimingDecision("unavailable", reason="nonfinite utility")
-    return TimingDecision("wait" if utility > 0 else "execute", utility, variance)
+        return TimingDecision(TimingState.UNAVAILABLE, reason="nonfinite utility")
+    return TimingDecision(
+        TimingState.WAIT if utility > 0 else TimingState.EXECUTE, utility, variance
+    )
 
 
 # Obtain an observed auction price for accounting without selecting by future prices.
@@ -113,14 +133,14 @@ def actions(
         chosen = decision(
             means[stock, 2],
             risk[stock],
-            "buy" if buying else "sell",
+            OrderSide.BUY if buying else OrderSide.SELL,
             weight,
             cost_bps,
             horizon=HORIZON,
         )
-        acting[stock] = chosen.state == "execute"
-        counts["waiting_decisions"] += int(chosen.state == "wait")
-        counts["risk_refusals"] += int(chosen.state == "unavailable")
+        acting[stock] = chosen.state is TimingState.EXECUTE
+        counts["waiting_decisions"] += int(chosen.state is TimingState.WAIT)
+        counts["risk_refusals"] += int(chosen.state is TimingState.UNAVAILABLE)
         counts["cash_limited_attempts"] += int(buying and fraction < 1)
     return acting
 
@@ -201,7 +221,7 @@ def intent_traces(panel, day, offset, targets, nav, prior, initial, wanted, budg
             "initial_shares": float(initial[stock]),
             "desired_shares": float(wanted[stock]),
             "morning_cash": float(budget),
-            "side": "buy" if wanted[stock] > initial[stock] else "sell",
+            "side": OrderSide.BUY if wanted[stock] > initial[stock] else OrderSide.SELL,
             "attempt_clock": None,
             "terminal_action": False,
             "observed_price": None,

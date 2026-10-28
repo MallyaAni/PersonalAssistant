@@ -6,6 +6,8 @@ It never counts prospective sale proceeds or borrows from the paper account.
 
 from decimal import ROUND_FLOOR, Decimal
 
+from backend.market.labels import DeskAction
+
 
 # Reject non-finite money before it reaches allocation arithmetic or JSON.
 def amount(value: object, name: str, *, positive: bool = False) -> Decimal:
@@ -35,7 +37,10 @@ def preview(rows: list[dict], equity: float, cash: float) -> dict:
         if ticker in seen:
             raise ValueError("Duplicate ticker in sizing inputs")
         seen.add(ticker)
-        if row.get("action") not in ("buy", "add") or row.get("event_paused"):
+        if DeskAction(row.get("action")) not in (
+            DeskAction.BUY,
+            DeskAction.ADD,
+        ) or row.get("event_paused"):
             continue
         price = amount(row.get("last"), "Reference price", positive=True)
         held = amount(row.get("shares", 0), "Held shares")
@@ -79,7 +84,10 @@ def reductions(rows: list[dict], equity: float) -> list[dict]:
     total = amount(equity, "Account equity", positive=True)
     result = []
     for row in rows:
-        if row.get("action") not in ("trim", "sell") or row.get("event_paused"):
+        if DeskAction(row.get("action")) not in (
+            DeskAction.TRIM,
+            DeskAction.SELL,
+        ) or row.get("event_paused"):
             continue
         price = amount(row.get("last"), "Reference price", positive=True)
         held = amount(row.get("shares"), "Held shares")

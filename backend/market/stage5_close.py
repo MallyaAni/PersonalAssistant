@@ -143,6 +143,7 @@ from backend.market import stage4_decisions as sd
 from backend.market import stage4_labels as lab
 from backend.market import stage4_orders as so
 from backend.market.fill_timing import clustered_t
+from backend.market.labels import OrderSide
 from backend.market.midcycle_ew import EVENT, MIDCYCLE, REBALANCE
 from backend.market.sip_cube import FULL_SESSION_SLOTS, SessionCube
 from backend.market.universe import AI_SIDE, SOFTWARE_SIDE
@@ -1416,8 +1417,8 @@ def plan_decision(
     bought: dict[int, set[str]] = {}
     for order in retry + planned:
         j = panel.index(order.symbol)
-        wanted[j] += order.qty * (1 if order.side == "buy" else -1)
-        if order.side == "buy" and order.qty > 0:
+        wanted[j] += order.qty * (1 if order.side == OrderSide.BUY else -1)
+        if order.side == OrderSide.BUY and order.qty > 0:
             bought.setdefault(j, set()).add(leg_of(order.reason))
     reference = simulate._live_midcycle(  # type: ignore[no-untyped-call]
         book,
@@ -1705,8 +1706,8 @@ def fill_grid(panel: Any, cubes: Mapping[str, SessionCube]) -> Fills:
         on = rows >= 0
         out["candidate"][on, j] = official_close(cube)[rows[on]] * scale[on]
         fills = lab.name_fills(series, cube)
-        out["control_buy"][:, j] = fills[(lab.CONTROL, "buy")].price
-        out["control_sell"][:, j] = fills[(lab.CONTROL, "sell")].price
+        out["control_buy"][:, j] = fills[(lab.CONTROL, OrderSide.BUY)].price
+        out["control_sell"][:, j] = fills[(lab.CONTROL, OrderSide.SELL)].price
         ahead = np.full(len(dates), -1, dtype=np.int64)
         ahead[:-1] = rows[1:]
         next_scale = np.full(len(dates), np.nan)
@@ -1848,7 +1849,7 @@ def account(
                     _cause(final_grid, proxy, mask, t, int(j)),
                 )
             )
-    buys = np.flatnonzero(orders.side == "buy")
+    buys = np.flatnonzero(orders.side == OrderSide.BUY)
     session = orders.session[buys]
     column = orders.column[buys]
     count = len(buys)
@@ -1882,10 +1883,14 @@ def account(
             if matched[i] < 1.0 - 1e-12:
                 cause[i] = _cause(final_grid, proxy, mask, t, j)
     gain = lab.gain(
-        fills.control_buy[session, column], fills.candidate[session, column], "buy"
+        fills.control_buy[session, column],
+        fills.candidate[session, column],
+        OrderSide.BUY,
     )
     gain_open = lab.gain(
-        fills.next_open[session, column], fills.candidate[session, column], "buy"
+        fills.next_open[session, column],
+        fills.candidate[session, column],
+        OrderSide.BUY,
     )
     on = (status == ELIGIBLE) & (matched > 0)
     g = np.where(on, matched * gain, 0.0)

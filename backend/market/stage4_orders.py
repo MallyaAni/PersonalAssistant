@@ -79,6 +79,7 @@ import numpy as np
 from backend.agents.trading.desk import grading, policy_v4, simulate
 from backend.cli.market_pit_scorecard import _since
 from backend.market import profit_taking, stage3_verdict
+from backend.market.labels import OrderSide
 from backend.market.midcycle_ew import EVENT, MIDCYCLE, REBALANCE, TOPUP, Ledger
 
 if TYPE_CHECKING:
@@ -197,7 +198,7 @@ class Orders:
     @property
     def buy(self) -> np.ndarray:
         """Return the (M,) buy flags."""
-        return self.side == "buy"
+        return self.side == OrderSide.BUY
 
     # The orders `keep` selects (a mask or indices), with the same run bounds;
     # the run-level counts in `meta` do not carry over to a subset.
@@ -229,8 +230,8 @@ def classify(
 ) -> str:
     """Return the order's detail label."""
     if kind == EVENT:
-        return EVENT_BUY if side == "buy" else EVENT_SELL
-    if side == "sell":
+        return EVENT_BUY if side == OrderSide.BUY else EVENT_SELL
+    if side == OrderSide.SELL:
         if int(grade) >= A:
             return TRIM
         return RESET_EXIT if kind == REBALANCE else ROTATION_EXIT
@@ -299,7 +300,7 @@ def extract_orders(
                 status[_execution(sub, exe)] += 1
             if not weight > DUST:
                 continue
-            side = "buy" if units > 0 else "sell"
+            side = OrderSide.BUY if units > 0 else OrderSide.SELL
             ticker = journal.tickers[j]
             grade = int(grades[t, j])
             held_before = bool(before[j] > 0)

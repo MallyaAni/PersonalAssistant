@@ -22,6 +22,8 @@ from dataclasses import dataclass
 
 import numpy as np
 
+from backend.market.labels import OrderSide
+
 MIN_TRADE = 0.005
 
 
@@ -30,10 +32,15 @@ class Order:
     """One order: the name, the side, the quantity, and the decision behind it."""
 
     symbol: str
-    side: str  # "buy" or "sell"
+    side: OrderSide
     qty: float  # shares, at the decision price
     reference_price: float
     reason: str
+
+    # A side handed in as its wire string is parsed, so every move carries an
+    # `OrderSide` and an unknown side fails where the move is made.
+    def __post_init__(self) -> None:
+        object.__setattr__(self, "side", OrderSide(self.side))
 
 
 # The share count one name should end up holding, decided at `price` against
@@ -81,7 +88,7 @@ def plan(
         delta = wanted - held_qty
         if abs(delta) < 1e-12:
             continue
-        side = "buy" if delta > 0 else "sell"
+        side = OrderSide.BUY if delta > 0 else OrderSide.SELL
         reason = f"rebalance to {target:.3f}" if target > 0 else "leaves the book"
         orders.append(Order(symbol, side, abs(delta), float(price), reason))
     return orders

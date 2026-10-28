@@ -390,3 +390,11 @@ def test_chart_setup_labels_are_schema_enforced_and_other_labels_are_refused():
         bad = {"rows": {"AAA": {**row, key: word}}}
         provider, _ = _engine(lambda body, bad=bad: bad)
         assert current_setup.assess([fact], provider) == []
+
+
+# `decision_view.Action` is the labels module's `Action`, not a second class
+# with the same words: the view compares rows built elsewhere by identity.
+def test_decision_view_action_is_the_one_action_type():
+    from backend.market import decision_view
+
+    assert decision_view.Action is labels.Action

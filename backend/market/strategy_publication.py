@@ -22,6 +22,7 @@ from backend.market import grade_led_policy, learned_live_holding, live_model_de
 from backend.market import direct_daily_arithmetic, learned_entry_data, market_conditioned_calibration, probabilistic_execution
 from backend.market import strategy_model_allocation
 from backend.market.direct_daily_arithmetic import FEATURE_NAMES
+from backend.market.labels import Grade, GradeSignal
 
 VERSION = "strategy-model-allocation/2"
 SCHEMA = "strategy-recommendation-publication/1"
@@ -181,8 +182,8 @@ def validate(value, now, *, expected_sources=None, config_sha256=None):
         if (name in ("SPY", "QQQ") or type(weight) not in (int, float)
                 or not math.isfinite(weight) or not 0 <= weight <= growth.CAP
                 or reading["session"] != value["session"] or reading["basis"] != "observed_close_grade"
-                or reading["action"] not in ("buy", "sell", "hold", "avoid", "unavailable")
-                or reading["grade"] not in (None, "A+", "A", "B", "C")
+                or reading["action"] not in GradeSignal
+                or (reading["grade"] is not None and reading["grade"] not in Grade)
                 or evidence["grade"] != reading["grade"] or evidence["inputs_as_of"] != value["session"]
                 or evidence["model_position_size"] != weight
                 or (weight > 0 and reading["grade"] not in admitted)

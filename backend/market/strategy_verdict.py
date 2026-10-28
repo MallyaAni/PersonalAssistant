@@ -6,77 +6,76 @@ dashboard shows: buy, sell, or nothing, with one closed reason code. It does not
 decide a trade, size a position, or replace any existing field.
 """
 
-VERDICTS = ("buy", "sell", "nothing")
-REASON_CODES = (
-    "execute_now",
-    "waiting_better_price",
-    "at_target",
-    "no_allocation",
-    "grade_below_a",
-    "awaiting_candle",
-    "publication_expired",
-    "quote_stale",
-    "price_unavailable",
-    "entry_pending",
+from backend.market.labels import (
+    Action,
+    TimingState,
+    Verdict,
+    VerdictReason,
+    as_member,
 )
+
+VERDICTS = tuple(Verdict)
+REASON_CODES = tuple(VerdictReason)
 REASONS = {
-    "execute_now": "Act now at the current price",
-    "waiting_better_price": "Wait one candle for a better price",
-    "at_target": "The model position is already at target",
-    "no_allocation": "No model allocation for this name",
-    "grade_below_a": "The grade is below the entry grade",
-    "awaiting_candle": "Awaiting a completed 15-minute candle",
-    "publication_expired": "The published assessment has expired",
-    "quote_stale": "A fresh compatible quote is required",
-    "price_unavailable": "No compatible execution price is available",
-    "entry_pending": "Entry price not yet confirmed this candle",
+    VerdictReason.EXECUTE_NOW: "Act now at the current price",
+    VerdictReason.WAITING_BETTER_PRICE: "Wait one candle for a better price",
+    VerdictReason.AT_TARGET: "The model position is already at target",
+    VerdictReason.NO_ALLOCATION: "No model allocation for this name",
+    VerdictReason.GRADE_BELOW_A: "The grade is below the entry grade",
+    VerdictReason.AWAITING_CANDLE: "Awaiting a completed 15-minute candle",
+    VerdictReason.PUBLICATION_EXPIRED: "The published assessment has expired",
+    VerdictReason.QUOTE_STALE: "A fresh compatible quote is required",
+    VerdictReason.PRICE_UNAVAILABLE: "No compatible execution price is available",
+    VerdictReason.ENTRY_PENDING: "Entry price not yet confirmed this candle",
 }
+# The verdict a planned Buy or Sell reads as while its price is pending.
+_DIRECTION = {Action.BUY: Verdict.BUY, Action.SELL: Verdict.SELL}
 
 
 # Pick the reason a non-executing unavailable row cannot act.
 def _unavailable_code(timing_reason, quote_available, distribution_available):
     lowered = timing_reason.lower()
     if not distribution_available or "distribution" in lowered or "candle" in lowered:
-        return "awaiting_candle"
+        return VerdictReason.AWAITING_CANDLE
     if not quote_available or "quote" in lowered:
-        return "quote_stale"
+        return VerdictReason.QUOTE_STALE
     if any(
         token in lowered
         for token in ("price", "moment", "funding", "wealth", "cost", "numeric")
     ):
-        return "price_unavailable"
-    return "publication_expired"
+        return VerdictReason.PRICE_UNAVAILABLE
+    return VerdictReason.PUBLICATION_EXPIRED
 
 
 # Pick the reason a no-trade row has nothing to do.
 def _idle_code(action, timing_reason, target_weight, held_weight, resolved):
     lowered = timing_reason.lower()
     if resolved or "already resolved" in lowered:
-        return "at_target"
+        return VerdictReason.AT_TARGET
     if "no new model allocation" in lowered or "no original daily buy cash" in lowered:
-        return "no_allocation"
+        return VerdictReason.NO_ALLOCATION
     if target_weight is not None and target_weight == 0:
-        return "no_allocation"
+        return VerdictReason.NO_ALLOCATION
     if "no funded model reference change" in lowered:
-        return "at_target"
+        return VerdictReason.AT_TARGET
     if (
         target_weight is not None
         and held_weight is not None
         and abs(target_weight - held_weight) <= 1e-12
     ):
-        return "at_target"
+        return VerdictReason.AT_TARGET
     if timing_reason == "mandatory_grade_exit":
-        return "grade_below_a"
-    return "no_allocation" if action is None else "at_target"
+        return VerdictReason.GRADE_BELOW_A
+    return VerdictReason.NO_ALLOCATION if action is None else VerdictReason.AT_TARGET
 
 
 # The size of the trade the plan still calls for in the row's direction; None
 # when the row does not say enough to know it (a sale needs the holding).
 def _planned(action, target_weight, held_weight):
-    if target_weight is None or (action == "Sell" and held_weight is None):
+    if target_weight is None or (action == Action.SELL and held_weight is None):
         return None
     held = held_weight or 0.0
-    return target_weight - held if action == "Buy" else held - target_weight
+    return target_weight - held if action == Action.BUY else held - target_weight
 
 
 # Map existing row evidence to one verdict and one closed reason code.
@@ -93,31 +92,44 @@ def classify(
     resolved=False,
 ):
     reason = timing_reason or ""
+    # A row's action is Buy, Sell or absent; its state is any timing state,
+    # and a state outside that vocabulary is idle, as it always was.
+    action = None if action is None else Action(action)
+    state = as_member(TimingState, state)
     # A sale needs something held: a Sell row against a known empty reference
     # position is nothing to do, whatever the engine's state says.
-    if action == "Sell" and held_weight is not None and not held_weight > 0:
-        return "nothing", "no_allocation"
-    if state == "execute":
+    if action is Action.SELL and held_weight is not None and not held_weight > 0:
+        return Verdict.NOTHING, VerdictReason.NO_ALLOCATION
+    if state is TimingState.EXECUTE:
         if mandatory or reason == "mandatory_grade_exit":
-            return "sell", "grade_below_a"
-        if action == "Sell":
-            return "sell", "execute_now"
-        if action == "Buy":
-            return "buy", "execute_now"
-        return "nothing", "no_allocation" if target_weight == 0 else "at_target"
-    if state == "wait":
-        return "nothing", "waiting_better_price"
-    if state == "unavailable":
+            return Verdict.SELL, VerdictReason.GRADE_BELOW_A
+        if action is Action.SELL:
+            return Verdict.SELL, VerdictReason.EXECUTE_NOW
+        if action is Action.BUY:
+            return Verdict.BUY, VerdictReason.EXECUTE_NOW
+        return Verdict.NOTHING, (
+            VerdictReason.NO_ALLOCATION
+            if target_weight == 0
+            else VerdictReason.AT_TARGET
+        )
+    if state is TimingState.WAIT:
+        return Verdict.NOTHING, VerdictReason.WAITING_BETTER_PRICE
+    if state is TimingState.UNAVAILABLE:
         code = _unavailable_code(reason, quote_available, distribution_available)
         # A planned trade whose price the engine has not yet confirmed is still
         # the plan: the board says the direction and that the price is pending,
         # not "nothing", which read as "the model wants nothing here".
-        if code in ("quote_stale", "price_unavailable") and action in ("Buy", "Sell"):
+        if (
+            code in (VerdictReason.QUOTE_STALE, VerdictReason.PRICE_UNAVAILABLE)
+            and action in _DIRECTION
+        ):
             planned = _planned(action, target_weight, held_weight)
             if planned is None or planned > 0:
-                return action.lower(), "entry_pending"
-        return "nothing", code
-    return "nothing", _idle_code(action, reason, target_weight, held_weight, resolved)
+                return _DIRECTION[action], VerdictReason.ENTRY_PENDING
+        return Verdict.NOTHING, code
+    return Verdict.NOTHING, _idle_code(
+        action, reason, target_weight, held_weight, resolved
+    )
 
 
 # Add the verdict fields beside a row's existing timing reason without replacing it.
@@ -154,7 +166,7 @@ def annotate(
         resolved=resolved,
     )
     served = {**row, "verdict": verdict, "reason_code": code, reason_key: REASONS[code]}
-    if code == "entry_pending":
+    if code is VerdictReason.ENTRY_PENDING:
         # The engine's own size is a placeholder until its objective resolves;
         # the plan's remaining trade is what the person can read now.
         target = row.get("model_position_weight")

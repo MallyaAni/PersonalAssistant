@@ -18,6 +18,7 @@ from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 from backend.market import session_prices
+from backend.market.labels import QuoteFeed, QuoteSession
 
 try:
     import fcntl
@@ -28,11 +29,9 @@ VERSION = 1
 MAX_BYTES = 1_000_000
 MAX_SYMBOLS = 256
 MAX_AGE_SECONDS = 60
-FEEDS = frozenset({"sip", "iex", "boats", "overnight"})
+FEEDS = frozenset(QuoteFeed)
 STATUSES = frozenset({"fresh", "stale", "unavailable"})
-SESSIONS = frozenset(
-    {"regular", "pre-market", "post-market", "overnight", "closed", "unknown"}
-)
+SESSIONS = frozenset(QuoteSession)
 REASONS = frozenset(
     {
         "No fresh quote from available feeds",
@@ -114,9 +113,11 @@ def _unavailable(raw=None, reason="Snapshot unavailable"):
         "at": raw.get("at") if stamp else None,
         "feed": feed,
         "session": (
-            raw.get("session") if _known(raw.get("session"), SESSIONS) else "unknown"
+            raw.get("session")
+            if _known(raw.get("session"), SESSIONS)
+            else QuoteSession.UNKNOWN
         ),
-        "indicative": feed == "overnight",
+        "indicative": feed == QuoteFeed.OVERNIGHT,
         "status": "unavailable",
         "reason": reason,
         "valid_until": None,
@@ -172,7 +173,7 @@ def _row(raw, captured, now, capture_stale):
         not _known(raw.get("feed"), FEEDS)
         or not _known(raw.get("session"), SESSIONS)
         or type(raw.get("indicative")) is not bool
-        or raw["indicative"] != (raw["feed"] == "overnight")
+        or raw["indicative"] != (raw["feed"] == QuoteFeed.OVERNIGHT)
         or not _known(raw.get("status"), STATUSES)
         or (raw["status"] == "unavailable" and raw.get("price") is not None)
     ):

@@ -7,6 +7,7 @@ import numpy as np
 
 from backend.agents.trading.desk import entry, paper
 from backend.market import calendar, decision_view, desk_freshness
+from backend.market.labels import EntryState
 
 VERSION = "recorded-entry-opinions/1"
 
@@ -71,7 +72,8 @@ def capture(panel, record, observation):
         )
         rows[name] = {
             "grade": letter,
-            "price_setup": triggers.kind(len(panel.dates) - 1, column) or "wait",
+            "price_setup": triggers.kind(len(panel.dates) - 1, column)
+            or EntryState.WAIT,
             "band_z": band,
             "stretch_21": stretch,
             "adjusted_band_closes": [_number(value) for value in window],

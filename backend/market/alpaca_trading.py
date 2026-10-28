@@ -16,6 +16,8 @@ from datetime import date
 from typing import Any
 from urllib import error, request
 
+from backend.market.labels import OrderSide, as_member
+
 PAPER_URL = "https://paper-api.alpaca.markets/v2"
 Transport = Callable[[str, str, dict[str, str], bytes | None], tuple[int, bytes]]
 
@@ -237,7 +239,7 @@ class AlpacaTradingClient:
 
     # Submit a price-protected paper attempt that cannot rest or become a market order.
     def submit_limit_ioc(
-        self, symbol: str, qty: int, side: str, limit_price, client_order_id: str
+        self, symbol: str, qty: int, side: OrderSide, limit_price, client_order_id: str
     ) -> dict[str, Any]:
         from backend.market.bounded_execution import limit_text
 
@@ -285,12 +287,16 @@ class AlpacaTradingClient:
     # The dispatcher permits a regular-session day order only for explicit
     # FOMC reduction recovery; ordinary orders retain the after-close guard.
     def submit_market_on_open(
-        self, symbol: str, qty: int, side: str, client_order_id: str | None = None
+        self,
+        symbol: str,
+        qty: int,
+        side: OrderSide,
+        client_order_id: str | None = None,
     ) -> dict[str, Any]:
         """Submit a market order queued for the next open and return it as accepted."""
         if qty <= 0:
             raise AlpacaTradingError(f"{symbol}: quantity must be positive")
-        if side not in ("buy", "sell"):
+        if as_member(OrderSide, side) is None:
             raise AlpacaTradingError(f"{symbol}: side must be buy or sell")
         body = {
             "symbol": symbol,
@@ -314,7 +320,11 @@ class AlpacaTradingClient:
     # order's (a day market order); the name says what it does at the time it
     # is sent, which is the only difference between them.
     def submit_market(
-        self, symbol: str, qty: int, side: str, client_order_id: str | None = None
+        self,
+        symbol: str,
+        qty: int,
+        side: OrderSide,
+        client_order_id: str | None = None,
     ) -> dict[str, Any]:
         """Submit a day market order that fills now in the session; return it."""
         return self.submit_market_on_open(symbol, qty, side, client_order_id)
@@ -330,12 +340,16 @@ class AlpacaTradingClient:
     # buys the intraday leg sent from 3:30 PM, so that leg now sends a market
     # order at 3:45 PM instead (`docs/research/paper-moc-fills-2026-10-02.md`).
     def submit_market_on_close(
-        self, symbol: str, qty: int, side: str, client_order_id: str | None = None
+        self,
+        symbol: str,
+        qty: int,
+        side: OrderSide,
+        client_order_id: str | None = None,
     ) -> dict[str, Any]:
         """Submit a market order for the next closing auction."""
         if qty <= 0:
             raise AlpacaTradingError(f"{symbol}: quantity must be positive")
-        if side not in ("buy", "sell"):
+        if as_member(OrderSide, side) is None:
             raise AlpacaTradingError(f"{symbol}: side must be buy or sell")
         body = {
             "symbol": symbol,

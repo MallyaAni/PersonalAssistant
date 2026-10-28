@@ -44,6 +44,7 @@ from backend.market import stage3_export, universe
 from backend.market import stage3_io as io
 from backend.market import stage4_decisions as sd
 from backend.market import stage4_orders as so
+from backend.market.labels import OrderSide
 from backend.market.store import MarketStore
 
 FILE = "research/stage4/stage4_decisions.json"
@@ -217,7 +218,7 @@ def read_inputs(
         dates, tickers, g_buy, g_sell, meta = market_stage4_labels.load(labels_path)
         if not (np.array_equal(dates, keys[0]) and np.array_equal(tickers, keys[1])):
             raise ValueError(f"{labels_path}: the labels are not the export's rows")
-        labels = {"buy": g_buy, "sell": g_sell, "meta": meta}
+        labels = {OrderSide.BUY: g_buy, OrderSide.SELL: g_sell, "meta": meta}
     return Checked(data, keys, forecasts, identities, labels)
 
 
