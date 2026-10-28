@@ -120,6 +120,33 @@ test('Awaiting tonight plan keeps the last plan visible without an unavailable m
   expect(state.diagnostics).toEqual([])
 })
 
+// An expired plan's largest target must survive the first page even when it sorts last alphabetically.
+test('Awaiting tonight plan ranks the last targets instead of the alphabet',async ({page,baseURL})=>{
+  const state=fixture()
+  state.publicationV2=true
+  await install(page,baseURL!,state)
+  const expiredAt=new Date(Date.now()-60*60000).toISOString(), nextAt=new Date(Date.now()+60*60000).toISOString()
+  const last_rows:Record<string,{target_weight:number;evidence:{inputs_as_of:string;grade:string;model_position_size:number}}>={}
+  for(let i=0;i<30;i++){
+    const ticker=i===29?'ZZBIG':`AAA${String(i).padStart(2,'0')}`
+    const weight=i===29?.2:0
+    last_rows[ticker]={target_weight:weight,evidence:{inputs_as_of:'2026-10-19',grade:'A',model_position_size:weight}}
+  }
+  await page.route('**/model-allocation',route=>route.fulfill({json:{
+    version:'strategy-model-allocation/2',status:'awaiting_nightly',policy:'grade-led-learned-sizing/1',session:'2026-10-19',
+    observed_at:'2026-10-19T23:49:42Z',as_of:expiredAt,published_at:expiredAt,valid_until:expiredAt,
+    strategy_identity:'d'.repeat(64),snapshot_id:'e'.repeat(64),receipt_sha256:'f'.repeat(64),
+    basis:'account_independent_unit_capital_targets',account_basis:'no_account_inputs',
+    timing_basis:'nightly_position_size_not_immediate_trade_size',expired_at:expiredAt,next_publication_at:nextAt,last_session:'2026-10-19',
+    last_rows,
+  }}))
+  await page.goto('/?deskView=strategy#desk')
+  const board=page.getByRole('region',{name:'All names signals',exact:true})
+  await expect(board.locator('tbody tr').first()).toHaveAttribute('data-ticker','ZZBIG')
+  await expect(board.getByLabel('ZZBIG model size',{exact:true})).toHaveText('20.0%')
+  expect(state.diagnostics).toEqual([])
+})
+
 // Reference read failures never expose the unrelated fresh-capital percentage or an executable trade.
 test('Persisted position rejects unavailable foreign and mismatched-book evidence',async ({page,baseURL})=>{
   const state=fixture() as ReferenceFixture

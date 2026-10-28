@@ -735,8 +735,12 @@ export const SignalBoard = ({latest, live, allocation, now, onOpen, closes, refr
   const ranked = rows.filter(row => row.ticker.toLowerCase().includes(query.trim().toLowerCase())
       && (side === 'all' || views.get(row.ticker)!.view.verdict === side))
     .sort((a, b) => selected(a).rank - selected(b).rank
-      || (independent && side !== 'sell' && a.plan && b.plan
-        ? (modelWeight(latest, allocation, b.ticker, now) ?? 0) - (modelWeight(latest, allocation, a.ticker, now) ?? 0) : 0)
+      // An expired plan has no live weight, so rank its last targets instead;
+      // otherwise the largest allocations fall past the first page by alphabet.
+      || (awaitingNightly
+        ? (allocation?.last_rows?.[b.ticker]?.target_weight ?? 0) - (allocation?.last_rows?.[a.ticker]?.target_weight ?? 0)
+        : independent && side !== 'sell' && a.plan && b.plan
+          ? (modelWeight(latest, allocation, b.ticker, now) ?? 0) - (modelWeight(latest, allocation, a.ticker, now) ?? 0) : 0)
       || a.ticker.localeCompare(b.ticker))
   const quoteAt = latestQuoteTime(live)
   const candleAt = completedCandleTime(live, allocation)
