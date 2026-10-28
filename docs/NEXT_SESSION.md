@@ -1,5 +1,21 @@
 # Next session
 
+## CURRENT 2026-10-28 — enums live (5a8f8305), map fixes live (f432d837), chart-judgment test failed
+
+- Rules every trading session reads first: docs/trading/RULES.md; plain-English map: docs/trading/CODE_MAP.md.
+- Labels are enums (backend/market/labels.py, frontend/src/services/labels.ts); model answers under strict JSON schema.
+  ~25 fingerprinted files still hold raw literals (see the labels-enums candidate README); convert only with a reviewed
+  re-issue of those fingerprints.
+- Paper account "Historical simulation" box now reads the installed rule's policy_book replay (book.json beside the
+  replay manifest); nightly plan check (backend/market/plan_parity.py, 20:40 replay job) writes desk/plan_parity.json,
+  OK on 10-22..10-27. 10-21 mismatches because the rule changed after that night without a version bump: bump the
+  rule version whenever it changes.
+- Nightly 10-27 stopped at the prune: root-owned September partitions; ownership fixed. Briefs/economics skipped that night.
+- Chart-judgment entry timing (docs/research/chart-judgment-results-2026-10-28.md): +3 bp vs next open, CI [-13, +17];
+  FAIL. Not adopted.
+- FOMC 10-28: 8 restoration buys planned for 15:45 (dry run on the deployed tree sends the same 8).
+- Open: estimate-revision analyst (AV backfill ~10-29); convert the fingerprinted files; TSM ADR ratio; BRK-B/ERIE/STZ shares.
+
 ## CURRENT 2026-10-25 — share-count fallback live (74b797d1, deploy ADMITTED); weight re-check v2: keep weights
 
 - levels_pit falls back to the weighted-average diluted share count (edgar.SHARE_COUNT_FALLBACK_TAGS, stored as
