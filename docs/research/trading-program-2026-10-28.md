@@ -50,7 +50,10 @@ AI-and-software mandate; that is a deliberate bet, not alpha.
 - **The volatility target.** The only lever that has reliably moved drawdown:
   0.25 costs about a point of CAGR against the uncapped book and buys roughly
   fourteen points of worst drawdown; 0.20 is the cautious neighbour (two points
-  less CAGR, four points less drawdown).
+  less CAGR, four points less drawdown). On the installed leader rule the dial
+  is nearly flat on the broad universe (the book is already 95-97% invested);
+  on the IT+Comm universe 0.20 buys 4.7 drawdown points for 1.2 CAGR points
+  and 0.30 adds 3.3 drawdown points for 0.2 CAGR points.
 - **The leader tilt.** +2.3 CAGR points at the same worst drawdown; strength
   0.5 is the knee, 1.0 jumps the drawdown to −42%.
 - **The 1% minimum trade.** Cuts 82,446 fills to 6,703 with no return cost.
@@ -136,14 +139,19 @@ not a decade of point-in-time history, so it cannot support a historical
 backtest; the signal is forward-only. Record it nightly, evaluate after 252
 sessions. The backfill is infrastructure, not evidence.
 
-### P4 — Risk dial and core-satellite (owner decision)
+### P4 — Risk dial and core-satellite (measured; owner decision pending)
 
-Measure three settings of the installed rule (vol target 0.20, 0.25, 0.30) and
-a core-satellite blend (the thematic book beside a broad index) on the honest
-universe, and present CAGR, worst drawdown and Sharpe. The owner chooses the
-risk setting; no change without the release ceremony. The research already
-says the 0.25 target is the knee and that a sector cap only moves the book to
-cash; this workstream is about the owner's tolerance, not about finding alpha.
+The installed rule was run with only its volatility target changed, on the
+frozen honest cache: `risk-dial-2026-10-28.md`. On the broad S&P 500 PIT
+universe the dial is nearly flat (14.2%, 14.8% and 15.0% at 10 bp for 0.20,
+0.25 and 0.30), because the book is already 95-97% invested. On the
+IT+Comm PIT universe 0.20 gives up 1.2 CAGR points for 4.7 fewer drawdown
+points and the best Sharpe (0.98); 0.30 adds 0.2 CAGR points for 3.3 deeper
+drawdown points. **Recommendation: keep 0.25; 0.20 is the cautious
+setting; 0.30 is not worth it.** A core-satellite 80/20 theme/SPY blend
+cuts 2.2 drawdown points for 1.1 CAGR points with a flat Sharpe; deeper
+blends trade return for risk roughly linearly. The owner chooses; no
+change without the release ceremony.
 
 ### P5 — Reliability (parallel, no performance claim)
 
@@ -184,7 +192,8 @@ loop can be wrong.
    the pre-registration. Do not retry it without a new pre-registration.
 3. Keep the estimate snapshots recording nightly; do not read them as evidence
    before 252 sessions.
-4. Present the risk dial to the owner with the measured trade-off.
+4. The risk dial is measured (`risk-dial-2026-10-28.md`); the owner's
+   choice of 0.25 or 0.20 is pending.
 
 ## What this program refuses
 
