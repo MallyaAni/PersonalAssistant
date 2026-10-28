@@ -1,5 +1,7 @@
 # AniOS Agent Instructions
 
+**Trading work** (backend/market, backend/agents/trading, backend/cli/market_*, the Desk panel): first read [docs/trading/RULES.md](docs/trading/RULES.md). Every trading label is an enum; every model answer the code acts on is schema-constrained.
+
 ## Source of truth
 
 Use the current implementation, configuration, tests, and observed runtime behavior as the source of truth for what AniOS does today. Runtime evidence is authoritative only when its source revision or built artifact is known; a stale container does not override newer source code. Documentation records intent and verified knowledge, while an ADR records a decision rather than proof of implementation.

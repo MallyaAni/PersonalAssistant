@@ -1,5 +1,7 @@
 # AniOS
 
+**Trading work** (backend/market, backend/agents/trading, backend/cli/market_*, the Desk panel): first read [docs/trading/RULES.md](docs/trading/RULES.md). Every trading label is an enum; every model answer the code acts on is schema-constrained.
+
 Claude Code reads this file; Codex and other agents read `AGENTS.md`. The
 instructions are the same, so they live in one place rather than drifting apart.
 
