@@ -232,6 +232,23 @@ DEVELOPMENT_GUIDE.md unasked. Wall clock: 1.19.3 154 / 348 / 150 s,
 web unit read. Decision: code.deepmatter stays on 1.19.3; 2.1.1 stays
 installed for a later look, never swapped in place.
 
+**Round 4 (2026-10-28 08:02-08:28 ET): Claude Code 2.1.312 as the harness (the CloudCLI web UI at
+code.deep-matter.com runs it), same model through `effort-inject` (Anthropic `/v1/messages`, thinking
+on, effort max), same three tasks, same base `514bd0b7`, one run at a time, headless `claude -p`
+with `--permission-mode bypassPermissions` and git commit/push/reset denied (`~/dsv41/bo2/driver4.sh`).
+Each patch was then graded the same way as opencode 1.19.3's from round 3, on a fresh worktree
+(`grade4.sh`, `lintdiff.sh`). All three correct and complete. A: ruff and format clean, 34/34; it also
+ran a differential check of the old and new validator on its own. B: same wiring and the same six
+files as 1.19.3 (no DEVELOPMENT_GUIDE note), 28 passed + 6 skipped, no new lint. C: the same one-hunk
+move of the call into the retry, 36/36, no new lint; its comment names the gate incident, which
+AGENTS.md asks comments not to do. Wall clock: Claude Code 401 / 667 / 455 s against 1.19.3's
+154 / 348 / 150 s, i.e. 1.9-3.0x slower. Server-wide counters over its runs read 1.19M / 7.09M / 3.78M
+prompt tokens and 28K / 50K / 32K generated. A web session was open on the same server at the same time,
+so both its wall clock and these counters include any work that session did. Claude Code also
+prints `unrecognized_model` for this model id and runs on its defaults for it.
+Verdict: no accuracy difference on these tasks, and slower. Its advantages are features rather
+than results on these tasks: subagents, plan mode, hooks, skills, per-folder CLAUDE.md.
+
 **Verdict after four tasks:** no accuracy difference. Every run was correct
 and complete; dsh was marginally more careful once (round 1, no new lint)
 and never worse; opencode was 1.1-2.3x faster on every task at the same
