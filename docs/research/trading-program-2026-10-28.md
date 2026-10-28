@@ -189,9 +189,10 @@ and as a period word, accepts a year before the figure ("2013 results"),
 searches for the published-results phrase in the whole head so the dateline
 can rescue an outlook title, and refuses a dividend or buyback word only
 when no result word precedes it, so a standalone dividend or buyback
-announcement is still refused. Re-decided against the real filings, the rule
-admits eleven more ASML releases, restores four a year for every year from
-2007 through 2026, and leaves no year above four; 2004-2006 remain short.
+announcement is still refused. Re-decided from scratch against all 362 real
+filings, the rule admits eleven more ASML releases and revokes none of the
+79 already stored; it restores four a year for every year from 2007 through
+2026 and leaves no year above four; 2004-2006 remain short.
 The same re-decision on TSM, SIMO, ARM and NBIS admits nothing new and
 leaves every year at its stored count, so the widened rule does not readmit
 their monthly sales notes or guidance updates. Tests:
