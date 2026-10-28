@@ -89,3 +89,16 @@ shadow on live data. No live change on this result alone.
 - A decision whose interval until the next checkpoint has no bars (thin early extended hours) simply
   does not fill; the next checkpoint decides again.
 - An unparseable reply counts as "wait" and is recorded with its raw text.
+
+## Amendment, 2026-10-27, before any model call: structured labels
+- The reply is decoded under a strict JSON schema (labels.DECISION_SCHEMA): a discriminated union
+  of {analysis, action: buy_now} | {analysis, action: limit, limit > 0} | {analysis, action: wait}.
+  The model cannot emit any other label; the code compares only against labels.Action / Session
+  enum members. "reason" is replaced by "analysis" (<= 600 chars), generated before the label.
+- Consequently an unparseable reply can only be a truncated one; it still counts as wait and is
+  recorded with finish_reason.
+
+## Freeze after pilot, 2026-10-27 (pilot: 30 entries, 107 checkpoints, 0 parse errors, 0 truncations)
+- Frozen: system prompt sha d3517c2ff812, max_tokens 600, temperature 0, model deepseek-v4.1-flash-1017.
+- sha256 runner.py / chartlib.py / labels.py: 3859b55f8a63c0f56c07bffec6667b4caa7cd41edb23bd8e22d0cca9262bfc48 fb2ffeb071044ac07893e35f4850090ac925d934b1252cf2227f5dc2c9de8ca4 6fba9152226cd6165402dc7fcbf4356c419c0c0c33c7b59fa0bd6708da43785e 
+- No change to prompt, renderer or rules after seeing the pilot. Pilot entries stay excluded.
