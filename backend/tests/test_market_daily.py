@@ -381,30 +381,6 @@ def test_record_carries_the_legacy_source_when_the_desk_read_legacy():
     assert data["fundamental"]["dates"] == {}
 
 
-# The track-record curve names the fundamental data source its simulation's
-# analysts read, separate from the execution policy, so the page can tell a
-# period-checked curve from an older calculation without relabelling either.
-@pytest.mark.parametrize(
-    "source", ["fundamentals-features/1", "fundamentals-features/2"]
-)
-def test_curve_block_carries_the_fundamental_data_source(monkeypatch, source):
-    from backend.agents.trading.desk import simulate as sim_module
-
-    report = replace(_report(), fundamentals_source=source)
-    sim = sim_module.SimResult(
-        dates=report.panel.dates,
-        returns=np.array([0.0, 0.05, 1.1 / 1.05 - 1.0]),
-        invested=np.zeros(3),
-        trades=[],
-        rebalances=0,
-        equity=np.array([1.0, 1.05, 1.1]),
-    )
-    monkeypatch.setattr(sim_module, "run", lambda report, **kwargs: sim)
-    block = market_daily.curve_block(report, None)
-    assert block is not None
-    assert block["fundamentals_source"] == source
-
-
 # A record is the day's decision and must not be silently replaced: saving
 # a second record for the same session is refused unless the caller says it
 # is deliberately rewriting it. And every record says what produced it.
@@ -631,252 +607,6 @@ def test_prior_tone_records_carry_forward(tmp_path):
     assert market_tone.prior_records(store, "IREN", date(2026, 9, 6), "m") == {}
 
 
-# The record's curve block: the rules walked forward against SPY and QQQ,
-# from the simulation the nightly run already has, plus the headline stats.
-def test_curve_block_writes_the_rules_against_the_market(monkeypatch):
-    from backend.agents.trading.desk import simulate as sim_module
-    from backend.market import benchmarks
-
-    report = _report()
-    sim = sim_module.SimResult(
-        dates=report.panel.dates,
-        returns=np.array([0.0, 0.05, 1.1 / 1.05 - 1.0]),
-        invested=np.zeros(3),
-        trades=[],
-        rebalances=0,
-        equity=np.array([1.0, 1.05, 1.1]),
-    )
-    monkeypatch.setattr(sim_module, "run", lambda report, **kwargs: sim)
-    monkeypatch.setattr(
-        benchmarks,
-        "load_benchmark",
-        lambda store, symbol, sessions, **kw: benchmarks.BenchmarkSeries(
-            symbol, True, None, np.array([1.0, 1.02, 1.03]), np.asarray(sessions)
-        ),
-    )
-    block = market_daily.curve_block(report, object())
-    assert block is not None
-    assert block["rules"] == pytest.approx([0.0, 0.05, 0.1])
-    assert block["spy"] == pytest.approx([0.0, 0.02, 0.03])
-    assert block["qqq"] == pytest.approx([0.0, 0.02, 0.03])
-    assert block["benchmark_notes"] == {}
-    # The point-in-time line runs the same (patched) simulation on the
-    # restricted report, so here it equals the rules line; the record
-    # carries its own stats and an empty note.
-    assert block["rules_point_in_time"] == pytest.approx([0.0, 0.05, 0.1])
-    assert block["stats_point_in_time"]["total"] == pytest.approx(0.1)
-    assert block["point_in_time_note"] == ""
-    assert block["benchmark_cost_bps"] == sim_module.COST_BPS
-    assert block["stats"]["total"] == pytest.approx(0.1)
-    assert block["asof"] == "2026-09-03"
-    assert block["funding_model"] == sim_module.FUNDING_MODEL
-
-
-# The benchmark starts at zero like the rules, and its first return is the
-# first one the strategy participates in - not the return into the base date,
-# which the strategy never held. The off-by-one is visible only when the sim
-# starts mid-panel, so this sim does.
-def test_curve_benchmark_is_aligned_to_the_strategy_start(monkeypatch):
-    from backend.agents.trading.desk import grading, regime
-    from backend.agents.trading.desk import simulate as sim_module
-    from backend.market import benchmarks
-    from backend.agents.trading.desk.desk import DeskReport
-    from backend.agents.trading.desk.opinions import Opinion
-    from backend.agents.trading.desk.risk import Sized
-    from backend.market.panel import Panel
-    from backend.market.sizing import Position
-    from backend.market.universe import AI_COMPUTE
-
-    t, n = 4, 2
-    close = np.full((t, n + 1), 100.0)
-    # The benchmark falls 10% into the base date, then rises 10% a day: the
-    # fall must not appear in the curve, and the first rise must.
-    close[:, 2] = [100.0, 90.0, 99.0, 108.9]
-    dates = np.array(
-        [date(2026, 9, 1) + timedelta(days=i) for i in range(t)],
-        dtype="datetime64[D]",
-    )
-    panel = Panel(
-        dates=dates,
-        tickers=("SNDK", "IREN", "SPY"),
-        open=close,
-        high=close,
-        low=close,
-        close=close,
-        adj_close=close,
-        volume=np.full_like(close, 1e6),
-        themes={"SNDK": (AI_COMPUTE,), "IREN": (AI_COMPUTE,)},
-        benchmark="SPY",
-    )
-    grades = np.zeros((t, n + 1), dtype=int)
-    grades[:, 0] = grading.ORDINAL["A+"]
-    stances = {"fundamental": np.array([[1, -1, 0]] * t)}
-    graded = grading.Graded(grades, np.array([[3.0, -2.0, 0.0]] * t), stances)
-    state = regime.RegimeState(
-        -0.06,
-        0.19,
-        0.0,
-        -0.52,
-        -3.6,
-        4.8,
-        "software",
-        -0.217,
-        -0.223,
-        0.5,
-        1.0,
-        ("participation below its two-year median",),
-    )
-    view = regime.RegimeView(
-        [state] * t, Opinion("rotation", np.full((t, n + 1), np.nan))
-    )
-    book = [
-        Sized(
-            Position(
-                "SNDK", 0.08, 1.0, 1.37, (AI_COMPUTE,), "inverse-volatility weight"
-            ),
-            "A+",
-            1.0,
-            1.0,
-        )
-    ]
-    report = DeskReport(
-        panel,
-        {"SNDK": "ai", "IREN": "ai"},
-        {},
-        view,
-        graded,
-        grades.astype(float),
-        book,
-    )
-    sim = sim_module.SimResult(
-        dates=panel.dates[1:],
-        returns=np.array([0.0, 0.05, 0.1]),
-        invested=np.zeros(3),
-        trades=[],
-        rebalances=0,
-        equity=np.array([1.0, 1.05, 1.1]),
-    )
-    monkeypatch.setattr(sim_module, "run", lambda report, **kwargs: sim)
-    seen = {}
-
-    # The strict loader is handed the simulation's own sessions, so the
-    # benchmark cannot earn the -10% into the base date; it is priced from
-    # that date's close forward, exactly like the rules.
-    def fake_load(store, symbol, sessions, **kw):
-        seen[symbol] = [str(d) for d in sessions]
-        return benchmarks.BenchmarkSeries(
-            symbol, True, None, np.array([1.0, 1.1, 1.21]), np.asarray(sessions)
-        )
-
-    monkeypatch.setattr(benchmarks, "load_benchmark", fake_load)
-    block = market_daily.curve_block(report, object())
-    assert block is not None
-    assert block["rules"] == pytest.approx([0.0, 0.05, 0.1])
-    assert seen["SPY"] == [str(d) for d in panel.dates[1:]]
-    assert seen["QQQ"] == seen["SPY"]
-    assert block["spy"] == pytest.approx([0.0, 0.1, 0.21])
-    assert block["qqq"] == pytest.approx([0.0, 0.1, 0.21])
-
-
-# A benchmark the strict loader cannot price is left off the chart with its
-# reason on the record, never drawn as a flat 0% line from zero-filled gaps.
-def test_curve_block_reports_an_unavailable_benchmark_instead_of_drawing_it(
-    monkeypatch,
-):
-    from backend.agents.trading.desk import simulate as sim_module
-    from backend.market import benchmarks
-
-    report = _report()
-    sim = sim_module.SimResult(
-        dates=report.panel.dates,
-        returns=np.array([0.0, 0.05, 1.1 / 1.05 - 1.0]),
-        invested=np.zeros(3),
-        trades=[],
-        rebalances=0,
-        equity=np.array([1.0, 1.05, 1.1]),
-    )
-    monkeypatch.setattr(sim_module, "run", lambda report, **kwargs: sim)
-
-    def fake_load(store, symbol, sessions, **kw):
-        if symbol == "QQQ":
-            return benchmarks.BenchmarkSeries(
-                symbol, False, None, None, np.asarray(sessions),
-                reason="QQQ has no bars in the store",
-            )
-        return benchmarks.BenchmarkSeries(
-            symbol, True, None, np.array([1.0, 1.0, 1.0]), np.asarray(sessions)
-        )
-
-    monkeypatch.setattr(benchmarks, "load_benchmark", fake_load)
-    block = market_daily.curve_block(report, object())
-    assert block["spy"] == pytest.approx([0.0, 0.0, 0.0])
-    assert block["qqq"] == []
-    assert block["benchmark_notes"] == {"QQQ": "QQQ has no bars in the store"}
-    # Without a store nothing is priced, and the record says so.
-    none = market_daily.curve_block(report, None)
-    assert none["spy"] == [] and none["qqq"] == []
-    assert set(none["benchmark_notes"]) == {"SPY", "QQQ"}
-
-
-# Keep registered daily execution options stable; disclosure tests separately
-# ensure they are not described as the current paper executor.
-def test_curve_block_preserves_the_daily_execution_options(monkeypatch):
-    from backend.agents.trading.desk import simulate as sim_module
-
-    report = _report()
-    sim = sim_module.SimResult(
-        dates=report.panel.dates,
-        returns=np.array([0.0, 0.05, 0.1]),
-        invested=np.zeros(3),
-        trades=[],
-        rebalances=0,
-        equity=np.array([1.0, 1.05, 1.1]),
-    )
-    seen: dict[str, object] = {}
-
-    def fake_run(report, **kwargs):
-        seen.update(kwargs)
-        return sim
-
-    monkeypatch.setattr(sim_module, "run", fake_run)
-    market_daily.curve_block(report, None)
-    assert sim_module.LIVE_POLICY, "the live policy must not be empty"
-    for flag in sim_module.LIVE_POLICY:
-        assert flag in seen, f"curve_block did not pass the live flag {flag}"
-        assert seen[flag] == sim_module.LIVE_POLICY[flag]
-
-
-# The paper account's live equity history becomes the overlay for the same
-# chart, and an empty history is nothing rather than an error.
-def test_paper_curve_block_reads_the_live_history(tmp_path):
-    state = {
-        "sessions_seen": ["2026-09-04"],
-        "last_rebalance": None,
-        "sessions_since_rebalance": 0,
-        "opened": {},
-        "start_equity": 100000.0,
-        "history": [
-            {
-                "session": "2026-09-04",
-                "equity": 100000.0,
-                "pl_pct": 0.0,
-                "pl": 0.0,
-            }
-        ],
-        "pending": [],
-        "unconfirmed_rebalance": None,
-        "previous_rebalance": None,
-    }
-    root = tmp_path / "paper"
-    root.mkdir()
-    (root / "state.json").write_text(json.dumps(state), encoding="utf-8")
-    block = market_daily.paper_curve_block(tmp_path)
-    assert block is not None
-    assert block["sessions"] == ["2026-09-04"]
-    assert block["equity"] == [100000.0]
-    assert market_daily.paper_curve_block(tmp_path / "empty") is None
-
-
 # The drill-down files: one JSON per book name with the session rows and
 # the name's own backtest, so the page reads a single name without running
 # the desk again.
@@ -1079,7 +809,39 @@ def test_history_only_writes_histories_and_no_record(tmp_path, monkeypatch, caps
     assert payload["rows"][0]["action"] == "buy"
 
 
-# A curve that cannot be drawn is a missing block, never a lost record.
+# The paper account's live equity history is the record's curve block, and
+# an empty history is nothing rather than an error.
+def test_paper_curve_block_reads_the_live_history(tmp_path):
+    state = {
+        "sessions_seen": ["2026-09-04"],
+        "last_rebalance": None,
+        "sessions_since_rebalance": 0,
+        "opened": {},
+        "start_equity": 100000.0,
+        "history": [
+            {
+                "session": "2026-09-04",
+                "equity": 100000.0,
+                "pl_pct": 0.0,
+                "pl": 0.0,
+            }
+        ],
+        "pending": [],
+        "unconfirmed_rebalance": None,
+        "previous_rebalance": None,
+    }
+    root = tmp_path / "paper"
+    root.mkdir()
+    (root / "state.json").write_text(json.dumps(state), encoding="utf-8")
+    block = market_daily.paper_curve_block(tmp_path)
+    assert block is not None
+    assert block["sessions"] == ["2026-09-04"]
+    assert block["equity"] == [100000.0]
+    assert market_daily.paper_curve_block(tmp_path / "empty") is None
+
+
+# A curve block that cannot be read is a missing block, never a lost record;
+# the record carries no simulation curve (the box reads the replay instead).
 def test_curves_never_raise(monkeypatch, tmp_path):
     from backend.agents.trading.desk import paper
 
@@ -1087,17 +849,10 @@ def test_curves_never_raise(monkeypatch, tmp_path):
         raise OSError("the history file is unreadable")
 
     monkeypatch.setattr(paper, "load_state", boom)
-    monkeypatch.setattr(market_daily, "curve_block", lambda report, store: {"ok": 1})
-    out = market_daily.curves(None, None, tmp_path)
-    assert out == {"backtest": {"ok": 1}, "paper": None}
-
-    def boom2(report, store):
-        raise RuntimeError("no simulation")
-
-    monkeypatch.setattr(market_daily, "curve_block", boom2)
+    assert market_daily.curves(None, None, tmp_path) == {"paper": None}
     monkeypatch.setattr(paper, "load_state", lambda root: paper.PaperState())
-    out = market_daily.curves(None, None, tmp_path)
-    assert out == {"backtest": None, "paper": None}
+    assert market_daily.curves(None, None, tmp_path) == {"paper": None}
+    assert not hasattr(market_daily, "curve_block")
 
 
 # The record names the revision the process started from, not whatever the
@@ -1261,212 +1016,6 @@ def test_the_nightly_session_date_is_unchanged_in_summer():
 
     summer_run = datetime(2026, 9, 25, 23, 30, tzinfo=UTC)  # 19:30 EDT
     assert _nightly_asof(summer_run) == date(2026, 9, 25)
-
-
-# When the point-in-time run cannot be drawn (here: the simulation raises on
-# the restricted report only), the published line still stands and the
-# record says why the second line is absent.
-def test_curve_block_reports_a_missing_point_in_time_line(monkeypatch):
-    from backend.agents.trading.desk import simulate as sim_module
-    from backend.market import benchmarks
-
-    report = _report()
-    sim = sim_module.SimResult(
-        dates=report.panel.dates,
-        returns=np.array([0.0, 0.05, 1.1 / 1.05 - 1.0]),
-        invested=np.zeros(3),
-        trades=[],
-        rebalances=0,
-        equity=np.array([1.0, 1.05, 1.1]),
-    )
-    calls = {"n": 0}
-
-    def fake_run(report_, **kwargs):
-        calls["n"] += 1
-        if calls["n"] > 1:
-            raise RuntimeError("restricted run failed")
-        return sim
-
-    monkeypatch.setattr(sim_module, "run", fake_run)
-    monkeypatch.setattr(
-        benchmarks,
-        "load_benchmark",
-        lambda store, symbol, sessions, **kw: benchmarks.BenchmarkSeries(
-            symbol, True, None, np.array([1.0, 1.0, 1.0]), np.asarray(sessions)
-        ),
-    )
-    block = market_daily.curve_block(report, object())
-    assert block["rules"] == pytest.approx([0.0, 0.05, 0.1])
-    assert block["rules_point_in_time"] == []
-    assert block["stats_point_in_time"] == {}
-    assert "restricted run failed" in block["point_in_time_note"]
-
-
-# A report the simulator can actually walk: eight names and SPY over
-# `sessions` weekdays of random-walk prices, grades that move between A+, A,
-# B and C, so the candidate has to select, cap and hold cash. The same
-# shape as `test_policy_v4`'s report, built here so this module's guarantee
-# does not depend on another test file's fixture.
-def _walk_report(sessions: int = 160, seed: int = 3) -> DeskReport:
-    names = ("AAA", "BBB", "CCC", "DDD", "EEE", "FFF", "GGG", "HHH")
-    rng = np.random.default_rng(seed)
-    n = len(names)
-    days = []
-    d = date(2022, 1, 3)
-    while len(days) < sessions:
-        if d.weekday() < 5:
-            days.append(d)
-        d += timedelta(days=1)
-    dates = np.array(days, dtype="datetime64[D]")
-    log = rng.normal(0.0004, 0.02, size=(sessions, n + 1)).cumsum(axis=0)
-    close = 100.0 * np.exp(log)
-    panel = Panel(
-        dates=dates,
-        tickers=names + ("SPY",),
-        open=close * (1 + rng.normal(0, 0.002, size=close.shape)),
-        high=close * 1.01,
-        low=close * 0.99,
-        close=close,
-        adj_close=close,
-        volume=np.full_like(close, 1e6),
-        themes={t: (AI_COMPUTE,) for t in names},
-        benchmark="SPY",
-    )
-    grades = rng.choice(
-        [grading.ORDINAL[g] for g in ("A+", "A", "B", "C")],
-        size=(sessions, n + 1),
-        p=[0.3, 0.3, 0.2, 0.2],
-    )
-    grades[:, n] = 0
-    conviction = rng.normal(size=(sessions, n + 1))
-    conviction[:, n] = np.nan
-    graded = grading.Graded(grades, conviction.copy(), {}, conviction)
-    state = regime.RegimeState(
-        0.0, 0.0, 0.5, 0.0, 0.0, 0.0, "ai", 0.1, 0.0, 1.0, 1.0, (), 0.0, False
-    )
-    view = regime.RegimeView(
-        [state] * sessions, Opinion("rotation", np.full((sessions, n + 1), np.nan))
-    )
-    return DeskReport(
-        panel, {t: "ai" for t in names}, {}, view, graded, graded.as_scores(), []
-    )
-
-
-# A membership history for the walk report: six names throughout, GGG
-# entering late and FFF leaving early, so the point-in-time mask changes.
-def _walk_history(tmp_path: Path) -> Path:
-    path = tmp_path / "membership_history.csv"
-    rows = ["ticker,entered,entry_announced,exited,exit_announced,source,rule"]
-    for t in ("AAA", "BBB", "CCC", "DDD", "EEE", "HHH"):
-        rows.append(f"{t},2016-01-04,2016-01-04,,,test,member throughout")
-    rows.append("GGG,2022-05-02,2022-05-02,,,test,enters late")
-    rows.append("FFF,2016-01-04,2016-01-04,2022-06-01,2022-06-01,test,leaves early")
-    path.write_text("\n".join(rows) + "\n", encoding="utf-8")
-    return path
-
-
-# Point the nightly's restriction at a history file of the test's choosing
-# (the production default is bound into the function's signature, so the
-# module constant cannot be patched instead).
-def _use_history(monkeypatch, history_path: Path) -> None:
-    from backend.agents.trading.desk import point_in_time
-
-    original = point_in_time.point_in_time
-    monkeypatch.setattr(
-        point_in_time,
-        "point_in_time",
-        lambda report, history_path=history_path: original(
-            report, history_path=history_path
-        ),
-    )
-
-
-# The curve block carries the `/4` candidate as a third strategy line: the
-# same length as the published rules line, starting at 0, named by its
-# policy version and a fixed label that says how it was priced.
-def test_curve_block_carries_the_candidate_line(monkeypatch, tmp_path):
-    from backend.agents.trading.desk import policy_v4
-
-    _use_history(monkeypatch, _walk_history(tmp_path))
-    block = market_daily.curve_block(_walk_report(), None)
-    assert block is not None
-    curve = block["candidate_point_in_time"]
-    assert len(curve) == len(block["rules"]) > 2
-    assert curve[0] == 0.0
-    assert block["candidate_note"] == ""
-    assert block["candidate_policy"] == policy_v4.POLICY_VERSION == "graded-equal-weight/4"
-    assert block["candidate_label"] == market_daily.CANDIDATE_LABEL
-    assert block["candidate_label"].startswith("candidate /4: every A/A+ name")
-    assert "not the live executor" in block["candidate_label"]
-    stats = block["stats_candidate"]
-    assert set(stats) >= {"cagr", "volatility", "drawdown", "total"}
-    assert all(v is None or isinstance(v, float) for v in stats.values())
-    assert stats["total"] == pytest.approx(curve[-1])
-    # It is a different line from the rules and from the point-in-time
-    # rules, not one of them relabelled.
-    assert curve != block["rules"]
-    assert curve != block["rules_point_in_time"]
-
-
-# The guarantee behind the line: value for value, the dashboard's candidate
-# curve is the scorecard's `ew_graded_20` arm priced the plain way the
-# scorecard prices an arm (next-open fills at the default cost, the arm's
-# rebalance clock, no exits, no live policy) on the same report and the
-# same sessions. If either side drifts - a flag added here, a constant
-# changed in the arm - the page would be showing a number the scorecard
-# never measured, and this is what notices.
-def test_candidate_line_is_the_scorecard_arm_priced_plain(monkeypatch, tmp_path):
-    from backend.agents.trading.desk import paper, point_in_time, simulate
-    from backend.cli import market_pit_scorecard as sc
-
-    history = _walk_history(tmp_path)
-    _use_history(monkeypatch, history)
-    report = _walk_report()
-    block = market_daily.curve_block(report, None)
-    assert block["candidate_note"] == ""
-    restricted, mask = point_in_time.point_in_time(report, history_path=history)
-    arm = simulate.run(
-        restricted,
-        since=date.fromisoformat(block["dates"][0]),
-        use_exits=False,
-        rebalance=paper.REBALANCE_EVERY,
-        cost_bps=simulate.COST_BPS,
-        allocator=sc.ARMS["ew_graded_20"](restricted, mask),
-    )
-    assert [str(d) for d in arm.dates] == block["dates"]
-    expected = arm.equity / arm.equity[0] - 1.0
-    np.testing.assert_allclose(
-        block["candidate_point_in_time"], expected, rtol=0, atol=1e-12
-    )
-    # Not a vacuous match: the arm traded and moved.
-    assert np.abs(expected).max() > 0
-    assert arm.rebalances > 1
-    for key, value in arm.stats().items():
-        if value != value:
-            assert block["stats_candidate"][key] is None
-        else:
-            assert block["stats_candidate"][key] == pytest.approx(value)
-
-
-# Without the membership file the candidate cannot be placed on the
-# point-in-time book: the curve is empty, the stats are empty and the note
-# says why, while the published rules line still stands.
-def test_curve_block_reports_a_missing_candidate_line(monkeypatch, tmp_path):
-    _use_history(monkeypatch, tmp_path / "no-such-membership.csv")
-    block = market_daily.curve_block(_walk_report(), None)
-    assert block is not None
-    assert len(block["rules"]) > 2
-    assert block["candidate_point_in_time"] == []
-    assert block["stats_candidate"] == {}
-    assert block["candidate_note"].startswith("candidate line not drawn:")
-    assert "FileNotFoundError" in block["candidate_note"]
-    # The same failure takes the point-in-time rules line with it.
-    assert block["rules_point_in_time"] == []
-    assert block["point_in_time_note"].startswith("point-in-time line not drawn:")
-    # The line is absent, not mislabelled: the policy and label still say
-    # what would have been drawn.
-    assert block["candidate_policy"] == "graded-equal-weight/4"
-    assert block["candidate_label"] == market_daily.CANDIDATE_LABEL
 
 
 # The record carries the policy shadows' receipts under their own key, and
@@ -1799,206 +1348,6 @@ def test_the_redeploy_switch_off_plans_nothing(tmp_path, monkeypatch, capsys):
     assert entry["idle_cash_share"] == pytest.approx(0.9)
     assert entry["redeploy"]["enabled"] is False
     assert entry["redeploy"]["orders"] == 0
-
-
-# The published curve says which flags it ran. Under the active graded
-# equal-weight policy (`/5` since 2026-09-29) the executor's redeploy of
-# idle cash is among them - passed explicitly, never through `LIVE_POLICY`
-# (which every study's control is priced from) - and the record says so
-# (`redeploy_priced` True, the option and its buffer in
-# `execution_options`). The daily model has its own identity, separate from
-# the live executor, and its allocator is active: SNDK, the one A+
-# name, at `/5`'s quarter.
-def test_curve_block_prices_the_redeploy_under_the_active_policy(monkeypatch):
-    from backend.agents.trading.desk import live_policy, paper, policy_v5
-    from backend.agents.trading.desk import simulate as sim_module
-
-    assert live_policy.ACTIVE == policy_v5.POLICY_VERSION
-    assert live_policy.is_equal_weight()
-    report = _report()
-    sim = sim_module.SimResult(
-        dates=report.panel.dates,
-        returns=np.array([0.0, 0.05, 0.1]),
-        invested=np.zeros(3),
-        trades=[],
-        rebalances=0,
-        equity=np.array([1.0, 1.05, 1.1]),
-    )
-    calls: list[dict] = []
-
-    def fake_run(report, **kwargs):
-        calls.append(kwargs)
-        return sim
-
-    monkeypatch.setattr(sim_module, "run", fake_run)
-    block = market_daily.curve_block(report, None)
-    assert block["strategy_policy"] == "graded-equal-weight/5"
-    assert block["execution_policy"] == market_daily.DAILY_EXECUTION_POLICY
-    assert block["live_execution_policy"] == paper.POLICY_VERSION
-    assert block["execution_matches_live"] is False
-    assert paper.POLICY_VERSION == "cash-bounded-breakout-rotation/6"
-    assert block["execution_options"] == {
-        **sim_module.LIVE_POLICY,
-        "midcycle_redeploy": True,
-        "redeploy_buffer": paper.REDEPLOY_BUFFER,
-    }
-    assert block["redeploy_priced"] is True
-    # The first call is the published (hindsight) rules line.
-    seen = calls[0]
-    assert seen["midcycle_redeploy"] is True
-    assert seen["redeploy_buffer"] == paper.REDEPLOY_BUFFER
-    assert callable(seen["allocator"])
-    row = seen["allocator"](report, report.panel, None, len(report.panel.dates) - 1)
-    assert list(row) == [0.25, 0.0, 0.0]
-    assert "midcycle_redeploy" not in sim_module.LIVE_POLICY
-
-
-# Under a policy other than `/4` (the `/3` book, monkeypatched active) the
-# published curve is priced exactly as it was before the `/4` allocator was
-# wired in: the simulator's built-in targets, the live flags, no redeploy.
-# The keyword set is pinned in full so a `/3` record cannot change by a byte.
-def test_curve_block_keeps_the_v3_call_unchanged(monkeypatch):
-    from backend.agents.trading.desk import event_risk, live_policy, paper
-    from backend.agents.trading.desk import simulate as sim_module
-
-    monkeypatch.setattr(live_policy, "ACTIVE", "graded-equal-weight/3")
-    report = _report()
-    sim = sim_module.SimResult(
-        dates=report.panel.dates,
-        returns=np.array([0.0, 0.05, 0.1]),
-        invested=np.zeros(3),
-        trades=[],
-        rebalances=0,
-        equity=np.array([1.0, 1.05, 1.1]),
-    )
-    calls: list[dict] = []
-
-    def fake_run(report, **kwargs):
-        calls.append(kwargs)
-        return sim
-
-    monkeypatch.setattr(sim_module, "run", fake_run)
-    monkeypatch.setattr(
-        market_daily, "_candidate_curve", lambda report, sessions: ([], {}, "off")
-    )
-    block = market_daily.curve_block(report, None)
-    assert block["strategy_policy"] == "graded-equal-weight/3"
-    assert block["execution_options"] == sim_module.LIVE_POLICY
-    assert block["redeploy_priced"] is False
-    hindsight, pit = calls
-    expected = dict(
-        use_exits=False,
-        rebalance=paper.REBALANCE_EVERY,
-        event_lifecycle=True,
-        **sim_module.LIVE_POLICY,
-    )
-    for call in (hindsight, pit):
-        exposure = call.pop("event_exposure")
-        np.testing.assert_array_equal(exposure, event_risk.live_path(report.panel))
-    assert hindsight == expected
-    assert pit == {**expected, "since": report.panel.dates[0].astype(object)}
-
-
-# The record names both rules lines for what they are: the hindsight line
-# is today's names back-cast and is not an expectation; the point-in-time
-# line is the names known at the time under the daily-price execution model.
-def test_curve_block_labels_the_hindsight_and_point_in_time_lines(monkeypatch):
-    from backend.agents.trading.desk import simulate as sim_module
-
-    report = _report()
-    sim = sim_module.SimResult(
-        dates=report.panel.dates,
-        returns=np.array([0.0, 0.05, 0.1]),
-        invested=np.zeros(3),
-        trades=[],
-        rebalances=0,
-        equity=np.array([1.0, 1.05, 1.1]),
-    )
-    monkeypatch.setattr(sim_module, "run", lambda report, **kwargs: sim)
-    block = market_daily.curve_block(report, None)
-    assert block["universe"] == "hindsight"
-    assert block["rules_label"] == market_daily.HINDSIGHT_RULES_LABEL
-    assert block["rules_label"] == (
-        "today's names back-cast to 2015 (hindsight universe); not an expectation"
-    )
-    assert block["point_in_time_label"] == market_daily.POINT_IN_TIME_LABEL
-    assert block["point_in_time_label"] == (
-        "names known at the time, daily-price execution model"
-    )
-
-
-# The guarantee behind the published rules lines: element for element, both
-# the hindsight `rules` curve and `rules_point_in_time` are `simulate.run`
-# with the active policy's allocator (`policy_v5.allocator` since
-# 2026-09-29) on the matching book under the live options plus the redeploy
-# - the same call the mid-cycle study prices `mc-redeploy` with - and their
-# stats are those runs' stats. Before 2026-09-27 a record labelled `/4`
-# carried the `/3` book's curve under the `/4` name; the last check here is
-# that the `/5` line is not `/4`'s relabelled either.
-def test_rules_lines_are_the_active_policy_under_daily_execution(
-    monkeypatch, tmp_path
-):
-    from backend.agents.trading.desk import (
-        event_risk,
-        live_policy,
-        paper,
-        point_in_time,
-        policy_v4,
-        policy_v5,
-        simulate,
-    )
-
-    assert live_policy.POLICY is policy_v5
-    history = _walk_history(tmp_path)
-    _use_history(monkeypatch, history)
-    report = _walk_report()
-    block = market_daily.curve_block(report, None)
-    assert block["point_in_time_note"] == ""
-    assert block["strategy_policy"] == policy_v5.POLICY_VERSION
-    live = dict(
-        use_exits=False,
-        rebalance=paper.REBALANCE_EVERY,
-        event_exposure=event_risk.live_path(report.panel),
-        event_lifecycle=True,
-        midcycle_redeploy=True,
-        redeploy_buffer=paper.REDEPLOY_BUFFER,
-        **simulate.LIVE_POLICY,
-    )
-    everyone = np.ones((len(report.panel.dates), len(report.panel.tickers)), bool)
-    everyone[:, report.panel.index(report.panel.benchmark)] = False
-    hindsight = simulate.run(report, allocator=policy_v5.allocator(everyone), **live)
-    assert [str(d) for d in hindsight.dates] == block["dates"]
-    np.testing.assert_allclose(
-        block["rules"], hindsight.equity / hindsight.equity[0] - 1.0, rtol=0, atol=1e-12
-    )
-    restricted, mask = point_in_time.point_in_time(report, history_path=history)
-    pit = simulate.run(
-        restricted,
-        since=date.fromisoformat(block["dates"][0]),
-        allocator=policy_v5.allocator(mask),
-        **live,
-    )
-    np.testing.assert_allclose(
-        block["rules_point_in_time"], pit.equity / pit.equity[0] - 1.0, rtol=0, atol=1e-12
-    )
-    # Not a vacuous match: both books traded, and the restriction changed
-    # the line (GGG enters late, FFF leaves early in the walk history).
-    assert hindsight.rebalances > 1 and pit.rebalances > 1
-    assert np.abs(block["rules"]).max() > 0
-    assert block["rules"] != block["rules_point_in_time"]
-    for key, value in hindsight.stats().items():
-        assert block["stats"][key] == (None if value != value else pytest.approx(value))
-    for key, value in pit.stats().items():
-        assert block["stats_point_in_time"][key] == (
-            None if value != value else pytest.approx(value)
-        )
-    # And neither is the plainly-priced candidate line: the executor differs.
-    assert block["rules_point_in_time"] != block["candidate_point_in_time"]
-    # Nor `/4` relabelled: the same executor on `/4`'s allocator draws a
-    # different line, because the walk report has sessions with fewer than
-    # five A/A+ names, where the two caps disagree.
-    v4 = simulate.run(report, allocator=policy_v4.allocator(everyone), **live)
-    assert not np.allclose(block["rules"], v4.equity / v4.equity[0] - 1.0)
 
 
 # The idle cash share is what the plan leaves: cash less the buys plus the

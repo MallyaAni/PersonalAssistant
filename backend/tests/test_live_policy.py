@@ -118,9 +118,8 @@ def test_the_family_exemption_needs_the_active_policy_in_it(monkeypatch):
 
 
 # The nightly record carries the active policy's targets beside the desk's
-# `/3` book, and the curve block names the allocation policy and the
-# executor's conventions separately.
-def test_record_and_curve_block_name_the_active_policy():
+# `/3` book.
+def test_record_names_the_active_policy():
     report = _report()
     record = market_daily.record(report)
     assert record["targets"]["policy"] == live_policy.ACTIVE
@@ -131,12 +130,6 @@ def test_record_and_curve_block_name_the_active_policy():
     )
     assert record["targets"]["weights"]["SNDK"] == pytest.approx(0.25)
     assert record["book"], "the /3 book stays on the record for reference"
-    curve = market_daily.curve_block(report, None)
-    if curve is not None:
-        assert curve["strategy_policy"] == live_policy.ACTIVE
-        assert curve["execution_policy"] == market_daily.DAILY_EXECUTION_POLICY
-        assert curve["live_execution_policy"] == paper.POLICY_VERSION
-        assert curve["execution_matches_live"] is False
 
 
 # The board reads the active policy's weights as its book; a record from

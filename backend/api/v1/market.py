@@ -195,12 +195,18 @@ async def latest_desk(user_id: UserId) -> dict[str, object]:
         "summary": deskrecord.summary(latest),
         "changes": deskrecord.changes(latest, previous).to_dict(),
         "sessions": deskrecord.sessions(_root()),
-        # The track-record curve the record carries; absent on older records.
-        "curve": _curve_for_display((latest or {}).get("curve")),
+        # The "Historical simulation" box: the installed rule's own account
+        # simulation from the replay of this record's session, or why it is
+        # missing. Never the older daily-price simulator.
+        "policy_simulation": _policy_simulation_for(latest),
         # Whether tonight's live grades and targets agree with the
         # point-in-time replay. The board refuses to be traded from when
         # they do not; None on records written before the check existed.
         "grade_parity": _grade_parity_for(latest),
+        # Whether tonight's paper plan agrees with the account simulator's
+        # plan on the same inputs (written by the 20:40 replay job); None
+        # until it has been checked for this record.
+        "plan_parity": _plan_parity_for(latest),
     }
 
 
@@ -216,19 +222,41 @@ def _grade_parity_for(record: dict | None) -> dict | None:
     return stored if stored is not None else record.get("grade_parity")
 
 
-# Withhold unvalidated historical NAV while preserving the immutable source record.
-def _curve_for_display(curve):
-    from backend.agents.trading.desk import simulate
+# The plan check's row for the record the board shows, or None.
+def _plan_parity_for(record: dict | None) -> dict | None:
+    from backend.market import plan_parity
 
-    visible = dict(curve or {})
-    backtest = visible.get("backtest")
-    if backtest and backtest.get("valuation_model") != simulate.VALUATION_MODEL:
-        visible["backtest"] = None
-        visible["backtest_unavailable_reason"] = (
-            "Historical simulation withheld: this saved curve predates the check "
-            "for missing prices on held stocks. Its returns need revalidation."
-        )
-    return visible
+    return plan_parity.for_session(_root(), (record or {}).get("session"))
+
+
+# The installed rule's account simulation for the record the board shows:
+# the replay of the record's policy through the record's session, written by
+# the 20:40 job after the nightly. When that replay is missing the box says
+# so; no other simulation is shown in its place.
+def _policy_simulation_for(record: dict | None) -> dict | None:
+    from backend.cli import market_policy_replay_research as replay
+    from backend.market.labels import SimulationStatus
+
+    if not record:
+        return None
+    policy = (record.get("targets") or {}).get("policy")
+    session = record.get("session")
+    book = replay.read_book(_root(), policy, session)
+    if book is not None:
+        return {"status": SimulationStatus.AVAILABLE, **book}
+    return {
+        "status": SimulationStatus.MISSING,
+        "policy": policy,
+        "session": session,
+        "reason": (
+            f"No replay of {policy or 'the recorded policy'} for the {session} "
+            "record has been written yet. The replay runs at 20:40, after the "
+            "evening record; until it does, no simulation is shown."
+            if policy in replay.INSTALLED_ARMS
+            else f"The {session} record's policy ({policy or 'not named'}) has no "
+            "account simulation."
+        ),
+    }
 
 
 # Read the collected display snapshot without triggering provider or account work.

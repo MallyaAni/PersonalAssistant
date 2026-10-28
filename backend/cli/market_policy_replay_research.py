@@ -24,7 +24,14 @@ September for its whole past (CoreWeave, IREN, Apple, Meta ...).
 
 The result lands under `research/policy-replay/<arm>/<asof>/` with a
 manifest naming the arm, its parameters, the sources it ran from and the
-sessions covered; the API serves the newest folder.
+sessions covered; the API serves the newest folder. For the installed rule the
+folder also holds `book.json`, the simulated account's equity beside SPY on
+the same sessions: the Paper account view's "Historical simulation" box draws
+it and the manifest's `book` summary for the record of the same session.
+
+After the replay, the same report checks tonight's paper plan against the
+simulator's plan (`backend.market.plan_parity`) and writes the verdict to
+`desk/plan_parity.json`.
 """
 
 from __future__ import annotations
@@ -36,6 +43,7 @@ import sys
 from datetime import UTC, datetime
 from hashlib import sha256
 from pathlib import Path
+from types import SimpleNamespace
 
 import numpy as np
 
@@ -48,6 +56,9 @@ from backend.market.store import MarketStore
 
 DIRECTORY = "research/policy-replay"
 SCHEMA = "policy-replay-research/1"
+# The installed rule's simulated account curve beside its benchmark.
+BOOK_FILE = "book.json"
+BOOK_SCHEMA = "policy-replay-book/1"
 # The arm that reproduces each installed policy's rule, and the policy it stands for.
 INSTALLED_ARMS = {
     "grade-led-leader-weight/1": "leader_ewma_minB_floor50",
@@ -280,6 +291,36 @@ def installed_book(report) -> policy_book.Book:
     )
 
 
+# The account's equity and the benchmark's adjusted close over the span the
+# summary's `all` measures (from the first session the trailing window can
+# size), as cumulative returns from that session's close, with the benchmark
+# held throughout at no cost: what the "Historical simulation" box draws. And
+# the period and the benchmark's own record on the same sessions.
+def book_curve(book, panel) -> tuple[dict, dict]:
+    """Return ({dates, equity, benchmark}, {period, benchmark metrics})."""
+    start = leader.WINDOW
+    equity = np.asarray(book.equity[start:], dtype=float)
+    closes = np.asarray(panel.adj_close[start:, panel.index(panel.benchmark)], float)
+    shown = SimpleNamespace(equity=closes)
+    curve = {
+        "dates": list(book.dates[start:]),
+        "equity": [float(v / equity[0] - 1.0) for v in equity],
+        "benchmark": [float(v / closes[0] - 1.0) for v in closes],
+    }
+    return curve, {
+        "period": {
+            "start": book.dates[start],
+            "through": book.dates[-1],
+            "sessions": len(equity),
+        },
+        "benchmark": {
+            "symbol": panel.benchmark,
+            "basis": "adjusted close held from the first session, no costs",
+            **policy_book.metrics(shown),
+        },
+    }
+
+
 # The book's compounded record, over all of it and the 2015-2022 / 2023- windows
 # the rule was chosen and checked on.
 def book_summary(book) -> dict:
@@ -302,13 +343,15 @@ def replay(
     """Return (manifest, {ticker: rows}) for the installed rule, or a scorecard arm."""
     panel = report.panel
     dates = [str(d)[:10] for d in panel.dates]
-    summary = None
+    summary = curve = None
     if arm_name in INSTALLED_ARMS.values():
         if basis != "book":
             raise ValueError("The installed rule is replayed over the book")
         restricted = report
         book = installed_book(report)
         summary = book_summary(book)
+        curve, measured = book_curve(book, panel)
+        summary = {**summary, **measured, "curve_file": BOOK_FILE}
         held = book.weights
         by_name: dict[str, list[dict]] = {}
         for trade in book.trades:
@@ -392,7 +435,7 @@ def replay(
         "arm": arm_name,
         "audit": audit,
         "basis": "point_in_time_research_targets_not_audited_history",
-        **({"book": summary} if summary else {}),
+        **({"book": summary, "curve": curve} if summary else {}),
         "universe": basis,
         "start": dates[0],
         "through": dates[-1],
@@ -461,14 +504,75 @@ def write(root: Path, policy: str, manifest: dict, stocks: dict[str, dict]) -> P
     """Write the replay under the arm and session and point `latest.json` at it."""
     folder = root / DIRECTORY / manifest["arm"] / manifest["through"]
     manifest = {**manifest, "policy": policy}
+    curve = manifest.pop("curve", None)
     for ticker, value in stocks.items():
         _write(folder / f"{ticker}.json", value)
+    if curve is not None:
+        _write(
+            folder / BOOK_FILE,
+            {
+                "schema": BOOK_SCHEMA,
+                "policy": policy,
+                "through": manifest["through"],
+                **curve,
+            },
+        )
     _write(folder / "manifest.json", manifest)
     _write(
         root / DIRECTORY / manifest["arm"] / "latest.json",
         {"through": manifest["through"], "generated_at": manifest["generated_at"]},
     )
     return folder
+
+
+# The installed rule's account simulation for one record, as the Paper account
+# view's "Historical simulation" box shows it: the replay of `policy` through
+# `session` - its manifest's book summary and its equity curve beside the
+# benchmark - or None when that replay has not been written (or predates the
+# curve). Nothing is recomputed and no other simulator stands in for it.
+def read_book(root, policy: str | None, session: str | None) -> dict | None:
+    """Return the replay's book for `policy` through `session`, or None."""
+    arm = INSTALLED_ARMS.get(policy or "")
+    if arm is None or not session:
+        return None
+    folder = Path(root) / DIRECTORY / arm / session
+    try:
+        manifest = json.loads((folder / "manifest.json").read_bytes())
+        curve = json.loads((folder / BOOK_FILE).read_bytes())
+    except (OSError, ValueError):
+        return None
+    if (
+        manifest.get("schema") != SCHEMA
+        or manifest.get("policy") != policy
+        or manifest.get("through") != session
+        or "book" not in manifest
+        or curve.get("schema") != BOOK_SCHEMA
+        or curve.get("through") != session
+    ):
+        return None
+    return {
+        "policy": policy,
+        "arm": arm,
+        "session": session,
+        "generated_at": manifest["generated_at"],
+        "note": manifest["note"],
+        "book": manifest["book"],
+        "dates": curve["dates"],
+        "equity": curve["equity"],
+        "benchmark": curve["benchmark"],
+    }
+
+
+# Check tonight's paper plan against the simulator's on the replay's report,
+# for the record of the replay's session; the verdict is written whatever it
+# is, and a check that cannot run is written as unavailable.
+def check_plan(root: Path, report, session: str) -> dict | None:
+    from backend.market import deskrecord, plan_parity
+
+    record = deskrecord.load(root, session)
+    if record is None:
+        return None
+    return plan_parity.run(root, report=report, record=record)
 
 
 def main(argv=None) -> int:
@@ -494,6 +598,15 @@ def main(argv=None) -> int:
         f"{folder}: {len(stocks)} names, {manifest['sessions']} sessions, "
         f"{trades} trades"
     )
+    if arm_name == INSTALLED_ARMS.get(args.policy) and not args.membership:
+        from backend.market import plan_parity
+
+        result = check_plan(root, report, manifest["through"])
+        print(
+            plan_parity.line(result)
+            if result is not None
+            else f"plan parity {manifest['through']}: no record to check"
+        )
     return 0
 
 

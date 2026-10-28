@@ -11,15 +11,19 @@ from backend.cli import market_release_admission as admission
 
 DAILY = "backend/cli/market_daily.py"
 VIEW = "backend/market/live_model_decision.py"
-# Pinned to the closed-label tree (order sides, desk actions, grade signals,
-# grades, execution timings and plan words compared and built as the
-# `backend.market.labels` enums; same wire strings, same decisions); before it
+# Pinned to the tree without the daily-price curve block (the nightly no longer
+# prices the old `desk/simulate.py` curve for the record; the Historical
+# simulation box reads the installed rule's replay instead; planning,
+# submission and persistence unchanged); before it 113d9cb4... (the
+# closed-label tree: order sides, desk actions, grade signals, grades,
+# execution timings and plan words compared and built as the
+# `backend.market.labels` enums; same wire strings, same decisions),
 # 46975df3... (the FOMC decision-close tree: the nightly holds decision-close
 # restorations for the balancer, gives them their session, and hands a released
 # cycle back to the ordinary planner the same night), b451c481... (the
 # grade-led-leader-weight/1 tree), and before that abff0526... and 3e894a1f....
 # The view pin was 56d62816... before the closed-label tree.
-UNCHANGED = "113d9cb402fcfb570100377b2215d5bbe473651fa23570dd02c9a972a0e6990e"
+UNCHANGED = "4aad1d278f8140c96aa64516975debf0c016d20e23b68336791e843da88f76ae"
 UNCHANGED_VIEW = "aa9134c3b5401051f38a2702d2f672cfd7e8cf59be624eff40145d47e23649b2"
 
 

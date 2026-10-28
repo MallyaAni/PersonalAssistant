@@ -1,4 +1,5 @@
 import {expect, test, type Page, type TestInfo} from '@playwright/test'
+import {MANIFEST, POLICY_SIMULATION} from './fixtures/policySimulation'
 
 const USER = 'fundamental-source-fixture'
 const CURRENT = 'fundamentals-features/6'
@@ -76,7 +77,7 @@ async function install(page: Page, frontendURL: string, scenario: Case) {
     let json: unknown
     if (url.pathname === '/api/v1/auth/session') json = {authentication_required: true, user_id: USER, is_admin: false, desk_access: true, desk_write: false}
     else if (url.pathname.startsWith('/api/v1/conversations/')) json = {conversations: [], messages: []}
-    else if (url.pathname === base) json = {latest, sessions: [latest.session]}
+    else if (url.pathname === base) json = {latest, sessions: [latest.session], policy_simulation: POLICY_SIMULATION}
     else if (url.pathname === `${base}/holdings`) json = {holdings: []}
     else if (url.pathname === `${base}/live`) json = {as_of: '2026-09-24T14:00:00Z', quotes: {AAPL: {last: 110, bar: '2026-09-24T13:45:00Z'}}, technical: {}, technical_detail: {}}
     else if (url.pathname === `${base}/session-prices`) json = {as_of: '2026-09-24T14:00:00Z', session: 'regular', signal_scope: 'regular-session', quotes: {}}
@@ -150,43 +151,20 @@ for (const scenario of cases) {
         const detailSource = page.getByLabel('Fundamental data source', {exact: true})
         await expect(detailSource).toHaveText(scenario.notice)
         await expect(detailSource).toHaveAttribute('title', `Recorded fundamental source: ${scenario.record || 'not recorded'}.`)
-        // Simulation provenance moved out of the paper-account summary.
+        // The Historical simulation box is the installed rule's replay. The
+        // record's stored curve and every provenance label, funding note and
+        // figure the old box derived from it stay out of it, whatever its tags.
         await page.locator('details[aria-label="Historical simulation"] > summary').click()
         const glance = page.getByLabel('Historical simulation summary')
-        const curve = glance.getByText(scenario.curveLabel, {exact: true})
-        await expect(curve).toBeVisible()
-        await expect(curve).not.toContainText('live executor')
-        const execution = page.getByLabel('Simulation execution assumptions', {exact: true})
-        if (scenario.execution === 'daily-open-close/1') {
-          await expect(execution).toContainText('Does not reproduce current paper execution.')
-          await expect(execution).toContainText('next open')
-          await expect(execution).toContainText('green-open sells held')
-        } else {
-          await expect(execution).toHaveText('Execution assumptions were not recorded or are not recognized. Alignment with current paper execution is unverified.')
-        }
-        await expect(curve).toHaveAttribute('title', `Recorded simulation fundamental source: ${scenario.backtest || 'not recorded'}.`)
-        await expect(glance).toContainText(scenario.curveNote)
-        if (scenario.backtest === PRIOR && scenario.cashCapped !== false) {
-          await expect(glance).toContainText(`not evidence of future returns. ${PRIOR_NOTE}`)
-        }
-        if (scenario.backtest === PRIOR) await expect(glance).toContainText(PRIOR_NOTE)
-        if (scenario.cashCapped === false) await expect(glance).not.toContainText('cash capped after costs')
-        else await expect(glance).toContainText('cash capped after costs')
-        const funding = page.getByLabel('Simulation funding assumptions', {exact: true})
-        if (scenario.fundingNote) {
-          await expect(glance).toContainText(scenario.fundingNote)
-          await expect(funding).toContainText(scenario.fundingNote)
-          await expect(funding).not.toContainText('buys fit cash after costs')
-        } else await expect(funding).toContainText('buys fit cash after costs; closing sales cannot fund earlier buys')
-        await expect(glance).not.toContainText('permits borrowing')
-        await expect(funding).not.toContainText('borrowing was permitted')
-        await expect(glance).toContainText('+2.0%')
-        await expect(glance).not.toContainText('+3.0%')
-        await expect(glance.getByLabel('Policy simulation CAGR')).toHaveText('CAGR 10.0% · ')
-        await expect(glance).toContainText('vs SPY ↑ +1.0%')
-        await expect(glance).toContainText('QQQ ↑ +1.5%')
-        if (scenario.curveLabel !== LABEL) await expect(glance.getByText(LABEL, {exact: true})).toHaveCount(0)
-        if (scenario.record !== 'edgar-frozen' && scenario.backtest !== 'edgar-frozen') await expect(glance).not.toContainText('frozen EDGAR snapshot')
+        await expect(glance.getByLabel('Simulated rule', {exact: true})).toContainText(MANIFEST.policy)
+        await expect(glance.getByText(scenario.curveLabel, {exact: true})).toHaveCount(0)
+        await expect(glance).not.toContainText(scenario.curveNote)
+        if (scenario.fundingNote) await expect(glance).not.toContainText(scenario.fundingNote)
+        await expect(page.getByLabel('Simulation execution assumptions', {exact: true})).toHaveCount(0)
+        await expect(page.getByLabel('Simulation funding assumptions', {exact: true})).toHaveCount(0)
+        await expect(glance).not.toContainText('+2.0%')
+        await expect(glance).not.toContainText('QQQ')
+        if (scenario.record !== 'edgar-frozen') await expect(glance).not.toContainText('frozen EDGAR snapshot')
       }
       expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
       if (scenario.phone || scenario.name === 'current record and simulation') {

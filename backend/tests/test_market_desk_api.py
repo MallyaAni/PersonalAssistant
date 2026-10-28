@@ -930,10 +930,15 @@ async def test_the_paper_account_is_read_live(tmp_path, monkeypatch, activity_fa
     assert missing.json()["reason"] == "no key"
 
 
-# The record's track-record curve reaches the desk endpoint, and a record
-# written before the curve existed answers without one.
+# The desk endpoint serves the record's plan check row and the Historical
+# simulation box's status; a record that names no policy has no simulation,
+# and the record's own stored curve is never served as the box.
 @pytest.mark.asyncio
-async def test_the_desk_returns_the_track_record_curve(tmp_path, monkeypatch):
+async def test_the_desk_serves_the_plan_check_and_the_simulation_status(
+    tmp_path, monkeypatch
+):
+    from backend.market import plan_parity
+
     monkeypatch.setattr(settings, "MARKET_DATA_ROOT", str(tmp_path))
     monkeypatch.setattr(settings, "MARKET_DESK_USER", "desk_user")
     _write(
@@ -951,6 +956,16 @@ async def test_the_desk_returns_the_track_record_curve(tmp_path, monkeypatch):
             "paper": None,
         },
     )
+    row = {
+        "version": plan_parity.VERSION,
+        "date": "2026-09-04",
+        "verdict": "mismatch",
+        "ok": False,
+        "mismatches": [
+            {"kind": "holding", "ticker": "SNDK", "live": 0.1, "simulator": 0.08}
+        ],
+    }
+    plan_parity.write(tmp_path, row)
     token = issue_user_token("desk_user", ttl_seconds=60, scopes=["memory:read"])
     async with AsyncClient(
         transport=ASGITransport(app=app), base_url="http://test"
@@ -960,8 +975,12 @@ async def test_the_desk_returns_the_track_record_curve(tmp_path, monkeypatch):
             headers={"Authorization": f"Bearer {token}"},
         )
     assert response.status_code == 200
-    assert response.json()["curve"]["backtest"]["rules"] == [0.0]
-    assert response.json()["latest"]["curve"]["backtest"]["dates"] == ["2026-09-03"]
+    body = response.json()
+    assert body["plan_parity"] == row
+    assert body["policy_simulation"]["status"] == "missing"
+    assert "no account simulation" in body["policy_simulation"]["reason"]
+    assert "curve" not in body
+    assert body["latest"]["curve"]["backtest"]["dates"] == ["2026-09-03"]
 
 
 # The drill-down reads the nightly history file for one name, and refuses a
@@ -1295,7 +1314,7 @@ async def test_the_desk_payload_carries_every_key_the_page_reads(tmp_path, monke
         "sessions",
         "summary",
         "changes",
-        "curve",
+        "policy_simulation",
         "coverage",
         "board_paper",
         "ml_forward",

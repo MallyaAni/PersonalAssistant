@@ -1,0 +1,390 @@
+{
+ "mismatch": {
+  "version": "plan-parity/1",
+  "date": "2026-10-21",
+  "checked_at": "2026-10-28T03:09:28.421312+00:00",
+  "verdict": "mismatch",
+  "ok": false,
+  "policy": "grade-led-leader-weight/1",
+  "simulator_policy": "grade-led-leader-weight/1",
+  "mismatches": [
+   {
+    "kind": "inputs",
+    "ticker": "ACN",
+    "live": 0,
+    "simulator": 1,
+    "detail": "grade the plan recorded differs from the report's"
+   },
+   {
+    "kind": "inputs",
+    "ticker": "ADBE",
+    "live": 0,
+    "simulator": 1,
+    "detail": "grade the plan recorded differs from the report's"
+   },
+   {
+    "kind": "inputs",
+    "ticker": "ALAB",
+    "live": 2,
+    "simulator": 1,
+    "detail": "grade the plan recorded differs from the report's"
+   },
+   {
+    "kind": "inputs",
+    "ticker": "APLD",
+    "live": 0,
+    "simulator": 1,
+    "detail": "grade the plan recorded differs from the report's"
+   },
+   {
+    "kind": "inputs",
+    "ticker": "FTNT",
+    "live": 1,
+    "simulator": 0,
+    "detail": "grade the plan recorded differs from the report's"
+   },
+   {
+    "kind": "inputs",
+    "ticker": "GEN",
+    "live": 0,
+    "simulator": 1,
+    "detail": "grade the plan recorded differs from the report's"
+   },
+   {
+    "kind": "inputs",
+    "ticker": "GEV",
+    "live": 2,
+    "simulator": 1,
+    "detail": "grade the plan recorded differs from the report's"
+   },
+   {
+    "kind": "inputs",
+    "ticker": "IBM",
+    "live": 0,
+    "simulator": 1,
+    "detail": "grade the plan recorded differs from the report's"
+   },
+   {
+    "kind": "inputs",
+    "ticker": "INTC",
+    "live": 1,
+    "simulator": 2,
+    "detail": "grade the plan recorded differs from the report's"
+   },
+   {
+    "kind": "inputs",
+    "ticker": "MRVL",
+    "live": 1,
+    "simulator": 0,
+    "detail": "grade the plan recorded differs from the report's"
+   },
+   {
+    "kind": "inputs",
+    "ticker": "PLTR",
+    "live": 1,
+    "simulator": 0,
+    "detail": "grade the plan recorded differs from the report's"
+   },
+   {
+    "kind": "inputs",
+    "ticker": "Q",
+    "live": 0,
+    "simulator": 1,
+    "detail": "grade the plan recorded differs from the report's"
+   },
+   {
+    "kind": "inputs",
+    "ticker": "TSM",
+    "live": 2,
+    "simulator": 1,
+    "detail": "grade the plan recorded differs from the report's"
+   },
+   {
+    "kind": "sizing",
+    "ticker": "ALAB",
+    "live": 0.034964967407190774,
+    "simulator": 0.04164304371878609,
+    "detail": "leader target differs by more than 1e-09"
+   },
+   {
+    "kind": "sizing",
+    "ticker": "COHR",
+    "live": 0.024206515897285924,
+    "simulator": 0.02658517140548398,
+    "detail": "leader target differs by more than 1e-09"
+   },
+   {
+    "kind": "sizing",
+    "ticker": "GEV",
+    "live": 0.0403441931621432,
+    "simulator": 0.02944799861753535,
+    "detail": "leader target differs by more than 1e-09"
+   },
+   {
+    "kind": "sizing",
+    "ticker": "HPE",
+    "live": 0.06724032193690534,
+    "simulator": 0.07098010998904827,
+    "detail": "leader target differs by more than 1e-09"
+   },
+   {
+    "kind": "sizing",
+    "ticker": "INTC",
+    "live": 0.0,
+    "simulator": 0.04655517351062509,
+    "detail": "leader target differs by more than 1e-09"
+   },
+   {
+    "kind": "sizing",
+    "ticker": "MU",
+    "live": 0.04572341891709563,
+    "simulator": 0.06219312085317713,
+    "detail": "leader target differs by more than 1e-09"
+   },
+   {
+    "kind": "sizing",
+    "ticker": "NTAP",
+    "live": 0.07261954769185776,
+    "simulator": 0.033997528024206476,
+    "detail": "leader target differs by more than 1e-09"
+   },
+   {
+    "kind": "sizing",
+    "ticker": "SMCI",
+    "live": 0.05648187042700048,
+    "simulator": 0.07687729309978222,
+    "detail": "leader target differs by more than 1e-09"
+   },
+   {
+    "kind": "sizing",
+    "ticker": "SNDK",
+    "live": 0.02958574165223835,
+    "simulator": 0.04009732559129543,
+    "detail": "leader target differs by more than 1e-09"
+   },
+   {
+    "kind": "sizing",
+    "ticker": "SNPS",
+    "live": 0.06186109618195291,
+    "simulator": 0.07935349419711704,
+    "detail": "leader target differs by more than 1e-09"
+   },
+   {
+    "kind": "sizing",
+    "ticker": "TSM",
+    "live": 0.05110264467204806,
+    "simulator": 0.0,
+    "detail": "leader target differs by more than 1e-09"
+   },
+   {
+    "kind": "holding",
+    "ticker": "MU",
+    "live": 0.050108365302063265,
+    "simulator": 0.06219312085317713,
+    "low": 0.052171447792764475,
+    "high": 0.07221479391358979,
+    "detail": "weight after tonight's plan is outside the simulator's rounding and minimum-trade band"
+   },
+   {
+    "kind": "holding",
+    "ticker": "NTAP",
+    "live": 0.0726183481936293,
+    "simulator": 0.033997528024206476,
+    "low": 0.023997528024206474,
+    "high": 0.04399752802420648,
+    "detail": "weight after tonight's plan is outside the simulator's rounding and minimum-trade band"
+   },
+   {
+    "kind": "holding",
+    "ticker": "SMCI",
+    "live": 0.05655634594519416,
+    "simulator": 0.07687729309978222,
+    "low": 0.06687729309978223,
+    "high": 0.08687729309978222,
+    "detail": "weight after tonight's plan is outside the simulator's rounding and minimum-trade band"
+   },
+   {
+    "kind": "holding",
+    "ticker": "TSM",
+    "live": 0.004813028783986603,
+    "simulator": 0.0,
+    "low": 0.0,
+    "high": 0.0,
+    "detail": "weight after tonight's plan is outside the simulator's rounding and minimum-trade band"
+   }
+  ],
+  "path": "ordinary",
+  "live_path": "ordinary",
+  "basis": "ordinary night: leader target weights to 1e-09; weight after tonight's plan within max(0.01, one share) of the target, zero where the target is zero, buys scaled by the cash on hand",
+  "names": {
+   "ALAB": {
+    "held": 27.0,
+    "after": 11.0,
+    "live": 0.0349367772489032,
+    "simulator": 0.04164304371878609,
+    "low": 0.03164304371878609,
+    "high": 0.05164304371878609
+   },
+   "COHR": {
+    "held": 0.0,
+    "after": 1.0,
+    "live": 0.002647059858782948,
+    "simulator": 0.02658517140548398,
+    "low": -0.006604299658198506,
+    "high": 0.03658517140548398
+   },
+   "GEV": {
+    "held": 2.0,
+    "after": 2.0,
+    "live": 0.020416005078146938,
+    "simulator": 0.02944799861753535,
+    "low": 0.011361651055423585,
+    "high": 0.03965600115660882
+   },
+   "HPE": {
+    "held": 282.0,
+    "after": 105.0,
+    "live": 0.06693151009789876,
+    "simulator": 0.07098010998904827,
+    "low": 0.06098010998904827,
+    "high": 0.08098010998904827
+   },
+   "INTC": {
+    "held": 0.0,
+    "after": 0.0,
+    "live": 0.0,
+    "simulator": 0.04655517351062509,
+    "low": -0.0040535490183054735,
+    "high": 0.05655517351062509
+   },
+   "MU": {
+    "held": 22.0,
+    "after": 5.0,
+    "live": 0.050108365302063265,
+    "simulator": 0.06219312085317713,
+    "low": 0.052171447792764475,
+    "high": 0.07221479391358979
+   },
+   "NTAP": {
+    "held": 78.0,
+    "after": 30.0,
+    "live": 0.0726183481936293,
+    "simulator": 0.033997528024206476,
+    "low": 0.023997528024206474,
+    "high": 0.04399752802420648
+   },
+   "SMCI": {
+    "held": 365.0,
+    "after": 145.0,
+    "live": 0.05655634594519416,
+    "simulator": 0.07687729309978222,
+    "low": 0.06687729309978223,
+    "high": 0.08687729309978222
+   },
+   "SNDK": {
+    "held": 6.0,
+    "after": 2.0,
+    "live": 0.030055658130874616,
+    "simulator": 0.04009732559129543,
+    "low": 0.025069496525858125,
+    "high": 0.05512515465673274
+   },
+   "SNPS": {
+    "held": 12.0,
+    "after": 12.0,
+    "live": 0.06033731876337849,
+    "simulator": 0.07935349419711704,
+    "low": 0.05276623796932286,
+    "high": 0.08935349419711704
+   },
+   "TSM": {
+    "held": 0.0,
+    "after": 1.0,
+    "live": 0.004813028783986603,
+    "simulator": 0.0,
+    "low": 0.0,
+    "high": 0.0
+   }
+  },
+  "cash_scale": 0.12772911221858926,
+  "equity": 89733.52,
+  "cash": 1069.3
+ },
+ "ok": {
+  "version": "plan-parity/1",
+  "date": "2026-10-27",
+  "checked_at": "2026-10-28T03:09:22.588712+00:00",
+  "verdict": "ok",
+  "ok": true,
+  "policy": "grade-led-leader-weight/1",
+  "simulator_policy": "grade-led-leader-weight/1",
+  "mismatches": [],
+  "path": "event",
+  "live_path": "event",
+  "basis": "FOMC cycle: shares after tonight's plan against the cycle's cut, hold or restoration of the account's snapshot, exactly; a restoration may fall short only by what cash on hand cannot fund",
+  "names": {
+   "ALAB": {
+    "held": 6.0,
+    "live": 11.0,
+    "simulator": 11.0,
+    "low": 11.0
+   },
+   "COHR": {
+    "held": 1.0,
+    "live": 1.0,
+    "simulator": 1.0,
+    "low": 1.0
+   },
+   "GEV": {
+    "held": 1.0,
+    "live": 2.0,
+    "simulator": 2.0,
+    "low": 2.0
+   },
+   "HPE": {
+    "held": 53.0,
+    "live": 105.0,
+    "simulator": 105.0,
+    "low": 105.0
+   },
+   "MU": {
+    "held": 3.0,
+    "live": 5.0,
+    "simulator": 5.0,
+    "low": 5.0
+   },
+   "NTAP": {
+    "held": 15.0,
+    "live": 30.0,
+    "simulator": 30.0,
+    "low": 30.0
+   },
+   "SMCI": {
+    "held": 73.0,
+    "live": 145.0,
+    "simulator": 145.0,
+    "low": 145.0
+   },
+   "SNDK": {
+    "held": 1.0,
+    "live": 2.0,
+    "simulator": 2.0,
+    "low": 2.0
+   },
+   "SNPS": {
+    "held": 6.0,
+    "live": 12.0,
+    "simulator": 12.0,
+    "low": 12.0
+   },
+   "TSM": {
+    "held": 1.0,
+    "live": 1.0,
+    "simulator": 1.0,
+    "low": 1.0
+   }
+  },
+  "stage": "restore",
+  "cash_scale": 1.0
+ }
+}

@@ -4,7 +4,7 @@ import {
   type EntryState, type EntryTimingState, type ExchangePhase, type ExecutionTiming, type Grade,
   type GradeSignal, type HistoryAction, type InflationPressure, type MarketPhase, type ModelAction,
   type OpportunityStatus, type OrderSide, type OrderTiming, type PaperOrderState, type PlanAction,
-  type PlanTrade, type QuoteSession,
+  type PlanParityKind, type PlanParityVerdict, type PlanPath, type PlanTrade, type QuoteSession, type SimulationStatus,
   type SimulatedAction, type TimingState, type TradeAction, type TradedAction, type Verdict,
 } from './labels'
 
@@ -1961,70 +1961,73 @@ export interface DeskRecord {
   targets?: {policy?: string; weights?: Record<string, number>};
   // Absent on records written before the board existed.
   actions?: DeskAction[];
-  // The track-record curve the nightly run wrote: the desk's rules walked
-  // forward against SPY and QQQ, and the paper account's live equity.
-  curve?: DeskCurve;
 }
 
-// The track record the page draws. `backtest` is the desk's own rules
-// walked forward (cumulative returns, 1.0 start) against SPY and QQQ on
-// the same sessions; `paper` is the live paper account's equity history.
-// Absent on records written before the feature existed.
-export interface DeskCurve {
-  backtest_unavailable_reason?: string;
-  backtest?: {
-    funding_model?: string;
-    valuation_model?: string;
-    strategy_policy?: string;
-    // Which data source the simulation's analysts read; empty before the
-    // corrected fundamental source was carried into the record.
-    fundamentals_source?: string;
-    label: string;
-    asof: string;
-    dates: string[];
-    rules: number[];
-    // The same rules restricted each session to the names the book could
-    // have held then; empty, with a note, when the nightly could not draw it.
-    rules_point_in_time?: number[];
-    stats_point_in_time?: Record<string, number | null>;
-    point_in_time_note?: string;
-    // Which names the `rules` line could choose from ("hindsight": today's
-    // panel back-cast to the first session) and the record's own wording
-    // for the two rules lines. Absent on records written before 2026-09-27.
-    universe?: string;
-    rules_label?: string;
-    point_in_time_label?: string;
-    // The `simulate.run` options the rules lines were priced with, and
-    // whether the executor's idle-cash redeploy was among them.
-    execution_options?: Record<string, boolean | number>;
-    execution_policy?: string;
-    execution_matches_live?: boolean;
-    execution_note?: string;
-    live_execution_policy?: string;
-    live_execution_timing?: string;
-    redeploy_priced?: boolean;
-    // The `/4` candidate policy on the same point-in-time book, priced
-    // plain (next-open fills, no live executor): the scorecard's measured
-    // arm, not a live record. Empty, with a note, when it could not be drawn.
-    candidate_point_in_time?: number[];
-    stats_candidate?: Record<string, number | null>;
-    candidate_note?: string;
-    candidate_policy?: string;
-    candidate_label?: string;
-    spy: number[];
-    qqq: number[];
-    stats: Record<string, number | null>;
-    evaluation_periods?: {
-      label: string; since: string; through: string; total_return: number;
-      drawdown: number; sessions: number; completed_meetings: string[]; basis: string;
-    }[];
-  };
-  paper?: {
-    label: string;
-    sessions: string[];
-    equity: number[];
-    pl_pct: number[];
-  };
+// One period's compounded record of the simulated account (`policy_book.metrics`).
+export interface DeskBookMetrics {
+  cagr?: number;
+  max_drawdown?: number;
+  sharpe?: number;
+  total?: number;
+}
+
+// The replay manifest's `book`: the installed rule's simulated account over
+// the whole history, the 2015-2022 and 2023- windows, its fills and costs,
+// the measured period and SPY on the same sessions.
+export interface DeskPolicyBook {
+  capital: number;
+  all: DeskBookMetrics;
+  to_2022: DeskBookMetrics;
+  from_2023: DeskBookMetrics;
+  fills: number;
+  costs: number;
+  period: { start: string; through: string; sessions: number };
+  benchmark: DeskBookMetrics & { symbol: string; basis: string };
+  rule: Record<string, number | boolean | null>;
+  curve_file?: string;
+}
+
+// The "Historical simulation" box: the replay of the record's policy through
+// the record's session (cumulative returns of the account and the benchmark
+// on `dates`), or, when `status` is missing, the reason it is not shown.
+export interface DeskPolicySimulation {
+  status: SimulationStatus;
+  policy?: string | null;
+  session?: string | null;
+  reason?: string;
+  arm?: string;
+  generated_at?: string;
+  note?: string;
+  book?: DeskPolicyBook;
+  dates?: string[];
+  equity?: number[];
+  benchmark?: number[];
+}
+
+// One row of the nightly plan check: what differs, for which name, and the
+// two values (weights, shares or labels, by kind).
+export interface DeskPlanParityRow {
+  kind: PlanParityKind;
+  ticker?: string;
+  live?: number | string | boolean | null;
+  simulator?: number | string | boolean | null;
+  low?: number;
+  high?: number;
+  detail?: string;
+}
+
+// The paper plan against the account simulator's plan for one session.
+export interface DeskPlanParity {
+  version: string;
+  date: string;
+  verdict: PlanParityVerdict;
+  ok: boolean;
+  policy?: string | null;
+  simulator_policy?: string;
+  path?: PlanPath | null;
+  basis?: string;
+  note?: string;
+  mismatches: DeskPlanParityRow[];
 }
 
 // One name's drill-down: what the desk said session by session and what
@@ -2377,8 +2380,11 @@ export interface DeskPayload {
     flags_cleared: string[];
   };
   sessions: string[];
-  // The record's track-record curve, for convenience at the top level.
-  curve?: DeskCurve;
+  // The installed rule's account simulation for this record (the 20:40
+  // replay), or why it is missing; the "Historical simulation" box.
+  policy_simulation?: DeskPolicySimulation | null;
+  // The nightly check of this record's paper plan against the simulator.
+  plan_parity?: DeskPlanParity | null;
 }
 
 // Every fill's distance from its decision price, split at the benchmark the

@@ -483,3 +483,35 @@ class QuoteFeed(StrEnum):
     IEX = "iex"
     BOATS = "boats"
     OVERNIGHT = "overnight"
+
+
+class SimulationStatus(StrEnum):
+    """Whether the installed rule's account simulation exists for the record shown."""
+
+    AVAILABLE = "available"
+    MISSING = "missing"
+
+
+class PlanParity(StrEnum):
+    """The nightly verdict of the paper plan against the simulator (`plan_parity`)."""
+
+    OK = "ok"
+    MISMATCH = "mismatch"
+    UNAVAILABLE = "unavailable"
+
+
+class PlanParityKind(StrEnum):
+    """What a plan parity mismatch row is about."""
+
+    POLICY = "policy"
+    PATH = "path"
+    INPUTS = "inputs"
+    SIZING = "sizing"
+    HOLDING = "holding"
+
+
+class PlanPath(StrEnum):
+    """Which planner owned a night: the ordinary sizing or the FOMC cycle."""
+
+    ORDINARY = "ordinary"
+    EVENT = "event"

@@ -128,6 +128,19 @@ export type EntryState = (typeof ENTRY_STATES)[number]
 export const INFLATION_PRESSURES = ['easing', 'building', 'mixed', 'unknown'] as const
 export type InflationPressure = (typeof INFLATION_PRESSURES)[number]
 
+// Whether the installed rule's account simulation exists for the record shown.
+export const SIMULATION_STATUSES = ['available', 'missing'] as const
+export type SimulationStatus = (typeof SIMULATION_STATUSES)[number]
+
+// The nightly check of the paper plan against the account simulator: its
+// verdict, what a mismatch row is about, and which planner owned the night.
+export const PLAN_PARITY_VERDICTS = ['ok', 'mismatch', 'unavailable'] as const
+export type PlanParityVerdict = (typeof PLAN_PARITY_VERDICTS)[number]
+export const PLAN_PARITY_KINDS = ['policy', 'path', 'inputs', 'sizing', 'holding'] as const
+export type PlanParityKind = (typeof PLAN_PARITY_KINDS)[number]
+export const PLAN_PATHS = ['ordinary', 'event'] as const
+export type PlanPath = (typeof PLAN_PATHS)[number]
+
 // A grade's place in the order, best highest.
 export const GRADE_RANK: Record<Grade, number> = {'A+': 3, A: 2, B: 1, C: 0}
 

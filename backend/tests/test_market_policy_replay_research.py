@@ -1,5 +1,9 @@
 """The chart replay's grade changes come from the same run as its trades."""
 
+import json
+
+import pytest
+
 from backend.cli import market_policy_replay_research as research
 from backend.tests.test_market_pit_scorecard import _report, history  # noqa: F401
 
@@ -112,3 +116,48 @@ def test_signal_outcomes_start_at_the_fill(monkeypatch):
     assert entry["return_1"] == pytest.approx(0.0)
     assert entry["return_2"] == pytest.approx(15 / 12 - 1)
     assert out["exits"] == []
+
+
+# The installed replay carries the account's curve beside the benchmark on the
+# summary's own span, and the box reads back exactly what the replay wrote:
+# the manifest's book summary verbatim and the curve whose last points are the
+# summary's total returns.
+def test_the_box_reads_the_replays_book_verbatim(history, tmp_path):  # noqa: F811
+    report = _report()
+    manifest, stocks = research.replay(report, history, "leader_ewma_minB_floor50")
+    book = manifest["book"]
+    curve = manifest["curve"]
+    assert book["curve_file"] == research.BOOK_FILE
+    assert book["period"]["sessions"] == len(curve["dates"]) == len(curve["equity"])
+    assert len(curve["benchmark"]) == len(curve["dates"])
+    assert curve["dates"][0] == book["period"]["start"]
+    assert curve["dates"][-1] == book["period"]["through"] == manifest["through"]
+    assert curve["equity"][0] == curve["benchmark"][0] == 0.0
+    assert curve["equity"][-1] == pytest.approx(book["all"]["total"])
+    assert curve["benchmark"][-1] == pytest.approx(book["benchmark"]["total"])
+    assert book["benchmark"]["symbol"] == report.panel.benchmark
+    policy = "grade-led-leader-weight/1"
+    research.write(tmp_path, policy, manifest, stocks)
+    shown = research.read_book(tmp_path, policy, manifest["through"])
+    on_disk = json.loads(
+        (
+            tmp_path / research.DIRECTORY / manifest["arm"] / manifest["through"]
+            / "manifest.json"
+        ).read_text()
+    )
+    assert "curve" not in on_disk
+    assert shown["book"] == on_disk["book"]
+    assert shown["policy"] == policy
+    assert shown["session"] == manifest["through"]
+    assert shown["dates"] == curve["dates"]
+    assert shown["equity"] == curve["equity"]
+    assert shown["benchmark"] == curve["benchmark"]
+    # Another session, another policy, or a replay without the curve is missing.
+    assert research.read_book(tmp_path, policy, "1999-01-04") is None
+    other = "graded-equal-weight/5"
+    assert research.read_book(tmp_path, other, manifest["through"]) is None
+    (
+        tmp_path / research.DIRECTORY / manifest["arm"] / manifest["through"]
+        / research.BOOK_FILE
+    ).unlink()
+    assert research.read_book(tmp_path, policy, manifest["through"]) is None

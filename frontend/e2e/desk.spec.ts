@@ -1,5 +1,6 @@
 import { expect, test, type Page } from '@playwright/test'
 import type { DeskForwardEvidence } from '../src/services/api'
+import { CHART_NAME, EXPECTED_CELLS, MANIFEST, POLICY_SIMULATION, missingSimulation } from './fixtures/policySimulation'
 
 // Deterministic browser acceptance for the trading desk page. The desk is the
 // operator's own page, so the session is mocked as an operator and every desk
@@ -107,22 +108,25 @@ for (const policy of [
   })
 }
 
-// Unsupported historical returns stay hidden while the original record remains archived.
-test('withholds an unvalidated simulation and explains missing held marks', async ({page}) => {
+// Without the installed rule's replay for the record, the box says so and
+// shows no figures; the record's own stored curve is never drawn instead.
+test('says the replay is missing instead of showing the record\'s stored curve', async ({page}) => {
   const errors = observeBlockingBrowserErrors(page)
   const failed: string[] = []
   page.on('requestfailed', request => { if (request.url().includes('/market/')) failed.push(request.url()) })
   await page.route('**/api/v1/conversations/**', route => route.fulfill({json: {messages: [], conversations: []}}))
+  const missing = missingSimulation('2026-09-08')
   await page.route(`**/market/${USER}/desk`, route => route.fulfill({json: {
     latest: deskRecord(),
-    curve: {backtest: null, backtest_unavailable_reason: 'Historical simulation withheld: this saved curve predates the check for missing prices on held stocks. Its returns need revalidation.'},
+    policy_simulation: missing,
   }}))
   await page.goto('/?deskView=paper&deskDetails=1#desk')
   await page.locator('summary', {hasText: 'Paper account'}).click()
   await simulationDetails(page)
-  await expect(page.getByText('Historical simulation withheld:', {exact: false})).toBeVisible()
+  await expect(page.getByLabel('Historical simulation summary').getByRole('status')).toHaveText(missing.reason)
   await expect(page.getByText('CAGR', {exact: true})).toHaveCount(0)
-  await expect(page.getByRole('img', {name: "The desk's track record against SPY and QQQ"})).toHaveCount(0)
+  await expect(page.getByRole('img', {name: CHART_NAME})).toHaveCount(0)
+  await expect(page.getByText('31.0%', {exact: true})).toHaveCount(0)
   await expect(page.getByLabel('The desk at a glance')).not.toContainText('vs SPY')
   await expect(page.getByLabel('The desk at a glance')).toContainText('Practice account')
   expect(failed).toEqual([])
@@ -1124,7 +1128,7 @@ test.beforeEach(async ({ page }) => {
         flags_cleared: [],
       },
       sessions: ['2026-09-04', '2026-09-08'],
-      curve: record.curve,
+      policy_simulation: POLICY_SIMULATION,
     }),
   }))
   await page.route(`**/api/v1/market/${USER}/desk/holdings`, route => route.fulfill({
@@ -1385,23 +1389,22 @@ test('renders the desk at a glance with the track record', async ({ page }) => {
   await expect(glance).not.toContainText('CAGR')
   await expect(glance).not.toContainText('SPY')
   const simulation = await simulationDetails(page)
-  await expect(simulation.getByText('Policy not recorded', { exact: true })).toBeVisible()
-  await expect(simulation.getByText('The historical simulation did not record its strategy policy.', { exact: false })).toBeVisible()
-  // The strip's number is the point-in-time line's total with its CAGR, not
-  // the stored hindsight line's (127% here), which stays on the chart.
-  await expect(simulation.getByText('+8.0%', { exact: false })).toBeVisible()
-  await expect(simulation.getByLabel('Policy simulation CAGR')).toHaveText('CAGR 8.0% · ')
+  // The box is the installed rule's replay: its rule and the manifest's own
+  // figures, not the curve the record carries (31% CAGR, 127% there).
+  await expect(simulation.getByLabel('Simulated rule', { exact: true })).toContainText(MANIFEST.policy)
+  await expect(simulation.getByLabel('CAGR', { exact: true })).toHaveText(`CAGR${EXPECTED_CELLS['CAGR']}`)
+  await expect(simulation.getByLabel('SPY CAGR', { exact: true })).toHaveText(`SPY CAGR${EXPECTED_CELLS['SPY CAGR']}`)
   await expect(glance).not.toContainText('127.0%')
-  await expect(simulation.getByText('vs SPY', { exact: false })).toBeVisible()
+  await expect(glance).not.toContainText(EXPECTED_CELLS['CAGR'])
   await expect(glance.getByText('6% invested')).toBeVisible()  // 6,120 of 104,200 live
 
   // The trust anchor: the curve and its summary numbers, as an SVG the page
   // draws itself, in the same practice section.
   const record = page.getByRole('heading', {name: 'Historical simulation', exact: true})
   await expect(record).toBeVisible()
-  await expect(page.getByRole('img', { name: "The desk's track record against SPY and QQQ" })).toBeVisible()
+  await expect(page.getByRole('img', { name: CHART_NAME })).toBeVisible()
   await expect(page.getByText('CAGR', { exact: true })).toBeVisible()
-  await expect(page.getByText('31.0%', { exact: true })).toBeVisible()
+  await expect(page.getByText('31.0%', { exact: true })).toHaveCount(0)
 
   // The recorded market flags remain visible without claiming they size another policy.
   await expect(page.getByRole('note')).toContainText('Market risk')
@@ -1431,24 +1434,17 @@ test('renders the desk at a glance with the track record', async ({ page }) => {
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })
 
-// Reporting-period inputs are named in strategy details and the summary without relabelling legacy curves.
-test('names the fundamental data source and flags older fundamental-input curves', async ({ page }) => {
+// Reporting-period inputs are named in strategy details; the simulation box
+// is the installed rule's replay and carries none of the record curve's tags.
+test('names the fundamental data source while the simulation box ignores the record curve', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
   const latest = deskRecord()
   latest.provenance = { data: { fundamentals: 'fundamentals-features/6' } }
-  // The simulation is of the strategy the record says the account runs
-  // (`targets.policy`), so it reads as the policy simulation.
-  latest.targets = { policy: 'graded-equal-weight/4', weights: { AAPL: 0.06 } }
-  latest.curve = {
-    ...latest.curve!,
-    backtest: {
-      ...latest.curve!.backtest,
-      strategy_policy: 'graded-equal-weight/4',
-      fundamentals_source: 'fundamentals-features/6',
-    },
-  }
+  latest.targets = { policy: MANIFEST.policy, weights: { AAPL: 0.06 } }
+  const curve = (latest as unknown as {curve: {backtest: Record<string, unknown>}}).curve
+  curve.backtest = { ...curve.backtest, strategy_policy: 'graded-equal-weight/4', fundamentals_source: 'fundamentals-features/6' }
   await page.route('**/api/v1/conversations/**', route => route.request().method() === 'GET' ? route.fulfill({json: {messages: [], conversations: []}}) : route.fulfill({json: {}}))
-  await page.route(`**/market/${USER}/desk`, route => route.fulfill({json: {latest, sessions: [latest.session]}}))
+  await page.route(`**/market/${USER}/desk`, route => route.fulfill({json: {latest, sessions: [latest.session], policy_simulation: POLICY_SIMULATION}}))
   await page.goto('/?deskView=paper&deskDetails=1#desk')
 
   // The single stock board keeps source provenance in the strategy disclosure.
@@ -1456,65 +1452,53 @@ test('names the fundamental data source and flags older fundamental-input curves
   await expect(board).toBeVisible()
   await strategyDetails(page)
   await expect(page.getByLabel('Fundamental data source', {exact: true})).toContainText('stored filing versions; reporting-period safeguard applied')
-
-  // Historical source checks live with the simulation, not the actual account values.
   await simulationDetails(page)
   const glance = page.getByLabel('Historical simulation summary')
-  await expect(glance.getByText('Policy simulation · names known at the time', { exact: true })).toBeVisible()
+  await expect(glance.getByLabel('Simulated rule', { exact: true })).toContainText(MANIFEST.policy)
+  await expect(glance).not.toContainText('Policy simulation')
+  await expect(glance).not.toContainText('graded-equal-weight/4')
 
-  // Same execution policy version, a record whose analyst read the frozen
-  // EDGAR snapshot: the board's label switches to the legacy source and the
-  // curve is flagged as older fundamental inputs rather than presented as
-  // the corrected simulation.
+  // A record whose analysts read the frozen EDGAR snapshot: strategy details
+  // says so; the box still shows the replay and no old-curve wording.
   latest.provenance = { data: { fundamentals: 'edgar-frozen' } }
-  latest.curve = { ...latest.curve!, backtest: { ...latest.curve!.backtest, fundamentals_source: 'edgar-frozen' } }
+  curve.backtest = { ...curve.backtest, fundamentals_source: 'edgar-frozen' }
   await page.evaluate(() => localStorage.removeItem('anios_conversation_id:ani.mallya'))
   await page.reload()
   await strategyDetails(page)
   await expect(page.getByLabel('Fundamental data source', {exact: true})).toContainText('frozen EDGAR snapshot')
   await simulationDetails(page)
   const glance2 = page.getByLabel('Historical simulation summary')
-  await expect(glance2.getByText('Policy simulation · names known at the time · older fundamental inputs', { exact: true })).toBeVisible()
-  await expect(glance2).toContainText('frozen EDGAR snapshot')
+  await expect(glance2.getByLabel('Simulated rule', { exact: true })).toContainText(MANIFEST.policy)
+  await expect(glance2).not.toContainText('older fundamental inputs')
+  await expect(glance2).not.toContainText('frozen EDGAR snapshot')
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })
 
-// The `/5` release (2026-09-29; `/4` under a 25% hold cap): a record whose targets are `/5`'s,
-// beside its own `/5` simulation, reads as the current policy simulation - never "Unrecognized".
-// The same record beside a `/4` simulation reads as the earlier policy, named as such.
-test('a /5 record reads its /5 simulation as the policy simulation', async ({ page }) => {
+// Whatever policy the record's old curve names (`/5`, `/4`), the box names the
+// replay's own rule and never calls itself an older or unrecognized simulation.
+test('the simulation box names the replay\'s rule, not the record curve\'s policy', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
   const latest = deskRecord()
   latest.provenance = { data: { fundamentals: 'fundamentals-features/6' } }
   latest.targets = { policy: 'graded-equal-weight/5', weights: { AAPL: 0.25 } }
-  latest.curve = {
-    ...latest.curve!,
-    backtest: {
-      ...latest.curve!.backtest,
-      strategy_policy: 'graded-equal-weight/5',
-      fundamentals_source: 'fundamentals-features/6',
-    },
-  }
+  const curve = (latest as unknown as {curve: {backtest: Record<string, unknown>}}).curve
+  curve.backtest = { ...curve.backtest, strategy_policy: 'graded-equal-weight/5', fundamentals_source: 'fundamentals-features/6' }
   await page.route('**/api/v1/conversations/**', route => route.request().method() === 'GET' ? route.fulfill({json: {messages: [], conversations: []}}) : route.fulfill({json: {}}))
-  await page.route(`**/market/${USER}/desk`, route => route.fulfill({json: {latest, sessions: [latest.session]}}))
+  await page.route(`**/market/${USER}/desk`, route => route.fulfill({json: {latest, sessions: [latest.session], policy_simulation: POLICY_SIMULATION}}))
   await page.goto('/?deskView=paper&deskDetails=1#desk')
-  await simulationDetails(page)
-  const glance = page.getByLabel('Historical simulation summary')
-  await expect(glance.getByText('Policy simulation · names known at the time', { exact: true })).toBeVisible()
-  await expect(glance).not.toContainText('Unrecognized policy simulation')
-  await expect(glance).not.toContainText('Older policy simulation')
   await strategyDetails(page)
   await expect(page.getByLabel('Recorded allocation policy')).toContainText('Allocation policy: graded-equal-weight/5')
-
-  // The same `/5` record beside a `/4` simulation: recognised, and the earlier policy.
-  latest.curve = { ...latest.curve!, backtest: { ...latest.curve!.backtest, strategy_policy: 'graded-equal-weight/4' } }
-  await page.evaluate(() => localStorage.removeItem('anios_conversation_id:ani.mallya'))
-  await page.reload()
-  await simulationDetails(page)
-  const older = page.getByLabel('Historical simulation summary')
-  await expect(older.getByText('Older policy simulation', { exact: true })).toBeVisible()
-  await expect(older).toContainText('Uses an earlier recorded strategy policy (graded-equal-weight/4); differs from the saved paper policy (graded-equal-weight/5).')
-  await expect(older).not.toContainText('Unrecognized policy simulation')
+  for (const recorded of ['graded-equal-weight/5', 'graded-equal-weight/4']) {
+    curve.backtest = { ...curve.backtest, strategy_policy: recorded }
+    await page.evaluate(() => localStorage.removeItem('anios_conversation_id:ani.mallya'))
+    await page.reload()
+    await simulationDetails(page)
+    const glance = page.getByLabel('Historical simulation summary')
+    await expect(glance.getByLabel('Simulated rule', { exact: true })).toContainText(MANIFEST.policy)
+    await expect(glance).not.toContainText('Older policy simulation')
+    await expect(glance).not.toContainText('Unrecognized policy simulation')
+    await expect(glance).not.toContainText(recorded)
+  }
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })
 
@@ -1984,23 +1968,24 @@ test('trading review shows the empty-document response', async ({page}) => {
   expect(errors).toEqual({consoleErrors: [], pageErrors: []})
 })
 
-// Funding labels follow the stored artifact, never the latest deployed simulator alone.
-test('cash-limited performance is distinguished from legacy simulated borrowing', async ({ page }) => {
+// The box states the replay's own fills and funding (the manifest's note:
+// next open, cash on hand, whole shares), never the record curve's funding tag.
+test('the simulation box states the replay\'s funding, not the record curve\'s', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)
   const latest = deskRecord()
-  const bt = latest.curve!.backtest!
-  bt.strategy_policy = 'cash-bounded-breakout-rotation/3'
-  bt.fundamentals_source = 'fundamentals-features/2'
-  bt.funding_model = 'cash-at-fill-v1'
+  const curve = (latest as unknown as {curve: {backtest: Record<string, unknown>}}).curve
+  curve.backtest = { ...curve.backtest, strategy_policy: 'cash-bounded-breakout-rotation/3', fundamentals_source: 'fundamentals-features/2', funding_model: 'cash-at-fill-v1' }
   await page.route(`**/api/v1/market/${USER}/desk`, route => route.fulfill({
-    status: 200, contentType: 'application/json', body: JSON.stringify({latest, changes: null}),
+    status: 200, contentType: 'application/json', body: JSON.stringify({latest, changes: null, policy_simulation: POLICY_SIMULATION}),
   }))
   await page.goto('/?deskView=paper&deskDetails=1#desk')
   await simulationDetails(page)
-  await expect(page.getByLabel('Historical simulation summary')).toContainText('cash capped after costs')
-  await expect(page.getByLabel('Historical simulation summary')).not.toContainText('legacy simulation permits borrowing')
-  await expect(page.getByText('closing sales cannot fund earlier buys', {exact: false})).toBeVisible()
-  await expect(page.getByText('Legacy simulation under review', {exact: false})).not.toBeVisible()
+  const glance = page.getByLabel('Historical simulation summary')
+  await expect(glance.getByLabel('Simulation note', {exact: true})).toHaveText(MANIFEST.note)
+  await expect(glance).toContainText('from cash on hand')
+  await expect(glance).not.toContainText('cash capped after costs')
+  await expect(glance).not.toContainText('legacy simulation permits borrowing')
+  await expect(page.getByText('closing sales cannot fund earlier buys', {exact: false})).toHaveCount(0)
   expect(errors).toEqual({consoleErrors: [], pageErrors: []})
 })
 

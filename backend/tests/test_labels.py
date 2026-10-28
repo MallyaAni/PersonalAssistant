@@ -115,6 +115,10 @@ WIRE = {
         "unknown",
     ],
     labels.QuoteFeed: ["sip", "iex", "boats", "overnight"],
+    labels.SimulationStatus: ["available", "missing"],
+    labels.PlanParity: ["ok", "mismatch", "unavailable"],
+    labels.PlanParityKind: ["policy", "path", "inputs", "sizing", "holding"],
+    labels.PlanPath: ["ordinary", "event"],
 }
 
 
@@ -424,6 +428,10 @@ MIRRORED = {
     "BRIEF_STANCES": labels.BriefStance,
     "ENTRY_STATES": labels.EntryState,
     "INFLATION_PRESSURES": labels.InflationPressure,
+    "SIMULATION_STATUSES": labels.SimulationStatus,
+    "PLAN_PARITY_VERDICTS": labels.PlanParity,
+    "PLAN_PARITY_KINDS": labels.PlanParityKind,
+    "PLAN_PATHS": labels.PlanPath,
 }
 
 

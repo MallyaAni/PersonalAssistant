@@ -205,10 +205,7 @@ def simulate(
             }
             if at_close:
                 budget = cash  # the cut's proceeds have settled by the decision close
-            need = sum(q * prices[j] for j, q in want.items()) * (1 + cost)
-            scale = min(1.0, max(0.0, budget) / need) if need > 0 else 0.0
-            for j, q in sorted(want.items()):
-                qty = math.floor(q * scale)
+            for j, qty in funded(want, prices, budget, cost).items():
                 if qty > 0:
                     fill(
                         t, j, qty, prices[j], decided, reason, timing, before[j], value
@@ -248,9 +245,7 @@ def simulate(
             base = cycle["baseline"]
             if day < cycle["decision"]:
                 if eve and cycle["cut"]:
-                    buys = {
-                        j: base[j] - shares[j] for j in range(N) if base[j] > shares[j]
-                    }
+                    buys = cycle_restore(base, shares)
                     pending = (
                         dates[t],
                         {},
@@ -260,18 +255,14 @@ def simulate(
                     )
                     cycle["restored"] = True
                 elif not cycle["cut"]:
-                    sells = {
-                        j: math.floor(base[j] * event_risk.REDUCED)
-                        for j in range(N)
-                        if base[j] > 0
-                    }
+                    sells = cycle_cut(base)
                     pending = (dates[t], sells, {}, "fomc_reduction", None)
                     cycle["cut"] = True
                 continue
             restored = cycle["restored"]
             cycle = None
             if not restored:
-                buys = {j: base[j] - shares[j] for j in range(N) if base[j] > shares[j]}
+                buys = cycle_restore(base, shares)
                 pending = (dates[t], {}, buys, "fomc_restoration", None)
                 continue
         if t < window:
@@ -280,39 +271,11 @@ def simulate(
         # decision, as the live sizing refuses to resize a book it cannot value.
         if ((shares > 0) & ~priceable[t] & (g >= 0)).any():
             continue
-        target = _ordinary(
+        target, protected = plan_target(
             rule, mask[t], g, below, shares, band[t], adj_close, t, held,
             None if tilt is None else tilt[t],
         )
-        # A held name without a grade keeps its shares (a protected holding);
-        # the rest of the book is sized on the remaining capital.
-        protected = (shares > 0) & (g < 0)
-        if protected.any():
-            target = np.where(protected, held, target * (1.0 - held[protected].sum()))
-        sells, buys = {}, {}
-        for j in range(N):
-            price = adj_close[t, j]
-            if not (np.isfinite(price) and price > 0) or protected[j]:
-                continue
-            # The funded planner's arithmetic: the continuous share gap, tested
-            # against the minimum trade (never an exit), rounded to the nearest
-            # whole share with nothing inside half a share; a held name the
-            # grade keeps never rounds to nothing.
-            exit_all = target[j] <= 0
-            gap = (target[j] * value / price if not exit_all else 0.0) - shares[j]
-            if not exit_all and abs(gap) * price < rule.min_trade * value:
-                continue
-            qty = 0 if abs(gap) <= 0.5 + 1e-9 else int(math.floor(abs(gap) + 0.5))
-            if exit_all:
-                qty = int(shares[j])
-            if gap < 0 and not exit_all:
-                qty = min(qty, int(shares[j]) - 1) if shares[j] >= 1 else 0
-            if qty <= 0:
-                continue
-            if gap < 0:
-                sells[j] = qty
-            else:
-                buys[j] = qty
+        sells, buys = plan_orders(rule, target, shares, adj_close[t], value, protected)
         if sells or buys:
             pending = (dates[t], sells, buys, None, None)
     return Book(dates, tickers, equity, weights, trades, costs_paid, planned, cash_close, cash_open)
@@ -334,6 +297,77 @@ def _ordinary(rule, mask_t, g, below, shares, band_t, adj_close, t, held, tilt_t
         extra=tilt_t,
     )
     return np.where(blocked, np.minimum(target, held), target)
+
+
+# Tonight's ordinary target at close t on the book's own holdings: the leader
+# plan, with a held name the grades cannot read (a protected holding) kept at
+# its weight and the rest of the book sized on the remaining capital. Returns
+# the (N,) target weights and the (N,) protected mask. The simulator and the
+# nightly plan check (`plan_parity`) both plan through this.
+def plan_target(
+    rule, mask_t, g, below, shares, band_t, adj_close, t, held, tilt_t=None
+):
+    target = _ordinary(
+        rule, mask_t, g, below, shares, band_t, adj_close, t, held, tilt_t
+    )
+    protected = (shares > 0) & (g < 0)
+    if protected.any():
+        target = np.where(protected, held, target * (1.0 - held[protected].sum()))
+    return target, protected
+
+
+# Tonight's whole-share orders toward `target` at `prices`, on `value` of
+# equity: the funded planner's arithmetic. The continuous share gap is tested
+# against the minimum trade (never an exit) and rounded to the nearest whole
+# share with nothing inside half a share; a held name the grade keeps never
+# rounds to nothing; an exit sells every share. Returns ({j: shares to sell},
+# {j: shares to buy}) before the cash limit (`funded`).
+def plan_orders(rule, target, shares, prices, value, protected):
+    sells, buys = {}, {}
+    for j in range(len(target)):
+        price = prices[j]
+        if not (np.isfinite(price) and price > 0) or protected[j]:
+            continue
+        exit_all = target[j] <= 0
+        gap = (target[j] * value / price if not exit_all else 0.0) - shares[j]
+        if not exit_all and abs(gap) * price < rule.min_trade * value:
+            continue
+        qty = 0 if abs(gap) <= 0.5 + 1e-9 else int(math.floor(abs(gap) + 0.5))
+        if exit_all:
+            qty = int(shares[j])
+        if gap < 0 and not exit_all:
+            qty = min(qty, int(shares[j]) - 1) if shares[j] >= 1 else 0
+        if qty <= 0:
+            continue
+        if gap < 0:
+            sells[j] = qty
+        else:
+            buys[j] = qty
+    return sells, buys
+
+
+# The buys `want` ({j: shares}) funded from `budget` of cash at `prices`, a
+# `cost` fraction charged on each: every buy scaled by one factor so the
+# basket fits the cash, then rounded down to whole shares, in name order.
+def funded(want, prices, budget, cost):
+    need = sum(q * prices[j] for j, q in want.items()) * (1 + cost)
+    scale = min(1.0, max(0.0, budget) / need) if need > 0 else 0.0
+    return {j: math.floor(q * scale) for j, q in sorted(want.items())}
+
+
+# The FOMC cycle's arithmetic on its snapshot of shares `base`: the cut sells
+# the reduced share of every snapshot name, the restoration buys each name back
+# up to its snapshot.
+def cycle_cut(base):
+    return {
+        j: math.floor(base[j] * event_risk.REDUCED)
+        for j in range(len(base))
+        if base[j] > 0
+    }
+
+
+def cycle_restore(base, shares):
+    return {j: base[j] - shares[j] for j in range(len(base)) if base[j] > shares[j]}
 
 
 # Compounded results of a simulated book over [lo, hi).

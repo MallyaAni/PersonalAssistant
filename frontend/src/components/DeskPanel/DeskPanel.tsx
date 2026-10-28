@@ -5,7 +5,7 @@ import { ForwardEvidence } from './ForwardEvidence'
 import { FomcGate } from './FomcGate'
 import { ExecutionQuality } from './ExecutionQuality'
 import { actionPresentation, BoardSimulation, executionClockMessage, MlComparison, timedBoard, type BoardEvent } from './StockBoard'
-import { GRADE_RANK, isLabel, lookup, PLAN_ACTIONS, type DeskActionLabel, type Grade, type PlanAction, type PlanTrade } from '../../services/labels'
+import { exhausted, GRADE_RANK, isLabel, lookup, PLAN_ACTIONS, type DeskActionLabel, type Grade, type PlanAction, type PlanParityKind, type PlanTrade } from '../../services/labels'
 import { RecommendationTimeline } from './RecommendationTimeline'
 import type { PersonalHistoryContext } from './PersonalDecisionHistory'
 import { PaperAccountHistory } from './PaperAccountHistory'
@@ -34,7 +34,8 @@ import {
   getTradingAutopsy,
   putDeskHoldings,
   type DataVintage,
-  type DeskCurve,
+  type DeskPlanParity,
+  type DeskPolicySimulation,
   type DeskDecisions,
   type DeskBrief,
   type DeskEarnings,
@@ -383,105 +384,33 @@ const describeFundamentalSource = (source?: string) => {
   switch (source) {
     case 'fundamentals-features/6':
       return {title, current: true, known: true,
-        notice: 'Fundamentals: stored filing versions; reporting-period safeguard applied.',
-        simulationNote: ''}
+        notice: 'Fundamentals: stored filing versions; reporting-period safeguard applied.'}
     case 'fundamentals-features/4':
       return {title, current: false, known: true,
-        notice: 'Fundamentals: stored filing versions; reporting-period safeguard applied (previous tag table).',
-        simulationNote: 'Read revenue and net income only under the main tags, so names that moved to other tags were carried at old quarters or left out. Not measured with the current tag table.'}
+        notice: 'Fundamentals: stored filing versions; reporting-period safeguard applied (previous tag table).'}
     case 'fundamentals-features/3':
       return {title, current: false, known: true,
-        notice: 'Fundamentals: stored filing versions; reporting-period safeguard applied (previous revenue-tag choice).',
-        simulationNote: 'Chose each name\'s revenue tag by the most history, so names that moved to new revenue tags in 2018 were left out for years. Not measured with the current tag choice.'}
+        notice: 'Fundamentals: stored filing versions; reporting-period safeguard applied (previous revenue-tag choice).'}
     case 'fundamentals-features/7':
       return {title, current: false, known: true,
-        notice: 'Fundamentals: stored filing versions; margin period dates checked (research calculation).',
-        simulationNote: 'Checks margin period dates, but does not exclude inputs from older reporting periods. Not measured with the reporting-period safeguard.'}
+        notice: 'Fundamentals: stored filing versions; margin period dates checked (research calculation).'}
     case 'fundamentals-features/5':
       return {title, current: false, known: true,
-        notice: 'Fundamentals: stored filing versions; margin period dates checked (previous research calculation).',
-        simulationNote: 'Checks margin period dates, but does not exclude inputs from older reporting periods. Not measured with the reporting-period safeguard.'}
+        notice: 'Fundamentals: stored filing versions; margin period dates checked (previous research calculation).'}
     case 'fundamentals-features/2':
       return {title, current: false, known: true,
-        notice: 'Fundamentals: stored filing versions; margin period dates checked (previous calculation).',
-        simulationNote: 'Checks margin period dates, but does not exclude inputs from older reporting periods. Not measured with the reporting-period safeguard.'}
+        notice: 'Fundamentals: stored filing versions; margin period dates checked (previous calculation).'}
     case 'fundamentals-features/1':
       return {title, current: false, known: true,
-        notice: 'Fundamentals: stored filing versions (earlier margin calculation).',
-        simulationNote: 'Uses the earlier stored-filing calculation, before margin period dates were checked. Not measured with the current margin calculation.'}
+        notice: 'Fundamentals: stored filing versions (earlier margin calculation).'}
     case 'edgar-frozen':
       return {title, current: false, known: true,
-        notice: 'Fundamentals: frozen EDGAR snapshot (legacy).',
-        simulationNote: 'Uses the frozen EDGAR snapshot, not the current stored-filing calculation.'}
+        notice: 'Fundamentals: frozen EDGAR snapshot (legacy).'}
     default:
       return {title, current: false, known: false,
-        notice: source ? 'Fundamentals: unrecognized recorded data source.' : 'Fundamentals: data source not tagged.',
-        simulationNote: source
-          ? 'The recorded fundamental source is not recognized; its inputs cannot be verified.'
-          : 'The simulation did not record its fundamental data source; its inputs cannot be verified.'}
+        notice: source ? 'Fundamentals: unrecognized recorded data source.' : 'Fundamentals: data source not tagged.'}
   }
 }
-
-// Describe funding only from recognized metadata; absent tags do not prove legacy borrowing.
-const describeSimulationFunding = (source: unknown) => {
-  if (source === 'cash-at-fill-v1') return {
-    summary: 'cash capped after costs; fractional simulated fills, not broker execution; a universe chosen with hindsight, not evidence of future returns.',
-    assumptions: 'Simulation assumptions: buys fit cash after costs; closing sales cannot fund earlier buys. Fractional fills and immediate use of completed sale proceeds are modeled; settlement delays, bid/ask spreads, market impact and broker rejections are not. Historical inputs and the selected universe can bias results.',
-  }
-  const summary = source === undefined || source === null || source === ''
-    ? 'Funding model was not recorded; cash-only funding is unverified.'
-    : 'Recorded funding model is not recognized; cash-only funding is unverified.'
-  return {summary, assumptions: `${summary} These results do not establish the performance of a cash-only account or the current FOMC policy.`}
-}
-
-// Every strategy policy a record has carried, so a simulation of an
-// earlier one reads as "older" and a string the page has never seen reads
-// as "unrecognized". The first two are the executor's version strings,
-// which records wrote into `strategy_policy` before the allocation policy
-// had its own name. `/5` is `/4` under a 25% hold cap, the account's policy
-// since 2026-09-29.
-const KNOWN_STRATEGY_POLICIES = [
-  'cash-bounded-breakout-rotation/2',
-  'cash-bounded-breakout-rotation/3',
-  'graded-equal-weight/3',
-  'graded-equal-weight/4',
-  'graded-equal-weight/5',
-]
-
-// Compare an archived simulation with the paper policy saved in this record.
-// `active` is the record's own `targets.policy` (`live_policy.ACTIVE`), the
-// allocation policy; it is never the execution policy string, which is a
-// different versioned thing (the executor's conventions) and never equals a
-// strategy name - comparing with it is how a `/4` record read
-// "Unrecognized policy simulation" on the live board.
-const describeSimulationPolicy = (source: unknown, active: unknown) => {
-  if (source === undefined || source === null || source === '') return {
-    current: false, label: 'Policy not recorded',
-    note: 'The historical simulation did not record its strategy policy.',
-  }
-  if (typeof source !== 'string' || !KNOWN_STRATEGY_POLICIES.includes(source)) return {
-    current: false, label: 'Unrecognized policy simulation',
-    note: 'Recorded strategy policy is not recognized; alignment with the saved paper policy is unverified.',
-  }
-  if (typeof active !== 'string' || active === '') return {
-    current: false, label: 'Recorded policy simulation',
-    note: `Simulation of ${source}; the record does not name its saved paper policy, so alignment is unverified.`,
-  }
-  if (source === active) return {current: true, label: 'Policy simulation', note: 'Matches this saved paper policy. Latest-strategy history is in the separate view.'}
-  return {
-    current: false, label: 'Older policy simulation',
-    note: `Uses an earlier recorded strategy policy (${source}); differs from the saved paper policy (${active}).`,
-  }
-}
-
-// Allocation identity does not establish execution parity, including for old records.
-const POLICY_SIMULATION_LABEL = 'Policy simulation · names known at the time'
-
-// Describe only a recognized simulation model; old live-planner stamps prove nothing.
-const simulationExecutionNote = (backtest: DeskCurve['backtest']): string =>
-  backtest?.execution_policy === 'daily-open-close/1'
-    ? 'Daily-price model: ordinary buys at the next open; ordinary sells at the next close, with green-open sells held. Does not reproduce current paper execution.'
-    : 'Execution assumptions were not recorded or are not recognized. Alignment with current paper execution is unverified.'
 
 // Compute target cash from the active allocator's weights, never from the separate legacy book.
 const PlannedCash = ({record, paused}: {record: DeskRecord; paused: boolean}) => {
@@ -592,30 +521,6 @@ const SummaryStrip = ({
       </div>
     </section>
   )
-}
-
-// Keep policy alignment, historical inputs and benchmark comparisons beside the simulation only.
-const SimulationSummary = ({latest, backtest}: {latest: DeskRecord; backtest: DeskCurve['backtest']}) => {
-  const policy = describeSimulationPolicy(backtest?.strategy_policy, latest.targets?.policy)
-  const fundamentals = describeFundamentalSource(backtest?.fundamentals_source)
-  const label = policy.current
-    ? `${POLICY_SIMULATION_LABEL}${fundamentals.current ? '' : fundamentals.known ? ' · older fundamental inputs' : ' · fundamental inputs unverified'}`
-    : policy.label
-  // No point-in-time result means no headline; never substitute a hindsight-universe total.
-  const last = (values?: number[]) => values?.length ? values[values.length - 1] : null
-  const total = last(backtest?.rules_point_in_time)
-  if (total === null) return null
-  const cagr = backtest?.stats_point_in_time?.cagr
-  const spy = last(backtest?.spy)
-  const qqq = last(backtest?.qqq)
-  return <section aria-label="Historical simulation summary" className="mb-3 rounded-xl bg-[#f5f5f7] p-3 text-xs">
-    <p title={`Recorded simulation fundamental source: ${backtest?.fundamentals_source || 'not recorded'}.`}>{label}</p>
-    <p className="my-1 text-sm"><Trend value={total * 100} />{' '}
-      {typeof cagr === 'number' && Number.isFinite(cagr) && <span aria-label="Policy simulation CAGR">CAGR {(cagr * 100).toFixed(1)}% · </span>}
-      {spy !== null && <>vs SPY <Trend value={spy * 100} /></>}{qqq !== null && <> · QQQ <Trend value={qqq * 100} /></>}
-    </p>
-    <p className="text-[#6e6e73]">{[policy.note, describeSimulationFunding(backtest?.funding_model).summary, fundamentals.simulationNote].filter(Boolean).join(' ')}</p>
-  </section>
 }
 
 // Show recorded market conditions without attributing reference sizing to account targets.
@@ -799,55 +704,13 @@ function ToneExpiryNote({expiry}: {expiry?: ToneExpiry | null}) {
   </div>
 }
 
-// A small dependency-free SVG line chart of the track record: the desk's
-// rules, SPY and QQQ on the same sessions, and the paper account's live
-// equity normalized to the same start. Hovering shows the values on one
-// session.
-const CurveChart = ({
-  backtest,
-  paper,
-}: {
-  backtest: DeskCurve['backtest']
-  paper?: DeskCurve['paper']
-}) => {
+// A small dependency-free SVG line chart of cumulative returns on one date
+// axis, one line per series (the simulated account first). Hovering shows the
+// values on one session.
+type CurveSeries = { label: string; color: string; values: number[] }
+const CurveChart = ({ dates, series, label }: { dates: string[]; series: CurveSeries[]; label: string }) => {
   const svgRef = useRef<SVGSVGElement | null>(null)
   const [hover, setHover] = useState<number | null>(null)
-  // The backtest spans years while the paper account started a few
-  // sessions ago. Aligning every series to one merged date axis keeps the
-  // paper curve at its real dates; drawing it at the backtest's indices
-  // used to put its September 2026 points at the 2015 start of the chart.
-  const btDates = backtest?.dates ?? []
-  const paperDates = paper?.sessions ?? []
-  const dates = [...new Set([...btDates, ...paperDates])].sort()
-  const align = (d: string[], values: number[]) => {
-    const by = new Map(d.map((date, i) => [date, values[i]] as const))
-    return dates.map((date) => by.get(date) ?? NaN)
-  }
-  const series: { label: string; color: string; values: number[] }[] = []
-  if (backtest) {
-    // A record that names its universe says so in the legend: the stored
-    // line is today's names back-cast, not a return anyone could have earned.
-    series.push({ label: backtest.universe === 'hindsight' ? 'stored simulation · hindsight universe' : 'stored simulation', color: '#1e7a3a', values: align(btDates, backtest.rules) })
-    if (backtest.rules_point_in_time && backtest.rules_point_in_time.length) {
-      series.push({ label: 'same rules, names known at the time', color: '#b45309', values: align(btDates, backtest.rules_point_in_time) })
-    }
-    // The /4 candidate on the same point-in-time book: the scorecard's
-    // measured arm priced plain, so the page shows the line the operator is
-    // deciding on next to the one the account runs.
-    if (backtest.candidate_point_in_time && backtest.candidate_point_in_time.length) {
-      series.push({ label: 'candidate /4, names known at the time', color: '#0f766e', values: align(btDates, backtest.candidate_point_in_time) })
-    }
-    series.push({ label: 'SPY', color: '#9ca3af', values: align(btDates, backtest.spy) })
-    if (backtest.qqq && backtest.qqq.length) series.push({ label: 'QQQ', color: '#0b5cad', values: align(btDates, backtest.qqq) })
-  }
-  if (paper && paper.equity.length > 1) {
-    const base = paper.equity[0] || 1
-    series.push({
-      label: 'practice account (recorded equity)',
-      color: '#d97706',
-      values: align(paperDates, paper.equity.map((e) => e / base - 1)),
-    })
-  }
   const width = 800
   const height = 240
   const padT = 14
@@ -863,7 +726,7 @@ const CurveChart = ({
   const x = (i: number) => (dates.length > 1 ? padL + (i / (dates.length - 1)) * innerW : padL + innerW / 2)
   const y = (v: number) => padT + (1 - (v - min) / span) * innerH
   // A polyline per run of finite values, so a series that starts later
-  // (the paper account) or skips a date does not draw a false bridge.
+  // or skips a date does not draw a false bridge.
   // A missing value must close the current run: appending the next finite
   // point to the last non-empty segment would draw the gap as a straight
   // line, which is exactly the bridge this is meant to avoid.
@@ -899,7 +762,7 @@ const CurveChart = ({
         viewBox={`0 0 ${width} ${height}`}
         className="h-auto w-full"
         role="img"
-        aria-label="The desk's track record against SPY and QQQ"
+        aria-label={label}
         onMouseMove={onMove}
         onMouseLeave={() => setHover(null)}
       >
@@ -954,76 +817,106 @@ const CurveChart = ({
   )
 }
 
-// The trust anchor: the rules' track record in words and the curve. Absent
-// until the nightly run writes a curve block, with a plain note.
-const TrackRecord = ({ curve, latest }: { curve: DeskCurve | undefined; latest: DeskRecord }) => {
-  const backtest = curve?.backtest
-  const stats = backtest?.stats
-  if (!backtest || !stats) {
-    return (
-      <section className="rounded-2xl border border-black/[0.08] bg-white p-4">
-        <h3 className="text-sm font-semibold text-[#1d1d1f]">Historical simulation</h3>
-        <p className="mt-1 text-sm text-[#6e6e73]">
-          {curve?.backtest_unavailable_reason ?? 'No historical simulation available.'}
-        </p>
-      </section>
-    )
+const percent1 = (value: number | undefined) => typeof value === 'number' && Number.isFinite(value) ? `${(value * 100).toFixed(1)}%` : '—'
+const usd0 = (value: number) => value.toLocaleString('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 })
+
+// The installed rule's own account simulation: the replay (`policy_book`, run
+// at 20:40 after the evening record) of the record's session, its equity
+// beside SPY and its headline numbers exactly as the replay wrote them. When
+// that replay is missing the box says so; no other simulation stands in.
+const TrackRecord = ({ simulation }: { simulation: DeskPolicySimulation | null | undefined }) => {
+  const missing = (reason: string) => (
+    <section aria-label="Historical simulation summary" className="rounded-2xl border border-black/[0.08] bg-white p-4">
+      <h3 className="text-sm font-semibold text-[#1d1d1f]">Historical simulation</h3>
+      <p role="status" className="mt-1 text-sm text-[#6e6e73]">{reason}</p>
+    </section>
+  )
+  if (!simulation) return missing('No historical simulation available.')
+  switch (simulation.status) {
+    case 'missing':
+      return missing(simulation.reason ?? 'The replay for this record has not been written yet.')
+    case 'available':
+      break
+    default:
+      return exhausted(simulation.status, missing('No historical simulation available.'))
   }
-  const pit = backtest.stats_point_in_time
-  const candidate = backtest.stats_candidate
+  const book = simulation.book
+  if (!book || !simulation.dates || !simulation.equity || !simulation.benchmark) return missing('The replay for this record carries no account simulation.')
   const cells = [
-    { label: 'CAGR', value: stats.cagr != null ? `${(stats.cagr * 100).toFixed(1)}%` : '—' },
-    // The honest figure beside the published one: the same rules on the
-    // names the book could have held on each session. The difference is
-    // the choice of names, not the strategy.
-    { label: 'CAGR, names known at the time', value: pit && pit.cagr != null ? `${(pit.cagr * 100).toFixed(1)}%` : '—' },
-    // The /4 candidate on the same names, priced plain: the scorecard's
-    // ew_graded_20 number, not a live record.
-    { label: 'CAGR, candidate /4', value: candidate && candidate.cagr != null ? `${(candidate.cagr * 100).toFixed(1)}%` : '—' },
-    { label: 'Volatility', value: stats.volatility != null ? `${(stats.volatility * 100).toFixed(0)}%` : '—' },
-    { label: 'Worst drawdown', value: stats.drawdown != null ? `${(stats.drawdown * 100).toFixed(0)}%` : '—' },
-    { label: 'Total return', value: stats.total != null ? `${(stats.total * 100).toFixed(0)}%` : '—' },
+    { label: 'CAGR', value: percent1(book.all.cagr) },
+    { label: 'Max drawdown', value: percent1(book.all.max_drawdown) },
+    { label: 'Total return', value: percent1(book.all.total) },
+    { label: `${book.benchmark.symbol} CAGR`, value: percent1(book.benchmark.cagr) },
+    { label: `${book.benchmark.symbol} max drawdown`, value: percent1(book.benchmark.max_drawdown) },
+    { label: 'Trades', value: book.fills.toLocaleString('en-US') },
+    { label: 'Costs', value: usd0(book.costs) },
+    { label: 'Starting capital', value: usd0(book.capital) },
   ]
   return (
-    <section className="rounded-2xl border border-black/[0.08] bg-white p-4">
+    <section aria-label="Historical simulation summary" className="rounded-2xl border border-black/[0.08] bg-white p-4">
       <div className="mb-2 flex flex-wrap items-baseline justify-between gap-2">
         <h3 className="text-sm font-semibold text-[#1d1d1f]">Historical simulation</h3>
-        <p className="text-xs text-[#6e6e73]">
-          {backtest.label} · as of {shortDate(backtest.asof)} · not paper-account results
-        </p>
+        <p className="text-xs text-[#6e6e73]">not paper-account results</p>
       </div>
-      <SimulationSummary latest={latest} backtest={backtest} />
-      <p aria-label="Simulation execution assumptions" className="mb-3 text-xs text-amber-800">{simulationExecutionNote(backtest)}</p>
-      <p aria-label="Simulation funding assumptions" className="mb-3 text-xs text-amber-800">{describeSimulationFunding(backtest.funding_model).assumptions}</p>
+      <p aria-label="Simulated rule" className="mb-1 text-sm text-[#1d1d1f]">
+        <b>{simulation.policy}</b> · replay of the {simulation.session} record
+      </p>
+      <p aria-label="Simulation period" className="mb-3 text-xs text-[#6e6e73]">
+        {book.period.start} to {book.period.through} · {book.period.sessions.toLocaleString('en-US')} sessions · {book.rule.cost_bps} bp per fill
+      </p>
       <div className="mb-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
         {cells.map((c) => (
-          <div key={c.label} className="rounded-xl bg-[#f5f5f7] px-3 py-2">
+          <div key={c.label} aria-label={c.label} className="rounded-xl bg-[#f5f5f7] px-3 py-2">
             <p className="text-xs text-[#6e6e73]">{c.label}</p>
             <p className="text-sm font-semibold text-[#1d1d1f]">{c.value}</p>
           </div>
         ))}
       </div>
-      {/* The nightly's reason when the point-in-time line could not be drawn;
-          without it the second line's absence reads as if the names never
-          differed. */}
-      {backtest.point_in_time_note && (
-        <p aria-label="Point-in-time note" className="mb-3 text-xs text-[#6e6e73]">{backtest.point_in_time_note}</p>
-      )}
-      {/* The same for the candidate line: an absent third line needs its
-          reason, or it reads as if the candidate was never measured. */}
-      {backtest.candidate_note && (
-        <p aria-label="Candidate note" className="mb-3 text-xs text-[#6e6e73]">{backtest.candidate_note}</p>
-      )}
-      <CurveChart backtest={backtest} paper={curve?.paper} />
-      {backtest.evaluation_periods?.map((period) => (
-        <p key={period.label} className="mt-3 text-xs text-[#6e6e73]">
-          <b>{period.label}</b> · {period.since} to {period.through}: return {(period.total_return * 100).toFixed(2)}%,
-          maximum drawdown {(period.drawdown * 100).toFixed(2)}% · {period.sessions} sessions,
-          {' '}{period.completed_meetings.length} completed FOMC {period.completed_meetings.length === 1 ? 'meeting' : 'meetings'}. {period.basis}.
-        </p>
-      ))}
+      <p aria-label="Simulation windows" className="mb-3 text-xs text-[#6e6e73]">
+        2015 to 2022: CAGR {percent1(book.to_2022.cagr)}, max drawdown {percent1(book.to_2022.max_drawdown)} · 2023 on: CAGR {percent1(book.from_2023.cagr)}, max drawdown {percent1(book.from_2023.max_drawdown)}
+      </p>
+      <CurveChart
+        label={`${simulation.policy} simulated account against ${book.benchmark.symbol}`}
+        dates={simulation.dates}
+        series={[
+          { label: `${simulation.policy} (simulated account)`, color: '#1e7a3a', values: simulation.equity },
+          { label: `${book.benchmark.symbol} (${book.benchmark.basis})`, color: '#9ca3af', values: simulation.benchmark },
+        ]}
+      />
+      <p aria-label="Simulation note" className="mt-3 text-xs text-[#6e6e73]">{simulation.note}</p>
     </section>
   )
+}
+
+// The nightly check of the paper plan against the account simulator's plan on
+// the same inputs (the 20:40 replay job). Nothing when it passed or has not
+// run for this record; a red banner naming the names on a mismatch; an amber
+// line when the check could not run, so a broken check is not read as a pass.
+const PLAN_PARITY_WORDS: Record<PlanParityKind, string> = {
+  policy: 'policy', path: 'planner path', inputs: 'inputs', sizing: 'target weight', holding: 'shares after the plan',
+}
+function PlanParityBanner({parity}: {parity?: DeskPlanParity | null}) {
+  if (!parity) return null
+  switch (parity.verdict) {
+    case 'ok':
+      return null
+    case 'unavailable':
+      return <div role="status" aria-label="Plan check" className="border-b border-[#b45309]/30 bg-[#fffbeb] px-3 py-2 text-sm text-[#92400e]">
+        <p>The check of the {parity.date} paper plan against the simulator could not run: {parity.note ?? 'no reason recorded'}.</p>
+      </div>
+    case 'mismatch':
+      break
+    default:
+      return exhausted(parity.verdict, null)
+  }
+  const names = [...new Set(parity.mismatches.map(m => m.ticker).filter((t): t is string => !!t))].sort()
+  const value = (v: unknown) => typeof v === 'number' ? (Math.abs(v) < 1 && v !== 0 && !Number.isInteger(v) ? `${(v * 100).toFixed(2)}%` : String(v)) : v === null || v === undefined ? '—' : String(v)
+  return <div role="alert" aria-label="Plan check" className="border-b border-[#b42318]/30 bg-[#fef2f2] px-3 py-2 text-sm text-[#b42318]">
+    <p className="font-semibold">The {parity.date} paper plan differs from the account simulator{names.length ? `: ${names.length} ${names.length === 1 ? 'name' : 'names'} (${names.join(', ')})` : ''}</p>
+    {parity.mismatches.map((m, i) => <p key={`${m.kind}:${m.ticker ?? ''}:${i}`} className="text-xs">
+      {m.ticker ? `${m.ticker} ` : ''}({lookup(PLAN_PARITY_WORDS, m.kind) ?? m.kind}: live {value(m.live)}, simulator {value(m.simulator)}) {m.detail}
+    </p>)}
+  </div>
 }
 
 // Explain the selected stock or paper-account view using its own recorded evidence.
@@ -1441,7 +1334,6 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
       || (lookup(GRADE_RANK, b.grade_live) ?? -1) - (lookup(GRADE_RANK, a.grade_live) ?? -1)
       || (b.score_live ?? latest?.grades[b.ticker]?.score ?? -1e9) - (a.score_live ?? latest?.grades[a.ticker]?.score ?? -1e9)
       || a.ticker.localeCompare(b.ticker))
-  const curve = payload.curve ?? latest?.curve
   // Each name's close on the decision session, for the day's move on the board.
   const closes: Record<string, number | null> = Object.fromEntries((latest?.actions ?? []).map(a => [a.ticker, a.last_close]))
   // Whether the paper book's next session is a rebalance: only then are the
@@ -1591,6 +1483,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
       {/* On phones, diagnostics use page scrolling instead of a tiny nested viewport. */}
       {latest && <div className="flex flex-col sm:max-h-[75vh]">
       <GradeParityBanner parity={payload.grade_parity} />
+      <PlanParityBanner parity={payload.plan_parity} />
       <DataVintageNote vintage={latest.data_vintage} />
       <ReleaseCoverageNote coverage={latest.release_coverage} />
       <ToneExpiryNote expiry={latest.tone_expiry} />
@@ -1705,7 +1598,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
 
       {latest && <details aria-label="Historical simulation" className="rounded-2xl border border-black/[0.08] bg-white">
         <summary className="cursor-pointer px-4 py-3 text-sm font-semibold">Historical simulation <span className="ml-2 text-xs font-normal text-[#6e6e73]">research · not paper-account results</span></summary>
-        <TrackRecord latest={latest} curve={curve} />
+        <TrackRecord simulation={payload.policy_simulation} />
       </details>}
 
       </>}

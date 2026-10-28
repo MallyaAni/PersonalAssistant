@@ -1,35 +1,23 @@
-"""Published daily simulations must not inherit the live executor's identity."""
+"""The record publishes no daily-price simulation under the live rule's name.
 
-import numpy as np
-import pytest
+The Paper account view's "Historical simulation" box used to draw a curve the
+nightly priced with the older daily-price simulator (`desk/simulate.py`,
+graded-equal-weight/5 with dip-or-close fills) under the live policy's name.
+The box now reads the installed rule's own account simulation from the replay
+(`market_policy_replay_research.read_book`), so the record carries only the
+paper account's own equity history.
+"""
 
-from backend.agents.trading.desk import intraday_orders, paper, simulate
+from backend.agents.trading.desk import paper, simulate
 from backend.cli import market_daily
 from backend.tests.test_market_daily import _report
 
 
-# Check curve identity independently of current and future planner versions.
-@pytest.mark.parametrize("planner_version", [paper.POLICY_VERSION, "future-paper/99"])
-def test_daily_curve_names_its_actual_model_not_the_live_executor(
-    monkeypatch, planner_version
-):
-    monkeypatch.setattr(paper, "POLICY_VERSION", planner_version)
-    report = _report()
-    result = simulate.SimResult(
-        dates=report.panel.dates,
-        returns=np.array([0.0, 0.05, 0.1]),
-        invested=np.zeros(3),
-        trades=[],
-        rebalances=0,
-        equity=np.array([1.0, 1.05, 1.1]),
-    )
-    monkeypatch.setattr(simulate, "run", lambda report, **kwargs: result)
-    curve = market_daily.curve_block(report, None)
-    assert curve["execution_policy"] == "daily-open-close/1"
-    assert curve["live_execution_policy"] == paper.POLICY_VERSION
-    assert curve["live_execution_timing"] == intraday_orders.INTRADAY_TIMING
-    assert curve["execution_matches_live"] is False
-    assert "next-open buys" in curve["execution_note"]
-    assert "green-open sell suppression" in curve["execution_note"]
-    assert "live executor" not in curve["point_in_time_label"]
-    np.testing.assert_allclose(curve["rules"], [0.0, 0.05, 0.1])
+def test_the_record_carries_no_daily_price_simulation(monkeypatch, tmp_path):
+    def forbidden(*args, **kwargs):
+        raise AssertionError("the nightly priced the old daily-price simulation")
+
+    monkeypatch.setattr(simulate, "run", forbidden)
+    monkeypatch.setattr(paper, "load_state", lambda root: paper.PaperState())
+    assert market_daily.curves(_report(), object(), tmp_path) == {"paper": None}
+    assert not hasattr(market_daily, "curve_block")
