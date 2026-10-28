@@ -352,22 +352,23 @@ points with no more than 0.5 CAGR points given up, at 25 bp, in both windows.
 1. **Now (live):** install the FOMC retirement after the 15:45 ET restoration
    and after the last balancer tick, deploy, confirm admission, run the one-time
    6-K reclassify before the 19:30 ET nightly. Freeze the rule for 252 sessions.
-2. **Research now (no live change):** pre-register C1, the residual-momentum
-   leader tilt. It is one function, it fits the installed architecture, it has
-   the strongest external and internal support, and it is the only candidate
-   that can plausibly improve the installed rule without changing its
-   selection, cadence or execution. Run it on the honest PIT cache at 10 and
-   25 bp with yearly walk-forward and placebos.
-3. **Research next:** C2, the value × residual-momentum blend, with value-only
-   and momentum-only arms so the incremental effect is identifiable. Then C3,
-   the 52-week-high tilt, with the dispersion diagnostic.
+2. **C1 (closed):** the residual-momentum leader tilt was pre-registered and
+   run on the honest PIT cache at 10 and 25 bp. It failed: R120 lost 0.0129
+   choosing Sharpe and deepened the drawdown by 2.1 points
+   (`residual-momentum-results-2026-10-28.md`). The arm is not retried.
+3. **C2 (closed):** the value × residual-momentum blend was pre-registered
+   with value-only and residual-only controls. Value-only was the best single
+   arm at 0.6903 choosing Sharpe, but the blend landed at 0.6748, below the
+   +0.05 bar and deeper than the drawdown bar; the arm is closed
+   (`value-momentum-blend-results-2026-10-28.md`). **Research next:** C3, the
+   52-week-high tilt, with the dispersion diagnostic.
 4. **Data audit:** C4, the SUE coverage audit. If coverage is adequate, run the
    rank-IC study; if not, record the gap and do not force the signal.
 5. **Owner decision:** C5, the sector-rotation sleeve. It is the honest answer
    to the sector question, but it is a separate mandate and must not be spliced
    into the AI book.
-6. **Only if C1/C2/C3 pass:** prepare a release candidate, forward-shadow it,
-   and install it only after the 252-session forward record and the release
+6. **Only if a candidate passes:** prepare a release candidate, forward-shadow
+   it, and install it only after the 252-session forward record and the release
    ceremony. The forward record is the only out-of-sample evidence this desk
    will ever have; changing the rule to chase a backtest would destroy it.
 
