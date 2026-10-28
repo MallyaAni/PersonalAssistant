@@ -1,0 +1,10 @@
+{
+ "cost_bps": 10,
+ "model_directory": "model",
+ "model_receipt_sha256": "858163d5e414ee658f28a10532a934528c72fe98fd1cb685e655d6d3a2c75825",
+ "policy": "grade-led-leader-weight/1",
+ "release_receipt_sha256": "<sha256 of the installed release.json bytes; recompute after writing it>",
+ "risk_directory": "risk",
+ "risk_receipt_sha256": "79b33d54253001ba0f907ae0b41f49c81ae436800e43e05b75cd5f58bb653cfe",
+ "timing_config_sha256": "d03339a3ad4b590ef8ed4205375d39d634df12a6fb49e290ab5b0f3642ea679a"
+}
