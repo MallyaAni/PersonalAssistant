@@ -3,6 +3,10 @@ import type { DeskCurrentSetup, DeskLevelTag, DeskLive, DeskModelDecision, DeskP
 import { displayedBoardPrice, SessionPrice } from './StockBoard'
 import {rankCurrent, confirmationText, invalidationText, quoteReferenceText} from './currentRanking'
 import {modelDecisionFor} from './modelDecisions'
+import {
+  FINISHED_ORDER_STATES, GRADE_RANK, isLabel, lookup, SUBMITTED_ORDER_STATES, UNSENT_ORDER_STATES,
+  exhausted, type Grade, type ModelAction,
+} from '../../services/labels'
 
 // Stocks takes action, grade, funded shares and timing from one admitted
 // numeric plan. Its recorded paper executions stay separate in Details.
@@ -16,6 +20,11 @@ import {modelDecisionFor} from './modelDecisions'
 // Keep strategy direction separate from timing and recorded mixed order groups.
 const STRATEGY_ACTIONS = ['BUY', 'SELL', 'TRIM', 'HOLD'] as const
 export type BoardWord = typeof STRATEGY_ACTIONS[number] | '—' | 'ORDERS'
+// The board word of each numeric model decision action.
+const MODEL_WORD: Record<ModelAction, BoardWord> = {buy: 'BUY', sell: 'SELL', trim: 'TRIM', hold: 'HOLD'}
+// The colour the board writes a grade in: entry grades green, C red, B plain.
+const GRADE_TONE: Record<Grade, string> = {'A+': 'text-[#248a3d]', A: 'text-[#248a3d]', B: 'text-[#6e6e73]', C: 'text-[#b42318]'}
+
 
 const LEARNED_HOLDING_POLICY = 'joint-stock-risk-funded/6-retained-holdings-probability-timing-research'
 
@@ -28,9 +37,15 @@ export const rankingText = 'Admitted numeric decisions rank blocked plans and pl
 // Prefer the executor's recorded rule rather than assigning legacy timing to a new policy.
 export const executionRuleText = (plan?: DeskPaperPlan): string => {
   if (plan?.rule_text) return [...new Set(Object.values(plan.rule_text))].join(' · ')
-  if (plan?.rule === 'next_open') return 'Recorded timing: next open. Each order states its execution session and timing.'
-  if (plan?.rule === 'dip_or_close') return 'Buys wait for a 15-minute close at least 1% under the day’s open; sells wait for one at least 1% over. Otherwise, a market order goes in at 3:45 PM ET, the last 15-minute candle before the regular close.'
-  return 'Order timing unavailable; see each order.'
+  const unavailable = 'Order timing unavailable; see each order.'
+  if (!plan) return unavailable
+  switch (plan.rule) {
+    case 'next_open': return 'Recorded timing: next open. Each order states its execution session and timing.'
+    case 'dip_or_close': return 'Buys wait for a 15-minute close at least 1% under the day’s open; sells wait for one at least 1% over. Otherwise, a market order goes in at 3:45 PM ET, the last 15-minute candle before the regular close.'
+    // A plan never carries the FOMC rule as its own; each order states it.
+    case 'decision_close': return unavailable
+    default: return exhausted(plan.rule, unavailable)
+  }
 }
 
 // One name on the board, with everything its row and its details show.
@@ -81,7 +96,7 @@ const hasAction = (row: BoardRow, action: FilterAction) => !row.modelPlan && row
 export const savedTargetText = (row: BoardRow, session: string) =>
   `Saved target ${row.target === null ? 'unavailable' : percent(row.target)} · ${session}`
 
-const GRADE_RANK: Record<string, number> = { 'A+': 3, A: 2, B: 1, C: 0 }
+
 // Where the viewer's own account size is kept: a per-browser convenience that
 // only scales the paper account's sizes, never read by the server.
 const MY_ACCOUNT_KEY = 'desk.myAccount'
@@ -243,11 +258,11 @@ export const orderWord = (order: DeskPaperOrder): BoardWord => {
 
 // An order that is over: filled, cancelled, rejected or missed.
 export const isDone = (order: DeskPaperOrder): boolean =>
-  order.terminal === true || ['filled', 'cancelled', 'rejected', 'missed'].includes(order.state)
+  order.terminal === true || isLabel(FINISHED_ORDER_STATES, order.state)
 
 // Only unsubmitted plans can have a reference size; this is not a personal trade plan.
 const canScale = (order: DeskPaperOrder) =>
-  ['planned', 'waiting', 'due'].includes(order.state) && !order.sent_at && order.submitted_qty == null
+  isLabel(UNSENT_ORDER_STATES, order.state) && !order.sent_at && order.submitted_qty == null
 
 // Show only triggers linked to the admitted model row, or recorded paper triggers in the account view.
 const decisionLevels = (row: BoardRow): string[] => [...new Set((row.modelPlan ? row.modelDecision?.executions ?? [] : row.orders)
@@ -261,7 +276,7 @@ const decisionLevels = (row: BoardRow): string[] => [...new Set((row.modelPlan ?
 
 // Label the quantity basis, including older API responses without the new field.
 export const quantityLabel = (order: DeskPaperOrder): string =>
-  order.quantity_basis ?? (order.state === 'filled' ? 'filled' : ['sent', 'queued', 'partial'].includes(order.state) ? 'submitted' : 'planned')
+  order.quantity_basis ?? (order.state === 'filled' ? 'filled' : isLabel(SUBMITTED_ORDER_STATES, order.state) ? 'submitted' : 'planned')
 
 // Aggregate only like order states; mixed outcomes stay visibly separate.
 const wordOf = (orders: DeskPaperOrder[]): BoardWord => {
@@ -334,7 +349,7 @@ export const boardRows = (latest: DeskRecord, paper: DeskPaperLive | null | unde
       : `${lead.status} · ${mine.filter(o => o.state === 'filled').length} of ${mine.length} orders filled`
     const qty = mine.reduce((sum, o) => sum + o.qty, 0)
     const notional = combined && mine.length && mine.every(o => o.notional !== null) ? mine.reduce((sum, o) => sum + (o.notional ?? 0), 0) : null
-    const word: BoardWord = model ? (decision?.action?.toUpperCase() as BoardWord | undefined) ?? '—' : mine.length ? wordOf(mine) : held > 0 ? 'HOLD' : '—'
+    const word: BoardWord = model ? (decision?.action ? MODEL_WORD[decision.action] : undefined) ?? '—' : mine.length ? wordOf(mine) : held > 0 ? 'HOLD' : '—'
     const done = model ? decision?.status === 'complete' : mine.length > 0 && mine.every(isDone)
     const why = model ? model.reason
       : mine.length
@@ -581,7 +596,7 @@ export const TradeBoard = ({latest, live, paper, now, onOpen, closes, paused = f
     : true)
   const measure = (row: BoardRow, key: SortKey): number | string =>
     key === 'ticker' ? row.ticker
-    : key === 'grade' ? GRADE_RANK[currentOnly ? row.modelDecision?.grade ?? '' : row.grade] ?? -1
+    : key === 'grade' ? lookup(GRADE_RANK, currentOnly ? row.modelDecision?.grade : row.grade) ?? -1
     : key === 'position' ? row.heldWeight ?? -1
     : currentOnly ? row.modelDecision?.qty ?? -1 : row.notional ?? -1
   const actionChoices = currentOnly ? STRATEGY_ACTIONS : FILTER_ACTIONS
@@ -669,7 +684,7 @@ export const TradeBoard = ({latest, live, paper, now, onOpen, closes, paused = f
                 {age && <div aria-label={`${row.ticker} price age`} title="Completed regular-session bar used by the strategy; the displayed quote has its own timestamp." className="whitespace-nowrap text-[10px] text-[#86868b]">{age}</div>}
               </td>
               <td className="py-2 text-xs" aria-label={`${row.ticker} displayed grade`}>
-                <span className={`font-semibold ${assessedGrade === 'A+' || assessedGrade === 'A' ? 'text-[#248a3d]' : assessedGrade === 'C' ? 'text-[#b42318]' : 'text-[#6e6e73]'}`}>{assessedGrade || '—'}</span>
+                <span className={`font-semibold ${lookup(GRADE_TONE, assessedGrade) ?? 'text-[#6e6e73]'}`}>{assessedGrade || '—'}</span>
                 {currentOnly && row.modelDecision && <div className="text-[10px] text-[#6e6e73]">{row.modelDecision.signal_session ?? latest.session} plan</div>}
               </td>
               <td className="py-2 text-xs" aria-label={`${row.ticker} position`}>

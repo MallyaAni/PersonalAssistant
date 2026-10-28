@@ -1,4 +1,5 @@
 import type {DeskModelDecision, DeskPaperLive, DeskRecord} from '../../services/api'
+import {isLabel, MODEL_ACTIONS} from '../../services/labels'
 
 export type ModelDecisionView = {decision: DeskModelDecision | null; status: string; reason: string}
 
@@ -27,7 +28,7 @@ export const modelDecisionFor = (latest: DeskRecord, paper: DeskPaperLive | null
   if (decision.status === 'unavailable') return {...absent, reason: decision.reason}
   if (decision.status === 'complete' || decision.status === 'no_position')
     return {decision: {...decision, action: null, qty: null, when: null}, status: statusText[decision.status], reason: decision.reason}
-  if (!['buy', 'trim', 'sell', 'hold'].includes(decision.action ?? '')
+  if (!isLabel(MODEL_ACTIONS, decision.action)
       || !Number.isInteger(decision.qty) || decision.qty! < 0
       || decision.action === 'hold' && decision.qty !== 0
       || decision.action !== 'hold' && decision.qty === 0 && decision.status !== 'blocked'

@@ -1,4 +1,5 @@
 import type {DeskPaperLive, DeskRecordedPaperFill} from '../../services/api'
+import {isLabel, ORDER_SIDES} from '../../services/labels'
 
 // Keep a confirmed fill's original clock; malformed, undated or future rows cannot become executions.
 const validFill = (fill: unknown, now: number): fill is DeskRecordedPaperFill => {
@@ -6,7 +7,7 @@ const validFill = (fill: unknown, now: number): fill is DeskRecordedPaperFill =>
   const row = fill as DeskRecordedPaperFill
   const at = Date.parse(row.filled_at ?? '')
   return typeof row.symbol === 'string' && row.symbol.length > 0
-    && (row.side === 'buy' || row.side === 'sell')
+    && isLabel(ORDER_SIDES, row.side)
     && Number.isFinite(row.qty) && row.qty > 0 && Number.isFinite(row.price) && row.price > 0
     && typeof row.filled_at === 'string' && /(?:Z|[+-]\d{2}:\d{2})$/.test(row.filled_at)
     && Number.isFinite(at) && at <= now

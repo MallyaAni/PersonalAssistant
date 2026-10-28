@@ -2,6 +2,10 @@ import type {DeskCurrentSetup, DeskLive} from '../../services/api'
 import type {BoardRow} from './TradeBoard'
 import {currentAssessments} from './liveAssessment'
 import {displayedBoardPrice} from './StockBoard'
+import {ENTRY_GRADES, isLabel, type ChartEntry} from '../../services/labels'
+
+// The capitalised word for an entry that is not ready, as the quote line writes it.
+const ENTRY_WORD: Record<Exclude<ChartEntry, 'ready'>, string> = {wait: 'WAIT', avoid: 'AVOID', unavailable: 'UNAVAILABLE'}
 
 // Withhold a judgment as soon as its own evidence expires or the candle changes.
 export const currentSetup = (live: DeskLive, session: string, ticker: string, now: number): DeskCurrentSetup | null => {
@@ -10,7 +14,7 @@ export const currentSetup = (live: DeskLive, session: string, ticker: string, no
   if (!grade || !row || row.status !== 'model_assessment' || row.bar !== live.quotes[ticker]?.bar
       || !Number.isFinite(row.price) || row.price <= 0
       || Date.parse(row.generated_at) > now || !(Date.parse(row.valid_until) > now)) return null
-  if (row.entry === 'ready' && grade.grade_live !== 'A' && grade.grade_live !== 'A+')
+  if (row.entry === 'ready' && !isLabel(ENTRY_GRADES, grade.grade_live))
     return {...row, entry: 'avoid', reason: 'The current grade no longer permits a new entry.'}
   if (row.entry === 'ready' && live.market_status?.phase && live.market_status.phase !== 'open')
     return {...row, entry: 'wait', reason: 'Regular-session entry review is waiting for the next open session.'}
@@ -52,7 +56,7 @@ export const quoteReferenceText = (live: DeskLive, ticker: string, setup: DeskCu
   const reference = setup.levels[setup.confirmation_ref]
   if (!reference) return `Latest quote $${quote.price.toFixed(2)}; entry confirmation is not established.`
   const relation = quote.price >= reference.price ? 'above' : 'below'
-  return `Latest quote $${quote.price.toFixed(2)} is ${relation} the $${reference.price.toFixed(2)} confirmation reference; ${setup.entry === 'ready' ? 'setup remains ready for review' : `entry remains ${setup.entry.toUpperCase()} until reassessed`}.`
+  return `Latest quote $${quote.price.toFixed(2)} is ${relation} the $${reference.price.toFixed(2)} confirmation reference; ${setup.entry === 'ready' ? 'setup remains ready for review' : `entry remains ${ENTRY_WORD[setup.entry]} until reassessed`}.`
 }
 
 // Attach chart evidence without replacing the recorded action, quantity, timing or order ranking.

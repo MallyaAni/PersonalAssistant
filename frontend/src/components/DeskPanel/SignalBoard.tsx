@@ -1,16 +1,37 @@
 import {useEffect, useMemo, useRef, useState} from 'react'
 import type {DeskCurrentSetup, DeskEntryReasonCode, DeskEntryVerdict, DeskLive, DeskModelAllocation, DeskRecord, DeskStrategyDecision, DeskStrategyStock} from '../../services/api'
+import {CHART_PRIORITIES, GRADES, GRADE_SIGNALS, HOLDING_SIGNALS, isLabel, PLAN_TRADES, VERDICTS, type ChartPriority, type ExchangePhase, type OrderSide, type PlanTrade, type TimingState, type Verdict} from '../../services/labels'
 import {currentSetup, confirmationText, invalidationText} from './currentRanking'
 import {currentAssessments} from './liveAssessment'
 import {displayedBoardPrice, SessionPrice} from './StockBoard'
 import {StrategyTechnicalEvidence} from './StrategyTechnicalEvidence'
 
-type Side = 'all' | 'buy' | 'sell'
-type Signal = {word: string; ready: boolean; priority: string; rank: number; reason: string}
+type Side = 'all' | OrderSide
+// The words a board signal says. They are display text, but the row's verdict,
+// its action and the chart's marker are all read from them, so they are a
+// closed set: a buy word, a sell word, or one of the words that trade nothing.
+const BUY_WORDS = ['Buy now', 'Buy plan', 'Buy setup', 'Buy pending'] as const
+const SELL_WORDS = ['Sell review now', 'Exit if held', 'Exit', 'Sell pending', 'Sell plan'] as const
+type QuietWord = 'Wait' | 'Hold' | 'Avoid' | 'Avoid entry' | 'Avoid new entry' | 'No buy allocation' | 'No grade exit'
+  | 'No sell signal' | 'Do nothing' | 'Unavailable' | '—'
+type SignalWord = (typeof BUY_WORDS)[number] | (typeof SELL_WORDS)[number] | QuietWord
+// What the board prints for a signal: its direction when it trades, else its own word.
+export type BoardLabel = PlanTrade | QuietWord
+type Signal = {word: SignalWord; ready: boolean; priority: ChartPriority | ''; rank: number; reason: string}
 // The row's existing signals plus the backend's one-word verdict when it supplies one.
 export type Signals = {ticker: string; grade: string; setup: DeskCurrentSetup | null; buy: Signal; sell: Signal; evidence?: DeskStrategyDecision['evidence']; current?: {completed: string; quote: string; until: string}; plan?: {session: string; published: string; validUntil: string; calculated?: string}; nextSession?: boolean; atOpen?: boolean; lastPlan?: boolean;
-  verdict?: 'buy' | 'sell' | 'nothing'; reason_code?: string; size_weight?: number; verdict_reason?: string}
-const PRIORITY: Record<string, number> = {high: 3, medium: 2, low: 1}
+  verdict?: Verdict; reason_code?: string; size_weight?: number; verdict_reason?: string}
+const PRIORITY: Record<ChartPriority, number> = {high: 3, medium: 2, low: 1}
+// The signal-strength column's word for a priority; a signal without one shows a dash.
+const PRIORITY_WORD: Record<ChartPriority, string> = {high: 'High', medium: 'Medium', low: 'Low'}
+const priorityWord = (priority: ChartPriority | ''): string => priority ? PRIORITY_WORD[priority] : '—'
+// The verdict column's word and colour; a verdict of nothing prints no word.
+const VERDICT_WORD: Record<Verdict, string> = {buy: 'Buy', sell: 'Sell', nothing: ''}
+const VERDICT_TONE: Record<Verdict, string> = {buy: 'text-[#248a3d]', sell: 'text-[#b42318]', nothing: 'text-[#6e6e73]'}
+// The two timing states of a bound numerical entry that still name a trade.
+const ENTRY_STATES = ['execute', 'wait'] as const satisfies readonly TimingState[]
+// The exchange phases outside a regular session that still have a known calendar.
+const OUTSIDE_PHASES = ['post-market', 'pre-market', 'closed'] as const satisfies readonly ExchangePhase[]
 
 // Read the backend's closed verdict vocabulary in plain words; the same words
 // are used when an older publication carries no verdict and the row falls back.
@@ -30,7 +51,7 @@ const REASON_WORDS: Record<DeskEntryReasonCode, string> = {
 // `state` is the one structured qualifier the verdict cell shows beside the word.
 type VerdictView = {verdict: DeskEntryVerdict; reason: string; size: number | null; nextSession: boolean; atOpen?: boolean; lastPlan: boolean; observedAt: string | null; validUntil: number; sourceAt: number; state?: 'pending' | 'unavailable'}
 
-export type StrategyChartTarget = {ticker: string; date: string; at: string; validUntil: string | null; action: 'Buy' | 'Sell' | null; weight: number; record: string; strategyIdentity?: string; evidence?: DeskStrategyDecision['evidence']; entry?: {at: string; validUntil: string}; entryReason?: string; recordedHistoryAvailable?: boolean; nextSessionPlan?: boolean; atOpen?: boolean; displayAction?: string; referenceTransition?: boolean; positionWeight?: number; tradeWeight?: number | null}
+export type StrategyChartTarget = {ticker: string; date: string; at: string; validUntil: string | null; action: 'Buy' | 'Sell' | null; weight: number; record: string; strategyIdentity?: string; evidence?: DeskStrategyDecision['evidence']; entry?: {at: string; validUntil: string}; entryReason?: string; recordedHistoryAvailable?: boolean; nextSessionPlan?: boolean; atOpen?: boolean; displayAction?: BoardLabel; referenceTransition?: boolean; positionWeight?: number; tradeWeight?: number | null}
 
 // Recognize the independently authenticated publication formats without consulting an account.
 const independentAllocation = (allocation?: DeskModelAllocation): boolean => allocation?.version === 'strategy-model-allocation/1' || allocation?.version === 'strategy-model-allocation/2'
@@ -61,12 +82,12 @@ const publicationValid = (allocation: DeskModelAllocation | undefined, now: numb
   for (const name of names) {
     const row = allocation.rows[name], grade = allocation.grade_signals?.[name], evidence = row.evidence
     if (!grade || grade.session !== allocation.session || grade.basis !== 'observed_close_grade'
-        || !['buy', 'hold', 'sell', 'avoid', 'unavailable'].includes(grade.action)
-        || !(grade.grade===null && grade.action==='unavailable' || ['A+', 'A', 'B', 'C'].includes(grade.grade ?? '')) || evidence?.grade !== grade.grade
+        || !isLabel(GRADE_SIGNALS, grade.action)
+        || !(grade.grade===null && grade.action==='unavailable' || isLabel(GRADES, grade.grade)) || evidence?.grade !== grade.grade
         || evidence?.inputs_as_of !== allocation.session || evidence?.model_position_size !== row.target_weight
         || typeof row.target_weight !== 'number' || !Number.isFinite(row.target_weight) || row.target_weight < 0 || row.target_weight > 1
         // Which letters a positive target may carry is the publishing policy's boundary, checked by the backend; the action says it was admitted.
-        || (row.target_weight > 0 && !['buy', 'hold'].includes(grade.action))) return false
+        || (row.target_weight > 0 && !isLabel(HOLDING_SIGNALS, grade.action))) return false
     total += row.target_weight
   }
   return total <= 1 + 1e-12
@@ -93,7 +114,7 @@ const entryEvidence = (allocation: DeskModelAllocation, ticker: string, now: num
   const referenceSize = reference && row && typeof row.model_position_weight === 'number' && Number.isFinite(row.model_position_weight)
     && row.model_position_weight >= 0 && row.model_position_weight <= 1 && row.evidence?.model_position_size === row.model_position_weight
     && row.evidence?.trade_size === row.size_weight && row.evidence?.sizing_basis === entry.sizing_basis
-    && ['Buy','Sell'].includes(row.action ?? '') && (row.action !== 'Sell' || typeof row.reference_units === 'number'
+    && isLabel(PLAN_TRADES, row.action) && (row.action !== 'Sell' || typeof row.reference_units === 'number'
       && typeof row.proposed_units === 'number' && row.proposed_units > 0 && row.proposed_units <= row.reference_units)
   if (!['strategy-numerical-entries/1','strategy-numerical-entries/2','strategy-numerical-entries/3'].includes(entry?.version ?? '') || entry?.status !== 'available'
       || entry.snapshot_id !== allocation.snapshot_id || entry.publication_receipt_sha256 !== allocation.receipt_sha256
@@ -121,7 +142,7 @@ const numericalEntry = (allocation: DeskModelAllocation, ticker: string, now: nu
   const bound = entryEvidence(allocation,ticker,now)
   if (!bound) return null
   const {entry,row,completed,quoted,until} = bound
-  if (!['execute','wait'].includes(row.state) || !(row.size_weight > 0 && row.size_weight <= 1)
+  if (!isLabel(ENTRY_STATES, row.state) || !(row.size_weight > 0 && row.size_weight <= 1)
       || !Number.isFinite(quoted) || !(now < completed + 900000) || !(now < until)) return null
   return {row, at: entry.generated_at!, validUntil: row.valid_until}
 }
@@ -196,7 +217,7 @@ export const modelWeight = (latest: DeskRecord, allocation: DeskModelAllocation 
   const reading = allocation?.grade_signals?.[ticker]
   const readingMatches = allocation?.version !== 'strategy-model-allocation/1' || (reading
     && reading.grade === latest.grades?.[ticker]?.grade && reading.session === latest.session
-    && reading.basis === 'observed_close_grade' && ['buy', 'hold', 'sell', 'avoid', 'unavailable'].includes(reading.action))
+    && reading.basis === 'observed_close_grade' && isLabel(GRADE_SIGNALS, reading.action))
   if (!basis || !readingMatches || allocation?.status !== 'available'
       || allocation.policy !== 'grade-led-learned-sizing/1' || allocation.policy !== latest.targets?.policy
       || allocation.session !== latest.session || allocation.observed_at !== latest.written
@@ -217,7 +238,7 @@ export const strategyChartTarget = (latest: DeskRecord, allocation: DeskModelAll
     const displayed = signalsFor(latest,live,ticker,now,allocation)
     const reference = (allocation.reference_positions!==undefined || referenceEntryFormat(allocation.entry_assessment)) && referencePosition(allocation,ticker,now)!==null
     return {ticker, date: current ? allocation.entry_assessment!.session! : allocation.session!, at: current?.at ?? allocation.as_of, validUntil: allocation.valid_until,
-      action: reference ? current?.row.action ?? null : weight > 0 && ['buy', 'hold'].includes(action ?? '') ? 'Buy' : action === 'sell' ? 'Sell' : null,
+      action: reference ? current?.row.action ?? null : weight > 0 && isLabel(HOLDING_SIGNALS, action) ? 'Buy' : action === 'sell' ? 'Sell' : null,
       weight:reference ? current?.row.size_weight ?? 0 : weight, positionWeight:weight, tradeWeight:current?.row.size_weight ?? null, referenceTransition:reference,
       record: allocation.snapshot_id!, strategyIdentity: allocation.strategy_identity,
       recordedHistoryAvailable:allocation.recorded_history_version==='strategy-recorded-entries/1',
@@ -228,7 +249,7 @@ export const strategyChartTarget = (latest: DeskRecord, allocation: DeskModelAll
       entry: !reference && current?.row.state === 'execute' ? {at:current.at,validUntil:current.validUntil} : undefined}
   }
   const action = allocation.grade_signals?.[ticker]?.action
-  if (weight > 0 && (action === 'buy' || action === 'hold')) {
+  if (weight > 0 && isLabel(HOLDING_SIGNALS, action)) {
     const signal = signalsFor(latest, live, ticker, now, allocation)
     const at = Math.max(Date.parse(allocation.as_of), Date.parse(signal.setup?.generated_at ?? ''))
     const until = Math.min(Date.parse(allocation.valid_until ?? ''), Date.parse(signal.setup?.valid_until ?? ''))
@@ -258,8 +279,8 @@ export const ModelSize = ({latest, allocation, ticker, now}: {latest: DeskRecord
 }
 
 // Preserve model priorities while keeping immediate, waiting and unavailable evidence distinct.
-const signal = (word: string, ready: boolean, priority: string, reason: string, tier: number): Signal =>
-  ({word, ready, priority, reason, rank: tier * 10 - (PRIORITY[priority] ?? 0)})
+const signal = (word: SignalWord, ready: boolean, priority: ChartPriority | '', reason: string, tier: number): Signal =>
+  ({word, ready, priority, reason, rank: tier * 10 - (isLabel(CHART_PRIORITIES, priority) ? PRIORITY[priority] : 0)})
 
 // Write an exchange instant in New York time, with the weekday only when the
 // line needs to name a different day.
@@ -325,12 +346,12 @@ const publishedPlanFor = (latest: DeskRecord, live: DeskLive, allocation: DeskMo
   const v2 = allocation?.version === 'strategy-model-allocation/2'
   const outside = allocation?.market_phase
     ? !sessionOpen(live, allocation)
-    : ['post-market', 'pre-market', 'closed'].includes(live.market_status?.phase ?? '')
+    : isLabel(OUTSIDE_PHASES, live.market_status?.phase)
   if (!v2 && !outside) return null
   const weight = modelWeight(latest, allocation, ticker, now)
   const grade = v2 ? allocation.grade_signals?.[ticker]?.grade : latest.grades?.[ticker]?.grade
   const session = v2 ? allocation.session : latest.session
-  if (weight === null || !grade || !['A+', 'A', 'B', 'C'].includes(grade)) return null
+  if (weight === null || !grade || !isLabel(GRADES, grade)) return null
   const independent = independentAllocation(allocation)
   const originalSignal = independent ? allocation?.grade_signals?.[ticker] : null
   const actions = independent ? originalSignal ? [{
@@ -340,8 +361,8 @@ const publishedPlanFor = (latest: DeskRecord, live: DeskLive, allocation: DeskMo
   const action = actions[0]
   if (actions.length !== 1 || action.grade !== grade || action.signal_session !== session
       || action.signal_basis !== 'observed_close_grade'
-      || !['buy', 'hold', 'sell', 'avoid'].includes(action.grade_signal ?? '')) return null
-  const eligible = action.grade_signal === 'buy' || action.grade_signal === 'hold'
+      || !isLabel(GRADE_SIGNALS, action.grade_signal) || action.grade_signal === 'unavailable') return null
+  const eligible = isLabel(HOLDING_SIGNALS, action.grade_signal)
   const exiting = action.grade_signal === 'sell'
   const hasExit = !eligible && (!independent || exiting)
   if (!eligible && weight > 0) return null
@@ -450,8 +471,8 @@ const signalsForBase = (latest: DeskRecord, live: DeskLive, ticker: string, now:
   const unavailable = signal('Unavailable', false, '', missing, 3)
   if (!setup || setup.entry === 'unavailable' || !Number.isFinite(Date.parse(setup.bar))
       || Date.parse(setup.bar) + 900_000 > Date.parse(setup.generated_at)
-      || !['high', 'medium', 'low'].includes(setup.entry_priority)
-      || !['high', 'medium', 'low'].includes(setup.exit_priority))
+      || !isLabel(CHART_PRIORITIES, setup.entry_priority)
+      || !isLabel(CHART_PRIORITIES, setup.exit_priority))
     return publishedPlanFor(latest, live, allocation, ticker, now) ?? {ticker, grade, setup: null, buy: unavailable, sell: unavailable}
   const quote = displayedBoardPrice(live, ticker, now)
   const quoted = quote?.current && quote.kind === 'midpoint' && quote.word === 'regular'
@@ -509,12 +530,12 @@ const evidenceTime = (at: string) => {
 const actionFor = (row: Signals): Signal => row.sell.ready || row.sell.rank < row.buy.rank ? row.sell : row.buy
 
 // Use direct trading labels while keeping confirmation and timing requirements in the supporting details.
-const actionLabel = (word: string): string => ['Buy now', 'Buy plan', 'Buy setup', 'Buy pending'].includes(word) ? 'Buy'
-  : ['Sell review now', 'Exit if held', 'Exit', 'Sell pending', 'Sell plan'].includes(word) ? 'Sell' : word
+const actionLabel = (word: SignalWord): BoardLabel => isLabel(BUY_WORDS, word) ? 'Buy'
+  : isLabel(SELL_WORDS, word) ? 'Sell' : word
 
 // Collapse every waiting, avoided and unavailable path into the one word the
 // board promises, while leaving the original detail as the supporting reason.
-const verdictFor = (word: string): DeskEntryVerdict => {
+const verdictFor = (word: SignalWord): DeskEntryVerdict => {
   const label = actionLabel(word)
   return label === 'Buy' ? 'buy' : label === 'Sell' ? 'sell' : 'nothing'
 }
@@ -526,7 +547,7 @@ const sizeText = (size: number | null): string => size === null ? '—' : size <
 // Accept only the closed verdict vocabulary a current backend publication can
 // supply; an older or malformed row falls back to the board's own derivation.
 const backendVerdict = (row: EntryEvidence['row']): DeskEntryVerdict | null =>
-  row.verdict === 'buy' || row.verdict === 'sell' || row.verdict === 'nothing' ? row.verdict : null
+  isLabel(VERDICTS, row.verdict) ? row.verdict : null
 
 // Turn a bound entry row into the one verdict the board shows, keeping the
 // backend's own reason and trade size rather than reinterpreting its state.
@@ -613,7 +634,7 @@ const clockTime = (value: string | null): string => {
 }
 
 // Resolve the row's displayed call once for the board and the chart's current marker.
-export const boardAction = (row: Signals): {word: string; action: 'Buy' | 'Sell' | null; reason: string; sizeWeight: number | null} => {
+export const boardAction = (row: Signals): {word: BoardLabel; action: PlanTrade | null; reason: string; sizeWeight: number | null} => {
   const selected = actionFor(row)
   const word = actionLabel(selected.word)
   const action = word === 'Buy' ? 'Buy' : word === 'Sell' ? 'Sell' : null
@@ -755,8 +776,8 @@ export const SignalBoard = ({latest, live, allocation, now, onOpen, closes, refr
       <tbody>{ranked.slice(0, visible).map(row => {
         const {view, refreshing} = views.get(row.ticker)!
         // Only an action is a word; a name with nothing to do shows an empty cell.
-        const label = view.verdict === 'buy' ? 'Buy' : view.verdict === 'sell' ? 'Sell' : ''
-        const tone = row.lastPlan ? 'text-[#6e6e73]' : view.verdict === 'sell' ? 'text-[#b42318]' : view.verdict === 'buy' ? 'text-[#248a3d]' : 'text-[#6e6e73]'
+        const label = VERDICT_WORD[view.verdict]
+        const tone = row.lastPlan ? 'text-[#6e6e73]' : VERDICT_TONE[view.verdict]
         return <tr key={row.ticker} data-ticker={row.ticker} className={`border-t align-top${row.lastPlan ? ' text-[#6e6e73] opacity-70' : ''}`}>
         <td className="p-2"><button type="button" className="font-semibold text-[#0071e3]" onClick={() => onOpen(row.ticker)}>{row.ticker}</button><SessionPrice live={live} ticker={row.ticker} now={now} compact close={closes?.[row.ticker]} closeSession={latest.session} /></td>
         <td aria-label={`${row.ticker} displayed grade`} className="p-2">{row.grade}</td>
@@ -767,7 +788,7 @@ export const SignalBoard = ({latest, live, allocation, now, onOpen, closes, refr
         </td>
         {independent && <td className="p-2"><span aria-label={`${row.ticker} trade size`}>{sizeText(view.size)}</span>{sizedAmount(row.ticker, view.size, planningEquity, displayedBoardPrice(live, row.ticker, now, closes?.[row.ticker], latest.session)?.price)}</td>}
         <td className="p-2"><ModelSize latest={latest} allocation={allocation} ticker={row.ticker} now={now} /></td>
-        {showPriority && <td aria-label={`${row.ticker} signal strength`} className="p-2">{selected(row).priority ? selected(row).priority[0].toUpperCase() + selected(row).priority.slice(1) : '—'}</td>}
+        {showPriority && <td aria-label={`${row.ticker} signal strength`} className="p-2">{priorityWord(selected(row).priority)}</td>}
         <td className="max-w-sm p-2"><button type="button" aria-label={`details for ${row.ticker}`} aria-expanded={opened === row.ticker} className="text-[#0071e3]" onClick={() => setOpened(opened === row.ticker ? null : row.ticker)}>Details</button>{opened === row.ticker && <SignalDetail signals={row} />}</td>
       </tr>})}</tbody>
     </table>

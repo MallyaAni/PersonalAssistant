@@ -1,3 +1,13 @@
+import {
+  isLabel, PLAN_TRADES, QUOTE_SESSIONS,
+  type BriefStance, type ChartEntry, type ChartExit, type ChartPriority, type DeskActionLabel,
+  type EntryState, type EntryTimingState, type ExchangePhase, type ExecutionTiming, type Grade,
+  type GradeSignal, type HistoryAction, type InflationPressure, type MarketPhase, type ModelAction,
+  type OpportunityStatus, type OrderSide, type OrderTiming, type PaperOrderState, type PlanAction,
+  type PlanTrade, type QuoteSession,
+  type SimulatedAction, type TimingState, type TradeAction, type TradedAction, type Verdict,
+} from './labels'
+
 // Development keeps its explicit API port; production uses the gateway origin.
 const API_BASE_URL = import.meta.env.VITE_API_URL
   ?? (import.meta.env.DEV ? 'http://localhost:8000' : '')
@@ -1874,7 +1884,7 @@ export interface DeskGrade {
 }
 
 export interface DeskBrief {
-  stance: string;
+  stance: BriefStance;
   verdict: string;
   reasoning: string;
   risks: string;
@@ -2039,7 +2049,7 @@ export interface DeskHistoryRow {
   // amounts to. Absent on files written before the replay existed.
   target_weight?: number;
   delta_weight?: number;
-  action?: 'buy' | 'sell' | 'add' | 'trim' | 'hold';
+  action?: HistoryAction;
   // Under the equal-weight policy: whether the session was a rebalance
   // reset on the paper account's clock. An add or a trim is only ever on
   // a reset; a target drift between resets is a hold. Absent on files
@@ -2050,7 +2060,7 @@ export interface DeskHistoryRow {
 export interface DeskHistoryFill {
   client_order_id?: string | null;
   date: string;
-  side: 'buy' | 'sell';
+  side: OrderSide;
   qty: number;
   price: number;
   filled_at?: string;
@@ -2093,7 +2103,7 @@ export interface DeskRecommendationHistory {
   outcomes?: {status: string; through?: string; mark_at?: string; mark_price?: number} | null;
   observations: {id: string; recorded_at: string; bar: string; grade: string;
     allocation: number | null; allocation_change: number | null; model_weight: number;
-    event_paused: boolean; entry_state: string | null; price: number;
+    event_paused: boolean; entry_state: EntryState | null; price: number;
     version: string; policy_sha256: string | null; stock_total_return: number | null; opportunity_score?: number | null}[];
 }
 
@@ -2117,13 +2127,13 @@ export interface TradingAutopsy {
 // the row scales to any account; stops are risk controls, not signals.
 export interface DeskAction {
   ticker: string;
-  grade_signal?: 'buy' | 'sell' | 'hold' | 'avoid' | 'unavailable';
+  grade_signal?: GradeSignal;
   signal_session?: string | null;
   previous_grade?: string | null;
   signal_status?: string;
   signal_reason?: string;
   signal_basis?: string;
-  action: 'buy' | 'add' | 'trim' | 'sell' | 'hold';
+  action: HistoryAction;
   grade: string;
   rank: number | null;
   score: number;
@@ -2165,11 +2175,11 @@ export interface DeskPaper {
   pl_pct: number;
   plan: string;
   positions: { symbol: string; qty: number; market_value: number; avg_entry_price: number; current_price: number; unrealized_pl: number }[];
-  orders: { symbol: string; side: string; qty: number; reason: string }[];
+  orders: { symbol: string; side: OrderSide; qty: number; reason: string }[];
   settled?: {
     client_order_id?: string;
     symbol: string;
-    side: string;
+    side: OrderSide;
     qty: number;
     filled: number;
     filled_price: number;
@@ -2190,7 +2200,7 @@ export interface DeskPaper {
 
 export interface DeskOrder {
   ticker: string;
-  action: string;
+  action: TradedAction;
   weight_from: number;
   weight_to: number;
   grade_from: string | null;
@@ -2390,7 +2400,7 @@ export interface DeskExecutionQuality {
   by_kind: {rebalance: DeskExecutionAggregate; fomc: DeskExecutionAggregate};
   by_side: {buy: DeskExecutionAggregate; sell: DeskExecutionAggregate};
   series: (DeskExecutionAggregate & {session: string; cumulative_dollars: number})[];
-  worst: {session: string; symbol: string; side: string; kind: string; bps: number; dollars: number;
+  worst: {session: string; symbol: string; side: OrderSide; kind: string; bps: number; dollars: number;
     slippage_bps?: number | null; drift_bps?: number | null; benchmark_kind?: string}[];
   basis: string;
 }
@@ -2438,7 +2448,7 @@ export interface DeskEconomics {
   observed_at: string;
   collection_stale: boolean;
   model?: string;
-  assessment?: { pressure: 'easing' | 'building' | 'mixed' | 'unknown'; evidence_ids: string[]; status: string } | null;
+  assessment?: { pressure: InflationPressure; evidence_ids: string[]; status: string } | null;
   facts: { id: string; label: string; status: string; period?: string; source?: string; month_change_pct?: number | null; year_change_pct?: number | null; previous_year_change_pct?: number | null }[];
 }
 
@@ -2463,7 +2473,7 @@ export interface DeskMarketStatus {
   calendar_known: boolean;
   is_session: boolean;
   open: boolean;
-  phase: 'unknown' | 'closed' | 'pre-market' | 'open' | 'post-market';
+  phase: ExchangePhase;
   opens_at: string | null;
   closes_at: string | null;
 }
@@ -2471,7 +2481,7 @@ export interface DeskMarketStatus {
 // The desk acts only in the regular session, so the next action and the next
 // publication come from the backend rather than a schedule rebuilt here.
 export type DeskMarketPhase = {
-  phase: 'pre_market' | 'regular' | 'after_hours' | 'overnight' | 'closed' | 'unknown';
+  phase: MarketPhase;
   exchange: 'XNYS';
   calendar_known: boolean;
   is_session: boolean;
@@ -2514,7 +2524,7 @@ export type DeskOptionsEvidence = {
   reason: string;
 });
 
-export type DeskEntryVerdict = 'buy' | 'sell' | 'nothing';
+export type DeskEntryVerdict = Verdict;
 export type DeskEntryReasonCode = 'execute_now' | 'waiting_better_price' | 'at_target' | 'no_allocation'
   | 'grade_below_a' | 'awaiting_candle' | 'publication_expired' | 'quote_stale' | 'price_unavailable' | 'entry_pending';
 
@@ -2542,7 +2552,7 @@ export interface DeskModelAllocation {
   superseded_policy?: string | null;
   next_publication_at?: string | null;
   last_session?: string | null;
-  last_rows?: Record<string, {target_weight: number; evidence?: DeskStrategyDecision['evidence'] & {timing_state?: string}}>;
+  last_rows?: Record<string, {target_weight: number; evidence?: DeskStrategyDecision['evidence'] & {timing_state?: TimingState}}>;
   market_phase?: DeskMarketPhase;
   record_sha256?: string;
   receipt_sha256?: string;
@@ -2568,16 +2578,16 @@ export interface DeskModelAllocation {
     session?: string; completed_at?: string; generated_at?: string; valid_until?: string;
     sizing_basis?: string; feed?: string; account_inputs?: boolean; reference_progression?: string; recommendation_not_fill?: boolean;
     day_id?: string; book_sha256?: string; execution_basis?: string;
-    rows: Record<string, {state: string; action: 'Buy' | 'Sell' | null; size_weight: number; model_position_weight?: number;
+    rows: Record<string, {state: TimingState; action: PlanTrade | null; size_weight: number; model_position_weight?: number;
       reference_position_weight?: number; trade_weight?: number; verdict_reason?: string;
       reference_units?: number; proposed_units?: number; quote_at: string | null;
       attempt_resolved?: boolean; objective_pending?: boolean;
       verdict?: DeskEntryVerdict; reason_code?: DeskEntryReasonCode; reason?: string; plan_weight?: number;
-      original_intent?: {id: string; completed_at: string; at: string; size_weight: number; action: 'Buy' | 'Sell'; receipt_sha256: string};
+      original_intent?: {id: string; completed_at: string; at: string; size_weight: number; action: PlanTrade; receipt_sha256: string};
       valid_until: string; evidence: DeskStrategyDecision['evidence']}>;
   };
-  rows: Record<string, {target_weight: number; evidence?: DeskStrategyDecision['evidence'] & {timing_state?: string}}>;
-  grade_signals?: Record<string, {action: string; grade: string | null; session: string; basis: string}>;
+  rows: Record<string, {target_weight: number; evidence?: DeskStrategyDecision['evidence'] & {timing_state?: TimingState}}>;
+  grade_signals?: Record<string, {action: GradeSignal; grade: Grade | null; session: string; basis: string}>;
 }
 
 // Read published strategy weights without supplying a balance or accessing a paper account.
@@ -2589,7 +2599,7 @@ export const getDeskModelAllocation = async (userId: string): Promise<DeskModelA
 };
 
 export interface DeskLive {
-  opportunities?: {status: string; rows: Record<string, DeskCurrentSetup>; unavailable?: Record<string, string>; generated_at?: string; snapshot_at?: string};
+  opportunities?: {status: OpportunityStatus; rows: Record<string, DeskCurrentSetup>; unavailable?: Record<string, string>; generated_at?: string; snapshot_at?: string};
   as_of: string | null;
   // Fresh assessments are available without entering a personal account.
   grades_live?: Record<string, DeskLiveGrade>;
@@ -2641,10 +2651,10 @@ export interface DeskLive {
 
 export interface DeskCurrentSetup {
   ticker: string;
-  entry: 'ready' | 'wait' | 'avoid' | 'unavailable';
-  exit: 'review' | 'hold';
-  entry_priority: 'high' | 'medium' | 'low';
-  exit_priority: 'high' | 'medium' | 'low';
+  entry: ChartEntry;
+  exit: ChartExit;
+  entry_priority: ChartPriority;
+  exit_priority: ChartPriority;
   reason: string;
   confirmation: 'hold_above' | 'reclaim_above' | 'none';
   confirmation_ref: string;
@@ -2701,7 +2711,7 @@ export interface DeskMineRow {
   // `uncovered` is a held name the desk does not rate: a review state, not
   // a sell instruction. `blocked` is a buy or add the band-reversal rule
   // held back: the desk will not place it, so it is not actionable.
-  action: 'buy' | 'add' | 'trim' | 'sell' | 'hold' | 'uncovered' | 'blocked';
+  action: DeskActionLabel;
   blocked_reason?: string | null;
   in_book: boolean;
   grade: string;
@@ -2829,9 +2839,9 @@ export interface DeskPersonalReceipt {
     code_fingerprint: Record<string, string>;
     event_state: unknown;
     rows: Record<string, {
-      action: 'Buy' | 'Sell' | 'Hold';
+      action: PlanAction;
       move_weight: number | null;
-      strategy_action: 'Buy' | 'Sell' | 'Hold';
+      strategy_action: PlanAction;
       strategy_move_weight: number | null;
       target_weight: number | null;
       current_weight: number | null;
@@ -2893,8 +2903,8 @@ export interface DeskOpportunity {
 // The selected policy's timing verdict; learned timing has no fixed price level.
 export interface DeskRowTiming {
   rule: string;
-  side: 'buy' | 'sell';
-  state: 'pre-open' | 'waiting' | 'triggered' | 'close' | 'closed';
+  side: OrderSide;
+  state: EntryTimingState;
   level_fraction: number | null;
   session: string;
   trading_day: boolean;
@@ -2927,7 +2937,7 @@ export interface DeskDecisions {
   rows: Record<string, {
     learned_timing?: {
       policy: string;
-      state: 'execute' | 'wait' | 'unavailable' | 'no_trade';
+      state: TimingState;
       at: string;
       reason: string;
     } | null;
@@ -2960,9 +2970,9 @@ export interface DeskDecisions {
     };
     // The executable action stays backward compatible while the strategy
     // fields preserve intent when evidence or account funding blocks it.
-    action: 'Buy' | 'Sell' | 'Hold';
+    action: PlanAction;
     move_weight: number;
-    strategy_action?: 'Buy' | 'Sell' | 'Hold';
+    strategy_action?: PlanAction;
     strategy_move_weight?: number;
     blocker?: string | null;
     executable?: boolean;
@@ -3058,7 +3068,7 @@ export interface DeskPaperLive {
   model_decisions?: DeskModelDecisions;
   recorded_fills?: DeskRecordedPaperFill[];
   recorded_fills_reason?: string | null;
-  activity?: { session?: string; complete?: boolean; reason?: string; fills?: { client_order_id?: string | null; symbol: string; side: string; qty: number; price: number; filled_at?: string }[] };
+  activity?: { session?: string; complete?: boolean; reason?: string; fills?: { client_order_id?: string | null; symbol: string; side: OrderSide; qty: number; price: number; filled_at?: string }[] };
   as_of?: string;
   reason?: string;
   equity?: number;
@@ -3067,7 +3077,7 @@ export interface DeskPaperLive {
   pl_pct?: number;
   day_pl_pct?: number;
   positions?: { symbol: string; qty: number; market_value: number; avg_entry_price: number; current_price: number; unrealized_pl: number }[];
-  orders?: { symbol: string; side: string; qty: number; status: string }[];
+  orders?: { symbol: string; side: OrderSide; qty: number; status: string }[];
   // The paper account's own orders as the board shows them, worded once by the
   // backend (`intraday_orders.board_orders`) so board, panel and chart agree.
   plan?: DeskPaperPlan;
@@ -3077,7 +3087,7 @@ export interface DeskPaperLive {
 export interface DeskRecordedPaperFill {
   client_order_id?: string | null;
   symbol: string;
-  side: 'buy' | 'sell';
+  side: OrderSide;
   qty: number;
   price: number;
   filled_at: string;
@@ -3088,9 +3098,9 @@ export interface DeskRecordedPaperFill {
 
 // One admitted numerical policy decision, independent of its actual paper executions.
 export interface DeskModelDecision {
-  grade?: string | null;
+  grade?: Grade | null;
   signal_session?: string | null;
-  action: 'buy' | 'trim' | 'sell' | 'hold' | null;
+  action: ModelAction | null;
   qty: number | null;
   status: 'planned' | 'blocked' | 'no_new_order' | 'no_position' | 'complete' | 'unavailable';
   reason: string;
@@ -3121,8 +3131,8 @@ export interface DeskModelDecisions {
 export interface DeskPaperOrder {
   client_order_id: string;
   symbol: string;
-  side: 'buy' | 'sell';
-  action: 'BUY' | 'SELL' | 'TRIM';
+  side: OrderSide;
+  action: SimulatedAction;
   qty: number;
   planned_qty?: number;
   submitted_qty?: number | null;
@@ -3135,7 +3145,7 @@ export interface DeskPaperOrder {
   leg: string;
   why: string;
   reason?: string | null;
-  timing: 'dip_or_close' | 'decision_close' | 'next_open' | 'close' | 'event';
+  timing: OrderTiming;
   timing_policy?: string;
   learned_timing?: {
     policy: string; state: string; reason: string; observed_qty: number | null;
@@ -3153,7 +3163,7 @@ export interface DeskPaperOrder {
   filled_at?: string | null;
   // planned, waiting, due, sent, queued, filled, partial, held, cancelled,
   // rejected, missed, problem.
-  state: string;
+  state: PaperOrderState;
   status: string;
   when: string;
 }
@@ -3161,7 +3171,7 @@ export interface DeskPaperOrder {
 // The paper account's plan: its orders, the rule they execute on and the reset clock.
 export interface DeskPaperPlan {
   policy?: string;
-  rule: string;
+  rule: ExecutionTiming;
   rule_text?: { buy: string; sell: string };
   orders: DeskPaperOrder[];
   until_rebalance: number | null;
@@ -3213,7 +3223,7 @@ export const getDeskPaperHistory = async (userId: string, limit = 90): Promise<D
 };
 
 export interface DeskSessionPrices {
-  session: 'pre-market' | 'post-market' | 'overnight' | 'closed' | 'regular' | 'unknown';
+  session: QuoteSession;
   as_of: string | null;
   signal_scope: 'regular-session';
   quotes: Record<string, {price: number | null; bid?: number; ask?: number; at: string | null;
@@ -3227,7 +3237,7 @@ export const getDeskSessionPrices = async (userId: string): Promise<DeskSessionP
   const base = `${API_BASE_URL}/api/v1/market/${encodeURIComponent(userId)}/desk`;
   const session = await authenticatedFetch(`${base}/session-prices`, {signal: AbortSignal.timeout(5000)})
     .then(async result => result.ok ? result.json() : null).catch(() => null);
-  const valid = session && ['pre-market', 'post-market', 'overnight', 'closed', 'regular', 'unknown'].includes(session.session)
+  const valid = session && isLabel(QUOTE_SESSIONS, session.session)
     && session.signal_scope === 'regular-session' && (session.as_of === null || typeof session.as_of === 'string')
     && session.quotes && typeof session.quotes === 'object' && !Array.isArray(session.quotes);
   return valid ? session as DeskSessionPrices : undefined;
@@ -3408,7 +3418,7 @@ export interface DeskChartBar {
 export interface DeskChartDecision {
   time: string;
   date: string;
-  action: 'buy' | 'sell' | 'add' | 'trim';
+  action: TradedAction;
   target_weight: number | null;
   label: string;
   // Whether the decision's session was a rebalance reset, when the history says.
@@ -3419,7 +3429,7 @@ export interface DeskChartDecision {
 export interface DeskChartFill {
   time: string;
   date: string;
-  side: 'buy' | 'sell';
+  side: OrderSide;
   qty: number;
   price: number;
   label: string;
@@ -3495,7 +3505,7 @@ export interface DeskStrategyDecision {
   date: string;
   at: string;
   execute_on: string | null;
-  action: 'BUY' | 'SELL' | 'TRIM';
+  action: SimulatedAction;
   qty: number;
   weight: number | null;
   target_weight: number | null;
@@ -3520,7 +3530,7 @@ export interface DeskStrategyTrade {
   id: string;
   date: string;
   at: string;
-  action: 'BUY' | 'SELL' | 'TRIM';
+  action: SimulatedAction;
   qty: number;
   price: number;
   fee: number;
@@ -3565,7 +3575,7 @@ export interface DeskPolicyReplay {
     to_2022?: {cagr: number; max_drawdown: number}; from_2023?: {cagr: number; max_drawdown: number}};
   rows: {date: string; weight: number; grade: string}[];
   // `reason` names an FOMC-rule step; `timing` 'decision_close' fills at the decision session's 3:45 PM bar.
-  trades: {decided: string; date: string; action: 'BUY' | 'SELL'; size: number; target: number; reason?: string; timing?: 'decision_close'}[];
+  trades: {decided: string; date: string; action: Extract<TradeAction, 'BUY' | 'SELL'>; size: number; target: number; reason?: string; timing?: 'decision_close'}[];
   // Every grade change under the installed grading, from the same replay as the trades.
   grades?: {date: string; grade: string; said?: boolean; at?: string}[];
   outcomes?: {entry_summary?: Record<string, number>; exit_summary?: Record<string, number>};
@@ -3628,7 +3638,7 @@ export interface DeskOriginalStrategyRecommendation {
   schema: 'strategy-recorded-entry/1'; ticker: string; current_instruction: false;
   recommendation_not_fill: true; account_inputs: false; verified_against_installed_economics: true;
   original_bytes_sha256?: string;
-  original: {ticker: string; action: 'Buy' | 'Sell'; at: string; completed_at: string; snapshot_id: string;
+  original: {ticker: string; action: PlanTrade; at: string; completed_at: string; snapshot_id: string;
     entry_version?: string; model_position_weight?: number; reference_units?: number; proposed_units?: number;
     strategy_identity: string; size_weight: number; evidence: NonNullable<DeskStrategyDecision['evidence']>};
 }
@@ -3642,7 +3652,7 @@ export const getDeskOriginalStrategyRecommendation = async (userId: string, tick
   const original=result.original;
   if (result.schema!=='strategy-recorded-entry/1' || result.ticker!==ticker || result.current_instruction!==false
       || result.recommendation_not_fill!==true || result.account_inputs!==false || result.verified_against_installed_economics!==true
-      || original?.ticker!==ticker || !['Buy','Sell'].includes(original.action) || original.snapshot_id!==snapshotId
+      || original?.ticker!==ticker || !isLabel(PLAN_TRADES, original.action) || original.snapshot_id!==snapshotId
       || original.completed_at!==completedAt || original.strategy_identity!==strategyIdentity
       || !Number.isFinite(Date.parse(original.at)) || Date.parse(original.at)>Date.now()
       || !Number.isFinite(original.size_weight) || !(original.size_weight>0 && original.size_weight<=1)
@@ -3659,7 +3669,7 @@ export const getDeskOriginalStrategyRecommendation = async (userId: string, tick
 
 export interface DeskRecordedStrategyReference {
   id: string; ticker: string; at: string; completed_at: string; snapshot_id: string;
-  strategy_identity: string; action: 'Buy' | 'Sell'; size_weight: number; valid_until: string; original_bytes_sha256: string;
+  strategy_identity: string; action: PlanTrade; size_weight: number; valid_until: string; original_bytes_sha256: string;
 }
 
 export interface DeskRecordedStrategyPage {
@@ -3683,7 +3693,7 @@ export const getDeskRecordedStrategyRecommendations = async (userId: string, tic
   const ids=new Set<string>();
   for (const item of value.items) {
     const at=Date.parse(item.at),completed=Date.parse(item.completed_at),until=Date.parse(item.valid_until);
-    if (item.ticker!==ticker || !['Buy','Sell'].includes(item.action) || item.strategy_identity!==strategyIdentity
+    if (item.ticker!==ticker || !isLabel(PLAN_TRADES, item.action) || item.strategy_identity!==strategyIdentity
         || ![item.id,item.snapshot_id,item.original_bytes_sha256].every(hash=>/^[a-f0-9]{64}$/.test(hash))
         || ids.has(item.id) || !Number.isFinite(at) || !Number.isFinite(completed) || !Number.isFinite(until)
         || !(completed<=at && at<until && until<=completed+900000 && at<=Date.now())
@@ -3698,7 +3708,7 @@ export interface DeskLiveModelDecision {
   ticker: string;
   date: string;
   at: string;
-  action: 'BUY' | 'ADD' | 'SELL' | 'TRIM';
+  action: TradeAction;
   qty: number;
   grade: string | null;
   previous_grade: string | null;

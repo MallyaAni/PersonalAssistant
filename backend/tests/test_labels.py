@@ -398,3 +398,47 @@ def test_decision_view_action_is_the_one_action_type():
     from backend.market import decision_view
 
     assert decision_view.Action is labels.Action
+
+
+# The page's closed vocabularies (`frontend/src/services/labels.ts`) spell
+# exactly the backend's: a tuple there that names a backend vocabulary holds
+# the same words, so the two sides of the wire cannot drift apart.
+MIRRORED = {
+    "ORDER_SIDES": labels.OrderSide,
+    "PLAN_ACTIONS": labels.Action,
+    "DESK_ACTIONS": labels.DeskAction,
+    "GRADE_SIGNALS": labels.GradeSignal,
+    "GRADES": labels.Grade,
+    "TRADE_ACTIONS": labels.TradeAction,
+    "TIMING_STATES": labels.TimingState,
+    "ENTRY_TIMING_STATES": labels.EntryTimingState,
+    "EXECUTION_TIMINGS": labels.ExecutionTiming,
+    "ORDER_TIMINGS": labels.BoardTiming,
+    "VERDICTS": labels.Verdict,
+    "CHART_ENTRIES": labels.ChartEntry,
+    "CHART_EXITS": labels.ChartExit,
+    "CHART_PRIORITIES": labels.ChartPriority,
+    "QUOTE_SESSIONS": labels.QuoteSession,
+    "EXCHANGE_PHASES": labels.ExchangePhase,
+    "MARKET_PHASES": labels.MarketPhase,
+    "BRIEF_STANCES": labels.BriefStance,
+    "ENTRY_STATES": labels.EntryState,
+    "INFLATION_PRESSURES": labels.InflationPressure,
+}
+
+
+# Read every mirrored tuple out of the page's labels module and compare words.
+def test_frontend_vocabularies_mirror_the_backend():
+    import re
+    from pathlib import Path
+
+    source = Path(__file__).resolve().parents[2] / "frontend/src/services/labels.ts"
+    if not source.exists():
+        pytest.skip("frontend sources are not part of this checkout")
+    text = source.read_text()
+    for name, kind in MIRRORED.items():
+        found = re.search(rf"export const {name} = \[([^\]]*)\] as const", text)
+        assert found, name
+        words = re.findall(r"'([^']*)'", found.group(1))
+        assert len(words) == len(set(words)), name
+        assert set(words) == set(values(kind)), name

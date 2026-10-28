@@ -1,4 +1,10 @@
 import type { DeskDecisions, DeskLive, DeskPayload, DeskRecord, DeskSessionPrices } from '../../services/api'
+import { EXTENDED_SESSIONS, isLabel, lookup, NO_SESSIONS, PLAN_ACTIONS, QUOTE_SESSIONS, type EntryTimingState, type PlanAction, type QuoteSession } from '../../services/labels'
+
+// The word a displayed price is labelled with: the session a fresh quote was
+// observed in ('quote' when it named none), a completed regular-session
+// candle, or the last close.
+type PriceWord = QuoteSession | 'quote' | 'close'
 
 // Scope known execution-clock reasons to the regular session without changing readiness.
 export const executionClockMessage = (reason?: string | null) => {
@@ -8,8 +14,7 @@ export const executionClockMessage = (reason?: string | null) => {
 
 // Accept only the documented schedule vocabulary; a schedule is never proof of venue availability.
 const quoteSchedule = (value: unknown): DeskSessionPrices['session'] | null =>
-  typeof value === 'string' && ['pre-market', 'post-market', 'overnight', 'regular', 'closed', 'unknown'].includes(value)
-    ? value as DeskSessionPrices['session'] : null
+  isLabel(QUOTE_SESSIONS, value) ? value : null
 
 // Validate dated quote evidence independently of regular-session scheduling and execution policy.
 const sessionPrice = (live: DeskLive, ticker: string, now: number) => {
@@ -35,8 +40,8 @@ const sessionPrice = (live: DeskLive, ticker: string, now: number) => {
     ? 'regular' : envelopeSchedule ?? regularSchedule ?? 'unknown'
   // Legacy extension envelopes carried their observation phase; a legacy regular envelope did not.
   const observationSchedule = quoteSchedule(quote?.session)
-    ?? (envelopeSchedule && ['pre-market', 'post-market', 'overnight'].includes(envelopeSchedule) ? envelopeSchedule : null)
-  const namedSession = observationSchedule && !['closed', 'unknown'].includes(observationSchedule) ? observationSchedule : null
+    ?? (envelopeSchedule && isLabel(EXTENDED_SESSIONS, envelopeSchedule) ? envelopeSchedule : null)
+  const namedSession = observationSchedule && !isLabel(NO_SESSIONS, observationSchedule) ? observationSchedule : null
   return {quote, state, observed, session: namedSession, currentSchedule,
     previousSession: namedSession !== null && currentSchedule !== 'unknown' && namedSession !== currentSchedule,
     unrecordedSession: observationSchedule === null}
@@ -80,16 +85,16 @@ const newYorkDay = (at: number): string => new Date(at).toLocaleDateString('en-C
 // wins over a bar of that same session (its time is that bar's end, which is the
 // close even on an early-close day); a bar from a later session wins over it.
 export const boardFallback = ({lastPrice, observed, word, regular, lastClose, closeSession}: {
-  lastPrice: number | null; observed: number; word: string
+  lastPrice: number | null; observed: number; word: PriceWord
   regular?: {last: number; bar: string} | null; lastClose: number | null; closeSession?: string | null
-}): {kind: 'midpoint' | 'regular' | 'close'; price: number; at: number; word: string} | null => {
+}): {kind: 'midpoint' | 'regular' | 'close'; price: number; at: number; word: PriceWord} | null => {
   const barStart = regular && Number.isFinite(regular.last) && regular.last > 0 ? Date.parse(regular.bar) : NaN
   const barEnd = Number.isFinite(barStart) ? barStart + 15 * 60_000 : NaN
   const barDay = Number.isFinite(barStart) ? newYorkDay(barStart) : null
   const closeAt = lastClose === null ? NaN
     : closeSession && barDay === closeSession ? barEnd
     : closeSession ? newYorkHour(closeSession, 16) : -Infinity
-  const candidates: {kind: 'midpoint' | 'regular' | 'close'; price: number; at: number; word: string; rank: number}[] = []
+  const candidates: {kind: 'midpoint' | 'regular' | 'close'; price: number; at: number; word: PriceWord; rank: number}[] = []
   if (lastPrice !== null && Number.isFinite(observed)) candidates.push({kind: 'midpoint', price: lastPrice, at: observed, word, rank: 1})
   if (Number.isFinite(barEnd) && !(lastClose !== null && closeSession && barDay !== null && barDay <= closeSession))
     candidates.push({kind: 'regular', price: regular!.last, at: barEnd, word: 'regular', rank: 0})
@@ -103,10 +108,11 @@ export const boardFallback = ({lastPrice, observed, word, regular, lastClose, cl
 // Select the same dated price for the compact quote and its level comparisons.
 export const displayedBoardPrice = (live: DeskLive, ticker: string, now: number, close?: number | null, closeSession?: string | null) => {
   const {quote, state, observed, session} = sessionPrice(live, ticker, now)
-  if (state === 'fresh') return {kind: 'midpoint' as const, price: quote!.price!, at: observed, word: (session ?? 'quote').toLowerCase(), current: true}
+  // Every session word is already lower case, so the word is the session itself.
+  if (state === 'fresh') return {kind: 'midpoint' as const, price: quote!.price!, at: observed, word: session ?? ('quote' as const), current: true}
   const lastPrice = state === 'stale' && typeof quote?.price === 'number' && Number.isFinite(quote.price) && quote.price > 0 ? quote.price : null
   const lastClose = typeof close === 'number' && Number.isFinite(close) && close > 0 ? close : null
-  const fallback = boardFallback({lastPrice, observed, word: (session ?? 'quote').toLowerCase(), regular: live.quotes[ticker], lastClose, closeSession})
+  const fallback = boardFallback({lastPrice, observed, word: session ?? 'quote', regular: live.quotes[ticker], lastClose, closeSession})
   return fallback ? {...fallback, current: fallback.kind === 'regular' && now - fallback.at < 20 * 60_000} : null
 }
 
@@ -140,22 +146,16 @@ export const SessionPrice = ({live, ticker, now, compact = false, close, closeSe
   </div>
 }
 
-// The three things the desk can be doing about a name. Declared here because
-// this is the board that lists them and DeskPanel already imports from it; the
-// other direction would be a cycle.
-export const PLAN_ACTIONS = ['Buy', 'Sell', 'Hold'] as const
-export type PlanAction = (typeof PLAN_ACTIONS)[number]
-
 // The one word a board row shows for its plan: BUY, SELL, Hold, or TRIM for
 // a Sell that keeps a positive target (the decision view writes "Trim to
 // <target>" for that case and leaves `target_weight` above zero), so a
 // partial reduction never reads as an exit. Casing follows the board's
 // convention: the two trading words in capitals, Hold as written.
-export const actionWord = (plan: PlanAction, decision?: {strategy_action?: string; target_weight?: number | null; reason?: string | null}): string => {
-  if (plan === 'Hold') return 'Hold'
+const PLAN_WORD: Record<PlanAction, string> = {Buy: 'BUY', Sell: 'SELL', Hold: 'Hold'}
+export const actionWord = (plan: PlanAction, decision?: {strategy_action?: PlanAction; target_weight?: number | null; reason?: string | null}): string => {
   if (plan === 'Sell' && decision?.strategy_action === 'Sell'
     && ((decision.target_weight ?? 0) > 0 || /^Trim to /.test(decision.reason ?? ''))) return 'TRIM'
-  return plan.toUpperCase()
+  return PLAN_WORD[plan]
 }
 
 // Whether the decisions on screen are the `/4` board's timed ones for the
@@ -168,9 +168,9 @@ export const timedBoard = (decisions: DeskDecisions | undefined, latest: DeskRec
 // Separate failed guidance, missing evidence and waiting setups from an actual hold instruction.
 export const actionPresentation = (plan: PlanAction, decision: DeskDecisions['rows'][string] | undefined, timed: boolean, now: number, paused = false): {word: string; detail: string | null} => {
   if (paused) return {word: 'Paused', detail: 'FOMC'}
-  if (!decision || !PLAN_ACTIONS.includes(decision.action)) return {word: 'Unavailable', detail: 'Refresh guidance'}
+  if (!decision || !isLabel(PLAN_ACTIONS, decision.action)) return {word: 'Unavailable', detail: 'Refresh guidance'}
   const intent = decision.strategy_action ?? decision.action
-  if (!PLAN_ACTIONS.includes(intent)) return {word: 'Unavailable', detail: 'Refresh guidance'}
+  if (!isLabel(PLAN_ACTIONS, intent)) return {word: 'Unavailable', detail: 'Refresh guidance'}
   if (decision.executable === false && !decision.valid_until && decision.blocker)
     return {word: 'Unavailable', detail: decision.blocker}
   if (!timed) return {word: actionWord(plan, decision), detail: null}
@@ -205,7 +205,7 @@ export const actionPresentation = (plan: PlanAction, decision: DeskDecisions['ro
 }
 
 // The timing states in the operator's words, for the hover.
-const TIMING_STATE: Record<string, string> = {
+const TIMING_STATE: Record<EntryTimingState, string> = {
   'pre-open': 'before the level is set',
   waiting: 'waiting for the level',
   triggered: 'level reached today',
@@ -219,7 +219,7 @@ const TIMING_STATE: Record<string, string> = {
 // row stays off the cell, which shows only the word and the size.
 export const timedHover = (decision: DeskDecisions['rows'][string], session: string): string[] => {
   const lines: string[] = []
-  if (decision.timing) lines.push(`Timing · ${TIMING_STATE[decision.timing.state] ?? decision.timing.state}: ${decision.timing.reason}`)
+  if (decision.timing) lines.push(`Timing · ${lookup(TIMING_STATE, decision.timing.state) ?? decision.timing.state}: ${decision.timing.reason}`)
   lines.push(decision.structure_gate === 'rejecting' ? "Structure · rejecting its upper band (executor's gate): no buy today"
     : decision.structure_gate === 'clear' ? "Structure · not rejecting its upper band (executor's gate)"
     : 'Structure · band gate not recorded on this decision; not treated as a block')

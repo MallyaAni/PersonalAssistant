@@ -16,6 +16,9 @@ import {
 } from 'lightweight-charts'
 import { exportDeskPersonalReceipt, getDeskChart, getDeskPersonalHistory, getDeskOriginalStrategyRecommendation, getDeskRecordedStrategyRecommendations, DESK_CHART_DEFAULT_SESSIONS, type DeskRecordedStrategyReference, type DeskOriginalStrategyRecommendation, type DeskPersonalReceipt, type DeskChart, type DeskChartBar, type DeskChartDecision, type DeskChartTimeframe } from '../../services/api'
 import type { DeskHistory, DeskHistoryFill, DeskHistoryRow, DeskLive, DeskModelAllocation, DeskPaperLive, DeskPolicyReplay, DeskStructure, DeskStrategyStock, DeskStrategyDecision } from '../../services/api'
+import { ENTRY_GRADES, exhausted, GRADE_RANK, isLabel, lookup, ORDER_SIDES, PLAN_TRADES, SIMULATED_ACTIONS, TRADED_ACTIONS, type Grade, type OrderSide, type PlanTrade, type Verdict } from '../../services/labels'
+
+
 import { SessionPrice } from './StockBoard'
 import { LEVEL_NAME, percent, shares } from './TradeBoard'
 import {confirmedPaperFills, paperActivitySession, paperFillSession} from './paperFills'
@@ -107,7 +110,7 @@ const boardLevels = (structure: Pick<DeskStructure, 'ema_21' | 'high_20'> | null
 const linesFor = (timeframe: Timeframe): Line[] =>
   timeframe === 'weekly' ? WEEKLY_LINES : timeframe === '15m' ? INTRADAY_LINES : DAILY_LINES
 
-const GRADE_COLOR: Record<string, string> = {
+const GRADE_COLOR: Record<Grade, string> = {
   'A+': '#1a7f37',
   A: '#2da44e',
   B: '#9a6700',
@@ -263,7 +266,7 @@ const recommendationEvents = (receipts: ChartReceipt[]) => {
     const session = recordedSession(receipt.generated_at)
     if (!session) { previous = null; continue }
     const action = receipt.action
-    if (action !== 'Buy' && action !== 'Sell') { previous = null; continue }
+    if (!isLabel(PLAN_TRADES, action)) { previous = null; continue }
     if (previous !== action) events.push({id: receipt.id, at: receipt.generated_at, session, action, grade: receipt.grade})
     previous = action
   }
@@ -307,9 +310,8 @@ const gradeMarkers = (history: {rows: {date: string; at?: string; grade?: string
     detail: string
     size: number
   }[] = []
-  const rank: Record<string, number> = { 'A+': 3, A: 2, B: 1, C: 0 }
   // Identify the grade boundary used by the exit rule, without assuming a holding.
-  const wanted = (grade: string) => grade === 'A' || grade === 'A+'
+  const wanted = (grade: string) => isLabel(ENTRY_GRADES, grade)
   for (let i = 1; i < rows.length; i += 1) {
     const before = rows[i - 1].grade
     const now = rows[i].grade
@@ -322,7 +324,7 @@ const gradeMarkers = (history: {rows: {date: string; at?: string; grade?: string
       return at != null && start != null && start <= at && at < start + 900000 && !bar.auction && drawableCandle(bar)
     }) : markerCandle(session, bars, timeframe)
     if (!candle) continue
-    const up = (rank[now] ?? -1) > (rank[before] ?? -1)
+    const up = (lookup(GRADE_RANK, now) ?? -1) > (lookup(GRADE_RANK, before) ?? -1)
     const previousSource = gradeSource(rows[i - 1].said)
     const nextSource = gradeSource(rows[i].said)
     // Crossing below A can inform an exit, but history does not prove a trade.
@@ -334,7 +336,7 @@ const gradeMarkers = (history: {rows: {date: string; at?: string; grade?: string
     out.push({
       time: barStamp(candle, timeframe),
       position: up ? 'belowBar' : 'aboveBar',
-      color: belowA ? '#b42318' : GRADE_COLOR[now] ?? '#6e6e73',
+      color: belowA ? '#b42318' : lookup(GRADE_COLOR, now) ?? '#6e6e73',
       shape: up ? 'arrowUp' : 'arrowDown',
       // Missing provenance must not be described as an original saved reading.
       text: direction === 'Grade change' ? `${before}→${now}` : `${belowA ? 'SELL' : 'BUY'} · ${now}`,
@@ -380,7 +382,7 @@ type MarkerKind = 'replay' | 'recorded' | 'current'
 type MarkerSample = 'in_sample' | 'out_of_sample' | 'live' | 'unknown'
 type ChartMarker = {
   id?: string
-  recommendations?: {id: string; at: string; action: string; weight: number; evidence?: DeskStrategyDecision['evidence']; simulated: boolean;
+  recommendations?: {id: string; at: string; action: PlanTrade; weight: number; evidence?: DeskStrategyDecision['evidence']; simulated: boolean;
     originalRef?: {snapshot: string; completed: string; strategy: string; at?: string; bytesSha?: string}}[]
   time: UTCTimestamp
   position: 'aboveBar' | 'belowBar'
@@ -410,7 +412,7 @@ const sizePercent = (weight: number): string => weight > 0 && weight < .001 ? '<
 const markerSample = (value: unknown): MarkerSample => value === 'in_sample' || value === 'out_of_sample' ? value : 'unknown'
 
 // Mute a historical replay that the model saw while fitting, without changing a live record.
-const replayColor = (action: string, sample: MarkerSample) => action === 'Buy'
+const replayColor = (action: PlanTrade, sample: MarkerSample) => action === 'Buy'
   ? sample === 'in_sample' ? 'rgba(36,138,61,.45)' : '#248a3d'
   : sample === 'in_sample' ? 'rgba(180,35,24,.45)' : '#b42318'
 
@@ -419,7 +421,7 @@ const replayColor = (action: string, sample: MarkerSample) => action === 'Buy'
 // the learned sizing's replay trades were such dust, and drawing them buried the real ones.
 const DUST_WEIGHT = 0.005
 const dustTrades = (simulation: DeskStrategyStock | null | undefined): number =>
-  simulation?.decisions.filter(row => ['BUY', 'SELL', 'TRIM'].includes(row.action) && typeof row.weight === 'number' && row.weight > 0 && row.weight < DUST_WEIGHT).length ?? 0
+  simulation?.decisions.filter(row => isLabel(SIMULATED_ACTIONS, row.action) && typeof row.weight === 'number' && row.weight > 0 && row.weight < DUST_WEIGHT).length ?? 0
 
 // An entry or an exit is always drawn; a resize of a held name only when it is a real
 // reallocation. The rule nudges a held name's slot most sessions as the tilt and the
@@ -516,7 +518,7 @@ const strategyTargetMarkers = (simulation: DeskStrategyStock | null | undefined,
   const targets: (StrategyChartTarget & {decision?: DeskStrategyDecision; recorded?: DeskRecordedStrategyReference; kind: MarkerKind; sample: MarkerSample})[] = []
   if (strategyHistoryMatches(simulation, current) && simulation) {
     for (const row of simulation.decisions) {
-      if (row.ticker !== (current?.ticker ?? simulation.ticker) || row.date > (current?.date ?? simulation.through) || !['BUY', 'SELL', 'TRIM'].includes(row.action) || typeof row.weight !== 'number'
+      if (row.ticker !== (current?.ticker ?? simulation.ticker) || row.date > (current?.date ?? simulation.through) || !isLabel(SIMULATED_ACTIONS, row.action) || typeof row.weight !== 'number'
           || !Number.isFinite(row.weight) || row.weight < DUST_WEIGHT || row.weight > 1
           || !recordedInstant(row.at) || recordedSession(row.at) !== row.date) continue
       const at = Date.parse(row.at)
@@ -571,6 +573,10 @@ const strategyTargetMarkers = (simulation: DeskStrategyStock | null | undefined,
   return [...markers.values()]
 }
 
+// Where the current call's marker sits and its colour, by verdict.
+const CURRENT_POSITION: Record<Verdict, 'aboveBar' | 'belowBar'> = {buy: 'belowBar', sell: 'aboveBar', nothing: 'aboveBar'}
+const CURRENT_COLOR: Record<Verdict, string> = {buy: '#248a3d', sell: '#b42318', nothing: '#6e6e73'}
+
 // Draw one current call at the newest candle when no confirmed entry marks it, even when no simulation or recorded row exists.
 const currentTargetMarker = (signal: Signals | null | undefined, current: StrategyChartTarget | null | undefined, bars: DeskChartBar[], timeframe: Timeframe, tradeWeight: number | null | undefined, policy?: string): ChartMarker | null => {
   if (!bars.length) return null
@@ -584,8 +590,9 @@ const currentTargetMarker = (signal: Signals | null | undefined, current: Strate
   const size = typeof rawSize === 'number' && Number.isFinite(rawSize) ? rawSize : null
   if (verdict === 'nothing') return null
   const action = verdict === 'buy' ? 'Buy' : 'Sell'
-  return {id: 'current', time, position: verdict === 'sell' ? 'aboveBar' : verdict === 'buy' ? 'belowBar' : 'aboveBar',
-    color: verdict === 'buy' ? '#248a3d' : verdict === 'sell' ? '#b42318' : '#6e6e73', shape: 'square',
+  return {id: 'current', time, position: CURRENT_POSITION[verdict],
+    color: CURRENT_COLOR[verdict], shape: 'square',
+
     text: size === null ? action : `${action} ${sizePercent(size)}%`, size: 1, kind: 'current', sample: 'live', policy}
 }
 
@@ -660,7 +667,7 @@ const EQUAL_WEIGHT_POLICIES: ReadonlySet<string> = new Set([
 const EQUAL_WEIGHT_LEGEND = 'Policy replay: BUY enters the A/A+ book; SELL leaves it; RESET rebalances to target. These are simulated decisions.'
 
 // A paper trade as the board writes it: BUY 2 @ $1,752.25.
-const tradeText = (side: string, qty: number, price: number) =>
+const tradeText = (side: OrderSide, qty: number, price: number) =>
   `${side === 'buy' ? 'BUY' : 'SELL'} ${qty.toLocaleString('en-US')} @ $${price.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`
 
 // A target weight as the percent of equity a trader reads it as: whole when it
@@ -683,17 +690,20 @@ const isEqualWeight = (policy: string | null | undefined) =>
 // as the move it places ("Rebalance +2.5%"); under a sizing policy it is the
 // level it leads to ("Add →20%"). A hold is no marker at all, so it returns nothing.
 const decisionText = (row: DeskHistoryRow, policy?: string | null) => {
-  switch (row.action) {
+  const action = row.action
+  switch (action) {
     case 'buy': return `BUY signal ${percentText(row.target_weight)}`
     case 'sell': return 'SELL signal'
     case 'add':
     case 'trim': {
-      if (!isEqualWeight(policy)) return `${row.action === 'add' ? 'BUY' : 'TRIM'} signal →${percentText(row.target_weight)}`
+      if (!isEqualWeight(policy)) return `${action === 'add' ? 'BUY' : 'TRIM'} signal →${percentText(row.target_weight)}`
       const delta = row.delta_weight
       if (typeof delta !== 'number' || !Number.isFinite(delta)) return `RESET →${percentText(row.target_weight)}`
       return `RESET ${delta >= 0 ? '+' : '−'}${percentText(Math.abs(delta))}`
     }
-    default: return null
+    case 'hold':
+    case undefined: return null
+    default: return exhausted(action, null)
   }
 }
 
@@ -722,7 +732,7 @@ const decisionMarkers = (history: DeskHistory | undefined, bars: DeskChartBar[],
 
 // Only a fill with a date, a side, a quantity and a price is drawable or listable.
 const drawableFill = (fill: DeskHistoryFill) =>
-  Boolean(fill) && typeof fill.date === 'string' && (fill.side === 'buy' || fill.side === 'sell')
+  Boolean(fill) && typeof fill.date === 'string' && isLabel(ORDER_SIDES, fill.side)
   && typeof fill.qty === 'number' && Number.isFinite(fill.qty) && fill.qty > 0
   && typeof fill.price === 'number' && Number.isFinite(fill.price) && fill.price > 0
 
@@ -748,7 +758,7 @@ const currentFillRows = (history: DeskHistory | undefined, activity: DeskPaperLi
   for (const fill of confirmed) {
     const instant = recordedInstant(fill.filled_at)
     if (fill.symbol !== ticker || !instant || instant.getTime() > now
-      || !['buy', 'sell'].includes(fill.side) || !Number.isFinite(fill.qty) || fill.qty <= 0
+      || !isLabel(ORDER_SIDES, fill.side) || !Number.isFinite(fill.qty) || fill.qty <= 0
       || !Number.isFinite(fill.price) || fill.price <= 0) continue
     const date = paperFillSession(fill.filled_at)
     const row: DeskHistoryFill = {date, side: fill.side, qty: fill.qty, price: fill.price, filled_at: fill.filled_at, client_order_id: fill.client_order_id}
@@ -814,7 +824,7 @@ const fillMarkers = (fills: DeskHistoryFill[], bars: DeskChartBar[], timeframe: 
 // Only a payload decision with a parseable time, a traded action and a label is drawable.
 const drawableDecision = (row: DeskChartDecision) =>
   Boolean(row) && typeof row.time === 'string' && Number.isFinite(Date.parse(row.time))
-  && (row.action === 'buy' || row.action === 'add' || row.action === 'sell' || row.action === 'trim')
+  && isLabel(TRADED_ACTIONS, row.action)
   && typeof row.label === 'string' && row.label.length > 0
 
 // The policy's decisions on the fifteen-minute bars, timed by the server: on
@@ -1614,12 +1624,12 @@ export const TickerChart = ({
     </div>
     {/* A name the grades reached but the replay never sized is the most puzzling chart on the desk: say so instead of showing arrows with no circles. */}
     {strategy && policyReplay && !policyReplay.trades.some(trade => trade.target > 0) && <p aria-label={`${ticker} replay without trades`} className="mb-2 text-[11px] text-[#6e6e73]">
-      {(policyReplay.grades ?? policyReplay.rows).some(row => row.grade === 'A' || row.grade === 'A+')
+      {(policyReplay.grades ?? policyReplay.rows).some(row => isLabel(ENTRY_GRADES, row.grade))
         ? `The rule never held ${ticker} in this window: the sessions it graded A or A+ never gave it a slot.`
         : `The rule never held ${ticker}: it never graded A or A+ in this window.`}
     </p>}
     {strategy && !policyReplay && simulation && !replayStale && simulation.decisions.length === 0 && <p aria-label={`${ticker} replay without trades`} className="mb-2 text-[11px] text-[#6e6e73]">
-      {!simulation.grade_rows?.some(row => row.grade === 'A' || row.grade === 'A+')
+      {!simulation.grade_rows?.some(row => isLabel(ENTRY_GRADES, row.grade))
         ? `The replay never bought ${ticker}: it never graded A or A+ in this window, so there was no trade to draw.`
         : simulation.targets.some(row => typeof row.weight === 'number' && row.weight > 0)
           ? `The replay never bought ${ticker}: the sizing model set a target while it graded A or A+, but no trade could be priced or executed in the replay. The grade arrows above are the direction; there was no trade to draw.`

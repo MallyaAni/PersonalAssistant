@@ -4,7 +4,8 @@ import { EconomicContext } from './EconomicContext'
 import { ForwardEvidence } from './ForwardEvidence'
 import { FomcGate } from './FomcGate'
 import { ExecutionQuality } from './ExecutionQuality'
-import { actionPresentation, BoardSimulation, executionClockMessage, MlComparison, PLAN_ACTIONS, timedBoard, type BoardEvent, type PlanAction } from './StockBoard'
+import { actionPresentation, BoardSimulation, executionClockMessage, MlComparison, timedBoard, type BoardEvent } from './StockBoard'
+import { GRADE_RANK, isLabel, lookup, PLAN_ACTIONS, type DeskActionLabel, type Grade, type PlanAction, type PlanTrade } from '../../services/labels'
 import { RecommendationTimeline } from './RecommendationTimeline'
 import type { PersonalHistoryContext } from './PersonalDecisionHistory'
 import { PaperAccountHistory } from './PaperAccountHistory'
@@ -113,14 +114,15 @@ const executionTime = (value: string | undefined) => {
   })} ET`
 }
 
-const GRADE_ORDER: Record<string, number> = { 'A+': 3, A: 2, B: 1, C: 0 }
-const GRADE_STYLE: Record<string, string> = {
+// The capitalised word of a plan action that trades.
+const TRADE_WORD: Record<PlanTrade, string> = {Buy: 'BUY', Sell: 'SELL'}
+const GRADE_STYLE: Record<Grade, string> = {
   'A+': 'bg-[#e6f4ea] text-[#1e7a3a]',
   A: 'bg-[#eaf3ff] text-[#0b5cad]',
   B: 'bg-[#fff6e5] text-[#9a6200]',
   C: 'bg-[#f5f5f7] text-[#6e6e73]',
 }
-const ACTION_STYLE: Record<string, string> = {
+const ACTION_STYLE: Record<DeskActionLabel, string> = {
   buy: 'bg-[#e6f4ea] text-[#1e7a3a]',
   add: 'bg-[#e6f4ea] text-[#1e7a3a]',
   trim: 'bg-[#fff6e5] text-[#9a6200]',
@@ -1439,7 +1441,7 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
   const rows = gradeContext.session && gradeContext.session !== latest?.session ? []
     : storedRows.map(row => gradeCurrent(row.ticker) ? row : eveningRow(row)).sort((a, b) =>
       Number(b.in_book) - Number(a.in_book)
-      || (GRADE_ORDER[b.grade_live] ?? -1) - (GRADE_ORDER[a.grade_live] ?? -1)
+      || (lookup(GRADE_RANK, b.grade_live) ?? -1) - (lookup(GRADE_RANK, a.grade_live) ?? -1)
       || (b.score_live ?? latest?.grades[b.ticker]?.score ?? -1e9) - (a.score_live ?? latest?.grades[a.ticker]?.score ?? -1e9)
       || a.ticker.localeCompare(b.ticker))
   const curve = payload.curve ?? latest?.curve
@@ -2225,7 +2227,7 @@ const planFor = (
   // the intent with its readiness beneath, as before.
   const timed = timedBoard(decisions, latest)
   const intent = timed ? row.action : row.strategy_action ?? row.action
-  if (!PLAN_ACTIONS.includes(intent as PlanAction)) return {action: 'Hold', reason: 'Unrecognized decision; refresh before acting.', blocked: false, blocker: null}
+  if (!isLabel(PLAN_ACTIONS, intent)) return {action: 'Hold', reason: 'Unrecognized decision; refresh before acting.', blocked: false, blocker: null}
   const deadline = row.valid_until ? Date.parse(row.valid_until) : Number.NaN
   const deadlineMissing = !Number.isFinite(deadline)
   const expired = !deadlineMissing && deadline <= now
@@ -2238,7 +2240,7 @@ const planFor = (
     row,
     // A timed trade whose evidence has lapsed on the page is a Hold until
     // the next refresh confirms it: a BUY must never outlive its evidence.
-    action: timed && blocked ? 'Hold' : intent as PlanAction,
+    action: timed && blocked ? 'Hold' : intent,
     reason: row.reason,
     blocked,
     blocker,
@@ -2267,7 +2269,7 @@ const DecisionCell = ({ticker, decisions, latest, now, compact = false, terse = 
     // "Sell 1.9%" beside a Target column reading 0.8% reads as a
     // contradiction. A sell is always the whole position, so it says so, and
     // a buy carries a + because it is an addition rather than a level.
-    return <span title={actOnIt(blocker ?? reason) ?? blocker ?? reason} aria-label={`${ticker} strategy intent`}>{action.toUpperCase()}{executionStatus}{spreadCaveat}</span>
+    return <span title={actOnIt(blocker ?? reason) ?? blocker ?? reason} aria-label={`${ticker} strategy intent`}>{TRADE_WORD[action]}{executionStatus}{spreadCaveat}</span>
   }
   // A Plan column is a signal, not a sentence. The allocation has its own
   // column and the reasoning is a hover: a trader scanning ninety-four rows
@@ -2613,7 +2615,7 @@ const STANCE_WORD: Record<number, string> = { 1: 'for', 0: 'neutral', [-1]: 'aga
 const UNKNOWN_VOTE_CONTEXT = 'Unknown means the vote was not recorded or was invalid; it does not mean neutral or prove that a vote changed.'
 const HISTORY_TRIGGER_LEGEND = `${ANALYST_MEANINGS} + for, · neutral, − against, ? missing or invalid vote.`
 // The grade one vote down from each grade.
-const GRADE_BELOW: Record<string, string> = { 'A+': 'A', A: 'B', B: 'C' }
+const GRADE_BELOW: Partial<Record<Grade, Grade>> = { 'A+': 'A', A: 'B', B: 'C' }
 
 // Name only the three valid vote values; all other evidence remains unknown.
 const recordedStanceWord = (value: unknown): string =>
@@ -2762,9 +2764,9 @@ const GradeMove = ({changes, session, reads, revision}: {
     <section aria-label="Why the grade moved" className="mb-4 rounded-xl border border-black/[0.08] bg-white p-3 text-sm">
       <p>
         <span className="font-semibold">{tonight ? 'Moved in tonight\u2019s decision' : `Last moved ${shortDate(latest.date)}`}:</span>{' '}
-        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${GRADE_STYLE[latest.from] ?? ''}`}>{latest.from}</span>
+        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${lookup(GRADE_STYLE, latest.from) ?? ''}`}>{latest.from}</span>
         <span className="mx-1 text-[#6e6e73]">→</span>
-        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${GRADE_STYLE[latest.to] ?? ''}`}>{latest.to}</span>
+        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${lookup(GRADE_STYLE, latest.to) ?? ''}`}>{latest.to}</span>
         {!tonight && <span className="ml-1 text-xs text-[#6e6e73]">· unchanged since then</span>}
       </p>
       {moved.length > 0 ? (
@@ -3000,7 +3002,7 @@ const NameDetail = ({
         <h4 className="mb-1 font-medium text-[#6e6e73]">Latest available grade</h4>
         {row && (
           <div className="mb-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
-            <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${GRADE_STYLE[row.grade_live] ?? ''}`}>
+            <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${lookup(GRADE_STYLE, row.grade_live) ?? ''}`}>
               <span aria-label="Latest grade value">{row.grade_live}</span>
               <span className="ml-1 font-normal text-[#6e6e73]">{row.grade_source === 'intraday' ? `intraday · ${row.grade} at the ${latest.session} close` : `at the ${latest.session} close`}</span>
             </span>
@@ -3011,7 +3013,7 @@ const NameDetail = ({
             {/* The list reads the live grade, so the detail must too: a
                 name outside the board's rows would otherwise show the
                 evening grade while the list beside it shows the candle's. */}
-            <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${GRADE_STYLE[(liveGrades[ticker]?.grade_live ?? latest.grades[ticker].grade) as keyof typeof GRADE_STYLE] ?? ''}`}>
+            <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${lookup(GRADE_STYLE, liveGrades[ticker]?.grade_live ?? latest.grades[ticker].grade) ?? ''}`}>
               <span aria-label="Latest grade value">{liveGrades[ticker]?.grade_live ?? latest.grades[ticker].grade}</span>
               <span className="ml-1 font-normal">{liveGrades[ticker] ? 'intraday grade' : `at the ${latest.session} close`}</span>
             </span>
@@ -3124,9 +3126,9 @@ const NameDetail = ({
                 {changes.map((c) => (
                   <li key={c.date} className="flex flex-wrap items-center gap-x-2">
                     <span className="text-[#6e6e73]">{shortDate(c.date)}</span>
-                    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${GRADE_STYLE[c.from] ?? ''}`}>{c.from}</span>
+                    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${lookup(GRADE_STYLE, c.from) ?? ''}`}>{c.from}</span>
                     <span className="text-[#6e6e73]">→</span>
-                    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${GRADE_STYLE[c.to] ?? ''}`}>{c.to}</span>
+                    <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${lookup(GRADE_STYLE, c.to) ?? ''}`}>{c.to}</span>
                     <span className="text-xs text-[#6e6e73]">{c.moved.length > 0 ? c.moved.join(', ') : 'no change in recorded votes; cause not recorded'}</span>
                     {c.said && <span title="The desk published this grade that night; a row without the mark is today's rules replayed over past prices" className="text-[10px] tracking-wide text-[#0b5cad]">published</span>}
                   </li>
@@ -3171,7 +3173,7 @@ const NameDetail = ({
                       {shortDate(row.date)}
                       {row.said && <span title="The desk published this grade that night" className="ml-1 text-[10px] tracking-wide text-[#0b5cad]">published</span>}
                     </td>
-                    <td><span className={`rounded-full px-2 py-0.5 text-xs font-medium ${GRADE_STYLE[row.grade] ?? ''}`}>{row.grade}</span></td>
+                    <td><span className={`rounded-full px-2 py-0.5 text-xs font-medium ${lookup(GRADE_STYLE, row.grade) ?? ''}`}>{row.grade}</span></td>
                     <td className="whitespace-nowrap font-mono text-xs text-[#1d1d1f]">
                       {row.stances && Object.keys(row.stances).length > 0
                         ? historyVoteMarks(row.stances)
