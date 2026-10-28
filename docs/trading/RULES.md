@@ -28,8 +28,14 @@ work around it. What each part does is in [CODE_MAP.md](CODE_MAP.md).
   vision role.
 
 ## 3. One engine
-- `backend/market/policy_book.py` `simulate()` is the only implementation of the account. It is
-  used by the backtest, the chart replay and the live parity check. Never write a second one.
+- `backend/market/policy_book.py` `simulate()` is the account simulator for the backtest and the
+  chart replay. The live account is planned by `joint_funded_policy.py`, `nightly_plan.py` and
+  `paper.py`, which share the sizing function `leader_weights`. Their agreement is checked by
+  `backend/tests/test_policy_book.py` only: there is no nightly runtime comparison yet. Never add a
+  third implementation; a change to sizing goes through `leader_weights` so both follow.
+- The "Historical simulation" box on the Paper account view still comes from the old
+  `desk/simulate.py` (graded-equal-weight/5). It is not the installed rule and must not be quoted
+  as its result.
 - Charts show the installed policy's own decisions, with no hindsight. They must agree across every
   ticker, timeframe and zoom level.
 
@@ -52,8 +58,9 @@ work around it. What each part does is in [CODE_MAP.md](CODE_MAP.md).
 
 ## 6. Data
 - Free sources first. API keys live in files with permission 600 and are never printed.
-- Research never writes to the deploy store (`~/deploy/anios/data/market`). Use overlays and
-  scratch roots.
+- Research never writes into the live store (`~/anios/data/market`, also reached as
+  `~/deploy/anios/data/market`) outside `research/` and `estimates/`, which the nightly research
+  jobs own. Everything else uses overlays and scratch roots.
 
 ## 7. Releasing changes
 - 44 "bound sources" (`learned_live_holding.source_identity()`) need the release ceremony: a
