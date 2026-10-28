@@ -192,7 +192,10 @@ when no result word precedes it, so a standalone dividend or buyback
 announcement is still refused. Re-decided against the real filings, the rule
 admits eleven more ASML releases, restores four a year for every year from
 2007 through 2026, and leaves no year above four; 2004-2006 remain short.
-Tests: `backend/tests/test_market_edgar_6k.py`. Stored 6-K decisions are
+The same re-decision on TSM, SIMO, ARM and NBIS admits nothing new and
+leaves every year at its stored count, so the widened rule does not readmit
+their monthly sales notes or guidance updates. Tests:
+`backend/tests/test_market_edgar_6k.py`. Stored 6-K decisions are
 cached, so the correction reaches the store only through a one-time
 `python -m backend.cli.market_edgar --refresh --reclassify-6k --tickers ASML`
 (and the other filers) run after this fix is deployed and before the 19:30
