@@ -12,7 +12,7 @@ from pathlib import Path
 
 import numpy as np
 
-from backend.agents.trading.desk import allocation, funded_execution, intraday_orders
+from backend.agents.trading.desk import allocation, event_risk, funded_execution, intraday_orders
 from backend.market import (
     adaptive_growth_policy,
     calendar,
@@ -236,7 +236,7 @@ def _basket(
     no_buys = (
         paused.get("factor") == 0.5
         or paused.get("execution_pending")
-        or paused.get("calendar_known") is False
+        or event_risk.calendar_blocks(paused)
     )
     references = {}
     for name, row in result["rows"].items():

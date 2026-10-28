@@ -35,8 +35,8 @@ def test_real_historical_prefix_has_known_calendar_and_ordinary_dispatch():
     assert nightly_plan.event_plan_required(paper.PaperState(), policy) is False
 
 
-# The same reviewed historical calendar still activates real pre-meeting weakness cuts.
-def test_real_historical_weakness_window_preserves_event_priority():
+# A weakness window is still visible in the readings, but the retired policy never cuts.
+def test_real_historical_weakness_window_no_longer_cuts():
     from backend.agents.trading.desk import nightly_plan, paper
 
     values = np.tile(np.arange(100.0, 94.0, -1)[:, None], (1, 6))
@@ -55,8 +55,47 @@ def test_real_historical_weakness_window_preserves_event_priority():
     policy = event_risk.decision(report.panel)
     assert policy["calendar_known"] is True
     assert policy["sessions_to_decision"] == 2
-    assert policy["factor"] == event_risk.REDUCED
-    assert nightly_plan.event_plan_required(paper.PaperState(), policy) is True
+    assert policy["spy_five_session_return"] < 0
+    assert policy["enabled"] is False
+    assert policy["retired_on"] == "2026-10-28"
+    assert policy["factor"] == 1.0
+    assert nightly_plan.event_plan_required(paper.PaperState(), policy) is False
+
+
+# The live path holds full exposure on every session, including a weakness window.
+def test_live_path_holds_through_every_meeting():
+    values = np.tile(np.arange(100.0, 94.0, -1)[:, None], (1, 6))
+    report = _report(values)
+    report.panel.dates[:] = np.asarray(
+        [
+            "2018-03-12",
+            "2018-03-13",
+            "2018-03-14",
+            "2018-03-15",
+            "2018-03-16",
+            "2018-03-19",
+        ],
+        dtype="datetime64[D]",
+    )
+    np.testing.assert_array_equal(event_risk.live_path(report.panel), np.ones(6))
+
+
+# A retired policy no longer halts ordinary planning when the calendar is unavailable.
+def test_retired_policy_does_not_pause_on_an_unknown_calendar():
+    from backend.agents.trading.desk import nightly_plan, paper
+
+    retired = {"enabled": False, "calendar_known": False, "factor": None}
+    assert event_risk.calendar_blocks(retired) is False
+    assert nightly_plan.event_plan_required(paper.PaperState(), retired) is False
+
+    # A record written before retirement has no `enabled` flag and keeps the old pause.
+    legacy = {"calendar_known": False, "factor": None}
+    assert event_risk.calendar_blocks(legacy) is True
+    assert nightly_plan.event_plan_required(paper.PaperState(), legacy) is True
+
+    enabled = {"enabled": True, "calendar_known": False, "factor": None}
+    assert event_risk.calendar_blocks(enabled) is True
+    assert nightly_plan.event_plan_required(paper.PaperState(), enabled) is True
 
 
 # Protect the chosen pre-meeting days plus the meeting; release at the next open.

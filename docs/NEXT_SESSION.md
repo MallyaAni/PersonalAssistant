@@ -12,9 +12,15 @@
   rule version whenever it changes.
 - Nightly 10-27 stopped at the prune: root-owned September partitions; ownership fixed. Briefs/economics skipped that night.
 - Chart-judgment entry timing (docs/research/chart-judgment-results-2026-10-28.md): +3 bp vs next open, CI [-13, +17];
-  FAIL. Not adopted.
-- FOMC 10-28: 8 restoration buys planned for 15:45 (dry run on the deployed tree sends the same 8).
-- Open: estimate-revision analyst (AV backfill ~10-29); convert the fingerprinted files; TSM ADR ratio; BRK-B/ERIE/STZ shares.
+  FAIL. Not adopted. Mechanical comparators did as well or better: VWAP limit +5.0 bp, hourly EMA21 +5.2 bp.
+- FOMC pre-meeting cut RETIRED in the fix/fomc-chart-20261028 worktree (`fomc-hold-through-meeting/1`;
+  docs/research/fomc-cut-retirement-2026-10-28.md). Across 34 triggered meetings 2015-2026 the book rose from the
+  cut to the decision close in 20 (mean +0.48%); the ten-year lead-in is positive on average. Not live until the
+  44-file release is approved and installed; the installed tree still runs `fomc-3-session-weakness/2`.
+- FOMC 10-28: the open October cycle still restores — 8 buys planned for 15:45 (dry run on the deployed tree sends
+  the same 8). Let that run before any deploy.
+- Open: install the FOMC retirement release after 15:45; estimate-revision analyst (AV backfill ~10-29); convert the
+  fingerprinted files; TSM ADR ratio; BRK-B/ERIE/STZ shares.
 
 ## CURRENT 2026-10-25 — share-count fallback live (74b797d1, deploy ADMITTED); weight re-check v2: keep weights
 

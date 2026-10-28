@@ -1,10 +1,11 @@
 """The FOMC overlay priced against the book that never traded it, meeting by meeting.
 
-The paper book cuts held shares before a meeting and restores them after
-(`event_execution`). Whether that helps is unknown: two completed meetings
-since the guidance change, and every variant cost return over 2021-2026.
-So the rule stays as it is and is judged by a gate written before the
-outcome of the next meeting was known (`docs/research/fomc-gate-2026-09-15.md`).
+The paper book cut held shares before a meeting and restored them after
+(`event_execution`). The pre-meeting cut was retired on 2026-10-28
+(`event_risk`), so the gate has no new cycles to score; it remains the
+recorded counterfactual for the cycles that ran, judged by a rule written
+before the outcome of the next meeting was known
+(`docs/research/fomc-gate-2026-09-15.md`).
 
 The counterfactual is exact for the paper account. For every confirmed
 event fill, a sale of q shares at p on session s means the book without

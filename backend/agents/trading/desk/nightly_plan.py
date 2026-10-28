@@ -36,7 +36,7 @@ def event_plan_required(state, event_policy):
         state.pending
         or state.event_cycle
         or event_policy.get("factor") == event_risk.REDUCED
-        or not event_policy["calendar_known"]
+        or event_risk.calendar_blocks(event_policy)
     )
 
 

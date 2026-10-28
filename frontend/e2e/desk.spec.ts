@@ -2044,6 +2044,72 @@ test('FOMC policy explains activation without inventing an executed reduction', 
   expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
 })
 
+// A retired policy stays visible and says no reduction is planned.
+test('retired FOMC policy states that no reduction is requested', async ({ page }) => {
+  const errors = observeBlockingBrowserErrors(page)
+  await page.route(`**/api/v1/market/${USER}/desk`, route => route.fulfill({
+    status: 200, contentType: 'application/json', body: JSON.stringify({
+      latest: {...deskRecord(), event_risk: {
+        session: '2026-10-28', enabled: false, factor: 1.0, calendar_known: true,
+        decision_date: '2026-10-28',
+      }}, sessions: ['2026-10-28'],
+      event_policy: {enabled: false, version: 'fomc-hold-through-meeting/1', retired_on: '2026-10-28', evaluation_since: '2026-06-18'},
+    }),
+  }))
+  await page.goto('/?deskView=paper&deskDetails=1#desk')
+  await strategyDetails(page)
+  const banner = page.getByRole('region', {name: 'FOMC exposure policy'})
+  await expect(banner).toContainText('· retired policy')
+  await expect(banner).toContainText('the pre-meeting cut is retired; no reduction is requested')
+  await expect(banner).not.toContainText('provisional policy')
+  expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
+})
+
+// A retired policy does not pause planning when the FOMC calendar is unavailable.
+test('retired FOMC policy reports an unknown calendar without pausing', async ({ page }) => {
+  const errors = observeBlockingBrowserErrors(page)
+  await page.route(`**/api/v1/market/${USER}/desk`, route => route.fulfill({
+    status: 200, contentType: 'application/json', body: JSON.stringify({
+      latest: {...deskRecord(), event_risk: {
+        session: '2026-10-28', enabled: false, factor: null, calendar_known: false,
+        decision_date: null,
+      }}, sessions: ['2026-10-28'],
+      event_policy: {enabled: false, version: 'fomc-hold-through-meeting/1', retired_on: '2026-10-28', evaluation_since: '2026-06-18'},
+    }),
+  }))
+  await page.goto('/?deskView=paper&deskDetails=1#desk')
+  await strategyDetails(page)
+  const banner = page.getByRole('region', {name: 'FOMC exposure policy'})
+  await expect(banner).toContainText('calendar unavailable; the retired policy does not pause planning')
+  await expect(banner).not.toContainText('exposure changes paused')
+  expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
+})
+
+// Retiring the cut must not hide the restoration of a cycle that was already open.
+test('retired FOMC policy keeps an open cycle restoration visible', async ({ page }) => {
+  const errors = observeBlockingBrowserErrors(page)
+  await page.route(`**/api/v1/market/${USER}/desk`, route => route.fulfill({
+    status: 200, contentType: 'application/json', body: JSON.stringify({
+      latest: {...deskRecord(), event_risk: {
+        session: '2026-10-27', enabled: false, factor: 1.0, calendar_known: true,
+        decision_date: '2026-10-28',
+      }}, sessions: ['2026-10-27'],
+      event_status: {as_of: new Date().toISOString(), stale: false, active: true, planning_paused: true,
+        status: 'restoration pending', pending_orders: 8,
+        policy: {session: '2026-10-27', enabled: false, factor: 1.0, calendar_known: true, decision_date: '2026-10-28'},
+        sold: {AAPL: 5}},
+      event_policy: {enabled: false, version: 'fomc-hold-through-meeting/1', retired_on: '2026-10-28', evaluation_since: '2026-06-18'},
+    }),
+  }))
+  await page.goto('/?deskView=paper&deskDetails=1#desk')
+  await strategyDetails(page)
+  const banner = page.getByRole('region', {name: 'FOMC exposure policy'})
+  await expect(banner).toContainText('FOMC · restoration pending')
+  await expect(banner).toContainText('restoration is queued')
+  await expect(banner).not.toContainText('provisional policy')
+  expect(errors).toEqual({ consoleErrors: [], pageErrors: [] })
+})
+
 // An active event must not expose ordinary rebalance targets as executable fill rows.
 test('FOMC reduction takes priority over regular target execution', async ({ page }) => {
   const errors = observeBlockingBrowserErrors(page)

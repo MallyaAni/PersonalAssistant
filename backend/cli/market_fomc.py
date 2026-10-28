@@ -117,7 +117,7 @@ def main() -> None:
                                     )
                                 ),
                                 "live_enabled": args.selected,
-                                "execution_lifecycle": event_risk.VERSION
+                                "execution_lifecycle": event_risk.RETIRED_VERSION
                                 if args.selected
                                 else "research scale-only",
                                 "evaluation_periods": event_risk.evaluation_slices(

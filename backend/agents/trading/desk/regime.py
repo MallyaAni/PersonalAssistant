@@ -21,9 +21,10 @@ Three things it measures every session, from the book's own names:
   anyone knows what the new map is.
 
 This analyst reports calendar and macro facts without changing their sizes.
-The separate, provisional FOMC execution policy in event_risk.py reduces
-held shares before a meeting when market weakness triggers it. Keeping it
-outside this analyst prevents applying the same reduction twice.
+The separate FOMC execution policy in event_risk.py is retired (2026-10-28)
+and no longer reduces held shares before a meeting. Keeping it outside this
+analyst prevents applying the same reduction twice in the historical
+arithmetic.
 """
 
 from dataclasses import dataclass

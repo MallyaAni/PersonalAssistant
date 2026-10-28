@@ -15,6 +15,7 @@ from backend.market import (
     opportunity,
     personal_risk,
 )
+from backend.agents.trading.desk import event_risk
 from backend.market.labels import Action, OrderSide
 
 VERSION = "desk-decision-view/2"
@@ -1257,7 +1258,7 @@ def build(
     paused = (
         event.get("factor") == 0.5
         or event.get("execution_pending")
-        or event.get("calendar_known") is False
+        or event_risk.calendar_blocks(event)
     )
     result = {}
     # The plan is current the session it names and the one after (the nightly

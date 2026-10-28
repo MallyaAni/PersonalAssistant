@@ -1534,36 +1534,45 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
       {/* Keep failed recovery explicit alongside active restrictions.
           Healthy monitoring stays quiet; an unavailable check never proves
           that no event execution occurred. */}
-      {payload.event_policy?.enabled && (
+      {(payload.event_policy || eventLive?.active) && (
         <section aria-label="FOMC exposure policy" className={eventRecoveryUnavailable || eventPaused || event?.factor === 0.5 || eventLive?.active
           ? "rounded-2xl border border-amber-200 bg-amber-50 p-4 text-sm text-[#5c4300]"
           : "rounded-2xl border border-black/[0.08] bg-white p-4 text-sm text-[#6e6e73]"}>
-          <h3 className="font-semibold">FOMC · {eventRecoveryUnavailable && eventLive?.stale ? 'last recovery unavailable' : !eventLive?.stale && eventLive?.status ? eventLive.status : eventPaused ? 'portfolio adjustments paused' : !event ? 'decision missing' : 'monitoring'} <span className="text-xs font-normal">· provisional policy</span></h3>
+          <h3 className="font-semibold">FOMC · {eventRecoveryUnavailable && eventLive?.stale ? 'last recovery unavailable' : !eventLive?.stale && eventLive?.status ? eventLive.status : eventPaused ? 'portfolio adjustments paused' : !event ? 'decision missing' : 'monitoring'} <span className="text-xs font-normal">· {payload.event_policy?.enabled ? 'provisional policy' : 'retired policy'}</span></h3>
           {eventLive?.as_of && <p className="mt-1 text-xs">Checked {marketTime(eventLive.as_of)}{eventLive.stale ? ' · last known status' : ''}</p>}
           <details className="mt-1 text-xs"><summary className="cursor-pointer">Policy & execution</summary>
-          <p className="mt-1">A negative five-session SPY return can trigger a one-time 50% reduction in held shares during the three sessions before the decision.
-            The reduction lasts through decision day. Nightly paper orders are queued for the next open, even on a green day.
-            Missed reductions are recovered during market hours using the same share baseline; recovery does not place buys.
-            Actual fill times and prices can differ.
-            Restoration is limited to confirmed reductions and available cash. Regular rebalances wait until the event cycle ends.
-            Restoration follows the calendar and cash availability; it is not a fresh market-risk all-clear.
-            If the remaining shares are unaffordable, the cycle ends with those shares left unbought.</p>
+          {payload.event_policy?.enabled ? (
+            <p className="mt-1">A negative five-session SPY return can trigger a one-time 50% reduction in held shares during the three sessions before the decision.
+              The reduction lasts through decision day. Nightly paper orders are queued for the next open, even on a green day.
+              Missed reductions are recovered during market hours using the same share baseline; recovery does not place buys.
+              Actual fill times and prices can differ.
+              Restoration is limited to confirmed reductions and available cash. Regular rebalances wait until the event cycle ends.
+              Restoration follows the calendar and cash availability; it is not a fresh market-risk all-clear.
+              If the remaining shares are unaffordable, the cycle ends with those shares left unbought.</p>
+          ) : (
+            <p className="mt-1">The pre-meeting cut was retired on {payload.event_policy?.retired_on ?? '2026-10-28'}: across the 34 triggered meetings from 2015 to 2026 the book rose from the cut to the decision close in 20, so the cut sold the rebound rather than avoiding it.
+              The account now holds through meetings. A cycle that was already open still restores under its original arithmetic; no new reduction is planned.
+              Restoration is limited to confirmed reductions and available cash. Actual fill times and prices can differ.</p>
+          )}
           </details>
           <p className="mt-2 text-xs" role={eventRecoveryUnavailable ? 'alert' : undefined}>{eventRecoveryUnavailable
             ? eventLive?.stale ? 'The last FOMC recovery check failed; current event execution is unconfirmed.'
               : 'FOMC recovery could not be verified; current event execution is unconfirmed.'
             : event
-            ? `Using the ${event.session} close: ${!event.calendar_known ? 'calendar unavailable; exposure changes paused' : event.factor === 0.5 ? 'reduction triggered or still in force' : eventLive?.active && !eventLive.stale ? `the reduction is done${eventLive.sold ? ` (${Object.keys(eventLive.sold).length} names sold)` : ''}; restoration is queued for the open after the decision` : eventLive?.active ? `the reduction is done; ${paperLive?.orders?.length ? `${paperLive.orders.length} restoration orders are` : 'restoration is'} queued for the open after the decision` : 'no pre-meeting reduction requested'}. FOMC decision: ${event.decision_date ?? 'unavailable'}.`
+            ? `Using the ${event.session} close: ${!event.calendar_known ? (payload.event_policy?.enabled ? 'calendar unavailable; exposure changes paused' : 'calendar unavailable; the retired policy does not pause planning') : event.factor === 0.5 ? 'reduction triggered or still in force' : eventLive?.active && !eventLive.stale ? `the reduction is done${eventLive.sold ? ` (${Object.keys(eventLive.sold).length} names sold)` : ''}; restoration is queued` : eventLive?.active ? `the reduction is done; ${paperLive?.orders?.length ? `${paperLive.orders.length} restoration orders are` : 'restoration is'} queued` : payload.event_policy?.enabled ? 'no pre-meeting reduction requested' : 'the pre-meeting cut is retired; no reduction is requested'}. FOMC decision: ${event.decision_date ?? 'unavailable'}.`
             : eventLive?.active ? 'An event cycle is recorded; the current policy observation is unavailable.'
-            : 'Enabled for the next nightly run. The stored decision predates this policy; it does not confirm any reduction.'}</p>
+            : payload.event_policy?.enabled ? 'Enabled for the next nightly run. The stored decision predates this policy; it does not confirm any reduction.'
+            : 'The pre-meeting cut is retired; no reduction is requested.'}</p>
           {event?.outcome?.status === 'cash-limited' && <p className="mt-2">Cash-limited restoration recorded {event.outcome.session}:
             {' '}{Object.entries(event.outcome.unrestored).map(([symbol, qty]) => `${symbol} ${qty} shares unbought`).join(' · ')}.
             These are unfilled quantities, not restored positions.</p>}
           <p className="mt-1 text-xs">{eventRecoveryUnavailable
             ? 'This status does not confirm whether reductions or restorations were placed or filled. Recorded regular orders and fills remain shown below.'
             : eventLive?.active
-            ? 'The reduction runs in the practice account below; your own book is unchanged until you act at your broker.'
-            : 'Nothing is being traded for this policy right now. Any reduction would run in the practice account below, never in your own book.'}</p>
+            ? 'The remaining restoration runs in the practice account below; your own book is unchanged until you act at your broker.'
+            : payload.event_policy?.enabled
+            ? 'Nothing is being traded for this policy right now. Any reduction would run in the practice account below, never in your own book.'
+            : 'The policy is retired; nothing is being traded for it. Your own book is unchanged.'}</p>
         </section>
       )}
 

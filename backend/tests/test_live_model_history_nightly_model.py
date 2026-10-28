@@ -8,7 +8,7 @@ from types import SimpleNamespace
 import numpy as np
 import pytest
 
-from backend.agents.trading.desk import paper
+from backend.agents.trading.desk import event_risk, paper
 from backend.market import (
     direct_daily_arithmetic,
     learned_retention_models,
@@ -473,7 +473,7 @@ def test_nonempty_event_reduction_and_restoration_do_not_invoke_model(
     policy, shown = analytic_policy()
     day = str(shown.panel.dates[-1])
     event_day = day if restore else "2099-01-01"
-    event_id = "fomc-3-session-weakness/2:" + event_day
+    event_id = event_risk.VERSION + ":" + event_day
     before = paper.PaperState()
     if restore:
         before.event_cycle = {

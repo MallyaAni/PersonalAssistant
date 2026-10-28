@@ -20,7 +20,7 @@ from dataclasses import asdict, dataclass
 from datetime import date
 from pathlib import Path
 
-from backend.agents.trading.desk import actions, grading
+from backend.agents.trading.desk import actions, event_risk, grading
 from backend.market.labels import DeskAction
 from backend.agents.trading.desk.opinions import (
     BEARISH,
@@ -183,7 +183,7 @@ def board(
     event_paused = (
         event.get("factor") == 0.5
         or event.get("execution_pending", False)
-        or event.get("calendar_known") is False
+        or event_risk.calendar_blocks(event)
     )
     # The desk's own positions belong on the board whatever the operator
     # holds. A name the book bought at the last reset and has since downgraded

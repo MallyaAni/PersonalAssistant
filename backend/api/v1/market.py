@@ -188,8 +188,9 @@ async def latest_desk(user_id: UserId) -> dict[str, object]:
         "event_status": event_live,
         "forward_evidence": await asyncio.to_thread(forward_evidence.report, _root()),
         "event_policy": {
-            "enabled": True,
+            "enabled": event_risk.ENABLED,
             "version": event_risk.VERSION,
+            "retired_on": str(event_risk.RETIRED_ON),
             "evaluation_since": str(event_risk.GUIDANCE_CHANGE),
         },
         "summary": deskrecord.summary(latest),

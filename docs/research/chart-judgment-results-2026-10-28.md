@@ -31,3 +31,12 @@ simply buying at the next open, and no better than a mechanical limit at VWAP. T
 are noise next to a typical 20-session move of ~220 bp. Entry timing is not where this rule loses
 money, so the chart judgment is not adopted for entries. Per the rules, it is not retried without a
 new pre-registration (e.g. exits, or using the judgment to skip entries rather than to time them).
+
+## The simple alternative
+The owner's method — follow the 15-minute trend, use session VWAP as the reference — is the
+mechanical family this test already priced. The closest comparators were a limit at session VWAP
+(+5.0 bp) and at the hourly EMA21 (+5.2 bp), both at least as good as the model's +3.0 bp. So the
+simple method is not worse than the expensive one, but neither clears the gate: the measured edge is
+a few basis points against a ~220 bp 20-session move, and the confidence interval spans zero. The
+exact rule (15-minute trend filter plus VWAP entry) has not been tested. Adopting it would need a
+new pre-registration and a forward shadow, not another look at the same entries.

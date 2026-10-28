@@ -1,10 +1,14 @@
 """Versioned FOMC exposure policy and causal research windows.
 
-A decision at today's close controls exposure from the next session. A
-window protects the specified pre-meeting sessions and the decision session;
-normal exposure resumes at the following open. The weakness variant waits
-for a negative trailing five-session benchmark return, then stays reduced
-through the event so a one-day rebound does not cause repeated trading.
+The live policy holds through meetings. The pre-meeting cut was retired on
+2026-10-28: across the 34 triggered meetings from 2015 to 2026 the book rose
+from the cut to the decision close in 20 of them (mean +0.48%), and the
+ten-year lead-in was better than an ordinary week, so cutting into the
+pre-meeting selloff sold the rebound rather than avoiding it
+(`docs/research/fomc-lead-in-2026-10-22.md`,
+`docs/research/fomc-cut-retirement-2026-10-28.md`). The historical window stays
+here for research and for the arithmetic of a cycle that was already open;
+`live_path` no longer applies it.
 """
 
 from datetime import date
@@ -14,16 +18,31 @@ import numpy as np
 from backend.market.calendar import _fomc_distances, fomc_decisions
 from backend.market.panel import Panel
 
-VERSION = "fomc-3-session-weakness/2"
+VERSION = "fomc-hold-through-meeting/1"
+ENABLED = False
+RETIRED_ON = date(2026, 10, 28)
+RETIREMENT_REASON = (
+    "Pre-meeting cut retired: the book rose from the cut to the decision "
+    "close in 20 of 34 triggered meetings (mean +0.48%), and the ten-year "
+    "lead-in is positive on average."
+)
+RETIRED_VERSION = "fomc-3-session-weakness/2"
 GUIDANCE_CHANGE = date(2026, 6, 18)
 PRE_SESSIONS = 3
 REDUCED = 0.5
 
 
-# Apply the adopted policy only in the new guidance regime for current-rule research.
+# The live policy holds through meetings: no pre-meeting cut, so every session is full exposure.
 def live_path(panel: Panel) -> np.ndarray:
-    path = exposure_path(panel, fomc_decisions(), PRE_SESSIONS, REDUCED, True)
-    return np.where(panel.dates >= np.datetime64(GUIDANCE_CHANGE), path, 1.0)
+    return np.ones(len(panel.dates))
+
+
+# A missing calendar blocks planning only while the policy can still cut.
+def calendar_blocks(event_policy: dict) -> bool:
+    return bool(
+        event_policy.get("enabled", True)
+        and event_policy.get("calendar_known") is False
+    )
 
 
 # Measure distinct policy eras on one continuous account, without restarting its clock.
@@ -71,7 +90,7 @@ def evaluation_slices(result) -> list[dict]:
     return out
 
 
-# Describe tonight's policy decision without treating a requested cut as a fill.
+# Describe tonight's retired policy: calendar and weakness readings stay visible, the cut never fires.
 def decision(panel: Panel) -> dict:
     meetings = fomc_decisions()
     last = panel.dates[-1].astype(object)
@@ -79,7 +98,6 @@ def decision(panel: Panel) -> dict:
     distances, _ = _fomc_distances(panel.dates, meetings)
     distance = float(distances[-1])
     known = upcoming is not None and np.isfinite(distance)
-    path = exposure_path(panel, meetings, PRE_SESSIONS, REDUCED, True)
     closes = panel.adj_close[:, panel.index(panel.benchmark)]
     change = (
         float(closes[-1] / closes[-6] - 1)
@@ -88,21 +106,27 @@ def decision(panel: Panel) -> dict:
     )
     return {
         "version": VERSION,
-        "enabled": True,
+        "enabled": ENABLED,
+        "retired_on": str(RETIRED_ON),
+        "retirement_reason": RETIREMENT_REASON,
         "session": str(last),
         "decision_date": str(upcoming) if upcoming else None,
         "sessions_to_decision": int(distance) if known else None,
         "calendar_known": bool(known),
-        "factor": float(path[-1]) if known else None,
+        "factor": 1.0 if known else None,
         "spy_five_session_return": change,
         "pre_sessions": PRE_SESSIONS,
         "reduced_exposure": REDUCED,
         "evaluation_since": str(GUIDANCE_CHANGE),
-        "qualification": "Provisional policy; limited post-guidance evidence.",
+        "qualification": (
+            "Retired 2026-10-28; the pre-meeting cut is not run. The "
+            "historical window remains for research."
+        ),
     }
 
 
-# Build decisions from the published calendar and benchmark prices known at each close.
+# Build the retired window from the published calendar and benchmark prices known at each close.
+# Research and legacy cycle arithmetic only; `live_path` does not call it after the retirement.
 def exposure_path(
     panel: Panel,
     decisions: list[date],

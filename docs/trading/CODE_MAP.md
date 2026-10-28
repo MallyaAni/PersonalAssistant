@@ -23,8 +23,10 @@ Words used below:
    15-minute prices from Alpaca's free feed and writes `desk/live.json` and `desk/intraday.json`
    for the screens. It also sends any paper order that is due now
    (`backend/agents/trading/desk/intraday_orders.py`). On an FOMC decision day it sends the
-   "restore" buys on the 15:45 candle (`backend/agents/trading/desk/decision_close.py`). If a
-   planned FOMC cut was missed, it catches up (`backend/cli/market_event_recovery.py`).
+   "restore" buys for a cycle that was already open on the 15:45 candle
+   (`backend/agents/trading/desk/decision_close.py`). The pre-meeting cut is retired
+   (2026-10-28), so no new reduction is planned; `backend/cli/market_event_recovery.py` only
+   reconciles an open cycle.
    Since 2026-10-21 ordinary buys and sells go at the next open (step 9), so on most days the
    balancer sends nothing.
 
@@ -78,10 +80,12 @@ Words used below:
    - No name gets more than 25%. A change smaller than 1% of the account is not traded.
    - A buy is skipped on a night when the "band reversal" price signal fires for that name
      (`backend/agents/trading/desk/exit.py`, the only part of that file still in use).
-   - FOMC rule (`backend/agents/trading/desk/event_risk.py`, version fomc-3-session-weakness/2):
-     in the 3 sessions before a Fed decision, if SPY fell over the last 5 sessions, held shares
-     are cut by half. They are bought back at 15:45 on decision day
-     (`backend/agents/trading/desk/event_execution.py`, `decision_close.py`).
+   - FOMC rule (`backend/agents/trading/desk/event_risk.py`, version
+     fomc-hold-through-meeting/1): **retired on 2026-10-28.** The book holds through Fed
+     meetings; the old three-session weakness cut no longer runs. A cycle that was already
+     open still restores, at 15:45 on decision day
+     (`backend/agents/trading/desk/event_execution.py`, `decision_close.py`). The retired
+     window stays in `exposure_path` for research and legacy cycle arithmetic only.
 
    `market_daily.py` first checks that the rule is properly released (see section 6,
    `backend/market/learned_live_holding.py`). Then it reads the Alpaca account and settles last
@@ -145,7 +149,7 @@ always mean the file affects trades, so the table says what each part actually d
 | Expectations gap | `backend/market/challenger.py` | yes | Extra input to the value analyst |
 | Sizing rule | `backend/market/grade_led_leader_policy.py`, `backend/market/joint_funded_policy.py`, `backend/market/learned_live_holding.py` | yes | Target weights for the paper account |
 | Order planning | `backend/agents/trading/desk/nightly_plan.py`, `funded_execution.py`, `paper.py` | yes | Turns weights into whole-share orders |
-| FOMC rule | `backend/agents/trading/desk/event_risk.py`, `event_execution.py`, `decision_close.py` | yes | Half-size before weak Fed meetings |
+| FOMC rule | `backend/agents/trading/desk/event_risk.py`, `event_execution.py`, `decision_close.py` | yes | Full exposure through Fed meetings; the pre-meeting cut is retired (2026-10-28), and an open cycle still restores |
 | Broker | `backend/market/alpaca_trading.py` | yes | Paper account only |
 | Balancer | `backend/cli/market_balancer.py`, `backend/agents/trading/desk/intraday_orders.py` | yes | 15-minute prices; sends due orders |
 | Grade check | `backend/market/grade_parity.py` | yes | Live grades vs replayed grades, nightly |
@@ -320,7 +324,8 @@ options job runs from `~/anios` and the laggard shadow from `~/shadow/anios`. `~
   A frontend-only change skips the tests. *Protects against:* untested code reaching the cron jobs.
   (A deploy of 5a8f8305 was running while this was written; the last finished deploy is 54908830.)
 - **One engine for tests of the rule.** `backend/tests/test_policy_book.py` checks that the
-  simulator's defaults equal the installed rule and that its FOMC cycle matches the live one.
+  simulator's defaults equal the installed rule and that its FOMC handling matches the live
+  policy (no new cycles after the 2026-10-28 retirement).
   Note: the live account is planned by different code (`joint_funded_policy.py` and `paper.py`)
   that shares the same sizing function (`leader_weights`). Since 2026-10-28 the 20:40 replay job
   also compares tonight's plan with the simulator's planner on the same inputs every night

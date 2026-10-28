@@ -89,3 +89,20 @@ its buys go in at the next open. A cut not filled by the eve restores at the
 next open as before. In the old regime the earlier fill is free (+0.05%
 average gap); in the three meetings since June it would have bought +2.0%,
 +4.3% and +2.2% lower on the restored half.
+
+## Addendum — retired 2026-10-28
+
+The pre-meeting cut was retired before the 2026-10-28 decision, superseding
+the "stays on" decision above. The measurement this note did not have:
+across the 34 triggered meetings from 2015 to 2026, the book rose from the
+cut to the decision close in 20 of them (59%), mean +0.48%, median +0.86%;
+SPY rose in 21 (mean +0.18%). The trigger is a dip signal, not risk-off, and
+the ten-year lead-in above is positive on average. Cutting into the selloff
+sold the rebound the restoration was meant to catch.
+
+The live policy is now `fomc-hold-through-meeting/1`: full exposure through
+every meeting, no new reduction. The 2026-10-28 cycle that was already open
+still restores at the decision-day close (15:45 ET) under the existing
+`decision_close` timing. The FOMC gate (`fomc-gate/1`) has no new cycles to
+score and stays `waiting`; its September and October counterfactuals remain
+recorded. `exposure_path` and the era slices stay for research only.

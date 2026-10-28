@@ -22,7 +22,7 @@ def load(root):
         and (
             result.get("status") == "recovery unavailable"
             or policy.get("factor") == event_risk.REDUCED
-            or policy.get("calendar_known") is False
+            or event_risk.calendar_blocks(policy)
         )
     )
     return {
