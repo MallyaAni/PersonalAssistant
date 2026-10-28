@@ -31,11 +31,17 @@ work around it. What each part does is in [CODE_MAP.md](CODE_MAP.md).
 - `backend/market/policy_book.py` `simulate()` is the account simulator for the backtest and the
   chart replay. The live account is planned by `joint_funded_policy.py`, `nightly_plan.py` and
   `paper.py`, which share the sizing function `leader_weights`. Their agreement is checked by
-  `backend/tests/test_policy_book.py` only: there is no nightly runtime comparison yet. Never add a
-  third implementation; a change to sizing goes through `leader_weights` so both follow.
-- The "Historical simulation" box on the Paper account view still comes from the old
-  `desk/simulate.py` (graded-equal-weight/5). It is not the installed rule and must not be quoted
-  as its result.
+  `backend/tests/test_policy_book.py` and, every night, by `backend/market/plan_parity.py`: the
+  20:40 replay job hands the simulator's own planner (`policy_book.plan_target`, `plan_orders`,
+  `cycle_cut`, `cycle_restore`) the inputs of tonight's paper plan and writes OK or MISMATCH to
+  `data/market/desk/plan_parity.json`; the Paper account view shows a red banner on a mismatch.
+  Never add a third implementation; a change to sizing goes through `leader_weights` and the
+  shared planner functions so both follow.
+- The "Historical simulation" box on the Paper account view shows the installed rule's own account
+  simulation (`policy_book`, from the 20:40 replay's manifest and `book.json` for the record's
+  session). When that replay is missing the box says so; nothing stands in for it. The old
+  `desk/simulate.py` (graded-equal-weight/5) is not the installed rule and must not be quoted as
+  its result.
 - Charts show the installed policy's own decisions, with no hindsight. They must agree across every
   ticker, timeframe and zoom level.
 

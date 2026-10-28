@@ -1,6 +1,8 @@
 # Code map: the trading system in plain words
 
-Written 2026-10-27 from main at 2cad22de. Every claim was checked against the code and against
+Written 2026-10-27 from main at 2cad22de; updated 2026-10-28 for the map fixes (the Historical
+simulation box reads the installed rule's replay, the nightly plan check, dead code removed).
+Every claim was checked against the code and against
 spark1 (crontab, scripts, data folders). All times are New York time; spark1's clock is set to it.
 The rules for changing anything are in [RULES.md](RULES.md).
 
@@ -119,7 +121,12 @@ Words used below:
     the run uses the current rule's settings. The stock charts draw their buy/sell markers from
     this, and the paper account's real fills come from the record and history files. The chart
     endpoint is `/desk/chart/{ticker}` and the replay endpoint is
-    `/desk/strategy-simulation/{ticker}`.
+    `/desk/strategy-simulation/{ticker}`. The replay folder also holds `book.json`, the simulated
+    account's equity beside SPY, which with the manifest's `book` summary is the Paper account
+    view's "Historical simulation" box (`/desk` serves it as `policy_simulation`). Right after the
+    replay, the same job checks tonight's paper plan against the simulator's plan on the same inputs
+    (`backend/market/plan_parity.py`) and writes OK or MISMATCH to `desk/plan_parity.json`
+    (`/desk` serves it as `plan_parity`; re-run one session with `backend/cli/market_plan_parity.py`).
 
 ## 2. What is live vs research
 
@@ -145,8 +152,9 @@ always mean the file affects trades, so the table says what each part actually d
 | Labels | `backend/market/labels.py`, `frontend/src/services/labels.ts` | yes | Fixed word lists (BUY, A+, ...) instead of free text. Merged on main (913cf9f0, 5a8f8305); being deployed tonight |
 | Web API | `backend/api/v1/market.py`, `market_simulation.py`, `market_allocation.py`, `market_history_sizing.py` | yes | Feeds the Desk screens |
 | Screens | `frontend/src/components/DeskPanel/`, `frontend/src/services/api.ts` | yes | The Desk panel |
-| Account simulator | `backend/market/policy_book.py`, `backend/cli/market_policy_replay_research.py` | research, run nightly | Backtest figures and chart markers for the installed rule |
-| Old simulator | `backend/agents/trading/desk/simulate.py` | live but out of date | Draws the "Historical simulation" box. That box still shows the older graded-equal-weight/5 rule with older fill timing, not the installed rule (checked in tonight's record) |
+| Account simulator | `backend/market/policy_book.py`, `backend/cli/market_policy_replay_research.py` | research, run nightly | Backtest figures, chart markers and the "Historical simulation" box for the installed rule |
+| Plan check | `backend/market/plan_parity.py`, `backend/cli/market_plan_parity.py` | yes, check only (20:40) | Tonight's paper plan against the simulator's plan; banner on a mismatch |
+| Old simulator | `backend/agents/trading/desk/simulate.py` | imported, not shown | Research studies and the `market_desk` CLI's book backtest. No longer draws the "Historical simulation" box, and the nightly no longer prices its curve into the record |
 | Policy shadow | `backend/agents/trading/desk/shadow_ledger.py`, `live_policy.py`, `policy_v5.py`, `policy_v4.py` | shadow | Runs the previous rule (graded-equal-weight/5) on paper every night; never sends orders |
 | Other shadows | `backend/market/fundamentals_shadow.py`, `backend/market/reversal.py`, `backend/market/opportunity_shadow.py`, the "challenger" block in `market_daily.py` | shadow | Written into the record for comparison only |
 | Old sizing | `backend/agents/trading/desk/risk.py` | recorded, not traded | The older "/3" book, still computed and saved |
@@ -165,22 +173,20 @@ graded-equal-weight/4 and /5 (now only the shadow). The "dip-or-close" order tim
 The installed release still carries and hash-checks older learned-model files
 (`desk/learned-holding/model`, `risk`), but the leader rule does not use them to size.
 
-**Dead modules (safe to call unused).** These 9 files are imported only by their own tests.
-Nothing in `backend/`, `scripts/`, the crontab, the `~/desk_*.sh` wrappers or `~/dsv41`
-imports or names them, and none can be run as a command:
-`backend/market/daily_forecast_diagnostics.py` (542 lines), `historical_packet_acquisition.py` (539),
-`historical_retained_forecast.py` (691), `intraday_single_source.py` (1,108),
-`joint_funded_accounts.py` (173), `learned_archive.py` (471), `recorded_timing_inputs.py` (300),
-`rl_readiness.py` (54), `timing_audit.py` (207), all under `backend/market/`.
-How I checked: a script parsed every Python file's imports (including imports inside functions),
-followed them from every entry point, and searched for each name as text. Apart from their tests,
-only docs under `docs/` mention some of them.
+**Dead modules removed (2026-10-28).** `daily_forecast_diagnostics.py`,
+`historical_packet_acquisition.py`, `historical_retained_forecast.py`, `intraday_single_source.py`,
+`learned_archive.py`, `recorded_timing_inputs.py`, `rl_readiness.py` and `timing_audit.py` (all
+under `backend/market/`) were imported only by their own tests and named by no cron job, script,
+CLI or `~/dsv41` file; they and their tests are gone. `joint_funded_accounts.py` stays: its
+`candidate_grid` is imported by the tests of the live `joint_funded_policy.py`
+(`test_joint_funded_policy.py`, `test_learned_holding_transition.py`, `test_verify_joint_funded.py`,
+`test_conditional_holding_calibration.py`, `test_market_conditioned_receipts.py`).
 
-**Unused screen calls.** `frontend/src/services/api.ts` defines these functions, but no screen
-calls them: `getDeskEntries`, `getDeskStrategySimulation`, `getDeskLiveModelHistory`,
-`getDeskFundingPreview`, `acknowledgeDeskHistory`, `deleteDeskPersonalReceipt`.
-`getDeskIntraday` is imported by `DeskPanel.tsx` but never called. Their backend endpoints still
-exist.
+**Unused screen calls removed (2026-10-28).** `getDeskEntries`, `getDeskStrategySimulation`,
+`getDeskLiveModelHistory`, `getDeskFundingPreview`, `acknowledgeDeskHistory`,
+`deleteDeskPersonalReceipt` and `getDeskIntraday` (with the never-filled intraday state in
+`DeskPanel.tsx`) are gone from the page. Their backend endpoints still exist; the assistant or a
+script may call them.
 
 ## 3. The screens
 
@@ -196,8 +202,9 @@ It is fed by `/desk` (the record), `/desk/live` and `/desk/session-prices` (curr
 
 **Paper account view, top to bottom:**
 - Status lines: whether last night's record and briefs exist, and the market regime banner.
-- Grade-check banner (from `grade_parity` in `/desk`), then notes on changed earnings data,
-  unread earnings releases and expired tone readings.
+- Grade-check banner (from `grade_parity` in `/desk`) and the plan-check banner (from
+  `plan_parity`: red on a mismatch, amber when the check could not run), then notes on changed
+  earnings data, unread earnings releases and expired tone readings.
 - `TradeBoard.tsx`: tonight's plan, one row per name with action, grade, shares and timing.
   Fed by `/desk`, `/desk/live` and `/desk/paper`.
 - "Personal portfolio": your own positions, typed in by you (`/desk/holdings` to read and save,
@@ -206,8 +213,10 @@ It is fed by `/desk` (the record), `/desk/live` and `/desk/session-prices` (curr
   since yesterday, and planned cash. All from `/desk`.
 - "Paper account": the account value over time (`PaperAccountHistory.tsx`, `/desk/paper/history`),
   plus positions, open orders and fills as the broker reports them now (`/desk/paper`).
-- "Historical simulation": the curve saved in the record. It is labelled research, and it is the
-  old simulator and old rule (see section 2).
+- "Historical simulation": the installed rule's own account simulation from the replay of the
+  record's session (`policy_simulation` in `/desk`): rule name, record date, period, CAGR, maximum
+  drawdown, total return, SPY on the same sessions, trades and costs, and the equity curve beside
+  SPY. When the replay is missing it says so and shows nothing else.
 
 **Ticker page (click any name):** latest grade, how each analyst voted, and the evidence.
 - The model's plain-words technical read: `/desk/live/read/{symbol}`.
@@ -246,7 +255,8 @@ both paths point to the same files.
 | `desk/session-prices/` | Display price snapshot | the web app's collector (`backend/services/session_price_collector.py`) | while the app runs |
 | `options/` | Option open interest | `market_options.py` | 08:45 |
 | `bars_15m_sip/` | 15-minute bars (consolidated feed) | `market_intraday_sip.py` | 20:30 |
-| `research/policy-replay/` | The installed rule's replay | `market_policy_replay_research.py` | 20:40 |
+| `research/policy-replay/` | The installed rule's replay (manifest, `book.json`, one file per name) | `market_policy_replay_research.py` | 20:40 |
+| `desk/plan_parity.json` | Tonight's paper plan against the simulator's plan | `market_policy_replay_research.py` | ~20:45 |
 | `research/forward-shadow/` | Forward test of rule variants | `~/dsv41/forward` | 20:50 |
 | `estimates/` | Analyst estimates (Yahoo; Alpha Vantage backfill) | `~/dsv41/estimates` | 21:15; 06:20 |
 | `research/llm-shadow/` | AI-model "analyst" calls, record only | `~/dsv41/llm_shadow` | 22:10 |
@@ -312,8 +322,9 @@ options job runs from `~/anios` and the laggard shadow from `~/shadow/anios`. `~
 - **One engine for tests of the rule.** `backend/tests/test_policy_book.py` checks that the
   simulator's defaults equal the installed rule and that its FOMC cycle matches the live one.
   Note: the live account is planned by different code (`joint_funded_policy.py` and `paper.py`)
-  that shares the same sizing function (`leader_weights`). No nightly job compares the account
-  with `policy_book.simulate()`. The "live parity" is these tests, not a runtime check.
+  that shares the same sizing function (`leader_weights`). Since 2026-10-28 the 20:40 replay job
+  also compares tonight's plan with the simulator's planner on the same inputs every night
+  (`plan_parity`, step 13). *Protects against:* the account trading a rule the backtest does not run.
 - **Nightly grade check.** `backend/market/grade_parity.py` (see step 12). The screen shows a
   banner when it fails. *Protects against:* the board showing grades the backtest would not give.
 - **Smaller guards.** Paper broker address only (`alpaca_trading.client_from_env`). No orders if
