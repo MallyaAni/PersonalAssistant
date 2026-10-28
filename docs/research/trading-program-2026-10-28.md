@@ -167,6 +167,20 @@ stale intraday prints shown as current, grade-parity drift banners, and
 date-pinned test fixtures. These do not add return; they remove ways the live
 loop can be wrong.
 
+The TSM unit defect is fixed. Its NYSE close is per ADS representing five
+common shares (20-F, accession 0001628280-26-025362), and its filings report
+TWD. `levels_pit` now divides the filed count by the ADS ratio and withholds
+revenue, earnings and equity for a non-USD reporter, because no FX series is
+on file. The live value analyst already had no multiple for TSM, so no grade
+moved. Tests: `backend/tests/test_listed_share_basis.py`.
+
+The multi-class names remain open. The company-facts feed drops class
+dimensions; BRK-B's only undimensioned count is from 2011 and below the
+plausibility floor, and ERIE and STZ have none, so they have no market cap
+and no value score in the research universe (none is in the live book). A
+correct fix needs the cover-page XBRL instance with dimensions, which the
+store does not fetch; a static multiplier would go stale and is refused.
+
 ## Operating model for the owner
 
 - The nightly runs at 19:30 ET. Review the desk panel after 20:00 ET; the

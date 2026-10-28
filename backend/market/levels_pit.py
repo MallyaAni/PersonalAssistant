@@ -26,6 +26,21 @@ FACTS = "edgar_facts"
 # support and it is consistent across every name.
 QUARTERS = 4.0
 
+# A close is quoted per listed security; a filed count can be common shares.
+# TSMC's ADS represents five common shares (20-F, accession
+# 0001628280-26-025362, filed 2026-04-16), so its NYSE close is one fifth of
+# a common share's value and the filed count is divided by five before it is
+# multiplied by that close. Names absent here are one listed share per filed
+# share.
+LISTED_PER_FILED_SHARES: dict[str, float] = {"TSM": 5.0}
+
+# Reporting currencies other than USD. A multiple formed against a USD close
+# would mix units, and no FX series is on file, so the monetary levels are
+# withheld rather than converted at an assumed rate. TSMC reports in New
+# Taiwan dollars. Revenue growth is a ratio of same-currency values and stays
+# unit-free.
+NON_USD_REPORTING: frozenset[str] = frozenset({"TSM"})
+
 
 # The trailing four quarters of one fundamental as known at each session:
 # the sum of the four most recent distinct quarter-ends that had been
@@ -119,13 +134,28 @@ def trailing_levels(
             out[name][:, column] = edgar._known_series(record.facts, name, panel.dates)[
                 0
             ][0]
+        ratio = LISTED_PER_FILED_SHARES.get(ticker, 1.0)
+        out["shares"][:, column] = out["shares"][:, column] / ratio
         # Growth of the trailing sum against the trailing sum a year earlier,
-        # taken from the same point-in-time series 252 sessions back.
+        # taken from the same point-in-time series 252 sessions back. It is a
+        # ratio of same-currency values, so it survives the currency mask.
         rev = out["revenue"][:, column]
         growth = np.full(len(rev), np.nan)
         with np.errstate(all="ignore"):
             growth[252:] = rev[252:] / rev[:-252] - 1.0
         out["revenue_growth"][:, column] = np.where(np.isfinite(growth), growth, np.nan)
+        if ticker in NON_USD_REPORTING:
+            for name in (
+                "revenue",
+                "earnings",
+                "gross_profit",
+                "operating_cash_flow",
+                "capex",
+                "equity",
+                "debt",
+                "cash",
+            ):
+                out[name][:, column] = np.nan
     return out
 
 
@@ -532,7 +562,12 @@ def versions_levels(
 def point_in_time_levels(
     store: MarketStore, panel: Panel, asof=None, *, strict_publication: bool = False
 ) -> dict[str, np.ndarray]:
-    """Return {"revenue", "earnings", "equity", "shares", "revenue_growth"}."""
+    """Return {"revenue", "earnings", "equity", "shares", "revenue_growth"}.
+
+    Shares are expressed per listed security (an ADR ratio is applied), and
+    the monetary levels are NaN where the reporting currency is not USD,
+    because no FX series is on file to put them on the close's basis.
+    """
     from backend.market import fundamentals_asof as fa
 
     shape = (len(panel.dates), len(panel.tickers))
@@ -556,14 +591,26 @@ def point_in_time_levels(
             if known is None:
                 continue
         with np.errstate(all="ignore"):
-            out["revenue"][:, column] = known["revenue"][0] * QUARTERS
-            out["earnings"][:, column] = known["net_income"][0] * QUARTERS
-            out["equity"][:, column] = known["equity"][0]
-            out["shares"][:, column] = split_adjusted_shares(
-                known["shares"][0],
-                panel.dates,
-                splits,
-                basis_dates=known["shares"][2] if strict_publication else None,
+            if ticker in NON_USD_REPORTING:
+                # Revenue, earnings and equity are in the reporting
+                # currency; only growth, a ratio of same-currency values,
+                # survives without an FX conversion.
+                out["revenue"][:, column] = np.nan
+                out["earnings"][:, column] = np.nan
+                out["equity"][:, column] = np.nan
+            else:
+                out["revenue"][:, column] = known["revenue"][0] * QUARTERS
+                out["earnings"][:, column] = known["net_income"][0] * QUARTERS
+                out["equity"][:, column] = known["equity"][0]
+            ratio = LISTED_PER_FILED_SHARES.get(ticker, 1.0)
+            out["shares"][:, column] = (
+                split_adjusted_shares(
+                    known["shares"][0],
+                    panel.dates,
+                    splits,
+                    basis_dates=known["shares"][2] if strict_publication else None,
+                )
+                / ratio
             )
             out["revenue_growth"][:, column] = (
                 known["revenue"][0] / known["revenue"][1] - 1.0
