@@ -157,13 +157,17 @@ momentum, but raw trailing return carries time-varying market and factor beta.
 Ranking on the part of the return the market does not explain should keep the
 tilt's return and cut its crash exposure.
 
-**Exact change.** Add a `residual` entry to `point_in_time.TILTS` and use it in
-`grade_led_leader_policy.leader_weights` in place of, or beside, `leader`. The
-score is the trailing sum of `own return − rolling beta × market return` over
-120–252 sessions, skipping the most recent 21, divided by the residual's own
-volatility. `baselines.residual_momentum` already implements exactly this; the
-change is to feed it the same window as the sizing code and rank it. Keep the
-same strength 0.5, the same 25% cap, the same volatility target and floor.
+**Exact change.** The residual score needs about 273 sessions of history, more
+than the 64 closes `point_in_time.TILTS` receives, so the score is computed on
+the full panel and passed to `grade_led_leader_policy.leader_weights` as an
+optional `scores` vector that replaces the trailing-return rank when given.
+`policy_book.simulate` gains the matching optional `leader_scores` array; both
+default to `None`, and the production nightly never passes them. The score is
+the trailing sum of `own return − rolling beta × market return` over 120–252
+sessions, skipping the most recent 21, divided by the residual's own
+volatility (`baselines.residual_momentum`, unchanged), ranked with the
+installed 1±0.5 mapping. Keep the same strength 0.5, the same 25% cap, the
+same volatility target and floor.
 
 **Evidence.** Blitz, Huij & Martens (2011): about twice the risk-adjusted
 profit at half the volatility, more consistent, less concentrated. Internally,
@@ -184,9 +188,12 @@ name the grades reject.
 
 **Measurement.** Honest S&P 500 PIT and IT+Comm PIT, 10/25 bp, 20 start
 offsets, yearly walk-forward, shuffled-rank and random-tilt placebos, account
-simulator with whole shares and the 1% minimum trade. Acceptance: CAGR at least
-the installed rule's, worst drawdown no deeper, Sharpe at least the installed
-rule's, at 25 bp, in both windows.
+simulator with whole shares and the 1% minimum trade. The operative gate is
+fixed in `residual-momentum-preregistration-2026-10-28.md`: choosing
+2016-2023 at 25 bp, Sharpe at least +0.05, CAGR no worse than −0.5 points,
+worst drawdown at least 2.0 points shallower, and the placebo's 95th
+percentile exceeded. The reported 2024-2026 window and IT+Comm are reported
+and do not gate.
 
 ### C2 — Value × residual-momentum composite sizing
 
