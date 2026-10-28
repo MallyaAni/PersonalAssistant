@@ -12,16 +12,20 @@ from typing import Any
 from jsonschema import validate
 
 from backend.core.interfaces import TextWriter
+from backend.core.llm import StrictSchema
+from backend.market.labels import DemandTrend, FinancingRisk, GuidanceChange, values
 
 VERSION = "grounded_release/1"
 MAX_CHARS = 48_000
 MAX_TOKENS = 1_200
 PROMPT = Path(__file__).with_suffix(".md").read_text(encoding="utf-8")
-VALUES = {
-    "guidance": ["raised", "lowered", "unchanged", "not_comparable", "not_stated"],
-    "demand": ["strengthening", "weakening", "stable", "not_stated"],
-    "financing_risk": ["increasing", "decreasing", "stable", "not_stated"],
+# Each field's closed vocabulary; every one of them has a NOT_STATED word.
+LABELS = {
+    "guidance": GuidanceChange,
+    "demand": DemandTrend,
+    "financing_risk": FinancingRisk,
 }
+VALUES = {field: values(kind) for field, kind in LABELS.items()}
 
 
 # Hash the exact UTF-8 text, including whitespace and any untrusted instructions.
@@ -31,28 +35,31 @@ def text_hash(text: str) -> str:
 
 # Require all fields so the grammar cannot silently skip a hard question.
 def schema() -> dict[str, Any]:
-    return {
-        "title": "GroundedRelease",
-        "type": "object",
-        "additionalProperties": False,
-        "required": list(VALUES),
-        "properties": {
-            field: {
-                "type": "object",
-                "additionalProperties": False,
-                "required": ["value", "quote"],
-                "properties": {
-                    "value": {"type": "string", "enum": choices},
-                    "quote": {
-                        "type": ["string", "null"],
-                        "minLength": 12,
-                        "maxLength": 900,
+    # Sent strict, so each value is one of its field's words.
+    return StrictSchema(
+        {
+            "title": "GroundedRelease",
+            "type": "object",
+            "additionalProperties": False,
+            "required": list(VALUES),
+            "properties": {
+                field: {
+                    "type": "object",
+                    "additionalProperties": False,
+                    "required": ["value", "quote"],
+                    "properties": {
+                        "value": {"type": "string", "enum": choices},
+                        "quote": {
+                            "type": ["string", "null"],
+                            "minLength": 12,
+                            "maxLength": 900,
+                        },
                     },
-                },
-            }
-            for field, choices in VALUES.items()
-        },
-    }
+                }
+                for field, choices in VALUES.items()
+            },
+        }
+    )
 
 
 # Validate shape and exact source spans; this proves citation presence, not its meaning.
@@ -61,7 +68,8 @@ def grounded_features(payload: dict, text: str) -> dict:
     features = {}
     for field, fact in payload.items():
         quote = fact["quote"]
-        if fact["value"] == "not_stated":
+        kind = LABELS[field]
+        if kind(fact["value"]) is kind.NOT_STATED:
             if quote is not None:
                 raise ValueError("Missing facts cannot carry a claimed citation")
             features[field] = {**fact, "start": None, "end": None}

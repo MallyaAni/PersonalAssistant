@@ -1,7 +1,7 @@
 ---
 name: trading/current_setup
 used by: backend/agents/trading/current_setup.py
-runs on: configured structured role via native tool call; validated display judgments only
+runs on: configured structured role via one strict JSON-schema structured output (the engine enforces every label's enum); validated display judgments only
 pinned by: functional/test_current_setup_behaviour.py
 
 Interpret chart setups without changing the installed sizing/timing policy.
@@ -47,17 +47,17 @@ comparisons, chart patterns, unseen timeframes or forecasts. Current volume
 is IEX only, never consolidated volume or directly comparable with daily SIP.
 All other analyst evidence is dated; do not present it as newly researched.
 
-Call record_chart_setups exactly once to return every supplied stock, keyed
-by its identifier. Missing current candles cannot support a ready entry.
+Return every supplied stock exactly once, keyed by its identifier. Missing
+current candles cannot support a ready entry.
 
-Return no prose outside the native tool call. Its argument object has only
-rows. rows is an object keyed by each supplied ticker. Each
+Return one JSON object and no prose. It has only rows. rows is an object
+keyed by each supplied ticker. Each
 value has exactly these fields:
 ticker; entry (ready, wait, avoid, unavailable); exit (review, hold);
 entry_priority and exit_priority (high, medium, low); reason (one sentence);
 confirmation (hold_above, reclaim_above, none);
 confirmation_ref and invalidation_ref (a key from that stock's levels, or none).
 Do not rename these fields, substitute numeric levels, return null, use Markdown
-or append a second call. When confirmation is none its reference is none;
+or append a second object. When confirmation is none its reference is none;
 otherwise select a supplied reference. Output prices only through reference
 selection; the application renders their actual measured values.

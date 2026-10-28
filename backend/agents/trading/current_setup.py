@@ -3,14 +3,30 @@
 import json
 from pathlib import Path
 
+from backend.core.llm import StrictSchema
 from backend.core.prompts import _strip_notes
+from backend.market.labels import (
+    ChartConfirmation,
+    ChartEntry,
+    ChartExit,
+    ChartPriority,
+    parse,
+    values,
+)
 
-VERSION = "current-chart-setup/1"
+# /2: the judgments come back as one strict JSON-schema structured output,
+# which the engine enforces, instead of a native tool call it did not.
+VERSION = "current-chart-setup/2"
 SYSTEM = _strip_notes(
     "trading/current_setup", Path(__file__).with_suffix(".md").read_text()
 )
-ENTRIES = ("ready", "wait", "avoid", "unavailable")
-RELATIONS = ("hold_above", "reclaim_above", "none")
+ENTRIES = tuple(ChartEntry)
+RELATIONS = tuple(ChartConfirmation)
+# The entry words a stock with current candles may take, and those a stock
+# whose entry is not permitted may take, with and without candles.
+_WITH_CANDLES = (ChartEntry.READY, ChartEntry.WAIT, ChartEntry.AVOID)
+_BLOCKED_WITH_CANDLES = (ChartEntry.WAIT, ChartEntry.AVOID)
+_BLOCKED_WITHOUT_CANDLES = (ChartEntry.WAIT, ChartEntry.AVOID, ChartEntry.UNAVAILABLE)
 
 
 # Constrain model rows to known symbols, judgments and supplied references.
@@ -18,17 +34,17 @@ def schema(facts):
     refs = sorted({key for row in facts for key in row["levels"]} | {"none"})
     properties = {
         "ticker": {"type": "string"},
-        "entry": {"type": "string", "enum": list(ENTRIES)},
-        "exit": {"type": "string", "enum": ["review", "hold"]},
-        "entry_priority": {"type": "string", "enum": ["high", "medium", "low"]},
-        "exit_priority": {"type": "string", "enum": ["high", "medium", "low"]},
+        "entry": {"type": "string", "enum": values(ChartEntry)},
+        "exit": {"type": "string", "enum": values(ChartExit)},
+        "entry_priority": {"type": "string", "enum": values(ChartPriority)},
+        "exit_priority": {"type": "string", "enum": values(ChartPriority)},
         "reason": {
             "type": "string",
             "minLength": 20,
             "maxLength": 240,
             "pattern": "^[^0-9]*$",
         },
-        "confirmation": {"type": "string", "enum": list(RELATIONS)},
+        "confirmation": {"type": "string", "enum": values(ChartConfirmation)},
         "confirmation_ref": {"type": "string", "enum": refs},
         "invalidation_ref": {"type": "string", "enum": refs},
     }
@@ -42,16 +58,16 @@ def schema(facts):
         }
         fields["entry"] = {
             "type": "string",
-            "enum": ["ready", "wait", "avoid"]
+            "enum": [str(entry) for entry in _WITH_CANDLES]
             if fact.get("candles")
-            else list(ENTRIES),
+            else values(ChartEntry),
         }
         if not fact["entry_permitted"] or not fact.get("candles"):
             fields["entry"] = {
                 "type": "string",
-                "enum": ["wait", "avoid"]
+                "enum": [str(entry) for entry in _BLOCKED_WITH_CANDLES]
                 if fact.get("candles")
-                else ["wait", "avoid", "unavailable"],
+                else [str(entry) for entry in _BLOCKED_WITHOUT_CANDLES],
             }
         rows[fact["ticker"]] = {
             "type": "object",
@@ -87,13 +103,10 @@ def validate(rows, facts):
 
 # Reject fabricated levels, prose numbers and judgments outside entry permission.
 def validate_row(row, fact):
-    if row["entry"] not in ENTRIES or row["exit"] not in ("review", "hold"):
-        raise ValueError("Unknown judgment")
-    if any(
-        row[key] not in ("high", "medium", "low")
-        for key in ("entry_priority", "exit_priority")
-    ):
-        raise ValueError("Unknown priority")
+    entry = parse(ChartEntry, row["entry"], "Unknown judgment")
+    parse(ChartExit, row["exit"], "Unknown judgment")
+    for key in ("entry_priority", "exit_priority"):
+        parse(ChartPriority, row[key], "Unknown priority")
     reason = row["reason"]
     if (
         not isinstance(reason, str)
@@ -104,24 +117,24 @@ def validate_row(row, fact):
     for key in ("confirmation_ref", "invalidation_ref"):
         if row[key] != "none" and row[key] not in fact["levels"]:
             raise ValueError("Unknown stock level")
-    if row["confirmation"] not in RELATIONS:
-        raise ValueError("Unknown confirmation")
-    if (row["confirmation"] == "none") != (row["confirmation_ref"] == "none"):
+    confirmation = parse(ChartConfirmation, row["confirmation"], "Unknown confirmation")
+    if (confirmation is ChartConfirmation.NONE) != (row["confirmation_ref"] == "none"):
         raise ValueError("Incomplete confirmation")
-    if row["entry"] == "unavailable" and fact.get("candles"):
+    if entry is ChartEntry.UNAVAILABLE and fact.get("candles"):
         raise ValueError("Supplied chart evidence cannot be called unavailable")
-    if row["entry"] == "ready" and (
+    if entry is ChartEntry.READY and (
         not fact["entry_permitted"] or not fact.get("candles")
     ):
         raise ValueError("Entry policy violation")
 
 
-# Ask the installed model once; failed inference never becomes a buy judgment.
+# Ask the installed model once for a strict structured answer the engine holds
+# to the schema; failed inference never becomes a buy judgment.
 def assess(facts, writer):
     if not facts or writer is None:
         return []
     try:
-        reply = writer.chat_with_tools(
+        reply = writer.chat(
             [
                 {"role": "system", "content": SYSTEM},
                 {
@@ -129,28 +142,12 @@ def assess(facts, writer):
                     "content": json.dumps({"stocks": facts}, allow_nan=False),
                 },
             ],
-            [
-                {
-                    "type": "function",
-                    "function": {
-                        "name": "record_chart_setups",
-                        "description": (
-                            "Record grounded chart judgments, including waits and "
-                            "avoids. Display analysis only; never execute trades."
-                        ),
-                        "parameters": schema(facts),
-                    },
-                }
-            ],
-            max_tokens=min(8192, 256 + 280 * len(facts)),
+            min(8192, 256 + 280 * len(facts)),
+            StrictSchema(schema(facts)),
+            # Greedy, as the tool call was: the same chart reads the same way.
+            0.0,
         )
-        calls = reply.get("tool_calls") or []
-        if (
-            len(calls) != 1
-            or calls[0].get("function", {}).get("name") != "record_chart_setups"
-        ):
-            return []
-        data = json.loads(calls[0]["function"]["arguments"])
+        data = json.loads(reply["content"])
         return validate(list(data["rows"].values()), facts)
     except Exception:  # noqa: BLE001 - display judgments fail closed
         return []

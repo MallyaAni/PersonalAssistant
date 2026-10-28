@@ -3,6 +3,9 @@
 import json
 from pathlib import Path
 
+from backend.core.llm import StrictSchema
+from backend.market.labels import InflationPressure, values
+
 VERSION = "desk-economist/1"
 SYSTEM = Path(__file__).with_suffix(".md").read_text(encoding="utf-8")
 
@@ -11,25 +14,28 @@ SYSTEM = Path(__file__).with_suffix(".md").read_text(encoding="utf-8")
 def assess(facts: list[dict], writer) -> dict:
     usable = [fact for fact in facts if fact.get("status") == "available"]
     ids = [fact["id"] for fact in usable]
-    schema = {
-        "title": "InflationContext",
-        "type": "object",
-        "additionalProperties": False,
-        "required": ["pressure", "evidence_ids"],
-        "properties": {
-            "pressure": {
-                "type": "string",
-                "enum": ["easing", "building", "mixed", "unknown"],
+    # Sent strict: the engine can only answer one of the pressure words.
+    schema = StrictSchema(
+        {
+            "title": "InflationContext",
+            "type": "object",
+            "additionalProperties": False,
+            "required": ["pressure", "evidence_ids"],
+            "properties": {
+                "pressure": {
+                    "type": "string",
+                    "enum": values(InflationPressure),
+                },
+                "evidence_ids": {
+                    "type": "array",
+                    "maxItems": len(ids),
+                    "items": {"type": "string", "enum": ids or ["none"]},
+                },
             },
-            "evidence_ids": {
-                "type": "array",
-                "maxItems": len(ids),
-                "items": {"type": "string", "enum": ids or ["none"]},
-            },
-        },
-    }
+        }
+    )
     fallback = {
-        "pressure": "unknown",
+        "pressure": InflationPressure.UNKNOWN,
         "evidence_ids": [],
         "prompt_version": VERSION,
         "status": "unavailable",
@@ -47,13 +53,18 @@ def assess(facts: list[dict], writer) -> dict:
             0.0,
         )
         result = json.loads(response["content"])
-        if result["pressure"] not in ("easing", "building", "mixed", "unknown"):
+        # A pressure outside the vocabulary is not a reading: the fallback, as before.
+        if result["pressure"] not in InflationPressure:
             return fallback
+        result["pressure"] = InflationPressure(result["pressure"])
         if not isinstance(result["evidence_ids"], list) or not set(
             result["evidence_ids"]
         ).issubset(ids):
             return fallback
-        if result["pressure"] != "unknown" and not result["evidence_ids"]:
+        if (
+            result["pressure"] is not InflationPressure.UNKNOWN
+            and not result["evidence_ids"]
+        ):
             return fallback
         result["evidence_ids"] = list(dict.fromkeys(result["evidence_ids"]))
         return {**result, "prompt_version": VERSION, "status": "model_assessment"}

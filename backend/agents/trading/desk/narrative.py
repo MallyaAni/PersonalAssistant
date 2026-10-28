@@ -18,16 +18,18 @@ from typing import Any
 from backend.agents.trading.desk import plainly
 from backend.agents.trading.desk.grading import A_PLUS, A, B
 from backend.core.interfaces import TextWriter
+from backend.core.llm import StrictSchema
 from backend.core.prompts import render
+from backend.market.labels import BriefStance, ClaimVerdict, values
 
 PROMPT_VERSION = "desk_brief/1"
 _SYSTEM = render("trading/desk_brief")
 _READ_SYSTEM = render("trading/desk_read")
 _CHECK_SYSTEM = render("trading/desk_brief_check")
-OWN = "own"
-WAIT = "wait"
-AVOID = "avoid"
-STANCES = (OWN, WAIT, AVOID)
+OWN = BriefStance.OWN
+WAIT = BriefStance.WAIT
+AVOID = BriefStance.AVOID
+STANCES = tuple(BriefStance)
 
 # The plain words a read uses for each analyst, so a read that skips an
 # analyst fails rather than passing on its own length.
@@ -159,7 +161,7 @@ def _check_facts(text: str) -> str:
 class DeskBrief:
     """What the model wrote for one name."""
 
-    stance: str
+    stance: BriefStance
     verdict: str
     reasoning: str
     risks: str
@@ -167,7 +169,7 @@ class DeskBrief:
 
 
 # The stance the grade implies; the model must agree with it.
-def stance_for(grade: str) -> str:
+def stance_for(grade: str) -> BriefStance:
     """Return "own", "wait" or "avoid" for a letter grade."""
     if grade in (A_PLUS, A):
         return OWN
@@ -270,57 +272,62 @@ def _cut(text: str, limit: int) -> str:
     return ""
 
 
+# The brief's schema, sent strict: the stance is one of the enum's words.
 def _schema() -> dict[str, Any]:
-    return {
-        "title": "DeskBrief",
-        "type": "object",
-        "additionalProperties": False,
-        "required": ["stance", "verdict", "reasoning", "risks", "watch"],
-        "properties": {
-            "stance": {"type": "string", "enum": list(STANCES)},
-            "verdict": {"type": "string", "minLength": 5, "maxLength": 200},
-            "reasoning": {"type": "string", "minLength": 20, "maxLength": 700},
-            "risks": {"type": "string", "minLength": 5, "maxLength": 300},
-            "watch": {"type": "string", "minLength": 5, "maxLength": 240},
-        },
-    }
+    return StrictSchema(
+        {
+            "title": "DeskBrief",
+            "type": "object",
+            "additionalProperties": False,
+            "required": ["stance", "verdict", "reasoning", "risks", "watch"],
+            "properties": {
+                "stance": {"type": "string", "enum": values(BriefStance)},
+                "verdict": {"type": "string", "minLength": 5, "maxLength": 200},
+                "reasoning": {"type": "string", "minLength": 20, "maxLength": 700},
+                "risks": {"type": "string", "minLength": 5, "maxLength": 300},
+                "watch": {"type": "string", "minLength": 5, "maxLength": 240},
+            },
+        }
+    )
 
 
 # The check's answer is one of two words; a grammar forces the choice.
 def _check_schema() -> dict[str, Any]:
-    return {
-        "title": "DeskBriefCheck",
-        "type": "object",
-        "additionalProperties": False,
-        "required": ["claims"],
-        "properties": {
-            # One row per factual claim in the brief: the claim as written,
-            # the fact it was compared with, and the verdict for that pair.
-            # Grading claim by claim, with the fact quoted, is what makes the
-            # checker look the measurement up instead of judging the whole
-            # brief on an impression; the overall verdict is derived in code
-            # from these rows, never asked for separately, because the model
-            # would sometimes answer "contradicts" over rows it had all
-            # marked consistent.
-            "claims": {
-                "type": "array",
-                "maxItems": 16,
-                "items": {
-                    "type": "object",
-                    "additionalProperties": False,
-                    "required": ["claim", "fact", "verdict"],
-                    "properties": {
-                        "claim": {"type": "string", "maxLength": 240},
-                        "fact": {"type": "string", "maxLength": 240},
-                        "verdict": {
-                            "type": "string",
-                            "enum": ["consistent", "contradicts", "uncertain"],
+    return StrictSchema(
+        {
+            "title": "DeskBriefCheck",
+            "type": "object",
+            "additionalProperties": False,
+            "required": ["claims"],
+            "properties": {
+                # One row per factual claim in the brief: the claim as written,
+                # the fact it was compared with, and the verdict for that pair.
+                # Grading claim by claim, with the fact quoted, is what makes the
+                # checker look the measurement up instead of judging the whole
+                # brief on an impression; the overall verdict is derived in code
+                # from these rows, never asked for separately, because the model
+                # would sometimes answer "contradicts" over rows it had all
+                # marked consistent.
+                "claims": {
+                    "type": "array",
+                    "maxItems": 16,
+                    "items": {
+                        "type": "object",
+                        "additionalProperties": False,
+                        "required": ["claim", "fact", "verdict"],
+                        "properties": {
+                            "claim": {"type": "string", "maxLength": 240},
+                            "fact": {"type": "string", "maxLength": 240},
+                            "verdict": {
+                                "type": "string",
+                                "enum": values(ClaimVerdict),
+                            },
                         },
                     },
                 },
             },
-        },
-    }
+        }
+    )
 
 
 # The verdict for one check from its claim rows. A contradicting row sinks
@@ -329,19 +336,22 @@ def _check_schema() -> dict[str, Any]:
 # carry) is "uncertain" and does not, because the brief is checked for what
 # it asserts against the facts, and omission or hedging is not assertion.
 # An answer with no rows judged nothing, which is not approval.
-def _check_verdict(payload: dict[str, Any]) -> tuple[str, list[str]]:
+def _check_verdict(payload: dict[str, Any]) -> tuple[ClaimVerdict, list[str]]:
     """Return (consistency, the claims that contradict)."""
     rows = payload.get("claims")
     if not isinstance(rows, list) or not rows:
-        return "uncertain", []
+        return ClaimVerdict.UNCERTAIN, []
+    # A row's verdict is parsed: a word outside the vocabulary fails the check
+    # attempt rather than reading as "not a contradiction".
+    verdicts = [ClaimVerdict(row.get("verdict")) for row in rows]
     named = [
         str(row.get("claim", "")).strip()
-        for row in rows
-        if row.get("verdict") == "contradicts" and str(row.get("claim", "")).strip()
+        for row, verdict in zip(rows, verdicts, strict=True)
+        if verdict is ClaimVerdict.CONTRADICTS and str(row.get("claim", "")).strip()
     ]
-    if any(row.get("verdict") == "contradicts" for row in rows):
-        return "contradicts", named
-    return "consistent", []
+    if ClaimVerdict.CONTRADICTS in verdicts:
+        return ClaimVerdict.CONTRADICTS, named
+    return ClaimVerdict.CONSISTENT, []
 
 
 # Why a brief was not written, in the words the nightly log and the prose
@@ -480,7 +490,7 @@ class DeskNarrator:
         try:
             payload = json.loads(result["content"])
             brief = DeskBrief(
-                stance=str(payload["stance"]),
+                stance=BriefStance(payload["stance"]),
                 verdict=_cut(str(payload["verdict"]), 200),
                 reasoning=_cut(str(payload["reasoning"]), 700),
                 risks=_cut(str(payload["risks"]), 300),
@@ -537,7 +547,7 @@ class DeskNarrator:
                     0.0,
                 )
                 verdict, named = _check_verdict(json.loads(result["content"]))
-                if verdict == "consistent":
+                if verdict is ClaimVerdict.CONSISTENT:
                     consistent += 1
                 for claim in named:
                     if claim not in claims:

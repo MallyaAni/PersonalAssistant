@@ -3,8 +3,12 @@
 import hashlib
 import json
 
+import httpx
 import pytest
 
+from backend.agents.trading import current_setup
+from backend.agents.trading.desk import economist, narrative
+from backend.core.llm import OpenAICompatibleInferenceProvider, StrictSchema
 from backend.market import labels
 from backend.market.labels import as_member, parse, values
 
@@ -215,3 +219,174 @@ def test_enums_of_source_bound_producers_match_their_words():
         entry_timing.CLOSED,
     )
     assert list(states) == values(labels.EntryTimingState)
+
+
+# The OpenAI-compatible provider marks a strict schema's request strict and
+# leaves every other caller's request byte for byte as it was.
+def test_only_a_strict_schema_is_sent_strict():
+    sent = []
+
+    # Answer like vLLM and keep the request body the provider sent.
+    def answer(request):
+        sent.append(json.loads(request.content))
+        return httpx.Response(
+            200, json={"choices": [{"message": {"content": '{"x": "a"}'}}]}
+        )
+
+    provider = OpenAICompatibleInferenceProvider(
+        "http://engine",
+        "model",
+        reasoning_effort="",
+        client=httpx.Client(transport=httpx.MockTransport(answer)),
+    )
+    schema = {"title": "X", "type": "object"}
+    messages = [{"role": "user", "content": "q"}]
+    provider.chat(messages, 10, schema, 0.0)
+    provider.chat(messages, 10, StrictSchema(schema), 0.0)
+    assert sent[0]["response_format"] == {
+        "type": "json_schema",
+        "json_schema": {"name": "X", "schema": schema},
+    }
+    assert sent[1]["response_format"] == {
+        "type": "json_schema",
+        "json_schema": {"name": "X", "schema": schema, "strict": True},
+    }
+
+
+# A scripted engine for the label-returning agents: it records each request
+# and answers with whatever label the test supplies, so the test can show the
+# request carries the enum and the agent refuses a word outside it.
+def _engine(reply):
+    sent = []
+
+    # Return the scripted JSON reply to every request.
+    def answer(request):
+        body = json.loads(request.content)
+        sent.append(body)
+        return httpx.Response(
+            200,
+            json={
+                "model": "model",
+                "choices": [
+                    {
+                        "message": {"content": json.dumps(reply(body))},
+                        "finish_reason": "stop",
+                    }
+                ],
+            },
+        )
+
+    provider = OpenAICompatibleInferenceProvider(
+        "http://engine",
+        "model",
+        reasoning_effort="",
+        client=httpx.Client(transport=httpx.MockTransport(answer)),
+    )
+    return provider, sent
+
+
+# The strict JSON schema the request carried, which the engine enforces.
+def _strict_schema(body):
+    shape = body["response_format"]
+    assert shape["type"] == "json_schema"
+    assert shape["json_schema"]["strict"] is True
+    return shape["json_schema"]["schema"]
+
+
+# The brief's stance is enumerated in a strict request; a stance outside the
+# enum (which the engine would never emit) is refused as a bad shape.
+def test_brief_stance_is_schema_enforced_and_other_stances_are_refused():
+    brief = {
+        "stance": "buy",
+        "verdict": "A reason here",
+        "reasoning": "Twenty or more characters of reasoning.",
+        "risks": "Some risk",
+        "watch": "Something to watch",
+    }
+    provider, sent = _engine(lambda body: brief)
+    result, failure = narrative.DeskNarrator(provider).brief_outcome("Grade: A+.", "A+")
+    schema = _strict_schema(sent[0])
+    assert schema["properties"]["stance"]["enum"] == ["own", "wait", "avoid"]
+    assert result is None
+    assert failure["reason"].startswith(narrative.BAD_SHAPE)
+
+    provider, sent = _engine(lambda body: {**brief, "stance": "own"})
+    written, _ = narrative.DeskNarrator(provider)._write_brief("Grade: A+.")
+    assert written.stance is labels.BriefStance.OWN
+
+
+# The checker's claim verdicts are enumerated in a strict request; a verdict
+# outside the enum makes that check attempt count for nothing.
+def test_brief_check_verdict_is_schema_enforced_and_other_verdicts_are_refused():
+    brief = narrative.DeskBrief(
+        labels.BriefStance.OWN, "verdict", "reasoning text", "risks", "watch"
+    )
+    provider, sent = _engine(
+        lambda body: {"claims": [{"claim": "c", "fact": "f", "verdict": "fine"}]}
+    )
+    assert narrative.DeskNarrator(provider)._check("Grade: A+.", brief) == []
+    schema = _strict_schema(sent[0])
+    verdict = schema["properties"]["claims"]["items"]["properties"]["verdict"]
+    assert verdict["enum"] == ["consistent", "contradicts", "uncertain"]
+
+    provider, _ = _engine(
+        lambda body: {"claims": [{"claim": "c", "fact": "f", "verdict": "consistent"}]}
+    )
+    assert narrative.DeskNarrator(provider)._check("Grade: A+.", brief) is None
+
+
+# The economist's pressure is enumerated in a strict request; another word
+# falls back to the unavailable reading.
+def test_economist_pressure_is_schema_enforced_and_other_words_fall_back():
+    facts = [{"id": "cpi", "status": "available", "value": 1}]
+    provider, sent = _engine(lambda body: {"pressure": "hot", "evidence_ids": ["cpi"]})
+    result = economist.assess(facts, provider)
+    assert _strict_schema(sent[0])["properties"]["pressure"]["enum"] == [
+        "easing",
+        "building",
+        "mixed",
+        "unknown",
+    ]
+    assert result["status"] == "unavailable"
+    assert result["pressure"] == "unknown"
+
+    reply = {"pressure": "building", "evidence_ids": ["cpi"]}
+    provider, _ = _engine(lambda body: reply)
+    result = economist.assess(facts, provider)
+    assert result["pressure"] is labels.InflationPressure.BUILDING
+    assert json.dumps(result["pressure"]) == '"building"'
+
+
+# Chart judgments come back as one strict structured output whose labels are
+# enumerated; a judgment outside a vocabulary fails the whole batch closed.
+def test_chart_setup_labels_are_schema_enforced_and_other_labels_are_refused():
+    fact = {
+        "ticker": "AAA",
+        "entry_permitted": True,
+        "candles": [{"close": 1}],
+        "levels": {"vwap": {"label": "VWAP", "price": 10}},
+    }
+    row = {
+        "ticker": "AAA",
+        "entry": "ready",
+        "exit": "hold",
+        "entry_priority": "high",
+        "exit_priority": "low",
+        "reason": "Buyers defended the level and reclaimed it cleanly.",
+        "confirmation": "hold_above",
+        "confirmation_ref": "vwap",
+        "invalidation_ref": "vwap",
+    }
+    provider, sent = _engine(lambda body: {"rows": {"AAA": row}})
+    assert current_setup.assess([fact], provider) == [row]
+    properties = _strict_schema(sent[0])["properties"]["rows"]["properties"]["AAA"][
+        "properties"
+    ]
+    assert properties["entry"]["enum"] == ["ready", "wait", "avoid"]
+    assert properties["exit"]["enum"] == ["review", "hold"]
+    assert properties["confirmation"]["enum"] == ["hold_above", "reclaim_above", "none"]
+    assert "tools" not in sent[0]
+    for key, word in (("entry", "buy"), ("exit", "sell"), ("exit_priority", "max")):
+        bad = {"rows": {"AAA": {**row, key: word}}}
+        provider, _ = _engine(lambda body, bad=bad: bad)
+        assert current_setup.assess([fact], provider) == []

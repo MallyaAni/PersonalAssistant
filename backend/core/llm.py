@@ -13,6 +13,16 @@ logger = logging.getLogger(__name__)
 InferenceProviderKind = Literal["openai_compatible"]
 
 
+# A response schema the engine must hold the answer to exactly, sent as an
+# OpenAI-style structured output with "strict": true. It is a plain dict
+# subclass so every writer, recorder and test double that takes a schema
+# takes this one unchanged; only the OpenAI-compatible provider reads the
+# marker, and a caller that wants an enumerated label enforced by the engine
+# (rather than checked after the fact) wraps its schema in it.
+class StrictSchema(dict[str, Any]):
+    """A JSON schema whose request is marked "strict": true."""
+
+
 class InferenceProvider(ABC):
     """Provider-neutral contract for text, streaming, and tool inference."""
 
@@ -255,12 +265,15 @@ class OpenAICompatibleInferenceProvider(InferenceProvider):
         # A caller-supplied schema is decoded as a grammar, so a violating field
         # name or type becomes unrepresentable rather than a post-hoc retry.
         if response_schema is not None:
+            json_schema: dict[str, Any] = {
+                "name": str(response_schema.get("title") or "response"),
+                "schema": response_schema,
+            }
+            if isinstance(response_schema, StrictSchema):
+                json_schema["strict"] = True
             payload["response_format"] = {
                 "type": "json_schema",
-                "json_schema": {
-                    "name": str(response_schema.get("title") or "response"),
-                    "schema": response_schema,
-                },
+                "json_schema": json_schema,
             }
         return payload
 

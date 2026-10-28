@@ -7,6 +7,7 @@ from datetime import UTC, datetime, timedelta
 import pytest
 
 from backend.agents.trading import current_setup
+from backend.core.llm import StrictSchema
 from backend.market import current_opportunities as current
 from backend.market.alpaca import IntradayBar
 
@@ -170,24 +171,15 @@ def test_current_collector_publishes_and_deduplicates(tmp_path, monkeypatch):
         model = "controlled-model"
 
         # Record each inference so a duplicate pass cannot masquerade as persistence.
-        def chat_with_tools(self, messages, tools, max_tokens):
+        def chat(self, messages, max_tokens, response_schema, temperature):
+            assert isinstance(response_schema, StrictSchema)
+            assert temperature == 0.0
             facts = json.loads(messages[-1]["content"])["stocks"]
             calls.append(facts)
             return {
-                "tool_calls": [
-                    {
-                        "function": {
-                            "name": "record_chart_setups",
-                            "arguments": json.dumps(
-                                {
-                                    "rows": {
-                                        fact["ticker"]: judgment(fact) for fact in facts
-                                    }
-                                }
-                            ),
-                        }
-                    }
-                ]
+                "content": json.dumps(
+                    {"rows": {fact["ticker"]: judgment(fact) for fact in facts}}
+                )
             }
 
     # Confirm the only provider request uses free raw IEX observations.
@@ -222,26 +214,17 @@ def test_current_collector_failed_inference_can_recover(tmp_path, monkeypatch):
         model = "controlled-model"
 
         # Retain failed inference evidence without upgrading it into a judgment.
-        def chat_with_tools(self, messages, tools, max_tokens):
+        def chat(self, messages, max_tokens, response_schema, temperature):
+            assert isinstance(response_schema, StrictSchema)
+            assert temperature == 0.0
             calls.append(1)
             if len(calls) == 1:
                 raise TimeoutError()
             facts = json.loads(messages[-1]["content"])["stocks"]
             return {
-                "tool_calls": [
-                    {
-                        "function": {
-                            "name": "record_chart_setups",
-                            "arguments": json.dumps(
-                                {
-                                    "rows": {
-                                        fact["ticker"]: judgment(fact) for fact in facts
-                                    }
-                                }
-                            ),
-                        }
-                    }
-                ]
+                "content": json.dumps(
+                    {"rows": {fact["ticker"]: judgment(fact) for fact in facts}}
+                )
             }
 
     writer = Writer()
@@ -277,29 +260,20 @@ def test_current_collector_recovers_missing_grid_and_keeps_original_facts(
     monkeypatch.setattr(current.deskrecord, "latest_pair", lambda root: (record, None))
     calls = []
 
-    # Record the supplied universe and return a grounded native tool response.
+    # Record the supplied universe and return a grounded strict structured response.
     class Writer:
         model = "controlled-model"
 
         # Keep the inference receipt tied to only the names still missing a judgment.
-        def chat_with_tools(self, messages, tools, max_tokens):
+        def chat(self, messages, max_tokens, response_schema, temperature):
+            assert isinstance(response_schema, StrictSchema)
+            assert temperature == 0.0
             facts = json.loads(messages[-1]["content"])["stocks"]
             calls.append([fact["ticker"] for fact in facts])
             return {
-                "tool_calls": [
-                    {
-                        "function": {
-                            "name": "record_chart_setups",
-                            "arguments": json.dumps(
-                                {
-                                    "rows": {
-                                        fact["ticker"]: judgment(fact) for fact in facts
-                                    }
-                                }
-                            ),
-                        }
-                    }
-                ]
+                "content": json.dumps(
+                    {"rows": {fact["ticker"]: judgment(fact) for fact in facts}}
+                )
             }
 
     writer = Writer()
