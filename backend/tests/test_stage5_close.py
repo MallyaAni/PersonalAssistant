@@ -45,6 +45,7 @@ import pytest
 from backend.agents.trading.desk import (
     desk,
     entry,
+    event_risk,
     fundamental,
     opinions,
     point_in_time,
@@ -73,6 +74,30 @@ from backend.market import technical as market_technical
 from backend.market.panel import Panel
 from backend.market.sip_cube import FULL_SESSION_SLOTS, SessionCube
 from backend.market.universe import AI_COMPUTE, SOFTWARE
+
+
+# The stage-5 control was registered under the retired pre-meeting FOMC cut.
+# The live policy holds through meetings since 2026-10-28, so pin the old
+# exposure path for this frozen research artifact; the retirement is a live
+# policy change, not a change to the study's arithmetic.
+def _retired_event_path(panel):
+    path = event_risk.exposure_path(
+        panel,
+        event_risk.fomc_decisions(),
+        event_risk.PRE_SESSIONS,
+        event_risk.REDUCED,
+        True,
+    )
+    return np.where(panel.dates >= np.datetime64(event_risk.GUIDANCE_CHANGE), path, 1.0)
+
+
+@pytest.fixture(scope="module", autouse=True)
+def _frozen_event_policy():
+    with pytest.MonkeyPatch.context() as pin:
+        pin.setattr(event_risk, "VERSION", "fomc-3-session-weakness/2")
+        pin.setattr(event_risk, "live_path", _retired_event_path)
+        yield
+
 
 T = 470
 PROXY_FROM = 260

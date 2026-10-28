@@ -100,11 +100,27 @@ def _case():
 FROZEN_EXECUTION_POLICY = "cash-bounded-breakout-rotation/3"
 
 
-# Pin the executor label to the frozen one for every test in this module.
+# The retired pre-meeting FOMC cut the frozen protocol was registered under.
+# The live policy holds through meetings since 2026-10-28, so the frozen study
+# pins the old version and its exposure path rather than reading the live one.
+def _retired_event_path(panel):
+    path = event_risk.exposure_path(
+        panel,
+        event_risk.fomc_decisions(),
+        event_risk.PRE_SESSIONS,
+        event_risk.REDUCED,
+        True,
+    )
+    return np.where(panel.dates >= np.datetime64(event_risk.GUIDANCE_CHANGE), path, 1.0)
+
+
+# Pin the executor label and the event policy to the frozen ones for every test.
 @pytest.fixture(scope="module", autouse=True)
 def _frozen_executor():
     with pytest.MonkeyPatch.context() as pin:
         pin.setattr(paper, "POLICY_VERSION", FROZEN_EXECUTION_POLICY)
+        pin.setattr(event_risk, "VERSION", "fomc-3-session-weakness/2")
+        pin.setattr(event_risk, "live_path", _retired_event_path)
         yield
 
 

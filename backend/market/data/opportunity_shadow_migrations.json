@@ -436,5 +436,47 @@
   "to": "8a0a51213ea76fc8e763b6368e4932eac1a7d8f859afe3b7058b1415f828a633",
   "declared": "2026-10-25",
   "reason": "edgar.SHARE_COUNT_FALLBACK_TAGS / WEIGHTED_SHARES_NAME add the weighted-average diluted share counts, stored in the versions frame under their own name and read only by levels_pit.versions_levels / point_in_time_levels as a tier-1 share count (chosen on a session only when its period end is later than every cover-page and balance-sheet count's), with every share count checked against a floor and the net-income / diluted-EPS implied count. edgar.FACT_TAGS, edgar.INSTANT_TAGS, edgar.parse_company_facts, the stored facts frame, edgar.edgar_features and levels_pit.trailing_levels, which are all the shadow reads (through opportunity_learning), are unchanged, as are the model bundle and every other hashed module; the shadow continues unchanged. Archived observations are not rewritten."
+ },
+ {
+  "from": "19f933ffc785a21c1275fe3f00e822fb755184e234f41fcee466c3128e5bd34f",
+  "to": "c75ae9a398097e58c3f7d6e119841c550b923a176701def5234be97f36e75f32",
+  "declared": "2026-10-28",
+  "reason": "edgar.results_headline / PERIOD_WORDS / RESULT_WORDS / NOT_A_RESULTS / RESULTS_REPORTED and the 6-K classifier were repaired to admit genuine quarterly results releases that the old rule refused (plain \"sales\", a year before the figure, a published-results phrase anywhere in the head, and a dividend or buyback word only when no result word precedes it). edgar.edgar_features and levels_pit.trailing_levels, which are all the shadow reads through opportunity_learning, are arithmetically unchanged; the repair changes which stored 6-K filings are admitted as results releases and reaches the store only through the declared one-time reclassify, which is a data correction and does not rewrite archived shadow observations. The model bundle, features, execution, price inputs, target construction and funded ledger are unchanged; the shadow continues."
+ },
+ {
+  "from": "39a7f99d0a31e284798eae906d262a98fad4b4f0d7b22da84087cb9b1fa802a8",
+  "to": "c75ae9a398097e58c3f7d6e119841c550b923a176701def5234be97f36e75f32",
+  "declared": "2026-10-28",
+  "reason": "edgar.results_headline / PERIOD_WORDS / RESULT_WORDS / NOT_A_RESULTS / RESULTS_REPORTED and the 6-K classifier were repaired to admit genuine quarterly results releases that the old rule refused (plain \"sales\", a year before the figure, a published-results phrase anywhere in the head, and a dividend or buyback word only when no result word precedes it). edgar.edgar_features and levels_pit.trailing_levels, which are all the shadow reads through opportunity_learning, are arithmetically unchanged; the repair changes which stored 6-K filings are admitted as results releases and reaches the store only through the declared one-time reclassify, which is a data correction and does not rewrite archived shadow observations. The model bundle, features, execution, price inputs, target construction and funded ledger are unchanged; the shadow continues."
+ },
+ {
+  "from": "4b5e711070e9ecbad73f179de89a5aac68a9d8d4bde4796dc29088c11477baac",
+  "to": "c75ae9a398097e58c3f7d6e119841c550b923a176701def5234be97f36e75f32",
+  "declared": "2026-10-28",
+  "reason": "edgar.results_headline / PERIOD_WORDS / RESULT_WORDS / NOT_A_RESULTS / RESULTS_REPORTED and the 6-K classifier were repaired to admit genuine quarterly results releases that the old rule refused (plain \"sales\", a year before the figure, a published-results phrase anywhere in the head, and a dividend or buyback word only when no result word precedes it). edgar.edgar_features and levels_pit.trailing_levels, which are all the shadow reads through opportunity_learning, are arithmetically unchanged; the repair changes which stored 6-K filings are admitted as results releases and reaches the store only through the declared one-time reclassify, which is a data correction and does not rewrite archived shadow observations. The model bundle, features, execution, price inputs, target construction and funded ledger are unchanged; the shadow continues."
+ },
+ {
+  "from": "884a9418c7d1fda8768755494162ddcc8ce0123d3442396dd9aabf1df10bbdf1",
+  "to": "c75ae9a398097e58c3f7d6e119841c550b923a176701def5234be97f36e75f32",
+  "declared": "2026-10-28",
+  "reason": "edgar.results_headline / PERIOD_WORDS / RESULT_WORDS / NOT_A_RESULTS / RESULTS_REPORTED and the 6-K classifier were repaired to admit genuine quarterly results releases that the old rule refused (plain \"sales\", a year before the figure, a published-results phrase anywhere in the head, and a dividend or buyback word only when no result word precedes it). edgar.edgar_features and levels_pit.trailing_levels, which are all the shadow reads through opportunity_learning, are arithmetically unchanged; the repair changes which stored 6-K filings are admitted as results releases and reaches the store only through the declared one-time reclassify, which is a data correction and does not rewrite archived shadow observations. The model bundle, features, execution, price inputs, target construction and funded ledger are unchanged; the shadow continues."
+ },
+ {
+  "from": "dc1d5fa6a445b8d0fcfaddc0886fcd13d2025f26b771ece3a6fb37aab574fbed",
+  "to": "c75ae9a398097e58c3f7d6e119841c550b923a176701def5234be97f36e75f32",
+  "declared": "2026-10-28",
+  "reason": "edgar.results_headline / PERIOD_WORDS / RESULT_WORDS / NOT_A_RESULTS / RESULTS_REPORTED and the 6-K classifier were repaired to admit genuine quarterly results releases that the old rule refused (plain \"sales\", a year before the figure, a published-results phrase anywhere in the head, and a dividend or buyback word only when no result word precedes it). edgar.edgar_features and levels_pit.trailing_levels, which are all the shadow reads through opportunity_learning, are arithmetically unchanged; the repair changes which stored 6-K filings are admitted as results releases and reaches the store only through the declared one-time reclassify, which is a data correction and does not rewrite archived shadow observations. The model bundle, features, execution, price inputs, target construction and funded ledger are unchanged; the shadow continues."
+ },
+ {
+  "from": "df47189d60dd11b108a0e29ece29a07f452ea8bece337baba9326b549aa7665a",
+  "to": "c75ae9a398097e58c3f7d6e119841c550b923a176701def5234be97f36e75f32",
+  "declared": "2026-10-28",
+  "reason": "edgar.results_headline / PERIOD_WORDS / RESULT_WORDS / NOT_A_RESULTS / RESULTS_REPORTED and the 6-K classifier were repaired to admit genuine quarterly results releases that the old rule refused (plain \"sales\", a year before the figure, a published-results phrase anywhere in the head, and a dividend or buyback word only when no result word precedes it). edgar.edgar_features and levels_pit.trailing_levels, which are all the shadow reads through opportunity_learning, are arithmetically unchanged; the repair changes which stored 6-K filings are admitted as results releases and reaches the store only through the declared one-time reclassify, which is a data correction and does not rewrite archived shadow observations. The model bundle, features, execution, price inputs, target construction and funded ledger are unchanged; the shadow continues."
+ },
+ {
+  "from": "e8f98a4324df6172abcd6b1d5b9c45ecd6e5bbe46a7f91588d532862ea74e22e",
+  "to": "c75ae9a398097e58c3f7d6e119841c550b923a176701def5234be97f36e75f32",
+  "declared": "2026-10-28",
+  "reason": "edgar.results_headline / PERIOD_WORDS / RESULT_WORDS / NOT_A_RESULTS / RESULTS_REPORTED and the 6-K classifier were repaired to admit genuine quarterly results releases that the old rule refused (plain \"sales\", a year before the figure, a published-results phrase anywhere in the head, and a dividend or buyback word only when no result word precedes it). edgar.edgar_features and levels_pit.trailing_levels, which are all the shadow reads through opportunity_learning, are arithmetically unchanged; the repair changes which stored 6-K filings are admitted as results releases and reaches the store only through the declared one-time reclassify, which is a data correction and does not rewrite archived shadow observations. The model bundle, features, execution, price inputs, target construction and funded ledger are unchanged; the shadow continues."
  }
 ]
