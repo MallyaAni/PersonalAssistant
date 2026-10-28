@@ -25,7 +25,6 @@ import {
   getDeskHistory,
   getDeskStrategyStock,
   getDeskHoldings,
-  getDeskIntraday,
   getDeskLive,
   getDeskModelAllocation,
   getDeskLiveRead,
@@ -44,7 +43,6 @@ import {
   type DeskHistory,
   type DeskHistoryRow,
   type DeskStrategyStock,
-  type DeskIntraday,
   type DeskLive,
   type DeskModelAllocation,
   type DeskLiveRead,
@@ -1136,7 +1134,6 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
   // The last whole-board poll start, so the Stocks strip can count down to the
   // next refresh instead of leaving the poll interval implicit.
   const [polledAt, setPolledAt] = useState(Date.now)
-  const [intraday, setIntraday] = useState<DeskIntraday | null>(null)
   // The confirmed personal account figures the board is computed against.
   // Equity starts from the per-browser convenience value (legacy default
   // $100,000) and becomes editable; cash is session-memory only - never
@@ -1522,11 +1519,6 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
               <DecisionCell ticker={previewTicker} decisions={decisions} latest={latest} now={now} />
             </div>
           </div>}
-          {intraday && intraday.session === latest.session && now - Date.parse(intraday.as_of) <= CANDLE_MS && intraday.changed && intraday.changed.length > 0 && (
-            <p className="mb-2 text-xs text-[#9a6200]">
-              Since the last plan: {intraday.changed.join(' · ')}
-            </p>
-          )}
           {holdingsError && <p role="alert" className="mb-2 text-xs text-[#b42318]">{holdingsError}</p>}
           {canWrite && holdingsReady && editing && (
             <Positions

@@ -2759,18 +2759,6 @@ export interface DeskMineRow {
   leaves_if: string;
 }
 
-// The balancer's persisted intraday plan: the same board, recomputed
-// headlessly on the fifteen-minute candle, with what changed since the
-// previous run.
-export interface DeskIntraday {
-  as_of: string;
-  session: string | null;
-  equity: number;
-  top_buys: DeskMineRow[];
-  rows: DeskMineRow[];
-  changed: string[];
-}
-
 // Fail explicitly when positions cannot be read; missing access is not an empty account.
 export const getDeskHoldings = async (userId: string): Promise<DeskHolding[]> => {
   const response = await authenticatedFetch(
@@ -2874,12 +2862,6 @@ const deskHistoryResponse = async <T>(response: Response): Promise<T> => {
   return await response.json() as T;
 };
 
-// Acknowledge the exact server receipt after the dashboard has accepted its context.
-export const acknowledgeDeskHistory = async (userId: string, id: string, session: string, written: string): Promise<{ id: string; status: 'acknowledged'; acknowledged_at: string }> =>
-  deskHistoryResponse(await authenticatedFetch(`${API_BASE_URL}/api/v1/market/${encodeURIComponent(userId)}/desk/personal-history/${encodeURIComponent(id)}/acknowledge`, {
-    method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({session, written}),
-  }));
-
 // Fetch one bounded page of the owner's generated and acknowledged decision receipts.
 export const getDeskPersonalHistory = async (userId: string, before?: string): Promise<DeskPersonalHistory> =>
   deskHistoryResponse(await authenticatedFetch(`${API_BASE_URL}/api/v1/market/${encodeURIComponent(userId)}/desk/personal-history?limit=20${before ? `&before=${encodeURIComponent(before)}` : ''}`));
@@ -2887,10 +2869,6 @@ export const getDeskPersonalHistory = async (userId: string, before?: string): P
 // Export one stored receipt through the same owner check as its history listing.
 export const exportDeskPersonalReceipt = async (userId: string, id: string): Promise<DeskPersonalReceipt> =>
   deskHistoryResponse(await authenticatedFetch(`${API_BASE_URL}/api/v1/market/${encodeURIComponent(userId)}/desk/personal-history/${encodeURIComponent(id)}`));
-
-// Delete only the one receipt the owner selected; holdings and orders are separate.
-export const deleteDeskPersonalReceipt = async (userId: string, id: string): Promise<unknown> =>
-  deskHistoryResponse(await authenticatedFetch(`${API_BASE_URL}/api/v1/market/${encodeURIComponent(userId)}/desk/personal-history/${encodeURIComponent(id)}`, {method: 'DELETE'}));
 
 export interface DeskOpportunity {
   version: string; score: number | null; status: string; price: number | null;
@@ -2985,41 +2963,6 @@ export interface DeskDecisions {
   }>;
 }
 
-export interface DeskFundingPreview {
-  reductions?: { ticker: string; held_shares: number; target_total_shares: number; reduction_shares: number }[];
-  mode?: string;
-  valid_until?: string | null;
-  macro?: { defensive: boolean; exposure: number; base_exposure: number } | null;
-  session: string;
-  calculated_at: string;
-  estimated_cost: number;
-  unallocated_cash: number;
-  cash_limited: boolean;
-  price_times: Record<string, string | null>;
-  rows: { ticker: string; reference_price: number; held_shares: number; target_total_shares: number; additional_shares: number; estimated_cost: number }[];
-}
-
-// Send confirmed planning cash in the request body, without storing it in a URL.
-export const getDeskFundingPreview = async (userId: string, equity: number, availableCash: number, mode = 'evening'): Promise<DeskFundingPreview> => {
-  const response = await authenticatedFetch(`${API_BASE_URL}/api/v1/market/${encodeURIComponent(userId)}/desk/funding-preview`, {
-    method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ equity, available_cash: availableCash, ...(mode === 'evening' ? {} : {mode}) }),
-  });
-  if (!response.ok) {
-    // The backend names the reason - no evening decision, the research
-    // allocation missing or belonging to another decision, a bad figure -
-    // and masking it with a generic failure leaves the person guessing. Read
-    // the detail through when the body carries it.
-    let detail = 'Sizing preview unavailable. Check account equity, cash and market data.'
-    try {
-      const body = await response.json()
-      if (body && typeof body.detail === 'string' && body.detail) detail = body.detail
-    } catch { /* keep the fallback */ }
-    throw new Error(detail)
-  }
-  return await response.json() as DeskFundingPreview;
-};
-
 // Preserve the evidence deadlines so an open page can expire an intraday grade.
 // The confirmed personal account figures travel in the request body, never in
 // the URL; `availableCash` is optional because an empty/unknown cash figure
@@ -3049,16 +2992,6 @@ export const getDeskMine = async (userId: string, equity: number, availableCash?
   }
   const data = (await response.json()) as Partial<DeskMine>;
   return { session: data.session, market_status: data.market_status, decisions: data.decisions, history_receipt: data.history_receipt, grade_valid_until: data.grade_valid_until ?? {}, rows: data.rows ?? [], grades_live: data.grades_live ?? {} };
-};
-
-// The balancer's persisted intraday plan (recomputed every fifteen minutes),
-// or null when none has been written yet.
-export const getDeskIntraday = async (userId: string): Promise<DeskIntraday | null> => {
-  const response = await authenticatedFetch(
-    `${API_BASE_URL}/api/v1/market/${encodeURIComponent(userId)}/desk/intraday`,
-  );
-  if (!response.ok) return null;
-  return (await response.json()) as DeskIntraday;
 };
 
 // The practice account as the broker reports it now. `pl_pct` is the
@@ -3341,53 +3274,6 @@ export interface StrategyBench {
   blocks: StrategyBenchBlock[];
 }
 
-// Where each name the desk wants to hold sits as an ENTRY, right now.
-// The board answers what to hold; this answers whether now is a moment to
-// start, which is the question while a price is moving. Ranked server-side,
-// because the ordering encodes which measured edge is larger.
-export interface DeskEntryRow {
-  ticker: string;
-  grade: string | null;
-  // "dip", "breakout", or null when neither trigger is firing.
-  trigger: 'dip' | 'breakout' | null;
-  // The strongest measured dip reading: below the band while the AI basket
-  // is falling.
-  with_the_basket_falling: boolean;
-  // Position in the 20-day band: -1 at the lower edge, +1 at the upper.
-  band_z: number | null;
-  // Close against the 21-day EMA, as a fraction.
-  stretch_21: number | null;
-  horizon_sessions: number | null;
-  last: number | null;
-  bar: string | null;
-}
-
-export interface DeskEntries {
-  user_id: string;
-  session: string | null;
-  as_of?: string | null;
-  bar?: string | null;
-  rows: DeskEntryRow[];
-  reason?: string;
-  edges?: {
-    dip: { horizon_sessions: number; excess: number; with_basket_falling: number };
-    breakout: { horizon_sessions: number; excess: number };
-  };
-}
-
-export const getDeskEntries = async (
-  userId: string,
-  grades = 'A+,A',
-): Promise<DeskEntries> => {
-  const response = await authenticatedFetch(
-    `${API_BASE_URL}/api/v1/market/${encodeURIComponent(userId)}/desk/entries?grades=${encodeURIComponent(grades)}`,
-  );
-  if (!response.ok) {
-    return { user_id: userId, session: null, rows: [], reason: `Entries unavailable (HTTP ${response.status}).` };
-  }
-  return (await response.json()) as DeskEntries;
-};
-
 // One name's drawable price history: the bars a trader looks at, plus the
 // averages, bands and levels the analysts actually score on. Split from the
 // history call on purpose — that one answers what the desk concluded, this
@@ -3601,30 +3487,6 @@ export interface DeskStrategyStock extends DeskStrategySimulation {
   grade_rows?: {date: string; at?: string; grade: string | null; said: boolean}[];
 }
 
-export interface DeskStrategySummary extends DeskStrategySimulation {
-  initial_cash: number;
-  starting_equity: number;
-  starting_holdings: Record<string, number>;
-  starting_basis: string;
-  ending_equity: number | null;
-  ending_cash: number;
-  ending_holdings: Record<string, number>;
-  latest_targets: Record<string, number | null>;
-  latest_decisions: DeskStrategyDecision[];
-  latest_positions: {symbol: string; qty: number; current_price: number; market_value: number; avg_entry_price: number}[];
-  stock_overview: Record<string, {target: number | null; holding: number; last_trade: DeskStrategyTrade | null; trades: number}>;
-  curve: {date: string; equity: number | null; cash: number}[];
-}
-
-// Read the explicit counterfactual portfolio without requesting account advice or orders.
-export const getDeskStrategySimulation = async (userId: string): Promise<DeskStrategySummary> => {
-  const response = await authenticatedFetch(`${API_BASE_URL}/api/v1/market/${encodeURIComponent(userId)}/desk/strategy-simulation`);
-  if (!response.ok) throw new Error('Latest-strategy simulation unavailable.');
-  const result = await response.json() as DeskStrategySummary;
-  if (result.schema !== 'latest-strategy-simulation/1' || result.counterfactual !== true || result.real_orders !== false || !result.stock_overview || !Array.isArray(result.latest_decisions)) throw new Error('Invalid latest-strategy simulation.');
-  return result;
-};
-
 // Read one stock's simulated actions and sizes independently of old paper fills.
 export const getDeskStrategyStock = async (userId: string, ticker: string): Promise<DeskStrategyStock> => {
   const response = await authenticatedFetch(`${API_BASE_URL}/api/v1/market/${encodeURIComponent(userId)}/desk/strategy-simulation/${encodeURIComponent(ticker)}`);
@@ -3701,50 +3563,6 @@ export const getDeskRecordedStrategyRecommendations = async (userId: string, tic
     ids.add(item.id);
   }
   return value;
-};
-
-export interface DeskLiveModelDecision {
-  id: string;
-  ticker: string;
-  date: string;
-  at: string;
-  action: TradeAction;
-  qty: number;
-  grade: string | null;
-  previous_grade: string | null;
-  grade_signal: string;
-  target_weight: number | null;
-  model_target_weight: number | null;
-  holding: number;
-  reason: string;
-  status: string;
-  executed_qty: number;
-  state: 'executed' | 'partial' | 'not_executed' | 'no_order';
-}
-
-export interface DeskLiveModelHistory {
-  schema: 'live-model-historical-sizing/1';
-  policy: 'grade-led-learned-sizing/1';
-  ticker: string;
-  start: string;
-  through: string;
-  starting_cash: number;
-  starting_holdings: Record<string, number>;
-  counterfactual: true;
-  real_orders: false;
-  provenance: {cost_bps: number; original_holding_publication: string; original_holding_fit_date: string; basis: string};
-  decisions: DeskLiveModelDecision[];
-  trades: Array<Omit<DeskStrategyTrade, 'action' | 'weight'> & {action: DeskLiveModelDecision['action']}>;
-  targets: {date: string; weight: number | null; model_weight?: number | null; holding?: number; grade?: string | null; status: string; reason?: string}[];
-}
-
-// Read current live-model historical quantities without substituting an older policy.
-export const getDeskLiveModelHistory = async (userId: string, ticker: string): Promise<DeskLiveModelHistory> => {
-  const response = await authenticatedFetch(`${API_BASE_URL}/api/v1/market/${encodeURIComponent(userId)}/desk/live-model-history/${encodeURIComponent(ticker)}`);
-  if (!response.ok) throw new Error('Live-model historical sizing unavailable for this stock.');
-  const result = await response.json() as DeskLiveModelHistory;
-  if (result.schema !== 'live-model-historical-sizing/1' || result.policy !== 'grade-led-learned-sizing/1' || result.ticker !== ticker || result.counterfactual !== true || result.real_orders !== false || !Array.isArray(result.decisions) || !Array.isArray(result.trades)) throw new Error('Invalid live-model historical sizing.');
-  return result;
 };
 
 // The newest earnings release read for one name, straight from the release
