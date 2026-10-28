@@ -193,9 +193,9 @@ announcement is still refused. Re-decided from scratch against all 362 real
 filings, the rule admits eleven more ASML releases and revokes none of the
 79 already stored; it restores four a year for every year from 2007 through
 2026 and leaves no year above four; 2004-2006 remain short.
-The same re-decision on TSM, SIMO, ARM and NBIS admits nothing new and
-leaves every year at its stored count, so the widened rule does not readmit
-their monthly sales notes or guidance updates. Tests:
+The same full re-decision on TSM, SIMO, ARM and NBIS admits nothing new and
+revokes nothing, so the widened rule does not readmit their monthly sales
+notes or guidance updates. Tests:
 `backend/tests/test_market_edgar_6k.py`. Stored 6-K decisions are
 cached, so the correction reaches the store only through a one-time
 `python -m backend.cli.market_edgar --refresh --reclassify-6k --tickers ASML`
