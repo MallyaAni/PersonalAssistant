@@ -23,8 +23,8 @@ only and was never tuned on.
 
 Run on the live market store, point-in-time book membership, beta-adjusted
 residual returns, `min_names=20`, benchmark excluded. The Newey-West lag is
-one period, which is twenty sessions because the ICs are computed every
-twenty sessions.
+one IC period: twenty sessions in the gating row, sixty in the reported
+60-session row.
 
 | horizon | window | n | mean IC | t | NW t | hit |
 |---|---:|---:|---:|---:|---:|---:|
