@@ -21,20 +21,20 @@ differs from the replay manifest by:
 
 | Metric | Replay manifest | Current baseline | Diff |
 |---|---:|---:|---:|
-| all CAGR | 36.16% | 38.92% | +2.76 pp |
-| all max drawdown | −28.27% | −27.70% | +0.57 pp |
-| all Sharpe | 1.4089 | 1.4927 | +0.0838 |
-| all total | +3,415% | +4,154% | +739 pp |
-| to_2022 CAGR | 19.68% | 22.02% | +2.34 pp |
-| to_2022 max drawdown | −28.27% | −27.70% | +0.57 pp |
-| to_2022 Sharpe | 0.9252 | 1.0162 | +0.0910 |
-| to_2022 total | +301.5% | +358.4% | +57.0 pp |
-| from_2023 CAGR | 77.17% | 81.00% | +3.84 pp |
+| all CAGR | 36.16% | 33.40% | −2.76 pp |
+| all max drawdown | −28.27% | −28.85% | −0.57 pp |
+| all Sharpe | 1.4089 | 1.3252 | −0.0838 |
+| all total | +3,415% | +2,676% | −739 pp |
+| to_2022 CAGR | 19.68% | 17.33% | −2.34 pp |
+| to_2022 max drawdown | −28.27% | −28.85% | −0.57 pp |
+| to_2022 Sharpe | 0.9252 | 0.8342 | −0.0910 |
+| to_2022 total | +301.5% | +244.5% | −57.0 pp |
+| from_2023 CAGR | 77.17% | 73.33% | −3.84 pp |
 | from_2023 max drawdown | −25.38% | −24.91% | +0.47 pp |
-| from_2023 Sharpe | 2.2284 | 2.2961 | +0.0678 |
-| from_2023 total | +775.5% | +845.3% | +69.8 pp |
-| fills | 7,201 | 7,413 | +212 |
-| costs | 70,087.80 | 87,657.88 | +17,570.07 |
+| from_2023 Sharpe | 2.2284 | 2.1606 | −0.0678 |
+| from_2023 total | +775.5% | +705.7% | −69.8 pp |
+| fills | 7,201 | 6,989 | −212 |
+| costs | 70,087.80 | 52,517.73 | −17,570.07 |
 
 The replay's book cannot be reproduced from today's code, so the first note's
 stop condition fired and neither the B nor the C arm was read. No B/C execution
