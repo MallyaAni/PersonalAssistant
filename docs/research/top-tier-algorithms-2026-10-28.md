@@ -360,14 +360,19 @@ points with no more than 0.5 CAGR points given up, at 25 bp, in both windows.
    with value-only and residual-only controls. Value-only was the best single
    arm at 0.6903 choosing Sharpe, but the blend landed at 0.6748, below the
    +0.05 bar and deeper than the drawdown bar; the arm is closed
-   (`value-momentum-blend-results-2026-10-28.md`). **Research next:** C3, the
-   52-week-high tilt, with the dispersion diagnostic.
-4. **Data audit:** C4, the SUE coverage audit. If coverage is adequate, run the
+   (`value-momentum-blend-results-2026-10-28.md`).
+4. **C3 (closed):** the 52-week-high proximity tilt passed the dispersion
+   diagnostic (median IQR 0.1203) but lost 0.0062 choosing Sharpe, missed the
+   drawdown bar by 1.33 points, and was beaten by its own reverse-high
+   placebo (+0.0231). The arm is closed; the reverse result is a negative
+   finding, not a candidate
+   (`high-proximity-results-2026-10-28.md`). **Research next:** C4.
+5. **Data audit:** C4, the SUE coverage audit. If coverage is adequate, run the
    rank-IC study; if not, record the gap and do not force the signal.
-5. **Owner decision:** C5, the sector-rotation sleeve. It is the honest answer
+6. **Owner decision:** C5, the sector-rotation sleeve. It is the honest answer
    to the sector question, but it is a separate mandate and must not be spliced
    into the AI book.
-6. **Only if a candidate passes:** prepare a release candidate, forward-shadow
+7. **Only if a candidate passes:** prepare a release candidate, forward-shadow
    it, and install it only after the 252-session forward record and the release
    ceremony. The forward record is the only out-of-sample evidence this desk
    will ever have; changing the rule to chase a backtest would destroy it.
