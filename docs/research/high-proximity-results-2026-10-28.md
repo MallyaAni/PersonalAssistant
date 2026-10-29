@@ -99,8 +99,9 @@ remains the best of the registered tilts on the choosing window.
 
 The 10 bp line does not rescue the arm: the high tilt measures 0.7107
 against the baseline's 0.7083 (+0.0024), well inside the noise the gate
-was designed to reject. IT+Comm is flat (+0.0030 Sharpe, +1.16 pp
-shallower drawdown on 16 names), does not gate, and is not a rescue.
+was designed to reject. IT+Comm is flat (+0.0030 Sharpe, −0.10 pp CAGR,
+2.16 pp shallower drawdown on 16 names), does not gate, and is not a
+rescue.
 
 ## What this closes
 
