@@ -1,0 +1,37 @@
+{
+  "authorization": "<owner writes this>",
+  "comparative_performance": "Account-consistency guard only; no rule, sizing, timing, model, cost or execution change. The 2026-10-29 nightly refused the ordinary plan with inconsistent_account_equity because broker equity (85,661.85) was $8.72 below cash (43,910.22) plus quote marks (41,760.353), 1.0 bp of equity, a rounding difference between two separately fetched broker snapshots. The guard reconciles quote marks to the broker equity inside a declared 10 bp tolerance and still refuses a larger disagreement; funded weights are rescaled to sum to one so the optimizer's own funded-weight check stays exact. The installed rule, account simulator and policy replay are unchanged.",
+  "contract": "grade-led-leader-weight/1 (revision 6: entry at A, hold while B, 1% minimum trade, P/E-history sizing tilt 0.5; split-corrected valuation history); valuation analyst at three votes; FOMC pre-meeting cut retired 2026-10-28 (fomc-hold-through-meeting/1), full exposure through meetings; an unknown FOMC calendar no longer blocks ordinary planning while retired; a cycle already open still restores at the decision-day close",
+  "execution": "every leg a market-on-open order at the nightly (revision 1); EWMA-20 volatility estimate (revision 2); entry at A or better, held while B, exit below B (revision 5); resizes under 1% of equity not traded, exits always (revision 5); no FOMC reduction is planned after 2026-10-28; the open 2026-10-28 cycle restores on the decision session's 3:45 PM candle (decision_close), and a cycle finished on the decision night hands the account back to the ordinary plan the same night",
+  "fresh_ordinary_paper_acceptance": "UNVERIFIED; required after installation",
+  "model_publications_unchanged": true,
+  "no_new_fits": true,
+  "original_evidence_sha256": "a23ea1e12c8629c1407a995f23373536e25911e99d4f648d4e7339fe21014b3d",
+  "parameters": {
+    "analyst_weights": {
+      "fundamental": 1,
+      "rotation": 0.5,
+      "sentiment": 1,
+      "technical": 1,
+      "value": 3
+    },
+    "annualisation": 252,
+    "entry_grade": "A",
+    "exposure_floor": 0.5,
+    "hold_grade": "B",
+    "min_trade": 0.01,
+    "pe_history_tilt": {
+      "min_readings": 250,
+      "strength": 0.5,
+      "window_sessions": 756
+    },
+    "per_name_cap": 0.25,
+    "tilt_strength": 0.5,
+    "volatility_estimator": "ewma_span_20",
+    "volatility_target": 0.25,
+    "window_sessions": 63
+  },
+  "source_revision": "<the commit on main carrying the change>",
+  "source_sha256": "<computed at installation>",
+  "targeted_tests": "<written at installation>"
+}

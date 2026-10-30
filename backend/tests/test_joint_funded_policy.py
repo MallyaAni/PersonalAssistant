@@ -402,6 +402,47 @@ def test_incomplete_actual_account_emits_no_orders(
         assert q["reason"] == reason
 
 
+# Broker equity and quote marks arrive in separate snapshots; reconcile mark
+# rounding inside the declared tolerance and refuse a material disagreement.
+@pytest.mark.parametrize(
+    ("mark", "available"),
+    [
+        # 2026-10-29: marks exceeded broker equity by $8.72, 1.0 bp of equity.
+        (41760.353, True),
+        # $248 above the equity-implied mark, 29 bp of equity, must refuse.
+        (42000.0, False),
+    ],
+)
+def test_mark_rounding_is_reconciled_only_inside_tolerance(
+    reader, monkeypatch, mark, available
+):
+    policy = analytic(monkeypatch, reader, {"AAA": [0.10, 0.12]})
+    current = report(reader, grades=(3, 0))
+    orders, state, what = policy.plan(
+        str(current.panel.dates[-1]),
+        paper.PaperState(),
+        85661.85,
+        {"AAA": 1},
+        {"AAA": mark, "BBB": 100.0},
+        current,
+        43910.22,
+        set(),
+    )
+    receipt = state.allocation_state["receipt"]
+    if available:
+        assert what == "joint-funded"
+        assert receipt["status"] == "available"
+        assert receipt["reserved_wealth"] == 0.0
+        weights = receipt["current_weights"]
+        assert weights["AAA"] == pytest.approx(41751.63 / 85661.85)
+        assert sum(weights.values()) + 43910.22 / 85661.85 == pytest.approx(1.0)
+    else:
+        assert what == "joint-funded-unavailable"
+        assert receipt["status"] == "unavailable"
+        assert receipt["reason"] == "inconsistent_account_equity"
+        assert not orders
+
+
 # An entirely unsupported entrant pool reports unavailable without a false growth claim.
 def test_maturity_empty_risk_pool_remains_unavailable(reader):
     shown = report(reader, day=300, grades=(3, 3))

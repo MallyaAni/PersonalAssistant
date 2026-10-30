@@ -27,6 +27,9 @@ MARKET_TIMED_POLICY = (
 HORIZON = "next_open_to_following_open_arithmetic_return"
 PROTOCOL = "docs/research/joint-funded-account-plan-2026-10-04.md"
 MATURITY_PROTOCOL = "docs/research/risk-qualified-funded-plan-2026-10-04.md"
+# Broker equity and the separate position snapshot can differ by a few basis
+# points of mark rounding; reconcile inside this share of equity and refuse more.
+MARK_RECONCILIATION_TOLERANCE = 1e-3
 
 
 # Refuse ambiguous account values rather than treating missing funding as zero.
@@ -39,7 +42,8 @@ def _number(value, *, positive=False):
     )
 
 
-# Separate spendable cash from reserved wealth and refuse unvalued positions.
+# Separate spendable cash from reserved wealth, reconcile mark rounding and
+# refuse unvalued positions or a materially inconsistent account.
 def _account(equity, held, prices, cash):
     if not _number(equity, positive=True) or not _number(cash):
         return {}, None, "account_cash_or_equity_unavailable"
@@ -53,13 +57,19 @@ def _account(equity, held, prices, cash):
     marked = {
         name: float(qty) * float(prices[name]) for name, qty in held.items() if qty > 0
     }
-    current = {name: value / float(equity) for name, value in marked.items()}
+    total = sum(marked.values())
+    implied = float(equity) - float(cash)
     if (
         not np.isfinite(list(marked.values())).all()
-        or float(cash) / float(equity) + sum(current.values()) > 1 + 1e-10
+        or implied < 0
+        or total - implied > float(equity) * MARK_RECONCILIATION_TOLERANCE
     ):
         return {}, None, "inconsistent_account_equity"
-    return current, max(0.0, float(equity) - float(cash) - sum(marked.values())), None
+    # Cash is the broker's exact figure; scale quote marks to the equity it
+    # implies so funded weights still sum to one for the optimizer's own check.
+    scale = implied / total if total > implied else 1.0
+    current = {name: value * scale / float(equity) for name, value in marked.items()}
+    return current, max(0.0, implied - total * scale), None
 
 
 # Bind the reviewed reader and fixed fees without fitting or contacting a broker.
