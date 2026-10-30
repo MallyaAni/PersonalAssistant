@@ -1,1 +1,8 @@
-[]
+[
+ {
+  "from": "e1916c99cdc72458c6a236eb796f6c14fbc3b2c6e9db2ed7b2f9688f8687da54",
+  "to": "bae65836b80bbc012d84541c7e13f612da24542d5b82c4d5c92a9a32ebe3ca21",
+  "declared": "2026-10-30",
+  "reason": "shadow_ledger.py's order-side string literals were replaced with the OrderSide StrEnum from backend/market/labels.py (BUY = 'buy', SELL = 'sell'); the values are the same strings the ledger wrote before, so every recorded fill, order, holding and refusal is unchanged. policy_v5.py, the other file the identity covers, is unchanged. The policy shadow continues."
+ }
+]

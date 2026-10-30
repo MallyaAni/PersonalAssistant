@@ -478,5 +478,11 @@
   "to": "c75ae9a398097e58c3f7d6e119841c550b923a176701def5234be97f36e75f32",
   "declared": "2026-10-28",
   "reason": "edgar.results_headline / PERIOD_WORDS / RESULT_WORDS / NOT_A_RESULTS / RESULTS_REPORTED and the 6-K classifier were repaired to admit genuine quarterly results releases that the old rule refused (plain \"sales\", a year before the figure, a published-results phrase anywhere in the head, and a dividend or buyback word only when no result word precedes it). edgar.edgar_features and levels_pit.trailing_levels, which are all the shadow reads through opportunity_learning, are arithmetically unchanged; the repair changes which stored 6-K filings are admitted as results releases and reaches the store only through the declared one-time reclassify, which is a data correction and does not rewrite archived shadow observations. The model bundle, features, execution, price inputs, target construction and funded ledger are unchanged; the shadow continues."
+ },
+ {
+  "from": "8a0a51213ea76fc8e763b6368e4932eac1a7d8f859afe3b7058b1415f828a633",
+  "to": "c75ae9a398097e58c3f7d6e119841c550b923a176701def5234be97f36e75f32",
+  "declared": "2026-10-30",
+  "reason": "The ML-forward ledger's last observation (2026-10-27) carries policy 8a0a5121..., the identity current before the 2026-10-28 deploy; the continuation rows declared that day covered the other origins but not this one. The code change is the same edgar.results_headline / PERIOD_WORDS / RESULT_WORDS / NOT_A_RESULTS / RESULTS_REPORTED repair: edgar.edgar_features and levels_pit.trailing_levels, which are all the shadow reads through opportunity_learning, are arithmetically unchanged; the repair changes which stored 6-K filings are admitted as results releases and reaches the store only through the declared one-time reclassify, which is a data correction and does not rewrite archived shadow observations. The model bundle, features, execution, price inputs, target construction and funded ledger are unchanged; the shadow continues."
  }
 ]
