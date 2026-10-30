@@ -112,7 +112,8 @@ def test_preflight_fails_when_admission_is_not_admitted(tmp_path):
     )
     assert result["status"] == "failed"
     assert "trading admission REFUSED" in result["reasons"]
-    assert messages and "preflight failed" in messages[0]
+    assert messages
+    assert "preflight failed" in messages[0]
 
 
 def test_preflight_fails_when_the_broker_clock_says_open(tmp_path):
@@ -308,7 +309,7 @@ def test_health_reports_a_red_verdict_in_the_log(tmp_path):
 
 def test_a_naive_instant_is_refused(tmp_path):
     _market(tmp_path)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, match="timezone-aware"):
         check.health(
             tmp_path,
             datetime(2026, 10, 30, 23, 30),

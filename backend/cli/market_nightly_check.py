@@ -30,6 +30,7 @@ Neither ever blocks the nightly: `~/desk_daily.sh` runs each with `|| true`.
 """
 
 import argparse
+import contextlib
 import json
 import os
 import subprocess
@@ -76,10 +77,8 @@ def _alert(root: Path, message: str) -> None:
     script = Path(root) / "scripts" / "notify-operator.sh"
     if not script.exists():
         return
-    try:
+    with contextlib.suppress(OSError, subprocess.SubprocessError):
         subprocess.run(["bash", str(script), message], check=False, timeout=30)
-    except (OSError, subprocess.SubprocessError):
-        pass
 
 
 # One verdict, with the reasons a person can act on.
@@ -92,6 +91,15 @@ def _verdict(mode: str, now: datetime, session: str, reasons, checks) -> dict:
         "reasons": list(reasons),
         "checks": checks,
     }
+
+
+# Send one page for a red verdict.
+def _page(root: Path, mode: str, session: str, reasons, notify) -> None:
+    message = f"AniOS nightly {mode} failed for {session}: " + "; ".join(reasons[:3])
+    if notify is None:
+        _alert(root, message[:400])
+    else:
+        notify(message[:400])
 
 
 # The last line the nightly printed about the paper book, or None.
@@ -111,6 +119,164 @@ def _last_paper_book(log_path: Path | None) -> str | None:
     return None
 
 
+# Admission as the nightly will find it, without broker or model inference.
+def _admission_status(market: Path, admission):
+    try:
+        if admission is None:
+            admitted = market_release_admission.check(market)
+        else:
+            admitted = admission()
+        status = admitted.get("status") if isinstance(admitted, dict) else None
+        if status != "ADMITTED":
+            return status, f"trading admission {status or 'unknown'}"
+        return status, None
+    except Exception as exc:
+        return "error", f"trading admission check failed: {exc}"
+
+
+# The broker client, or the reason it could not be made.
+def _broker_client(client):
+    if client is not None:
+        return client, None
+    try:
+        return alpaca_trading.client_from_env(), None
+    except Exception as exc:
+        return None, f"broker client unavailable: {exc}"
+
+
+# The broker clock, and whether it says ordinary orders would be refused.
+def _clock_status(client):
+    try:
+        clock = client.clock() or {}
+        checks = {
+            "is_open": clock.get("is_open"),
+            "next_open": clock.get("next_open"),
+            "next_close": clock.get("next_close"),
+        }
+        if clock.get("is_open") is not False:
+            return checks, (
+                "broker reports the market open; the nightly refuses ordinary orders"
+            )
+        return checks, None
+    except Exception as exc:
+        return "error", f"broker clock unavailable: {exc}"
+
+
+# The funded guard's own reconciliation of broker equity, marks and cash.
+def _account_status(client):
+    try:
+        account = client.account()
+        positions = client.positions()
+        held = {row.symbol: row.qty for row in positions}
+        marks = {
+            row.symbol: row.market_value / row.qty
+            for row in positions
+            if row.qty > 0
+        }
+        current, _, reason = joint_funded_policy._account(
+            account.equity, held, marks, account.cash
+        )
+        checks = {
+            "equity": account.equity,
+            "cash": account.cash,
+            "held": len(held),
+            "reason": reason,
+        }
+        if reason:
+            return checks, f"funded account guard: {reason}"
+        total = sum(current.values()) + float(account.cash) / float(account.equity)
+        if total > 1 + 1e-10:
+            return checks, "funded weights plus cash exceed one"
+        return checks, None
+    except Exception as exc:
+        return "error", f"broker account unavailable: {exc}"
+
+
+# Whether today's history entry is present and stamped with today.
+def _history_status(last, session):
+    checks = {
+        "history_session": last.get("session"),
+        "history_written": last.get("written"),
+        "plan": last.get("plan"),
+    }
+    if last.get("session") != session:
+        return checks, (
+            f"today's book was not written (last session {last.get('session')})"
+        )
+    written = last.get("written")
+    if not written:
+        return checks, "today's book has no written timestamp"
+    try:
+        stamp = datetime.fromisoformat(written)
+    except ValueError:
+        return checks, f"today's book has an unreadable written timestamp {written!r}"
+    if (
+        stamp.tzinfo is None
+        or stamp.astimezone(calendar.NEW_YORK).date().isoformat() != session
+    ):
+        return checks, f"today's book was written at {written}, not today"
+    return checks, None
+
+
+# Whether the funded receipt is available, and why it is not.
+def _receipt_status(state):
+    receipt = (state.allocation_state or {}).get("receipt") or {}
+    checks = {
+        "receipt_status": receipt.get("status"),
+        "receipt_reason": receipt.get("reason"),
+    }
+    if receipt.get("status") != "available":
+        return checks, (
+            f"funded receipt {receipt.get('status') or 'missing'}: "
+            f"{receipt.get('reason') or 'no reason'}"
+        )
+    return checks, None
+
+
+# Whether the plan note itself says the funded plan was unavailable.
+def _plan_status(last):
+    if last.get("plan") == "joint-funded-unavailable":
+        return "plan note joint-funded-unavailable"
+    return None
+
+
+# How many orders the nightly refused, and the first one.
+def _refused_status(last):
+    refused = last.get("refused") or []
+    if refused:
+        return len(refused), f"{len(refused)} order(s) refused: {refused[0]}"
+    return 0, None
+
+
+# The last paper-book log line, when it reports a night that did not trade.
+def _log_status(log_path):
+    line = _last_paper_book(log_path)
+    if line and ("not traded" in line or "joint-funded-unavailable" in line):
+        return line, f"nightly log: {line}"
+    return line, None
+
+
+# Whether the strategy publication is for today.
+def _publication_status(publication: Path, session: str):
+    if not publication.exists():
+        return None, "strategy publication missing"
+    try:
+        published = json.loads(publication.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return None, "strategy publication unreadable"
+    if published.get("session") != session:
+        return published.get("session"), (
+            f"strategy publication is for {published.get('session')}, not today"
+        )
+    return published.get("session"), None
+
+
+# A closed day has no book to check, and a page on one would train the
+# operator to ignore the alert.
+def _closed_day(status) -> bool:
+    return bool(status.get("calendar_known")) and not status.get("is_session")
+
+
 # The three inputs the nightly needs; mirrors what it does with each.
 def preflight(
     root: Path,
@@ -124,81 +290,29 @@ def preflight(
     market = _market_root(root)
     reasons = []
     checks = {}
-    if admission is None:
-        admission = lambda: market_release_admission.check(market)
-    try:
-        admitted = admission()
-        checks["admission"] = (
-            admitted.get("status") if isinstance(admitted, dict) else None
-        )
-        if checks["admission"] != "ADMITTED":
-            reasons.append(f"trading admission {checks['admission'] or 'unknown'}")
-    except Exception as exc:
-        checks["admission"] = "error"
-        reasons.append(f"trading admission check failed: {exc}")
-    if client is None:
-        try:
-            client = alpaca_trading.client_from_env()
-        except Exception as exc:
-            checks["broker"] = "error"
-            reasons.append(f"broker client unavailable: {exc}")
+    checks["admission"], reason = _admission_status(market, admission)
+    if reason:
+        reasons.append(reason)
+    client, reason = _broker_client(client)
+    if reason:
+        checks["broker"] = "error"
+        reasons.append(reason)
     if client is not None:
-        try:
-            clock = client.clock() or {}
-            checks["market_clock"] = {
-                "is_open": clock.get("is_open"),
-                "next_open": clock.get("next_open"),
-                "next_close": clock.get("next_close"),
-            }
-            if clock.get("is_open") is not False:
-                reasons.append(
-                    "broker reports the market open; the nightly refuses "
-                    "ordinary orders"
-                )
-        except Exception as exc:
-            checks["market_clock"] = "error"
-            reasons.append(f"broker clock unavailable: {exc}")
-        try:
-            account = client.account()
-            positions = client.positions()
-            held = {row.symbol: row.qty for row in positions}
-            marks = {
-                row.symbol: row.market_value / row.qty
-                for row in positions
-                if row.qty > 0
-            }
-            current, reserve, reason = joint_funded_policy._account(
-                account.equity, held, marks, account.cash
-            )
-            checks["account"] = {
-                "equity": account.equity,
-                "cash": account.cash,
-                "held": len(held),
-                "reason": reason,
-            }
-            if reason:
-                reasons.append(f"funded account guard: {reason}")
-            elif (
-                sum(current.values()) + float(account.cash) / float(account.equity)
-                > 1 + 1e-10
-            ):
-                reasons.append("funded weights plus cash exceed one")
-        except Exception as exc:
-            checks["account"] = "error"
-            reasons.append(f"broker account unavailable: {exc}")
+        checks["market_clock"], reason = _clock_status(client)
+        if reason:
+            reasons.append(reason)
+        checks["account"], reason = _account_status(client)
+        if reason:
+            reasons.append(reason)
     session = str(calendar.exchange_status(now)["session"])
     result = _verdict("preflight", now, session, reasons, checks)
     _write_status(market / "desk" / "nightly-readiness.json", result)
     if reasons:
-        message = (
-            f"AniOS nightly preflight failed for {session}: "
-            + "; ".join(reasons[:3])
-        )
-        (notify or (lambda text: _alert(root, text)))(message[:400])
+        _page(root, "preflight", session, reasons, notify)
     return result
 
 
-# What the nightly wrote, and whether it was a book that can trade.
+# What the nightly wrote, and whether it was a book that could trade.
 def health(
     root: Path,
     now: datetime | None = None,
@@ -211,9 +325,7 @@ def health(
     market = _market_root(root)
     status = calendar.exchange_status(now)
     session = str(status["session"])
-    # A holiday has no book to check, and a red page on one would train the
-    # operator to ignore the alert.
-    if status.get("calendar_known") and not status.get("is_session"):
+    if _closed_day(status):
         result = _verdict("health", now, session, [], {"session_open": False})
         _write_status(market / "desk" / "nightly-health.json", result)
         return result
@@ -223,72 +335,31 @@ def health(
         state = paper.load_state(market)
     history = state.history or []
     last = history[-1] if history else {}
-    checks["history_session"] = last.get("session")
-    checks["history_written"] = last.get("written")
-    checks["plan"] = last.get("plan")
-    if last.get("session") != session:
-        reasons.append(
-            f"today's book was not written (last session {last.get('session')})"
-        )
-    else:
-        written = last.get("written")
-        if not written:
-            reasons.append("today's book has no written timestamp")
-        else:
-            try:
-                stamp = datetime.fromisoformat(written)
-                if (
-                    stamp.tzinfo is None
-                    or stamp.astimezone(calendar.NEW_YORK).date().isoformat()
-                    != session
-                ):
-                    reasons.append(f"today's book was written at {written}, not today")
-            except ValueError:
-                reasons.append(
-                    f"today's book has an unreadable written timestamp {written!r}"
-                )
-    receipt = ((state.allocation_state or {}).get("receipt") or {})
-    checks["receipt_status"] = receipt.get("status")
-    checks["receipt_reason"] = receipt.get("reason")
-    if receipt.get("status") != "available":
-        reasons.append(
-            f"funded receipt {receipt.get('status') or 'missing'}: "
-            f"{receipt.get('reason') or 'no reason'}"
-        )
-    if last.get("plan") == "joint-funded-unavailable":
-        reasons.append("plan note joint-funded-unavailable")
-    refused = last.get("refused") or []
-    checks["refused"] = len(refused)
-    if refused:
-        reasons.append(f"{len(refused)} order(s) refused: {refused[0]}")
-    log_line = _last_paper_book(log_path)
-    checks["log_line"] = log_line
-    if log_line and (
-        "not traded" in log_line or "joint-funded-unavailable" in log_line
-    ):
-        reasons.append(f"nightly log: {log_line}")
+    history_checks, reason = _history_status(last, session)
+    checks.update(history_checks)
+    if reason:
+        reasons.append(reason)
+    receipt_checks, reason = _receipt_status(state)
+    checks.update(receipt_checks)
+    if reason:
+        reasons.append(reason)
+    reason = _plan_status(last)
+    if reason:
+        reasons.append(reason)
+    checks["refused"], reason = _refused_status(last)
+    if reason:
+        reasons.append(reason)
+    checks["log_line"], reason = _log_status(log_path)
+    if reason:
+        reasons.append(reason)
     publication = market / "desk" / "strategy-recommendations" / "latest.json"
-    checks["publication_session"] = None
-    if not publication.exists():
-        reasons.append("strategy publication missing")
-    else:
-        try:
-            published = json.loads(publication.read_text(encoding="utf-8"))
-            checks["publication_session"] = published.get("session")
-            if published.get("session") != session:
-                reasons.append(
-                    f"strategy publication is for {published.get('session')}, not today"
-                )
-        except (OSError, ValueError):
-            reasons.append("strategy publication unreadable")
+    checks["publication_session"], reason = _publication_status(publication, session)
+    if reason:
+        reasons.append(reason)
     result = _verdict("health", now, session, reasons, checks)
     _write_status(market / "desk" / "nightly-health.json", result)
     if reasons:
-        message = (
-            f"AniOS nightly health failed for {session}: "
-            + "; ".join(reasons[:3])
-        )
-        (notify or (lambda text: _alert(root, text)))(message[:400])
+        _page(root, "health", session, reasons, notify)
     return result
 
 
