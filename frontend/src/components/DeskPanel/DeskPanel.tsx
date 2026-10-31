@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { RefreshCw, X } from 'lucide-react'
 import { EconomicContext } from './EconomicContext'
+import { EventWatch } from './EventWatch'
 import { ForwardEvidence } from './ForwardEvidence'
 import { FomcGate } from './FomcGate'
 import { ExecutionQuality } from './ExecutionQuality'
@@ -22,6 +23,7 @@ import { ANALYST_MEANINGS, EVENING_VOTE_CONTEXT, analystLabel } from './analystL
 import {
   getDesk,
   getDeskEarnings,
+  getDeskEventWatch,
   getDeskHistory,
   getDeskStrategyStock,
   getDeskHoldings,
@@ -39,6 +41,7 @@ import {
   type DeskDecisions,
   type DeskBrief,
   type DeskEarnings,
+  type DeskEventWatch,
   type DeskGrade,
   type DeskHolding,
   type DeskHistory,
@@ -1010,6 +1013,7 @@ const GettingStarted = ({ hasRecord, hasPositions, onEnterPositions }: { hasReco
 // Paper-account history, personal guidance and archived research retain their separate views.
 const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
   const [payload, setPayload] = useState<DeskPayload | null>(null)
+  const [eventWatch, setEventWatch] = useState<DeskEventWatch | null>(null)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
   const [live, setLive] = useState<DeskLive>({ as_of: null, quotes: {} })
@@ -1112,7 +1116,14 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
 
   const load = async () => {
     try {
-      setPayload(await getDesk(userId))
+      // The scan is descriptive and separate from the record; a failure there
+      // must not hide the desk the owner trades from.
+      const [nextPayload, nextWatch] = await Promise.all([
+        getDesk(userId),
+        getDeskEventWatch(userId).catch(() => null),
+      ])
+      setPayload(nextPayload)
+      setEventWatch(nextWatch)
       setError('')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'The desk could not be loaded.')
@@ -1474,6 +1485,10 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
       {!latest && <GettingStarted hasRecord={false} hasPositions={holdings.length > 0} onEnterPositions={() => setEditing(true)} />}
 
       {!strategyView && latest && <RegimeBanner regime={latest.regime} session={latest.session} />}
+
+      {/* Mechanical event context from the nightly scan, shown in every view.
+          Descriptive only; the live rule does not read it. */}
+      {!loading && <EventWatch watch={eventWatch} />}
 
       {strategyView && !research && latest && <div className="flex flex-col sm:max-h-[75vh]">
           <SignalBoard latest={latest} live={live} allocation={modelAllocation} now={now} onOpen={setOpenName} closes={closes}

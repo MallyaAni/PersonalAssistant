@@ -20,6 +20,7 @@ from backend.api.v1.conversations import router as conversations_router
 from backend.api.v1.discovery import calendar_router as discovery_calendar_router
 from backend.api.v1.discovery import feed_router as discovery_feed_router
 from backend.api.v1.discovery import router as discovery_router
+from backend.api.v1.event_watch import router as event_watch_router
 from backend.api.v1.images import router as images_router
 from backend.api.v1.market import router as market_router
 from backend.api.v1.market_allocation import router as market_allocation_router
@@ -57,8 +58,10 @@ router.include_router(agent_memory_router)
 router.include_router(memory_router)
 router.include_router(market_simulation_router)
 router.include_router(market_history_sizing_router)
-# Match the fixed allocation path before the desk's dated-session wildcard.
+# Match the fixed allocation and event-watch paths before the desk's
+# dated-session wildcard.
 router.include_router(market_allocation_router)
+router.include_router(event_watch_router)
 router.include_router(market_router)
 router.include_router(artifacts_router)
 router.include_router(conversations_router)

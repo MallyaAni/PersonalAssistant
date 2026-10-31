@@ -2434,6 +2434,77 @@ export interface DeskFomcGate {
   basis: string;
 }
 
+// One latest release the nightly scan flagged: a mechanical earnings drop
+// confirmed by the reaction session, with the grade and action on the record.
+export interface DeskEventShock {
+  ticker: string;
+  theme?: string;
+  grade: string;
+  grade_headline?: string | null;
+  action: string | null;
+  target_weight: number | null;
+  current_weight: number | null;
+  quarter_end?: string | null;
+  reaction_date: string;
+  age_sessions: number;
+  eps?: number | null;
+  eps_qoq: number | null;
+  eps_yoy: number | null;
+  revenue_usd_m?: number | null;
+  revenue_qoq?: number | null;
+  revenue_yoy: number | null;
+  tone?: Record<string, number | null>;
+  tone_change?: Record<string, number | null>;
+  reaction_return: number | null;
+  volume_ratio: number | null;
+  shock: boolean;
+  shock_reasons: string[];
+}
+
+export interface DeskEventPriceShock {
+  ticker: string;
+  date: string;
+  return: number;
+  volume_ratio: number;
+}
+
+export interface DeskEventContagion {
+  trigger: DeskEventShock;
+  members: number;
+  mean: number | null;
+  worst: {ticker: string; return_since: number}[];
+}
+
+export interface DeskEventWatch {
+  version: string;
+  asof: string;
+  written: string | null;
+  session: string | null;
+  // True when the scan belongs to a different session than the desk shows.
+  stale: boolean;
+  rule: {
+    qoq_drop: number;
+    yoy_drop: number;
+    reaction_drop: number;
+    volume_ratio: number;
+    hyperscalers: string[];
+    price_window: number;
+    price_drop: number;
+    price_volume: number;
+  };
+  calendar: {
+    next_fomc: string | null;
+    sessions_to_fomc: number | null;
+    next_election: string;
+    next_election_midterm: boolean;
+    sessions_to_election: number | null;
+  };
+  shocks: DeskEventShock[];
+  price_shocks: DeskEventPriceShock[];
+  contagion: DeskEventContagion[];
+  counts: {names: number; shocks: number; price_shocks: number};
+}
+
 export interface DeskForwardEvidence {
   status: string;
   reason?: string;
@@ -3235,6 +3306,28 @@ export const getDesk = async (userId: string): Promise<DeskPayload> => {
     throw new Error(`Could not load the desk (HTTP ${response.status}).`);
   }
   return (await response.json()) as DeskPayload;
+};
+
+// The nightly mechanical event scan, separate from the desk record. A missing
+// scan is null rather than an error: the page can say it has not run yet.
+export const getDeskEventWatch = async (userId: string): Promise<DeskEventWatch | null> => {
+  const response = await authenticatedFetch(
+    `${API_BASE_URL}/api/v1/market/${encodeURIComponent(userId)}/desk/event-watch`,
+  );
+  if (!response.ok) {
+    if (response.status === 403) {
+      throw new Error(
+        'The desk is not open to this account. The server does not think this is it '
+          + '- check MARKET_DESK_USER / MARKET_DESK_USERS in the deployment environment.',
+      );
+    }
+    if (response.status === 401) {
+      throw new Error('Signed out. Sign in again to read the desk.');
+    }
+    throw new Error(`Could not load the event watch (HTTP ${response.status}).`);
+  }
+  const body = (await response.json()) as {event_watch?: DeskEventWatch | null};
+  return body.event_watch ?? null;
 };
 
 // One name's drill-down from the file the nightly run wrote.

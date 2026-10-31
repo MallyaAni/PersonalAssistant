@@ -33,7 +33,8 @@ from pathlib import Path
 import numpy as np
 
 from backend.agents.trading.desk import desk
-from backend.market import calendar, event_watch, fundamentals_asof as fa, language
+from backend.market import calendar, event_watch, language
+from backend.market import fundamentals_asof as fa
 from backend.market.store import MarketStore
 
 CHOOSING = (2016, 2023)
@@ -63,14 +64,17 @@ def number(value) -> float | None:
 
 # The mean and a 95% month-cluster bootstrap interval.
 def cluster_bootstrap(
-    values: list[float], months: list[str], draws: int = BOOTSTRAP_DRAWS, seed: int = RNG_SEED
+    values: list[float],
+    months: list[str],
+    draws: int = BOOTSTRAP_DRAWS,
+    seed: int = RNG_SEED,
 ) -> dict:
     """Return the mean, interval and counts for values clustered by month."""
     values = np.asarray(values, dtype=float)
     if not len(values):
         return {"events": 0, "months": 0, "mean": None, "ci_low": None, "ci_high": None}
     groups: dict[str, list[float]] = defaultdict(list)
-    for value, month in zip(values, months):
+    for value, month in zip(values, months, strict=True):
         groups[month].append(float(value))
     arrays = [np.asarray(groups[key], dtype=float) for key in sorted(groups)]
     rng = np.random.default_rng(seed)
@@ -156,7 +160,11 @@ def own_name_candidates(
 
 # The 200 own-name placebo pooled means at both horizons.
 def placebo_own_name(
-    events: list[dict], adj_close: np.ndarray, member: np.ndarray, days: np.ndarray, benchmark: int
+    events: list[dict],
+    adj_close: np.ndarray,
+    member: np.ndarray,
+    days: np.ndarray,
+    benchmark: int,
 ) -> dict[int, dict]:
     """Return the placebo mean distribution for the own-name arm."""
     candidates = own_name_candidates(events, days, member)
@@ -164,7 +172,7 @@ def placebo_own_name(
     draws: dict[int, list[float]] = {horizon: [] for horizon in HORIZONS}
     for _ in range(PLACEBO_DRAWS):
         values: dict[int, list[float]] = {horizon: [] for horizon in HORIZONS}
-        for event, allowed in zip(events, candidates):
+        for event, allowed in zip(events, candidates, strict=True):
             if not len(allowed):
                 continue
             index = int(allowed[rng.integers(0, len(allowed))])
@@ -229,7 +237,14 @@ def own_name_gate(
         >= 5
         for horizon in HORIZONS
     )
-    return {"stats": stats, "stopped": None, "G1": g1, "G2": g2, "G3": g3, "pass": g1 and g2 and g3}
+    return {
+        "stats": stats,
+        "stopped": None,
+        "G1": g1,
+        "G2": g2,
+        "G3": g3,
+        "pass": g1 and g2 and g3,
+    }
 
 
 # The shock matrix used to exclude peers with their own event near a date.
@@ -252,7 +267,11 @@ def contagion_rows(
     tickers: list[str],
 ) -> tuple[dict[int, list[dict]], dict]:
     """Return the peer-mean rows and the peer-count summary for A2."""
-    hyperscalers = {tickers.index(name) for name in event_watch.HYPERSCALERS if name in tickers}
+    hyperscalers = {
+        tickers.index(name)
+        for name in event_watch.HYPERSCALERS
+        if name in tickers
+    }
     shock = shock_matrix(events, days, member.shape[1])
     rows: dict[int, list[dict]] = {horizon: [] for horizon in HORIZONS}
     peers: list[int] = []
@@ -299,7 +318,7 @@ def contagion_rows(
 
 
 # The 200 hyperscaler placebo pooled means at both horizons.
-def placebo_contagion(
+def placebo_contagion(  # noqa: C901 - one placebo pass over the peer window
     events: list[dict],
     adj_close: np.ndarray,
     member: np.ndarray,
@@ -309,7 +328,11 @@ def placebo_contagion(
     tickers: list[str],
 ) -> dict[int, dict]:
     """Return the placebo mean distribution for the contagion arm."""
-    hyperscalers = {tickers.index(name) for name in event_watch.HYPERSCALERS if name in tickers}
+    hyperscalers = {
+        tickers.index(name)
+        for name in event_watch.HYPERSCALERS
+        if name in tickers
+    }
     shock = shock_matrix(events, days, member.shape[1])
     sessions = len(days)
     near = np.zeros_like(shock)
@@ -340,12 +363,13 @@ def placebo_contagion(
     draws: dict[int, list[float]] = {horizon: [] for horizon in HORIZONS}
     for _ in range(PLACEBO_DRAWS):
         values: dict[int, list[float]] = {horizon: [] for horizon in HORIZONS}
-        for event, allowed in candidates:
+        for _event, allowed in candidates:
             if not len(allowed):
                 continue
             index = int(allowed[rng.integers(0, len(allowed))])
             window = shock[
-                max(0, index - SHOCK_EXCLUSION):min(sessions, index + SHOCK_EXCLUSION + 1)
+                max(0, index - SHOCK_EXCLUSION)
+                : min(sessions, index + SHOCK_EXCLUSION + 1)
             ].any(axis=0)
             excluded = hyperscalers | set(np.flatnonzero(window).tolist())
             for horizon in HORIZONS:
@@ -519,8 +543,10 @@ def price_shocks(
 
 # The book's return since a hyperscaler shock, for the fear/contagion context.
 def book_since(panel, days: np.ndarray, trigger: dict) -> dict:
-    """Return the book's mean and worst returns from a shock close to the latest close."""
-    index = event_watch.reaction_index(days, date.fromisoformat(trigger["reaction_date"]))
+    """Return the book's mean and worst returns since a hyperscaler shock."""
+    index = event_watch.reaction_index(
+        days, date.fromisoformat(trigger["reaction_date"])
+    )
     last = len(days) - 1
     rows = []
     for column, ticker in enumerate(panel.tickers):
@@ -547,7 +573,11 @@ def scan(store: MarketStore, asof: date) -> dict:
     records = language.stored_records(store, panel.tickers, asof)
     days = np.asarray(panel.dates, dtype="datetime64[D]")
     desk_path = store.root / "desk" / f"asof={asof.isoformat()}" / "desk.json"
-    decisions = json.loads(desk_path.read_text(encoding="utf-8")) if desk_path.exists() else {}
+    decisions = (
+        json.loads(desk_path.read_text(encoding="utf-8"))
+        if desk_path.exists()
+        else {}
+    )
     grades = decisions.get("grades", {})
     actions = {row["ticker"]: row for row in decisions.get("actions", [])}
     rows = []
@@ -586,6 +616,8 @@ def scan(store: MarketStore, asof: date) -> dict:
             "volume_ratio": event_watch.VOLUME_RATIO,
             "hyperscalers": list(event_watch.HYPERSCALERS),
             "price_window": PRICE_WINDOW,
+            "price_drop": PRICE_DROP,
+            "price_volume": PRICE_VOLUME,
         },
         "calendar": calendar_section(asof),
         "shocks": shocks,
@@ -620,17 +652,23 @@ def study(store: MarketStore, cache: Path) -> dict:
         days, tickers, member, adj_close, versions_by_ticker, "net_income"
     )
     choosing = [
-        event for event in events if CHOOSING[0] <= int(event["reaction_date"][:4]) <= CHOOSING[1]
+        event
+        for event in events
+        if CHOOSING[0] <= int(event["reaction_date"][:4]) <= CHOOSING[1]
     ]
     reported = [
-        event for event in events if REPORTED[0] <= int(event["reaction_date"][:4]) <= REPORTED[1]
+        event
+        for event in events
+        if REPORTED[0] <= int(event["reaction_date"][:4]) <= REPORTED[1]
     ]
     rows = collect(choosing, adj_close, benchmark)
     placebo = placebo_own_name(choosing, adj_close, member, days, benchmark)
     own = own_name_gate(rows, placebo)
     reported_rows = collect(reported, adj_close, benchmark)
 
-    contagion_events = [event for event in choosing if event["ticker"] in event_watch.HYPERSCALERS]
+    contagion_events = [
+        event for event in choosing if event["ticker"] in event_watch.HYPERSCALERS
+    ]
     contagion, peers = contagion_rows(
         contagion_events, adj_close, member, sectors, days, benchmark, tickers
     )
@@ -643,7 +681,9 @@ def study(store: MarketStore, cache: Path) -> dict:
         days, tickers, member, adj_close, versions_by_ticker, "eps"
     )
     eps_choosing = [
-        event for event in eps_events if CHOOSING[0] <= int(event["reaction_date"][:4]) <= CHOOSING[1]
+        event
+        for event in eps_events
+        if CHOOSING[0] <= int(event["reaction_date"][:4]) <= CHOOSING[1]
     ]
     revenue_events = event_watch.study_events(
         days, tickers, member, adj_close, versions_by_ticker, "revenue"
@@ -681,7 +721,11 @@ def study(store: MarketStore, cache: Path) -> dict:
         grouped: dict[str, list[float]] = defaultdict(list)
         for row in rows[horizon]:
             grouped[sectors[row["event"]["column"]]].append(row["value"])
-        means = [float(np.mean(values)) for values in grouped.values() if len(values) >= 10]
+        means = [
+            float(np.mean(values))
+            for values in grouped.values()
+            if len(values) >= 10
+        ]
         sector_rows[horizon] = means
 
     controls = perturbation(adj_close, versions_by_ticker, events)
@@ -709,8 +753,14 @@ def study(store: MarketStore, cache: Path) -> dict:
             "reported": len(reported),
             "full_window": full_window,
             "by_year": {
-                str(year): sum(1 for event in events if int(event["reaction_date"][:4]) == year)
-                for year in sorted({int(event["reaction_date"][:4]) for event in events})
+                str(year): sum(
+                    1
+                    for event in events
+                    if int(event["reaction_date"][:4]) == year
+                )
+                for year in sorted(
+                    {int(event["reaction_date"][:4]) for event in events}
+                )
             },
         },
         "A1": own,
@@ -771,7 +821,9 @@ def perturbation(
         perturbed = adj_close[:, column].copy()
         perturbed[index + 1:] *= factor
         series = event_watch.quarter_series(versions_by_ticker[column], "net_income")
-        change = event_watch.earnings_changes(series)[date.fromisoformat(event["period_end"])]
+        change = event_watch.earnings_changes(series)[
+            date.fromisoformat(event["period_end"])
+        ]
         reaction = float(perturbed[index] / perturbed[index - 1] - 1.0)
         same = change["available"].isoformat() == event["available"]
         same = same and abs(reaction - event["reaction_return"]) < 1e-12
@@ -821,8 +873,12 @@ def brief(scan_result: dict) -> str:
         f"({'midterm' if calendar_info['next_election_midterm'] else 'presidential'}, "
         f"{election_sessions if election_sessions is not None else 'n/a'} sessions)."
     )
-    recent = [row for row in scan_result["shocks"] if row["age_sessions"] <= RECENT_SESSIONS]
-    older = [row for row in scan_result["shocks"] if row["age_sessions"] > RECENT_SESSIONS]
+    recent = [
+        row for row in scan_result["shocks"] if row["age_sessions"] <= RECENT_SESSIONS
+    ]
+    older = [
+        row for row in scan_result["shocks"] if row["age_sessions"] > RECENT_SESSIONS
+    ]
     lines.append(
         f"Earnings shocks in the latest release: {len(recent)} within "
         f"{RECENT_SESSIONS} sessions, {len(older)} older."
@@ -861,6 +917,20 @@ def brief(scan_result: dict) -> str:
     return "\n".join(lines)
 
 
+# The newest session the nightly wrote a desk record for, used when the caller
+# does not name a date. A holiday or a failed nightly then scans the last
+# record instead of inventing an empty session for today.
+def latest_session(store: MarketStore) -> date | None:
+    """Return the newest `desk/asof=` session on file, or None."""
+    sessions = []
+    for path in (store.root / "desk").glob("asof=*"):
+        try:
+            sessions.append(date.fromisoformat(path.name.split("=", 1)[1]))
+        except ValueError:
+            continue
+    return max(sessions) if sessions else None
+
+
 # Parse arguments, run the scan or the study, and write the result.
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
@@ -879,7 +949,11 @@ def main(argv=None) -> int:
         output.write_text(json.dumps(result, indent=1, sort_keys=True, allow_nan=False))
         print(json.dumps(result["verdict"], sort_keys=True))
         return 0
-    asof = date.fromisoformat(args.asof) if args.asof else date.today()
+    asof = (
+        date.fromisoformat(args.asof)
+        if args.asof
+        else latest_session(store) or date.today()
+    )
     result = scan(store, asof)
     output = Path(
         args.output
