@@ -1,5 +1,26 @@
 # Next session
 
+## CURRENT 2026-10-31 — event-shock detector and study (adcd4a2d), A1 stopped, A2 failed
+
+- Pre-registration committed first (9ddb5ab3), then the detector, CLI, tests and result
+  (adcd4a2d, pushed). `backend/market/event_watch.py` is the pure detection layer;
+  `backend/cli/market_event_watch.py --scan` is the live book scan and `--study` runs the
+  pre-registered PIT study. Tests: 8 passed (`backend/tests/test_market_event_watch.py`).
+- The scan found GOOGL 2026-10-29 without being told: EPS -76.7% QoQ / -26.1% YoY, revenue
+  +24.7% YoY, reaction -12.6% on 5.9x volume, grade C ("Avoid: sentiment and value against,
+  none for"). It also flagged INTC (grade A), NOW, META and older shocks, 20 adverse price
+  moves in five sessions, and the book mean -5.5% since the GOOGL shock. Next election
+  2026-11-03 (midterm, 2 sessions); next FOMC 2026-12-09 (27 sessions).
+- Study verdict (`docs/research/event-shock-results-2026-10-31.md`,
+  `docs/research/scorecards/event-shock/result.json`): A1 STOPPED as underpowered (114 events
+  in 2016-2023, below the 200 minimum); point estimates +1.52% at 20 and +1.81% at 60, a
+  bounce, not continuation. A2 ran on 3 hyperscaler events, no contagion (-0.21% at 20,
+  +2.97% at 60). A3 descriptive only (n=2 midterms). Positive-shock drift +2.44%/+3.06% is
+  diagnostic, not gated. Nothing goes live; the live rule stays frozen.
+- Scan writes only under `data/market/research/event-watch/`; it is not called by the
+  nightly. Open: owner decides whether to schedule it nightly or surface the brief on the
+  dashboard; either is a live-pipeline change needing the release ceremony.
+
 ## CURRENT 2026-10-28 — enums live (5a8f8305), map fixes live (f432d837), chart-judgment test failed
 
 - Rules every trading session reads first: docs/trading/RULES.md; plain-English map: docs/trading/CODE_MAP.md.
