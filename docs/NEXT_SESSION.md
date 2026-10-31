@@ -34,10 +34,18 @@
   files byte-identical), so the installed release stays ADMITTED and no new approval bundle
   is needed. Verified: 14 event-watch tests passed in the test container (6 reader, 1 HTTP
   route/ownership, 8 detector); ruff clean on all changed Python; `tsc --noEmit` clean.
+- **Live (34761347):** deployed through the full gate (11,741 unit tests passed, routing
+  gate passed), `check-trading-admission.sh` reports ADMITTED, and
+  `data/.post-deploy-status` reads `ok (cheap)`. The deploy checkout and the cron wrapper
+  are on the new commit. Live route checks through the gateway: the owner's token gets
+  200 with the 2026-10-30 scan (94 names, 9 shocks, 20 price shocks, not stale), a foreign
+  user gets 403 and anonymous gets 401; the fixed path resolves before the dated-session
+  wildcard. The nightly wrapper at `~/desk_daily.sh` now runs the scan after `market_daily`
+  with `|| true`.
 - The live rule still does not react to the scan: grades update nightly, orders execute at
-  the next open, and no grade, target, order or prompt reads this block. Next: deploy the
-  wiring; then step 2, a pre-registered sector-factor exposure cap/hedge through
-  `policy_book.simulate`.
+  the next open, and no grade, target, order or prompt reads this block. Next: step 2, a
+  pre-registered sector-factor exposure cap through `policy_book.simulate` (draft written,
+  not yet committed or run).
 
 ## CURRENT 2026-10-28 — enums live (5a8f8305), map fixes live (f432d837), chart-judgment test failed
 
