@@ -24,6 +24,7 @@ from backend.discovery.events import (
     clean_title,
     clean_url,
     event_has_passed,
+    is_date_only,
 )
 from backend.discovery.fetching import RequestBudget, fetch_feed
 from backend.discovery.relevance import MAX_LEAD_DAYS
@@ -240,9 +241,16 @@ def _build_events(
         # as the undated listing it is rather than inventing one.
         return [event(base_id, None, None)]
 
-    duration = (
-        ends_at - starts_at if ends_at is not None and ends_at > starts_at else None
-    )
+    duration = None
+    if ends_at is not None and ends_at > starts_at:
+        if is_date_only(starts_at) and is_date_only(ends_at):
+            # An all-day event's length is a number of calendar days. The
+            # absolute difference across a daylight-saving change is 23 or 25
+            # hours, and carrying that onto later occurrences would move their
+            # midnight to 11pm or 1am.
+            duration = timedelta(days=(ends_at.date() - starts_at.date()).days)
+        else:
+            duration = ends_at - starts_at
     excluded = set(_listed_times(properties.exdates, fallback))
     excluded.update(overrides.get(uid or "", set()))
     occurrences = _rule_occurrences(starts_at, rule) if rule is not None else []

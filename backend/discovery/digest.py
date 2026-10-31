@@ -478,9 +478,10 @@ def _format_when(starts_at: datetime | None, zone: ZoneInfo) -> str | None:
         # it into the reader's zone moves it to the previous evening and prints
         # a clock nobody published: a concert listed for Oct 3 was announced as
         # "Fri Oct 2, 8:00pm", one line below a title that said Oct 03, 9:30 PM.
-        # The date is what was known, so the date is all that is said.
-        stated = starts_at.astimezone(UTC)
-        return f"{stated.strftime('%a %b')} {stated.day}"
+        # The date is what was known, so the date is all that is said — read
+        # from the wall clock the source stated. Converting to UTC first slides
+        # a date in any zone east of it onto the previous day.
+        return f"{starts_at.strftime('%a %b')} {starts_at.day}"
     local = starts_at.astimezone(zone)
     hour = local.hour % 12 or 12
     meridiem = "am" if local.hour < 12 else "pm"

@@ -107,10 +107,12 @@ async def test_a_poster_is_shown_to_the_vision_model_and_captioned(monkeypatch):
 
 
 # The host's declared type is a claim. An HTML error page served as an image
-# must never be encoded and sent to the model.
+# must never be encoded and sent to the model, even when the host labels it
+# image/png to get past a type check.
+@pytest.mark.parametrize("declared", ["text/html", "image/png"])
 @pytest.mark.asyncio
-async def test_an_html_error_page_is_never_shown_to_the_model(monkeypatch):
-    _serve(monkeypatch, b"<html>not found</html>", "text/html")
+async def test_an_html_error_page_is_never_shown_to_the_model(monkeypatch, declared):
+    _serve(monkeypatch, b"<html>not found</html>", declared)
     vision = _FakeVision()
 
     caption = await PictureCaptioner(vision).caption(
@@ -128,6 +130,9 @@ def test_the_media_type_is_decided_from_the_bytes_not_the_claim():
     # A format with no signature is accepted only when the host declared it.
     assert image_media_type(b"....ftypavif", "image/avif") == "image/avif"
     assert image_media_type(b"....ftypavif", "application/octet-stream") is None
+    # Text is refused whatever the host claims it is.
+    assert image_media_type(b"<html>not found</html>", "image/png") is None
+    assert image_media_type(b"  \n<svg xmlns='...'></svg>", "image/svg+xml") is None
 
 
 @pytest.mark.asyncio

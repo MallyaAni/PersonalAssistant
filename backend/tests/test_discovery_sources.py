@@ -571,6 +571,36 @@ def test_a_recurring_all_day_series_keeps_whole_days():
         assert is_date_only(event.starts_at)
 
 
+# An all-day series crossing the daylight-saving change still ends at midnight.
+# Its absolute length is 25 hours, and carrying that onto later instances would
+# move their end to 1am.
+def test_a_recurring_all_day_series_keeps_whole_days_across_dst():
+    payload = _calendar(
+        "BEGIN:VEVENT",
+        "UID:dst-fair",
+        "SUMMARY:Street fair",
+        "DTSTART;VALUE=DATE:20261031",
+        "DTEND;VALUE=DATE:20261101",
+        "RRULE:FREQ=WEEKLY;BYDAY=SA",
+        "END:VEVENT",
+    )
+
+    events = parse_ics(
+        payload,
+        "venue",
+        "America/New_York",
+        now=datetime(2026, 10, 31, 12, 0, tzinfo=UTC),
+    )
+    later = [
+        event for event in events if event.starts_at.date() == date(2026, 11, 7)
+    ]
+
+    assert len(later) == 1
+    assert later[0].ends_at is not None
+    assert later[0].ends_at.date() == date(2026, 11, 8)
+    assert later[0].ends_at.hour == 0
+
+
 # The first instance keeps the bare identifier it had before expansion existed,
 # so a series already announced is not announced again under a new name.
 def test_the_first_occurrence_keeps_the_bare_identifier():

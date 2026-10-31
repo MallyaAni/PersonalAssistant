@@ -62,9 +62,21 @@ def image_media_type(content: bytes, declared: str = "") -> str | None:
         return "image/webp"
     # A format with no signature here (AVIF, HEIC) is only accepted when the
     # host declared an image type; the vision provider decides whether it can
-    # decode it and fails to no caption if not.
+    # decode it and fails to no caption if not. Text is refused regardless of
+    # what the host claimed: an error page served as image/png is still an
+    # error page, and it must never become a vision call.
+    if _looks_like_text(content):
+        return None
     claimed = declared.split(";", 1)[0].strip().lower()
     return claimed if claimed.startswith("image/") else None
+
+
+# Whether the first bytes read as a text document rather than a picture. The
+# formats with signatures never reach this check; it exists for the ones that
+# rely on the host's declared type.
+def _looks_like_text(content: bytes) -> bool:
+    head = content[:512].lstrip()
+    return head.startswith((b"<", b"{", b"["))
 
 
 class PictureCaptioner:

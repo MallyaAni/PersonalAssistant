@@ -23,7 +23,8 @@ flowchart TB
     Ranking --> Precision[MiniLM cross-encoder<br/>reads each pair together]
     Precision --> Reorder[DeepSeek V4 Flash<br/>orders the shortlist]
     Facts --> Reorder
-    Reorder --> Description[DeepSeek V4 Flash<br/>writes descriptions]
+    Reorder --> Poster[DeepSeek V4.1 vision<br/>captions a selected find's poster]
+    Poster --> Description[DeepSeek V4 Flash<br/>writes descriptions]
     Description --> Message[DeepSeek V4 Flash<br/>writes the message]
     Message --> Digest[One message per find]
     Digest --> Tapback([Thumbs up or down])
@@ -45,5 +46,5 @@ flowchart TB
     class Statement,Review,NoWrite,Trigger,Digest,Tapback interface;
     class Sweep,Sources,Safety,Ranking application;
     class Profile,Facts,Signal data;
-    class Extract,Aim,Precision,Reorder,Description,Message model;
+    class Extract,Aim,Precision,Reorder,Poster,Description,Message model;
     class Rule,Clock warning;

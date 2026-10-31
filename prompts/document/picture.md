@@ -2,8 +2,7 @@ name: document/picture
 used by: backend/services/document_parser.py, backend/agents/scout/seeing.py
 runs on: the Docling picture-description endpoint (DOCLING_PICTURE_API_URL),
   and the vision provider (VISION_MODEL) for a Scout find's poster
-pinned by: backend/tests/test_document_parser.py,
-  backend/tests/test_discovery_media.py
+pinned by: backend/tests/functional/test_document_upload_behaviour.py
 
 Sent once per picture Docling finds in a converted document, with the picture
 attached. The answer comes back as a caption paragraph under the picture's
