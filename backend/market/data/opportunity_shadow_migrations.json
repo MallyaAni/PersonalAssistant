@@ -484,5 +484,59 @@
   "to": "c75ae9a398097e58c3f7d6e119841c550b923a176701def5234be97f36e75f32",
   "declared": "2026-10-30",
   "reason": "The ML-forward ledger's last observation (2026-10-27) carries policy 8a0a5121..., the identity current before the 2026-10-28 deploy; the continuation rows declared that day covered the other origins but not this one. The code change is the same edgar.results_headline / PERIOD_WORDS / RESULT_WORDS / NOT_A_RESULTS / RESULTS_REPORTED repair: edgar.edgar_features and levels_pit.trailing_levels, which are all the shadow reads through opportunity_learning, are arithmetically unchanged; the repair changes which stored 6-K filings are admitted as results releases and reaches the store only through the declared one-time reclassify, which is a data correction and does not rewrite archived shadow observations. The model bundle, features, execution, price inputs, target construction and funded ledger are unchanged; the shadow continues."
+ },
+ {
+  "from": "19f933ffc785a21c1275fe3f00e822fb755184e234f41fcee466c3128e5bd34f",
+  "to": "a652a8ad6d513d28b81a499ef0cded960ad60b19597e8c4c5ede8366f1ebefdd",
+  "declared": "2026-10-31",
+  "reason": "Added the cover-page class-share reader (edgar.parse_cover_class_shares, fetch_cover_class_shares, fetch_filings) and made the incremental filings fetch skip older submissions blocks for a filer with no periodic form in the recent block. edgar.edgar_features and levels_pit.trailing_levels, which are all the shadow reads through opportunity_learning, are arithmetically unchanged. The repaired counts are a data correction read by the instant level readers and reach the store only through the nightly after deploy; archived shadow observations are not rewritten. The model bundle, features, execution, price inputs, target construction and funded ledger are unchanged; the shadow continues."
+ },
+ {
+  "from": "39a7f99d0a31e284798eae906d262a98fad4b4f0d7b22da84087cb9b1fa802a8",
+  "to": "a652a8ad6d513d28b81a499ef0cded960ad60b19597e8c4c5ede8366f1ebefdd",
+  "declared": "2026-10-31",
+  "reason": "Added the cover-page class-share reader (edgar.parse_cover_class_shares, fetch_cover_class_shares, fetch_filings) and made the incremental filings fetch skip older submissions blocks for a filer with no periodic form in the recent block. edgar.edgar_features and levels_pit.trailing_levels, which are all the shadow reads through opportunity_learning, are arithmetically unchanged. The repaired counts are a data correction read by the instant level readers and reach the store only through the nightly after deploy; archived shadow observations are not rewritten. The model bundle, features, execution, price inputs, target construction and funded ledger are unchanged; the shadow continues."
+ },
+ {
+  "from": "4b5e711070e9ecbad73f179de89a5aac68a9d8d4bde4796dc29088c11477baac",
+  "to": "a652a8ad6d513d28b81a499ef0cded960ad60b19597e8c4c5ede8366f1ebefdd",
+  "declared": "2026-10-31",
+  "reason": "Added the cover-page class-share reader (edgar.parse_cover_class_shares, fetch_cover_class_shares, fetch_filings) and made the incremental filings fetch skip older submissions blocks for a filer with no periodic form in the recent block. edgar.edgar_features and levels_pit.trailing_levels, which are all the shadow reads through opportunity_learning, are arithmetically unchanged. The repaired counts are a data correction read by the instant level readers and reach the store only through the nightly after deploy; archived shadow observations are not rewritten. The model bundle, features, execution, price inputs, target construction and funded ledger are unchanged; the shadow continues."
+ },
+ {
+  "from": "884a9418c7d1fda8768755494162ddcc8ce0123d3442396dd9aabf1df10bbdf1",
+  "to": "a652a8ad6d513d28b81a499ef0cded960ad60b19597e8c4c5ede8366f1ebefdd",
+  "declared": "2026-10-31",
+  "reason": "Added the cover-page class-share reader (edgar.parse_cover_class_shares, fetch_cover_class_shares, fetch_filings) and made the incremental filings fetch skip older submissions blocks for a filer with no periodic form in the recent block. edgar.edgar_features and levels_pit.trailing_levels, which are all the shadow reads through opportunity_learning, are arithmetically unchanged. The repaired counts are a data correction read by the instant level readers and reach the store only through the nightly after deploy; archived shadow observations are not rewritten. The model bundle, features, execution, price inputs, target construction and funded ledger are unchanged; the shadow continues."
+ },
+ {
+  "from": "dc1d5fa6a445b8d0fcfaddc0886fcd13d2025f26b771ece3a6fb37aab574fbed",
+  "to": "a652a8ad6d513d28b81a499ef0cded960ad60b19597e8c4c5ede8366f1ebefdd",
+  "declared": "2026-10-31",
+  "reason": "Added the cover-page class-share reader (edgar.parse_cover_class_shares, fetch_cover_class_shares, fetch_filings) and made the incremental filings fetch skip older submissions blocks for a filer with no periodic form in the recent block. edgar.edgar_features and levels_pit.trailing_levels, which are all the shadow reads through opportunity_learning, are arithmetically unchanged. The repaired counts are a data correction read by the instant level readers and reach the store only through the nightly after deploy; archived shadow observations are not rewritten. The model bundle, features, execution, price inputs, target construction and funded ledger are unchanged; the shadow continues."
+ },
+ {
+  "from": "df47189d60dd11b108a0e29ece29a07f452ea8bece337baba9326b549aa7665a",
+  "to": "a652a8ad6d513d28b81a499ef0cded960ad60b19597e8c4c5ede8366f1ebefdd",
+  "declared": "2026-10-31",
+  "reason": "Added the cover-page class-share reader (edgar.parse_cover_class_shares, fetch_cover_class_shares, fetch_filings) and made the incremental filings fetch skip older submissions blocks for a filer with no periodic form in the recent block. edgar.edgar_features and levels_pit.trailing_levels, which are all the shadow reads through opportunity_learning, are arithmetically unchanged. The repaired counts are a data correction read by the instant level readers and reach the store only through the nightly after deploy; archived shadow observations are not rewritten. The model bundle, features, execution, price inputs, target construction and funded ledger are unchanged; the shadow continues."
+ },
+ {
+  "from": "e8f98a4324df6172abcd6b1d5b9c45ecd6e5bbe46a7f91588d532862ea74e22e",
+  "to": "a652a8ad6d513d28b81a499ef0cded960ad60b19597e8c4c5ede8366f1ebefdd",
+  "declared": "2026-10-31",
+  "reason": "Added the cover-page class-share reader (edgar.parse_cover_class_shares, fetch_cover_class_shares, fetch_filings) and made the incremental filings fetch skip older submissions blocks for a filer with no periodic form in the recent block. edgar.edgar_features and levels_pit.trailing_levels, which are all the shadow reads through opportunity_learning, are arithmetically unchanged. The repaired counts are a data correction read by the instant level readers and reach the store only through the nightly after deploy; archived shadow observations are not rewritten. The model bundle, features, execution, price inputs, target construction and funded ledger are unchanged; the shadow continues."
+ },
+ {
+  "from": "8a0a51213ea76fc8e763b6368e4932eac1a7d8f859afe3b7058b1415f828a633",
+  "to": "a652a8ad6d513d28b81a499ef0cded960ad60b19597e8c4c5ede8366f1ebefdd",
+  "declared": "2026-10-31",
+  "reason": "Added the cover-page class-share reader (edgar.parse_cover_class_shares, fetch_cover_class_shares, fetch_filings) and made the incremental filings fetch skip older submissions blocks for a filer with no periodic form in the recent block. edgar.edgar_features and levels_pit.trailing_levels, which are all the shadow reads through opportunity_learning, are arithmetically unchanged. The repaired counts are a data correction read by the instant level readers and reach the store only through the nightly after deploy; archived shadow observations are not rewritten. The model bundle, features, execution, price inputs, target construction and funded ledger are unchanged; the shadow continues."
+ },
+ {
+  "from": "c75ae9a398097e58c3f7d6e119841c550b923a176701def5234be97f36e75f32",
+  "to": "a652a8ad6d513d28b81a499ef0cded960ad60b19597e8c4c5ede8366f1ebefdd",
+  "declared": "2026-10-31",
+  "reason": "The live ML-forward ledger's last observation (2026-10-30, sequence 31) carries policy c75ae9a3..., the identity current before the P5 class-share change. The code change is the cover-page class-share reader (edgar.parse_cover_class_shares, fetch_cover_class_shares, fetch_filings) plus the incremental filings fetch skipping older submissions blocks for a filer with no periodic form in the recent block. edgar.edgar_features and levels_pit.trailing_levels, which are all the shadow reads through opportunity_learning, are arithmetically unchanged. The repaired counts are a data correction read by the instant level readers and reach the store only through the nightly after deploy; archived shadow observations are not rewritten. The model bundle, features, execution, price inputs, target construction and funded ledger are unchanged; the shadow continues."
  }
 ]

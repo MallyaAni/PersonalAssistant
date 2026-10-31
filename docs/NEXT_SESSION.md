@@ -47,6 +47,13 @@
   (`89dc627b`); 36 tests in `backend/tests/test_cover_class_shares.py`; ruff
   clean; affected gate passed (128 passed, 2 skipped across the five EDGAR
   and fundamentals suites). No live rule, grade or order changed.
+- **Shadow identity continuation: added.** `opportunity_shadow.identity` hashes
+  `edgar.py`, so the P5 change moved the source identity to `a652a8ad`. The
+  full unit gate caught the drift: declared continuation rows now run from the
+  eight archived ledger origins and from the live ML-forward ledger's last
+  observation policy (`c75ae9a3`, 2026-10-30 sequence 31) to `a652a8ad`; a new
+  pinned test covers the live-ledger origin. Without the live row the forward
+  shadow would have refused to continue after deploy.
 - **Next:** P1 weekly tracking is the highest-priority workstream; the rule stays frozen
   for the 252-session window. The next ordinary nightly is 11-02 (the three 10-30 orders
   fill at that open) and its parity row is the first after the 10-31 deploy. P5 needs the
