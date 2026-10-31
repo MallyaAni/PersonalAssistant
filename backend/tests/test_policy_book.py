@@ -374,3 +374,119 @@ def test_sector_cap_configuration_errors():
         _run(grades, rule=pb.Rule(fomc=False, sector_cap=0.5))
     with pytest.raises(ValueError, match="sector_random requires"):
         _run(grades, rule=pb.Rule(fomc=False, sector_random=1))
+
+
+# The earnings overlay blocks a flagged unheld name, trims a flagged held name
+# by the factor, leaves an unflagged name alone and never touches a protected
+# holding. The freed weight stays cash.
+def test_earnings_overlay_trims_held_and_blocks_entries():
+    target = np.array([0.3, 0.2, 0.1, 0.1])
+    shares = np.array([10, 0, 5, 0])
+    protected = np.zeros(4, dtype=bool)
+    flags = np.array([True, True, False, True])
+    rule = pb.Rule(earnings_trim=0.5, earnings_blackout=True)
+    out = pb.trim_earnings_target(rule, target, flags, shares, protected)
+    assert out[0] == pytest.approx(0.15)  # held, flagged: trimmed
+    assert out[1] == 0.0  # unheld, flagged: blocked
+    assert out[2] == pytest.approx(0.1)  # unflagged: unchanged
+    assert out[3] == 0.0  # unheld, flagged: blocked
+    assert out.sum() < target.sum() - 1e-9  # freed weight is cash, not moved
+
+
+# A protected holding is kept at its weight even when its name is flagged.
+def test_earnings_overlay_leaves_a_protected_holding():
+    target = np.array([0.3, 0.2, 0.1, 0.1])
+    shares = np.array([10, 0, 5, 0])
+    protected = np.array([True, False, False, False])
+    flags = np.ones(4, dtype=bool)
+    rule = pb.Rule(earnings_trim=0.5, earnings_blackout=True)
+    out = pb.trim_earnings_target(rule, target, flags, shares, protected)
+    assert out[0] == pytest.approx(0.3)
+    assert out[1] == 0.0
+    assert out[2] == pytest.approx(0.05)
+
+
+# Off, trim=1 and an all-False flag matrix reproduce the installed book exactly.
+def test_earnings_overlay_off_and_one_reproduce_the_installed_book():
+    grades = np.full((160, len(TICKERS)), 2, dtype=int)
+    grades[:, 3] = 0
+    flags = np.ones((160, len(TICKERS)), dtype=bool)
+    base = _run(grades)
+    off = _run(grades, rule=pb.Rule(fomc=False), earnings=flags)
+    one = _run(
+        grades,
+        rule=pb.Rule(fomc=False, earnings_trim=1.0, earnings_blackout=False),
+        earnings=flags,
+    )
+    silent = _run(
+        grades,
+        rule=pb.Rule(fomc=False, earnings_trim=0.5, earnings_blackout=True),
+        earnings=np.zeros((160, len(TICKERS)), dtype=bool),
+    )
+    for book in (off, one, silent):
+        assert np.array_equal(base.equity, book.equity, equal_nan=True)
+        assert np.array_equal(base.weights, book.weights)
+        assert base.trades == book.trades
+
+
+# The placebo removes the overlay's total removed weight from a random subset,
+# and a fixed seed makes it deterministic.
+def test_earnings_placebo_removes_the_overlay_weight():
+    target = np.array([0.3, 0.3, 0.2, 0.1])
+    shares = np.full(4, 10)
+    protected = np.zeros(4, dtype=bool)
+    flags = np.array([True, True, False, False])
+    rule = pb.Rule(earnings_trim=0.5, earnings_blackout=False)
+    trimmed = pb.trim_earnings_target(rule, target, flags, shares, protected)
+    first = pb.trim_earnings_target(
+        rule, target, flags, shares, protected, np.random.default_rng(7)
+    )
+    second = pb.trim_earnings_target(
+        rule, target, flags, shares, protected, np.random.default_rng(7)
+    )
+    assert target.sum() - trimmed.sum() == pytest.approx(target.sum() - first.sum())
+    assert np.array_equal(first, second)
+    assert not np.array_equal(trimmed, first)
+
+
+# The overlay reads only closes on or before the decision session: changing
+# every close after the cutoff leaves the book and its early trades unchanged.
+def test_earnings_overlay_reads_only_past_closes():
+    sessions = 160
+    dates, open_, close, grades, band = _market(sessions)
+    grades[:, :3] = 2
+    flags = np.ones((sessions, len(TICKERS)), dtype=bool)
+    rule = pb.Rule(fomc=False, min_trade=0, earnings_trim=0.5, earnings_blackout=True)
+    base = pb.simulate(
+        dates, TICKERS, "SPY", open_, close, close.copy(), grades, band, rule,
+        earnings=flags,
+    )
+    changed = close.copy()
+    changed[120:] *= 10.0
+    moved = pb.simulate(
+        dates, TICKERS, "SPY", open_, changed, changed.copy(), grades, band, rule,
+        earnings=flags,
+    )
+    assert np.array_equal(base.weights[:120], moved.weights[:120])
+    early = [
+        trade for trade in base.trades if base.dates.index(trade["decided"]) < 118
+    ]
+    later = [
+        trade for trade in moved.trades if moved.dates.index(trade["decided"]) < 118
+    ]
+    assert early == later
+
+
+# An overlay without flags, a placebo without an overlay, a trim outside the
+# unit interval and a flag matrix of the wrong shape are configuration errors.
+def test_earnings_overlay_configuration_errors():
+    grades = np.full((160, len(TICKERS)), 2, dtype=int)
+    flags = np.zeros((160, len(TICKERS)), dtype=bool)
+    with pytest.raises(ValueError, match="earnings_trim"):
+        _run(grades, rule=pb.Rule(fomc=False, earnings_trim=1.5), earnings=flags)
+    with pytest.raises(ValueError, match="earnings_random requires"):
+        _run(grades, rule=pb.Rule(fomc=False, earnings_random=1))
+    with pytest.raises(ValueError, match="requires one flag"):
+        _run(grades, rule=pb.Rule(fomc=False, earnings_trim=0.5))
+    with pytest.raises(ValueError, match="One earnings flag"):
+        _run(grades, rule=pb.Rule(fomc=False, earnings_trim=0.5), earnings=flags[:80])

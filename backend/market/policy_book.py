@@ -66,6 +66,14 @@ class Rule:
     # Research placebo: remove the cap's weight from a random subset instead of
     # the sector group, seeded. Requires `sector_cap`.
     sector_random: int | None = None
+    # Research only: trim a flagged held name's target to this fraction while
+    # it is inside its predicted pre-release window. None is the installed rule.
+    earnings_trim: float | None = None
+    # Research only: block an entry into a flagged unheld name.
+    earnings_blackout: bool = False
+    # Research placebo: remove the overlay's weight from a random subset instead
+    # of the flagged names, seeded. Requires the overlay.
+    earnings_random: int | None = None
 
 
 @dataclass
@@ -128,6 +136,7 @@ def simulate(
     tilt: np.ndarray | None = None,
     eligible: np.ndarray | None = None,
     sector: np.ndarray | None = None,
+    earnings: np.ndarray | None = None,
 ) -> Book:
     dates = [str(d)[:10] for d in dates]
     tickers = list(tickers)
@@ -142,6 +151,17 @@ def simulate(
         sector = np.asarray(sector, dtype=str)
         if sector.shape != (N,):
             raise ValueError("One sector label per ticker required")
+    overlay = rule.earnings_trim is not None or rule.earnings_blackout
+    if rule.earnings_trim is not None and not 0 <= rule.earnings_trim <= 1:
+        raise ValueError("earnings_trim must be within [0, 1]")
+    if rule.earnings_random is not None and not overlay:
+        raise ValueError("earnings_random requires the earnings overlay")
+    if overlay and earnings is None:
+        raise ValueError("the earnings overlay requires one flag per session and name")
+    if earnings is not None:
+        earnings = np.asarray(earnings, dtype=bool)
+        if earnings.shape != (T, N):
+            raise ValueError("One earnings flag per session and name required")
     with np.errstate(invalid="ignore", divide="ignore"):
         opens = open_ * adj_close / close
     mask = sizable(adj_close, tickers, benchmark)
@@ -171,6 +191,11 @@ def simulate(
     sector_rng = (
         np.random.default_rng(rule.sector_random)
         if rule.sector_random is not None
+        else None
+    )
+    earnings_rng = (
+        np.random.default_rng(rule.earnings_random)
+        if rule.earnings_random is not None
         else None
     )
     window = leader.WINDOW
@@ -268,12 +293,18 @@ def simulate(
                     planned, _ = plan_target(
                         rule, mask[t], g, below, shares, band[t], adj_close, t,
                         held, tilt_t, rng, sector, sector_rng,
+                        None if earnings is None else earnings[t], earnings_rng,
                     )
                 else:
                     planned = _ordinary(
                         rule, mask[t], g, below, shares, band[t], adj_close, t,
                         held, tilt_t, rng,
                     )
+                    if overlay:
+                        planned = trim_earnings_target(
+                            rule, planned, earnings[t], shares,
+                            (shares > 0) & (g < 0), earnings_rng,
+                        )
             break
         # 2. Tonight's plan, from this close only.
         day = days[t]
@@ -321,6 +352,7 @@ def simulate(
         target, protected = plan_target(
             rule, mask[t], g, below, shares, band[t], adj_close, t, held,
             None if tilt is None else tilt[t], rng, sector, sector_rng,
+            None if earnings is None else earnings[t], earnings_rng,
         )
         sells, buys = plan_orders(rule, target, shares, adj_close[t], value, protected)
         if sells or buys:
@@ -420,6 +452,55 @@ def cap_sector_target(rule, target, sector_t, protected, rng=None):
     return out
 
 
+# Trim or block the names flagged inside their predicted pre-release window.
+# A flagged unheld name is not entered (blackout); a flagged held name is
+# scaled by the trim fraction; a protected holding is never touched. The freed
+# weight stays cash. With `rng`, the placebo removes the overlay's total
+# removed weight from a random subset of unprotected names instead.
+def trim_earnings_target(rule, target, earnings_t, shares, protected, rng=None):
+    """Return the target with flagged pre-release names trimmed or blocked."""
+    flagged = np.asarray(earnings_t, dtype=bool)
+    if flagged.shape != target.shape:
+        raise ValueError("One earnings flag per name required")
+    flagged = flagged & ~protected
+    if not flagged.any():
+        return target
+    if rng is None:
+        out = target.copy()
+        if rule.earnings_blackout:
+            out[flagged & (shares == 0)] = 0.0
+        if rule.earnings_trim is not None:
+            out[flagged & (shares > 0)] *= rule.earnings_trim
+        return out
+    removed = 0.0
+    if rule.earnings_blackout:
+        removed += float(target[flagged & (shares == 0)].sum())
+    if rule.earnings_trim is not None:
+        removed += float(target[flagged & (shares > 0)].sum()) * (
+            1.0 - rule.earnings_trim
+        )
+    if removed <= 0:
+        return target
+    out = target.copy()
+    candidates = np.flatnonzero((out > 0) & ~protected)
+    if len(candidates) == 0:
+        return out
+    picked = []
+    picked_weight = 0.0
+    for j in rng.permutation(candidates):
+        picked.append(j)
+        picked_weight += out[j]
+        if picked_weight >= removed:
+            break
+    if picked_weight <= 0:
+        return out
+    if picked_weight <= removed:
+        out[picked] = 0.0
+    else:
+        out[picked] *= (picked_weight - removed) / picked_weight
+    return out
+
+
 # Tonight's ordinary target at close t on the book's own holdings: the leader
 # plan, with a held name the grades cannot read (a protected holding) kept at
 # its weight and the rest of the book sized on the remaining capital. Returns
@@ -439,6 +520,8 @@ def plan_target(
     rng=None,
     sector_t=None,
     sector_rng=None,
+    earnings_t=None,
+    earnings_rng=None,
 ):
     target = _ordinary(
         rule, mask_t, g, below, shares, band_t, adj_close, t, held, tilt_t, rng
@@ -448,6 +531,10 @@ def plan_target(
         target = np.where(protected, held, target * (1.0 - held[protected].sum()))
     if rule.sector_cap is not None:
         target = cap_sector_target(rule, target, sector_t, protected, sector_rng)
+    if rule.earnings_trim is not None or rule.earnings_blackout:
+        target = trim_earnings_target(
+            rule, target, earnings_t, shares, protected, earnings_rng
+        )
     return target, protected
 
 

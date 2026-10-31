@@ -114,6 +114,39 @@ def test_sessions_until_is_signed():
     assert ec.sessions_until(asof, asof) == 0
 
 
+# Each usable release opens an interval that runs to the next release, and the
+# prediction is the one made at that release.
+def test_intervals_start_at_the_fifth_release():
+    out = ec.intervals(QUARTERLY)
+    assert len(out) == len(QUARTERLY) - ec.MIN_RELEASES + 1
+    assert out[0] == (date(2024, 1, 20), date(2024, 4, 20), date(2024, 4, 20))
+    assert out[-1][0] == date(2025, 10, 20)
+    assert out[-1][1] is None
+
+
+# A later release cannot change an interval that ended before it: the history
+# is read as of the release that opened the interval.
+def test_intervals_are_point_in_time():
+    before = ec.intervals(QUARTERLY)
+    later = QUARTERLY + [date(2026, 1, 20), date(2026, 4, 20)]
+    after = ec.intervals(later)
+    assert after[: len(before) - 1] == before[: len(before) - 1]
+    assert after[len(before) - 1] == (
+        date(2025, 10, 20), date(2026, 1, 20), date(2026, 1, 20)
+    )
+
+
+# The flag window includes the predicted session, the window before it and the
+# overdue tail, and excludes a None distance.
+def test_pre_release_window_boundaries():
+    assert ec.pre_release(5, 5, 20)
+    assert not ec.pre_release(6, 5, 20)
+    assert ec.pre_release(0, 5, 20)
+    assert ec.pre_release(-20, 5, 20)
+    assert not ec.pre_release(-21, 5, 20)
+    assert not ec.pre_release(None, 5, 20)
+
+
 # One name's row carries the last release and the next prediction together.
 def test_calendar_row_carries_the_history_and_prediction():
     columns = {

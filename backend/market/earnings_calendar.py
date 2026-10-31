@@ -187,3 +187,27 @@ def calendar_row(ticker: str, columns: Mapping[str, list], asof: date) -> dict |
     if prediction is None:
         return None
     return {"ticker": ticker, **prediction}
+
+
+# The predicted intervals from one release history: the prediction made at each
+# release is valid from that release until the next one. The last interval has
+# no end. Research only; the live scan reads `predict` directly.
+def intervals(dates: list[date]) -> list[tuple[date, date | None, date]]:
+    """Return (valid_from, valid_until, predicted) for each usable release."""
+    out = []
+    for index in range(MIN_RELEASES - 1, len(dates)):
+        prediction = predict(dates, dates[index])
+        if prediction is None:
+            continue
+        end = dates[index + 1] if index + 1 < len(dates) else None
+        out.append(
+            (dates[index], end, date.fromisoformat(prediction["predicted"]))
+        )
+    return out
+
+
+# The pre-release window: the signed session distance to the predicted date is
+# at most `window` and at least `-tail`. A None distance is outside the window.
+def pre_release(until: int | None, window: int, tail: int) -> bool:
+    """Return whether a signed session distance is inside the flag window."""
+    return until is not None and -tail <= until <= window
