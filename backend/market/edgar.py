@@ -655,6 +655,20 @@ def parse_filings_block(
     return out
 
 
+# Pure: the earliest filing date in a submissions block, whatever its form.
+# The recent block's oldest filing decides whether an older block can hold a
+# filing after `since`: every older-block filing predates it.
+def _earliest_filed(block: Mapping[str, Any]) -> date | None:
+    """Return the block's earliest filing date, or None."""
+    dates: list[date] = []
+    for value in block.get("filingDate") or []:
+        try:
+            dates.append(date.fromisoformat(str(value)))
+        except ValueError:
+            continue
+    return min(dates, default=None)
+
+
 # Fetch every 10-K and 10-Q for a company: the recent block plus each older
 # block the submissions document points at, deduplicated by accession and
 # returned oldest first. With `since`, the older blocks are read only when
@@ -674,8 +688,9 @@ def fetch_filings(
         _SUBMISSIONS_URL.format(name=f"CIK{cik:010d}.json"), transport, pacer, sleep
     )
     filings = payload.get("filings") or {}
-    out = parse_filings_block(filings.get("recent") or {}, forms)
-    earliest = min((filing.filed for filing in out), default=None)
+    recent = filings.get("recent") or {}
+    out = parse_filings_block(recent, forms)
+    earliest = _earliest_filed(recent)
     need_older = since is None or earliest is None or earliest > since
     if need_older:
         for older in filings.get("files") or []:

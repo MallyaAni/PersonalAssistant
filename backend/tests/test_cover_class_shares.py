@@ -452,6 +452,48 @@ def test_an_incremental_fetch_skips_the_older_submissions_blocks():
     assert older_url in transport.seen
 
 
+def test_a_recent_block_with_no_periodic_form_still_skips_older_blocks():
+    # A 20-F/6-K filer files no 10-K or 10-Q, so the recent block holds no
+    # periodic form at all. The nightly watermark is newer than the recent
+    # block's oldest filing, so no older block can hold a filing after it.
+    submissions_url = "https://data.sec.gov/submissions/CIK0000000002.json"
+    older_url = "https://data.sec.gov/submissions/CIK0000000002-submissions-001.json"
+    recent = {
+        "form": ["6-K", "20-F"],
+        "filingDate": ["2026-10-01", "2026-04-15"],
+        "acceptanceDateTime": ["2026-10-01T10:00:00Z", "2026-04-15T10:00:00Z"],
+        "accessionNumber": ["0000000002-26-000002", "0000000002-26-000001"],
+        "primaryDocument": ["a.htm", "b.htm"],
+    }
+    older = {
+        "form": ["20-F"],
+        "filingDate": ["2015-04-15"],
+        "acceptanceDateTime": ["2015-04-15T10:00:00Z"],
+        "accessionNumber": ["0000000002-15-000001"],
+        "primaryDocument": ["c.htm"],
+    }
+    payload = {
+        "filings": {
+            "recent": recent,
+            "files": [{"name": "CIK0000000002-submissions-001.json"}],
+        }
+    }
+    transport = Transport(
+        {
+            submissions_url: (200, json.dumps(payload).encode()),
+            older_url: (200, json.dumps(older).encode()),
+        }
+    )
+    filings = edgar.fetch_filings(2, since=date(2026, 10, 2), transport=transport)
+    assert filings == []
+    assert older_url not in transport.seen
+    # A watermark older than the recent block's oldest filing leaves a gap
+    # only an older block can fill, so that block is read.
+    filings = edgar.fetch_filings(2, since=date(2026, 4, 1), transport=transport)
+    assert filings == []
+    assert older_url in transport.seen
+
+
 def test_the_fetch_reads_the_instance_and_advances_the_watermark():
     accession = "0000000001-26-000001"
     index_url, document_url = archive_urls(1, accession)
