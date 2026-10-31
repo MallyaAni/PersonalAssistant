@@ -35,7 +35,7 @@
   −0.25-point mean difference); parity 3 of 4; execution all-time 134 fills, +15.55 bp
   all-in, drift +52.92 bp, slippage −34.88 bp; exposure 20.8% → 47.8% as the retired
   FOMC cut restored the October cycle. No live change; not a performance verdict.
-- **P5 multi-class and stale share counts: fixed, not yet deployed.** The cover-page
+- **P5 multi-class and stale share counts: fixed, not yet deployed** (`b8f11366`). The cover-page
   XBRL reader resolves ERIE 46,191,610 and STZ 169,224,220 and refreshes twelve stale
   names (ABT, C, DTE, ETR, EXC, FE, HSY, HUM, JCI, LNT, NEE, SO); it refuses BRK-B, V
   and ARES as ambiguous, and ASML, NBIS, SIMO and TSM have no 10-K/10-Q cover page.
