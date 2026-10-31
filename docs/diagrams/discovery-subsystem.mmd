@@ -21,7 +21,8 @@ flowchart LR
     Rank --> Precision[MiniLM cross-encoder<br/>CPU: orders and attributes]
     Precision --> Reorder[DeepSeek V4 Flash<br/>orders the qualified shortlist]
     Context --> Reorder
-    Reorder --> Describe[DeepSeek V4 Flash<br/>bounded descriptions]
+    Reorder --> Poster[DeepSeek V4.1 vision<br/>captions a selected find's poster]
+    Poster --> Describe[DeepSeek V4 Flash<br/>bounded descriptions]
     Describe --> Result[Digest and calendar]
 
     classDef interface fill:#f5f5f7,stroke:#86868b,color:#1d1d1f;
@@ -31,4 +32,4 @@ flowchart LR
     class User,Chat,Approval,Stop,Result interface;
     class Memory,Profile,Context data;
     class Schedule,Sweep,Feeds,Search,Candidates,Rank application;
-    class Understand,Aim,Precision,Reorder,Describe model;
+    class Understand,Aim,Precision,Reorder,Poster,Describe model;

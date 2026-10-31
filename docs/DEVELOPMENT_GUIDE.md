@@ -851,7 +851,8 @@ Key settings are:
 | `VISION_INFERENCE_ADAPTER` | blank | Vision-role adapter; blank inherits `INFERENCE_ADAPTER` |
 | `VISION_LLM_BASE_URL` | blank | Vision endpoint; blank falls back to `LLM_BASE_URL` |
 | `VISION_LLM_REASONING_EFFORT` | `none` | Vision-role reasoning control |
-| `VISION_MODEL` | `qwen/qwen3.5-4b` | The default is desktop-era; the deployment sets `qwen3-vl-8b`, served on the second Spark at `:8001`, independently replaceable from the chat setting |
+| `VISION_MODEL` | `deepseek-v4.1-flash-1017` | The image-reading role is the DeepSeek server on spark1 `:8000`, reached through the spark2 `:8001` forwarder; the compatibility alias `qwen3-vl-8b` still resolves to the same model. Independently replaceable from the chat setting |
+| `DOCLING_PICTURE_MODEL` | `deepseek-v4.1-flash-1017` | Model name requested from the Docling picture-description endpoint (`DOCLING_PICTURE_API_URL`) for a picture inside a converted document |
 | `VISION_MAX_TOKENS` | `512` | Maximum grounded analysis output tokens |
 | `VISION_ESCALATION_LLM_BASE_URL` | blank | Optional OpenAI-compatible specialist VLM endpoint; blank disables escalation |
 | `VISION_ESCALATION_MODEL` | blank | Specialist model identifier; both endpoint and model are required |
@@ -914,7 +915,8 @@ MEMORY_PROPOSAL_LLM_REASONING_EFFORT=none
 MEMORY_PROPOSAL_MAX_TOKENS=256
 VISION_INFERENCE_ADAPTER=openai_compatible
 VISION_LLM_BASE_URL=http://animallya-spark2.local:8001
-VISION_MODEL=qwen3-vl-8b
+VISION_MODEL=deepseek-v4.1-flash-1017
+DOCLING_PICTURE_MODEL=deepseek-v4.1-flash-1017
 EMBEDDING_INFERENCE_ADAPTER=openai_compatible
 EMBEDDING_BASE_URL=http://127.0.0.1:8004
 EMBEDDING_MODEL=text-embedding-nomic-embed-text-v1.5

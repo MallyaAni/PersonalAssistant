@@ -78,17 +78,24 @@ says so.
 | Subsystem view | [discovery-subsystem.svg](diagrams/discovery-subsystem.svg) |
 | Agent folder | `backend/agents/scout/` |
 | Domain package | `backend/discovery/` |
-| Prompts | `aiming.py` · `reranking.py` · `describing.py` · `digesting.py` · `place_suggest.py` · `timezones.py` |
+| Prompts | `aiming.py` · `reranking.py` · `describing.py` · `digesting.py` · `place_suggest.py` · `timezones.py` · `seeing.py` (the shared `document/picture` instruction) |
 | Card | `agents/scout/card.py` |
 | Functional tests | `test_prompt_behaviour.py` · `test_aiming_behaviour.py` · `test_description_quality.py` · `test_digest_writing.py` · `test_timezone_prompt_behaviour.py` |
 | Quality harness | `python -m backend.cli.evaluate_discovery_ranking` |
 
 **What the model decides:** the subject of each search, the vector a candidate is
-scored against, the order of an already-qualified shortlist, and how a find
-reads. **What is decided for it:** what qualifies. Novelty, familiarity,
-lead time, geography and the request budget are deterministic, because a sweep
-runs unattended and a sampled judgement would make the same feed produce
-different results on different days.
+scored against, the order of an already-qualified shortlist, what a listing's
+poster shows, and how a find reads. **What is decided for it:** what qualifies.
+Novelty, familiarity, lead time, geography and the request budget are
+deterministic, because a sweep runs unattended and a sampled judgement would
+make the same feed produce different results on different days.
+
+A feed is read as the instances it publishes, not as one row per entry: a
+recurring calendar entry expands into the upcoming occurrences the sweep can
+act on, and a poster is fetched for a selected find and captioned by the vision
+role before the describer sees the listing. The caption is the one place a
+model reads pixels on this path, and every failure around it is a missing
+caption rather than a lost find.
 
 **The message is written, not assembled.** `digesting.py` composes the greeting
 and one line per find; `discovery/digest.py` supplies the facts and attaches the

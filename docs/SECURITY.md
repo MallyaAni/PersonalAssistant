@@ -144,6 +144,17 @@ This document separates current security facts from future requirements. A contr
   blocked. Result text is bounded and quoted as untrusted data. Broad PII
   classification and approval for sensitive-but-useful queries remain
   incomplete.
+- **Discovery feeds are untrusted outbound input.** A user-supplied feed URL is
+  a request-forgery primitive unless its destination is checked, so
+  `backend/discovery/fetching.py` refuses non-web schemes, resolves every host
+  (including each redirect hop), and refuses loopback, private, link-local, and
+  cloud-metadata addresses before contacting them. Bodies are abandoned
+  mid-stream past 5 MB, feed text is bounded and stripped of control
+  characters, and non-web links are dropped before they can reach a
+  notification. A selected find's poster is fetched under the same guard and
+  request budget with an 8 MB ceiling, and its bytes are checked against their
+  magic number before any model sees them, so an HTML error page served as an
+  image never reaches the vision endpoint.
 - Google's unpaid Gemini service may use submitted prompts and responses to
   improve its products and may subject them to human review. Do not route
   sensitive, confidential, personal, or private-memory content to that worker.

@@ -1204,6 +1204,7 @@ every stage degrades to the one before it rather than failing the sweep:
 | Precision ranking and attribution | `ms-marco-MiniLM-L6-v2` cross-encoder, ONNX | CPU, in-process | one forward pass per (interest, candidate) pair over the shortlist; absent weights disable it |
 | Shortlist ordering against memory | `deepseek-v4-flash` (`MAIN_LLM_MODEL`), grammar-constrained, greedy | Sparks | once per sweep, and only when approved facts exist |
 | Find naming and description | `deepseek-v4-flash` (`MAIN_LLM_MODEL`), grammar-constrained, greedy | Sparks | once per selected find, after selection rather than per candidate |
+| Poster reading | `deepseek-v4.1-flash-1017` (`VISION_MODEL`) | spark1 `:8000` | once per selected find that published a picture, before its description |
 
 So a sweep costs about two main-role calls plus one per delivered find, one
 embedding batch, and a few hundred CPU cross-encoder passes. Everything is
@@ -1221,7 +1222,7 @@ Image and presentation paths:
 | Image generation / slide image | `flux-2-klein-9b-Q6_K.gguf` (`IMAGE_MODEL`) via ComfyUI | the desktop, only while it is on |
 | Image editing by instruction | FLUX.1 Kontext (`IMAGE_EDIT_MODEL`, GGUF) via ComfyUI; Klein when that is unset | desktop |
 | Refinement prompt merge, learned-style distillation | `deepseek-v4-flash` (`MAIN_LLM_MODEL`) | Sparks |
-| Image vision analysis (ask) | `qwen3-vl-8b` (`VISION_MODEL`) | spark2 (`anios-vlm`) |
+| Image vision analysis (ask) | `deepseek-v4.1-flash-1017` (`VISION_MODEL`, served under the compatibility alias `qwen3-vl-8b`) | spark1 `:8000`, reached through the spark2 `:8001` forwarder |
 | Image vision escalation | optional `VISION_ESCALATION_MODEL`, currently unset | configured OpenAI-compatible endpoint |
 | Image embedding (index and reconciler) | `nomic-embed-vision-v1.5` ONNX | spark1, CPU |
 | Deck outline, one slide-content microtask per slide, or slide revision | `deepseek-v4-flash` (`PRESENTATION_LLM_MODEL`) | Sparks |
@@ -1739,18 +1740,37 @@ user-scoped. The public export/delete APIs and live browser workflow exercise
 these guarantees rather than inferring them from repository wiring.
 
 `backend/discovery/events.py` defines a provider-neutral `EventSource` returning
-typed events with a stable per-source identity, start, place, and link, with
-iCalendar and RSS/Atom adapters parsed using the standard library. Discovery
-reads structured listings rather than searching: local listings are already
-structured, and search is the one part of the loop with a hard monthly ceiling.
-Feeds are treated as hostile input — control characters stripped, text bounded,
-non-web URL schemes dropped, 200 events per source, and bodies abandoned
-mid-stream past 5 MB. A `RequestBudget` fixes how many outbound requests one run
-may make, so the free-tier claim is decided in advance rather than emerging from
-how many sources happen to be configured. RSS is deliberately weaker than
-iCalendar: an item states when it was published, not when the happening occurs,
-so items carry no start time unless the publisher supplies an explicit event
-date.
+typed events with a stable per-source identity, start, place, link, and the
+picture the listing published. iCalendar and RSS/Atom adapters are parsed using
+the standard library. A recurring iCalendar entry is expanded into the
+occurrences a sweep can act on — RRULE (DAILY, WEEKLY, MONTHLY, YEARLY, with
+INTERVAL, COUNT, UNTIL, BYDAY, BYMONTHDAY, BYMONTH and WKST), RDATE, EXDATE and
+RECURRENCE-ID overrides — bounded by the sweep's lead time and a per-entry cap,
+so a weekly series is not reduced to its first stale date and one feed cannot
+flood the source's allowance. Discovery reads structured listings rather than
+searching: local listings are already structured, and search is the one part of
+the loop with a hard monthly ceiling. Feeds are treated as hostile input —
+control characters stripped, text bounded, non-web URL schemes dropped, 200
+events per source, destinations resolved and refused when non-public before a
+request or redirect is followed, and bodies abandoned mid-stream past 5 MB. A
+`RequestBudget` fixes how many outbound requests one run may make, so the
+free-tier claim is decided in advance rather than emerging from how many sources
+happen to be configured. RSS is deliberately weaker than iCalendar: an item
+states when it was published, not when the happening occurs, so items carry no
+start time unless the publisher supplies an explicit event date.
+
+The picture is the exception to the text-only path, and it is deliberately
+narrow. A source records the image it publishes (RSS enclosure or
+`media:content`, Atom enclosure, iCalendar `ATTACH`/`IMAGE`, schema.org
+`image`, link-card image) as a typed `media_url`; only a *selected* find fetches
+it, within the same request budget, under an 8 MB ceiling. The bytes are checked
+against their magic number, so an HTML error page served as an image never
+reaches the model, and the vision model captions it with the shared
+`document/picture` prompt. The caption is prepended to the page text the
+describer already reads, because the poster often states the date, venue or
+performers the prose omits. Every failure is a missing caption rather than a
+lost find, and `media_url` survives both the digest JSON and the seen payload so
+a resumed run and a repeat fill keep it.
 
 `discovery_schedules` and `discovery_runs` hold one user's cadence and each
 durable, leased sweep. Leasing reuses the presentation-worker pattern rather than
