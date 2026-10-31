@@ -3448,6 +3448,14 @@ export interface DeskStrategySimulation {
     strategy_contract?: {schema: string; strategy_identity: string; history_sha256: string; audit_sha256: string; source_record_sha256: string; config_sha256: string}};
 }
 
+// One signal the replay produced, judged from the fill the rule could trade at.
+export interface DeskPolicyReplayEntry {
+  date: string;
+  filled: string;
+  return_5?: number; return_20?: number; return_60?: number;
+  excess_5?: number; excess_20?: number; excess_60?: number;
+}
+
 // The installed policy's own replay: the point-in-time rule's target in this
 // name on every session and the trades it implies at the next open. Research,
 // not audited history; the chart draws it only for the installed policy.
@@ -3470,7 +3478,7 @@ export interface DeskPolicyReplay {
   trades: {decided: string; date: string; action: Extract<TradeAction, 'BUY' | 'SELL'>; size: number; target: number; reason?: string; timing?: 'decision_close'}[];
   // Every grade change under the installed grading, from the same replay as the trades.
   grades?: {date: string; grade: string; said?: boolean; at?: string}[];
-  outcomes?: {entry_summary?: Record<string, number>; exit_summary?: Record<string, number>};
+  outcomes?: {entry_summary?: Record<string, number>; exit_summary?: Record<string, number>; entries?: DeskPolicyReplayEntry[]};
   // What the rule's trades in this name earned as a share of the book: fills at the next open,
   // costs per side, beside the benchmark held at the same weights.
   realised?: {cost_bps: number; benchmark: string; gross: number; costs: number; net: number; benchmark_same_weights: number; excess: number;

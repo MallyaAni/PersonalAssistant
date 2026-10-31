@@ -1665,6 +1665,9 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
           paperRecordedFills={paperLive?.recorded_fills}
           paperRecordedFillsReason={paperLive?.recorded_fills_reason}
           paperAccountUnavailable={paperLive?.reason !== undefined}
+          paperPositions={paperLive?.positions}
+          paperEquity={paperLive?.equity}
+          paperPlan={paperLive?.plan}
           historyGeneration={accountGen.current}
           personalReceiptId={historyContext?.userId === userId
             && historyContext.generation === accountGen.current
@@ -2761,6 +2764,9 @@ const NameDetail = ({
   paperRecordedFills,
   paperRecordedFillsReason,
   paperAccountUnavailable = false,
+  paperPositions,
+  paperEquity,
+  paperPlan,
   personalReceiptId,
   order = null,
   lastClose = null,
@@ -2793,6 +2799,12 @@ const NameDetail = ({
   paperRecordedFills?: DeskPaperLive['recorded_fills']
   paperRecordedFillsReason?: DeskPaperLive['recorded_fills_reason']
   paperAccountUnavailable?: boolean
+  // The paper account's holdings and current plan, so the chart header can
+  // show them beside the account-independent model target instead of letting
+  // a 0% model target hide a name the paper account actually holds.
+  paperPositions?: DeskPaperLive['positions']
+  paperEquity?: number
+  paperPlan?: DeskPaperLive['plan']
   personalReceiptId?: string
   strategy?: boolean
   allocation?: DeskModelAllocation
@@ -2887,7 +2899,7 @@ const NameDetail = ({
             so it leads on a phone and holds the right two-fifths of a wide
             window, staying in place while the reasoning scrolls beside it. */}
         <div className={strategy ? 'mb-4 w-full' : 'mb-4 lg:sticky lg:top-0 lg:w-[40vw] lg:max-w-[54rem] lg:shrink-0'}>
-          <TickerChart key={`${userId}:${ticker}:${personalHistory}:${historyGeneration}`} userId={userId} ticker={ticker} history={history ?? undefined} currentPolicy={latest.targets?.policy} paperActivity={paperActivity} paperRecordedFills={paperRecordedFills} paperRecordedFillsReason={paperRecordedFillsReason} paperAccountUnavailable={paperAccountUnavailable} quote={live.quotes[ticker]} live={live} now={now} personalHistory={personalHistory} personalReceiptId={personalReceiptId} tall close={lastClose ?? row?.last_close} closeSession={latest.session} suggestion={liveSuggestion} levels={live.structure?.[ticker] ?? null} modelTarget={strategy ? strategyChartTarget(latest, allocation, ticker, now, live) : null} strategy={strategy} simulation={strategy ? matchingSimulation : null} policyReplay={simulation?.policy_replay ?? null} simulationError={strategy ? matchingSimulationError : ''} allocation={allocation} boardSignal={boardSignal} />
+          <TickerChart key={`${userId}:${ticker}:${personalHistory}:${historyGeneration}`} userId={userId} ticker={ticker} history={history ?? undefined} currentPolicy={latest.targets?.policy} paperActivity={paperActivity} paperRecordedFills={paperRecordedFills} paperRecordedFillsReason={paperRecordedFillsReason} paperAccountUnavailable={paperAccountUnavailable} paperPositions={paperPositions} paperEquity={paperEquity} paperPlan={paperPlan} quote={live.quotes[ticker]} live={live} now={now} personalHistory={personalHistory} personalReceiptId={personalReceiptId} tall close={lastClose ?? row?.last_close} closeSession={latest.session} suggestion={liveSuggestion} levels={live.structure?.[ticker] ?? null} modelTarget={strategy ? strategyChartTarget(latest, allocation, ticker, now, live) : null} strategy={strategy} simulation={strategy ? matchingSimulation : null} policyReplay={simulation?.policy_replay ?? null} simulationError={strategy ? matchingSimulationError : ''} allocation={allocation} boardSignal={boardSignal} />
         </div>
         <div className="lg:min-w-0 lg:flex-1">
         {order && <PaperOrderCard ticker={ticker} row={order} session={latest.session} />}

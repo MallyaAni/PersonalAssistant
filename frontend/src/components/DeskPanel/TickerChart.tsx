@@ -15,12 +15,12 @@ import {
   type UTCTimestamp,
 } from 'lightweight-charts'
 import { exportDeskPersonalReceipt, getDeskChart, getDeskPersonalHistory, getDeskOriginalStrategyRecommendation, getDeskRecordedStrategyRecommendations, DESK_CHART_DEFAULT_SESSIONS, type DeskRecordedStrategyReference, type DeskOriginalStrategyRecommendation, type DeskPersonalReceipt, type DeskChart, type DeskChartBar, type DeskChartDecision, type DeskChartTimeframe } from '../../services/api'
-import type { DeskHistory, DeskHistoryFill, DeskHistoryRow, DeskLive, DeskModelAllocation, DeskPaperLive, DeskPolicyReplay, DeskStructure, DeskStrategyStock, DeskStrategyDecision } from '../../services/api'
+import type { DeskHistory, DeskHistoryFill, DeskHistoryRow, DeskLive, DeskModelAllocation, DeskPaperLive, DeskPolicyReplay, DeskPolicyReplayEntry, DeskStructure, DeskStrategyStock, DeskStrategyDecision } from '../../services/api'
 import { ENTRY_GRADES, exhausted, GRADE_RANK, isLabel, lookup, ORDER_SIDES, PLAN_TRADES, SIMULATED_ACTIONS, TRADED_ACTIONS, type Grade, type OrderSide, type PlanTrade, type Verdict } from '../../services/labels'
 
 
 import { SessionPrice } from './StockBoard'
-import { LEVEL_NAME, percent, shares } from './TradeBoard'
+import { LEVEL_NAME, isDone, orderWord, percent, shares } from './TradeBoard'
 import {confirmedPaperFills, paperActivitySession, paperFillSession} from './paperFills'
 import type {Signals, StrategyChartTarget} from './SignalBoard'
 import {boardAction, marketPhaseLine, strategyHistoryMatches} from './SignalBoard'
@@ -355,6 +355,29 @@ const replayOutcomeLine = (replay: DeskPolicyReplay): string => {
   const signed = (value: number | undefined) => value === undefined ? '—' : `${value >= 0 ? '+' : ''}${(value * 100).toFixed(1)}%`
   const benchmark = replay.realised?.benchmark ?? 'the benchmark'
   return `${entry.count} entr${entry.count === 1 ? 'y' : 'ies'} here · from the fill, beat ${benchmark} after 20 sessions ${pct(entry.hit_rate_20)} of the time, mean excess ${signed(entry.mean_excess_20)} · after 60: ${pct(entry.hit_rate_60)}, ${signed(entry.mean_excess_60)}.`
+}
+
+// The same in-sample entries split at the book's 2022/2023 boundary, so a
+// name's early record is not read as one undivided period. This is a
+// descriptive split of the same run, not an out-of-sample validation.
+const replayOutcomeSplitLine = (replay: DeskPolicyReplay): string => {
+  const entries = replay.outcomes?.entries
+  if (!entries?.length) return ''
+  const benchmark = replay.realised?.benchmark ?? 'the benchmark'
+  const summary = (rows: DeskPolicyReplayEntry[]) => {
+    if (!rows.length) return null
+    const judged = rows.filter(row => typeof row.excess_20 === 'number' && Number.isFinite(row.excess_20))
+    // A recent entry is not a failed one: say it is too young to judge rather
+    // than dropping it or counting it as a miss.
+    if (!judged.length) return `${rows.length} entr${rows.length === 1 ? 'y' : 'ies'}, too recent to judge after 20 sessions`
+    const hits = judged.filter(row => row.excess_20! > 0).length
+    const mean = judged.reduce((sum, row) => sum + row.excess_20!, 0) / judged.length
+    return `${judged.length} entr${judged.length === 1 ? 'y' : 'ies'}, beat ${benchmark} after 20 sessions ${(hits / judged.length * 100).toFixed(0)}% of the time (mean excess ${mean >= 0 ? '+' : ''}${(mean * 100).toFixed(1)}%)`
+  }
+  const before = summary(entries.filter(row => row.date < '2023-01-01'))
+  const after = summary(entries.filter(row => row.date >= '2023-01-01'))
+  if (!before && !after) return ''
+  return `Entries by period, same in-sample run: to 2022 ${before ?? 'none'}; from 2023 ${after ?? 'none'}.`
 }
 
 // The backtest the chart is drawn from, for the whole book: one simulated account run by this rule.
@@ -875,6 +898,9 @@ export const TickerChart = ({
   paperRecordedFills,
   paperRecordedFillsReason,
   paperAccountUnavailable = false,
+  paperPositions,
+  paperEquity,
+  paperPlan,
   quote,
   live,
   now = Date.now(),
@@ -901,6 +927,11 @@ export const TickerChart = ({
   paperRecordedFills?: DeskPaperLive['recorded_fills']
   paperRecordedFillsReason?: DeskPaperLive['recorded_fills_reason']
   paperAccountUnavailable?: boolean
+  // The paper account's own holdings and current plan, separate from the
+  // account-independent model target the header also shows.
+  paperPositions?: DeskPaperLive['positions']
+  paperEquity?: number
+  paperPlan?: DeskPaperLive['plan']
   quote?: LiveQuote
   live?: DeskLive
   now?: number
@@ -972,6 +1003,21 @@ export const TickerChart = ({
   const chartAction = modelTarget?.displayAction ?? (!modelTarget?.entry && !modelTarget?.nextSessionPlan ? 'Wait' : modelTarget?.action ?? 'Avoid')
   const displayedTradeWeight = modelTarget && 'tradeWeight' in modelTarget ? modelTarget.tradeWeight : modelTarget?.weight
   const chartSize = displayedTradeWeight == null || displayedTradeWeight <= 0 ? '—' : `${sizePercent(displayedTradeWeight)}%`
+  // The paper account's own position and open plan for this name. They are a
+  // different source from the model target: a held B name can carry a 0% model
+  // target and still be a paper HOLD, and the header must not blur the two.
+  const paperPosition = paperPositions?.find(position => position.symbol === ticker)
+  const paperWeight = paperPosition && paperEquity && paperEquity > 0 ? paperPosition.market_value / paperEquity : null
+  const paperOrders = (paperPlan?.orders ?? []).filter(order => order.symbol === ticker)
+  const openPaperOrders = paperOrders.filter(order => !isDone(order))
+  // A refused or partial sell is still the last thing the plan did; calling it
+  // HOLD would report an exit the account intended and did not get.
+  const failedPaperOrders = paperOrders.filter(order => isDone(order) && order.state !== 'filled' && orderWord(order) !== 'BUY')
+  const paperPlanWord = openPaperOrders.length
+    ? [...new Set(openPaperOrders.map(orderWord))].join(' / ')
+    : failedPaperOrders.length
+      ? `${orderWord(failedPaperOrders[0])} · ${failedPaperOrders[0].state}`
+      : paperPosition ? 'HOLD' : null
   // A plan still waiting for its entry is named by the direction the board shows for it, so the
   // chart header and the row never disagree; "pending" is the badge, not a word.
   const headerWord = chartAction === 'Wait' ? (boardSignal ? boardAction(boardSignal).action ?? '' : '') : chartAction
@@ -1584,9 +1630,13 @@ export const TickerChart = ({
           {headerWord === 'Buy' || headerWord === 'Sell' ? chartSize === '—' ? headerWord : `${headerWord} ${chartSize}` : ''}
         </span>
         {chartAction === 'Wait' && headerWord && <span className="rounded bg-[#eef1f6] px-1.5 py-0.5 text-[10px] font-medium text-[#3a3a3c]" aria-label={`${ticker} chart entry state`}>pending</span>}
-        {modelTarget.positionWeight != null && <span className="text-[#6e6e73]" aria-label={`${ticker} current chart position`}>Position {sizePercent(modelTarget.positionWeight)}%</span>}
+        {modelTarget.positionWeight != null && <span className="text-[#6e6e73]" aria-label={`${ticker} current chart model position`}>Model position {sizePercent(modelTarget.positionWeight)}%</span>}
         {modelTarget.nextSessionPlan && <span className="text-[#6e6e73]" aria-label={`${ticker} chart plan timing`}>{modelTarget.atOpen ? 'At open' : 'Next session'}</span>}
       </div> : null) : <span className="text-[#6e6e73]" aria-label={`${ticker} current chart target`}></span>}
+      {/* The paper account is a separate source from the model target. Its shares
+          and open plan stay visible even when the model allocates this name nothing. */}
+      {paperPosition && <span className="text-[#6e6e73]" aria-label={`${ticker} current chart paper position`}>Paper {shares(paperPosition.qty)}{paperWeight != null ? ` · ${sizePercent(paperWeight)}%` : ''}</span>}
+      {paperPlanWord && <span className="text-[#6e6e73]" aria-label={`${ticker} current chart paper plan`}>Paper plan: {paperPlanWord}</span>}
       <div role="group" aria-label="Chart timeframe" className="flex gap-1">
         {(['15m', 'daily', 'weekly'] as const).map(frame => <button key={frame} type="button" aria-pressed={timeframe === frame} className={chip(timeframe === frame)} onClick={() => setTimeframe(frame)}>{frame === 'daily' ? 'D' : frame === 'weekly' ? 'W' : '15m'}</button>)}
       </div>
@@ -1618,6 +1668,7 @@ export const TickerChart = ({
           <span className="block">{policyReplay.note}</span>
           {replayBookLine(policyReplay) && <span className="block" aria-label={`${ticker} replay book backtest`}>{replayBookLine(policyReplay)}</span>}
           {replayOutcomeLine(policyReplay) && <span className="block">{replayOutcomeLine(policyReplay)}</span>}
+          {replayOutcomeSplitLine(policyReplay) && <span className="block" aria-label={`${ticker} replay entry accuracy by period`}>{replayOutcomeSplitLine(policyReplay)}</span>}
           <span className="block">Buy opens a position and Sell closes it; Add and Trim show the change since the last marker and the position after it, drawn once the position has moved 2% of the book. FOMC cuts and restorations are always drawn. Zoomed out past {ZOOMED_OUT_BARS} bars, adds and trims are hidden; every entry, exit and FOMC step stays.</span>
         </> : <>
           <span className="block">Historical replay of {simulation!.policy} · {simulation!.start} → {simulation!.through} · models were not refitted at each past date · not out-of-sample validation or advice published at that time.</span>
@@ -1840,7 +1891,7 @@ export const TickerChart = ({
           <details className="mt-1 text-[11px] text-[#6e6e73]" aria-label="Chart legend">
             <summary className="cursor-pointer">Chart key</summary>
             <p>
-            {strategy ? showPaperFills ? 'Circles: confirmed actual paper executions. Original fills and prices are listed below.' : 'Filled circles: replayed BUY/SELL/TRIM sizes, muted when in-sample. Hollow circles: recorded live recommendations. Square: the current call. Arrows: grade changes, not additional trades.' : `Circles: shares filled per ${timeframe === 'weekly' ? 'week' : timeframe === 'daily' ? 'day' : '15-minute bar'}. Individual fills and prices below (unadjusted).`}{showSignals ? ' Grade readings are labelled Saved or Recalculated when known.' : ''}{!strategy && showDecisions && !replayHidden ? policyReplay ? ' Buy/Sell circles: the installed policy replay, in-sample research, not fills.' : ' Signal and RESET labels: policy replay, in-sample research, not trades.' : ''}{!strategy && personalHistory && showRecommendations ? ' Saved Buy/Sell labels: recommendations, not fills.' : ''}
+            {strategy ? showPaperFills ? 'Circles: confirmed actual paper executions. Original fills and prices are listed below.' : policyReplay ? 'Filled circles: the installed policy replay, in-sample research, not fills. Hollow circles: recorded live recommendations. Square: the current call. Arrows: grade changes, not additional trades.' : 'Filled circles: replayed BUY/SELL/TRIM sizes, muted when in-sample. Hollow circles: recorded live recommendations. Square: the current call. Arrows: grade changes, not additional trades.' : `Circles: shares filled per ${timeframe === 'weekly' ? 'week' : timeframe === 'daily' ? 'day' : '15-minute bar'}. Individual fills and prices below (unadjusted).`}{showSignals ? ' Grade readings are labelled Saved or Recalculated when known.' : ''}{!strategy && showDecisions && !replayHidden ? policyReplay ? ' Buy/Sell circles: the installed policy replay, in-sample research, not fills.' : ' Signal and RESET labels: policy replay, in-sample research, not trades.' : ''}{!strategy && personalHistory && showRecommendations ? ' Saved Buy/Sell labels: recommendations, not fills.' : ''}
             </p>
           </details>
           {!strategy && timeframe === '15m' && fills.some(fill => !recordedInstant(fill.filled_at)) && <p aria-label="Fill timing" className="mt-1 text-[11px] text-[#6e6e73]">Some fills have no recorded time; listed below, not marked on 15m.</p>}

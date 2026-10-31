@@ -76,7 +76,7 @@ test('Persisted position stays consistent after candle expiry and reload without
   const dialog=page.getByRole('dialog',{name:'BUYHIGH history',exact:true})
   for(const frame of ['D','W','15m']){
     await dialog.getByRole('group',{name:'Chart timeframe',exact:true}).getByRole('button',{name:frame,exact:true}).click()
-    await expect(dialog.getByLabel('BUYHIGH current chart position',{exact:true})).toHaveText('Position 5.8%')
+    await expect(dialog.getByLabel('BUYHIGH current chart model position',{exact:true})).toHaveText('Model position 5.8%')
     await expect(dialog.getByLabel('BUYHIGH current chart target',{exact:true})).toHaveText('')
   }
   state.assessmentMissing=true
@@ -178,7 +178,7 @@ test('Persisted position survives the original trade permission deadline',async 
   const dialog=page.getByRole('dialog',{name:'BUYHIGH history',exact:true})
   await expect(dialog.getByLabel('BUYHIGH current chart target',{exact:true})).toHaveText('Sell 13.0%')
   await expect(dialog.getByLabel('BUYHIGH current chart target',{exact:true})).toHaveText('Sell',{timeout:10000})
-  await expect(dialog.getByLabel('BUYHIGH current chart position',{exact:true})).toHaveText('Position 5.8%')
+  await expect(dialog.getByLabel('BUYHIGH current chart model position',{exact:true})).toHaveText('Model position 5.8%')
   await expect(board.getByLabel('BUYHIGH verdict',{exact:true})).toHaveText('Sell')
   await expect(board.getByLabel('BUYHIGH trade size',{exact:true})).toHaveText('13.0%')
   await expect(board.getByLabel('BUYHIGH verdict cell',{exact:true})).toContainText('refreshing')
@@ -335,7 +335,9 @@ async function install(page: Page, baseURL: string, state: ReferenceFixture) {
             {decided: '2026-10-14', date: '2026-10-15', action: 'BUY', size: .032, target: .064, reason: 'fomc_restoration_decision_close', timing: 'decision_close'}]
           : [{decided: '2026-10-09', date: '2026-10-12', action: 'BUY', size: .05, target: .05}, {decided: '2026-10-12', date: '2026-10-13', action: 'BUY', size: .006, target: .056},
           {decided: '2026-10-13', date: '2026-10-14', action: 'BUY', size: .03, target: .086}, {decided: '2026-10-14', date: '2026-10-15', action: 'SELL', size: .086, target: 0}],
-        outcomes: {entry_summary: {count: 1, hit_rate_20: 1, mean_excess_20: .04, hit_rate_60: 0, mean_excess_60: -.02}},
+        outcomes: {entry_summary: {count: 2, hit_rate_20: .5, mean_excess_20: .01, hit_rate_60: 0, mean_excess_60: -.02},
+          // The same entries split at the book's 2022/2023 boundary: one early, one recent.
+          entries: [{date: '2016-02-01', filled: '2016-02-02', excess_20: .04, excess_60: -.01}, {date: '2024-03-01', filled: '2024-03-04', excess_20: -.02, excess_60: -.03}]},
         realised: {cost_bps: 10, benchmark: 'SPY', gross: .0126, costs: .0003, net: .0123, benchmark_same_weights: .005, excess: .0073, sessions_held: 3, mean_weight_held: .07,
           round_trips: 1, winning_trips: 1, trips_beating_benchmark: 1, short_trips: 0, short_trip_pnl: 0, open_since: null, unpriced_sessions: [],
           trips: [{entered: '2026-10-12', exited: '2026-10-15', sessions: 3, price_return: .2, excess: .15, pnl: .0123}]}, latest_target: 0}} : {}), latest_holding: 2, provenance: {cost_bps: 10, basis: 'account_independent_unit_capital_targets', source_record_sha256: (state.simulationIdentityWrong ? 'c' : 'a').repeat(64),
@@ -368,7 +370,7 @@ test('Standing reference trim shows a positive Sell and separate position',async
   for(const frame of ['D','W','15m']){
     await dialog.getByRole('group',{name:'Chart timeframe',exact:true}).getByRole('button',{name:frame,exact:true}).click()
     await expect(dialog.getByLabel('BUYHIGH current chart target',{exact:true})).toHaveText('Sell 13.0%')
-    await expect(dialog.getByLabel('BUYHIGH current chart position',{exact:true})).toHaveText('Position 14.3%')
+    await expect(dialog.getByLabel('BUYHIGH current chart model position',{exact:true})).toHaveText('Model position 14.3%')
     await expect(dialog.getByLabel('BUYHIGH target chart markers',{exact:true})).toHaveText('')
   }
   expect(state.diagnostics).toEqual([])
@@ -404,7 +406,7 @@ test('Observed reference Sell size and position agree across chart frames',async
   for(const frame of ['D','W','15m']){
     await dialog.getByRole('group',{name:'Chart timeframe',exact:true}).getByRole('button',{name:frame,exact:true}).click()
     await expect(dialog.getByLabel('BUYHIGH current chart target',{exact:true})).toHaveText('Sell 13.0%')
-    await expect(dialog.getByLabel('BUYHIGH current chart position',{exact:true})).toHaveText('Position 14.3%')
+    await expect(dialog.getByLabel('BUYHIGH current chart model position',{exact:true})).toHaveText('Model position 14.3%')
   }
   expect(state.diagnostics).toEqual([])
 })
@@ -491,7 +493,7 @@ test('Standing reference exit never renders Sell zero percent',async ({page,base
   await board.getByRole('button',{name:'BUYHIGH',exact:true}).click()
   const dialog=page.getByRole('dialog',{name:'BUYHIGH history',exact:true})
   await expect(dialog.getByLabel('BUYHIGH current chart target',{exact:true})).toHaveText('Sell 20.0%')
-  await expect(dialog.getByLabel('BUYHIGH current chart position',{exact:true})).toHaveText('Position 0.0%')
+  await expect(dialog.getByLabel('BUYHIGH current chart model position',{exact:true})).toHaveText('Model position 0.0%')
   expect(state.diagnostics).toEqual([])
 })
 
@@ -582,7 +584,7 @@ test('Historical chart discloses current-model replay limits without changing or
     await expect(basis).toContainText('Historical replay of ')
     await expect(basis).toContainText('models were not refitted at each past date')
     await expect(basis).toContainText('not out-of-sample validation or advice published at that time')
-    await expect(chart.getByLabel('BUYHIGH current chart position',{exact:true})).toHaveText('Position 14.3%')
+    await expect(chart.getByLabel('BUYHIGH current chart model position',{exact:true})).toHaveText('Model position 14.3%')
   }
   await chart.getByRole('group',{name:'Chart timeframe',exact:true}).getByRole('button',{name:'D',exact:true}).click()
   await chart.getByText('Recommendations',{exact:true}).click()
@@ -626,7 +628,7 @@ test('Current position and historical trade sizes have distinct labels on every 
   for(const frame of ['D','W','15m']){
     await dialog.getByRole('group',{name:'Chart timeframe',exact:true}).getByRole('button',{name:frame,exact:true}).click()
     await expect(dialog.getByLabel('BUYHIGH current chart target',{exact:true})).toHaveText('Buy')
-    await expect(dialog.getByLabel('BUYHIGH current chart position',{exact:true})).toHaveText('Position 14.3%')
+    await expect(dialog.getByLabel('BUYHIGH current chart model position',{exact:true})).toHaveText('Model position 14.3%')
     await expect(dialog.getByLabel('BUYHIGH target chart markers',{exact:true})).not.toContainText('14.3%')
   }
   expect(state.diagnostics).toEqual([])
@@ -652,7 +654,9 @@ test('Charts draw the installed policy replay and never an older policy',async (
   await basis.locator('summary').click()
   await expect(basis).toContainText('In-sample research fixture.')
   await expect(dialog.getByLabel('BUYHIGH replay book backtest',{exact:true})).toHaveText('The whole book under this rule, as one account: 39.4% a year, worst drop -26.9%, Sharpe 1.51 (to 2022 25.0%, from 2023 74.4%) · 6,703 fills after costs.')
-  await expect(basis).toContainText('1 entry here · from the fill, beat SPY after 20 sessions 100% of the time, mean excess +4.0% · after 60: 0%, -2.0%.')
+  await expect(basis).toContainText('2 entries here · from the fill, beat SPY after 20 sessions 50% of the time, mean excess +1.0% · after 60: 0%, -2.0%.')
+  // The same entries are split at the book's 2022/2023 boundary instead of being read as one period.
+  await expect(dialog.getByLabel('BUYHIGH replay entry accuracy by period',{exact:true})).toHaveText('Entries by period, same in-sample run: to 2022 1 entry, beat SPY after 20 sessions 100% of the time (mean excess +4.0%); from 2023 1 entry, beat SPY after 20 sessions 0% of the time (mean excess -2.0%).')
   // Whether trading the name this way made money is on the chart, not behind the about link.
   await expect(dialog.getByLabel('BUYHIGH replay profit and loss',{exact:true})).toHaveText('Traded by the rule, BUYHIGH made money and beat SPY: +1.23% of the book after 0.03% costs (10 bp a side), against +0.50% for SPY at the same weights. 1 round trip: 1 made money, 1 beat SPY.')
   await expect(basis).toContainText('drawn once the position has moved 2% of the book. FOMC cuts and restorations are always drawn')
@@ -702,7 +706,7 @@ test('Open-executed plan shows the change from the previous plan at the open on 
   for(const frame of ['D','W','15m']){
     await dialog.getByRole('group',{name:'Chart timeframe',exact:true}).getByRole('button',{name:frame,exact:true}).click()
     await expect(dialog.getByLabel('BUYHIGH current chart target',{exact:true})).toHaveText('Buy 4.3%')
-    await expect(dialog.getByLabel('BUYHIGH current chart position',{exact:true})).toHaveText('Position 14.3%')
+    await expect(dialog.getByLabel('BUYHIGH current chart model position',{exact:true})).toHaveText('Model position 14.3%')
     await expect(dialog.getByLabel('BUYHIGH chart plan timing',{exact:true})).toHaveText('At open')
     await expect(dialog.getByLabel('BUYHIGH chart entry state',{exact:true})).toHaveCount(0)
   }
@@ -733,7 +737,7 @@ test('Next-session Buy labels match the table on every chart without creating an
   for(const frame of ['D','W','15m']){
     await dialog.getByRole('group',{name:'Chart timeframe',exact:true}).getByRole('button',{name:frame,exact:true}).click()
     await expect(dialog.getByLabel('BUYHIGH current chart target',{exact:true})).toHaveText('Buy')
-    await expect(dialog.getByLabel('BUYHIGH current chart position',{exact:true})).toHaveText('Position 14.3%')
+    await expect(dialog.getByLabel('BUYHIGH current chart model position',{exact:true})).toHaveText('Model position 14.3%')
     await expect(dialog.getByLabel('BUYHIGH chart plan timing',{exact:true})).toHaveText('Next session')
     await expect(dialog.getByLabel('BUYHIGH target chart markers',{exact:true})).toHaveText('')
   }
@@ -744,7 +748,7 @@ test('Next-session Buy labels match the table on every chart without creating an
   await expect(board.getByLabel('BUYHIGH verdict cell',{exact:true})).not.toContainText('next session')
   await board.getByRole('button',{name:'BUYHIGH',exact:true}).click()
   await expect(dialog.getByLabel('BUYHIGH current chart target',{exact:true})).toHaveText('')
-  await expect(dialog.getByLabel('BUYHIGH current chart position',{exact:true})).toHaveText('Position 14.3%')
+  await expect(dialog.getByLabel('BUYHIGH current chart model position',{exact:true})).toHaveText('Model position 14.3%')
   await expect(dialog.getByLabel('BUYHIGH chart plan timing',{exact:true})).toHaveCount(0)
   expect(state.diagnostics).toEqual([])
 })
@@ -1482,7 +1486,7 @@ test('Unavailable publication keeps saved stocks and charts without current size
   await board.getByRole('button',{name:'BUYHIGH',exact:true}).click()
   const chart=page.getByRole('dialog',{name:'BUYHIGH history',exact:true})
   await expect(chart).toBeVisible()
-  await expect(chart).not.toContainText('Position 14.3%')
+  await expect(chart).not.toContainText('Model position 14.3%')
   for(const frame of ['D','W','15m']){
     await chart.getByRole('group',{name:'Chart timeframe',exact:true}).getByRole('button',{name:frame,exact:true}).click()
     await expect(chart.getByLabel('BUYHIGH current chart target',{exact:true})).toHaveText('')
@@ -1525,12 +1529,29 @@ test('Trader audit Avoid and Sell chart headers match their list actions',async 
   for(const frame of ['D','W','15m']){
     await dialog.getByRole('button',{name:frame,exact:true}).click()
     await expect(dialog.getByLabel('SELLLOW current chart target',{exact:true})).toHaveText('')
-    await expect(dialog.getByLabel('SELLLOW current chart position',{exact:true})).toHaveText('Position 0.0%')
+    await expect(dialog.getByLabel('SELLLOW current chart model position',{exact:true})).toHaveText('Model position 0.0%')
   }
   await dialog.getByRole('button',{name:'Close',exact:true}).click()
   await page.getByRole('button',{name:'SELLHIGH',exact:true}).click()
   await expect(page.getByRole('dialog').getByLabel('SELLHIGH current chart target',{exact:true})).toHaveText('Sell')
   await expect(page.getByRole('dialog').getByLabel('SELLHIGH chart plan timing',{exact:true})).toHaveText('Next session')
+  expect(state.diagnostics).toEqual([])
+})
+
+// The model target and the paper account are separate sources: a name the model
+// allocates nothing can still be a paper holding, and the chart must say both.
+test('Trader audit chart separates the model target from the paper holding',async ({page,baseURL})=>{
+  const state=fixture();Object.assign(state,{publicationV2:true,phase:'post-market'})
+  await install(page,baseURL!,state)
+  await page.goto('/?deskView=strategy#desk')
+  await page.getByRole('button',{name:'BUYLOW',exact:true}).click()
+  const dialog=page.getByRole('dialog')
+  for(const frame of ['D','W','15m']){
+    await dialog.getByRole('button',{name:frame,exact:true}).click()
+    await expect(dialog.getByLabel('BUYLOW current chart model position',{exact:true})).toHaveText('Model position 0.0%')
+    await expect(dialog.getByLabel('BUYLOW current chart paper position',{exact:true})).toHaveText('Paper 999 sh · 99.9%')
+    await expect(dialog.getByLabel('BUYLOW current chart paper plan',{exact:true})).toHaveText('Paper plan: HOLD')
+  }
   expect(state.diagnostics).toEqual([])
 })
 
