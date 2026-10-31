@@ -55,6 +55,17 @@ class Rule:
     # Research placebo: defer the guard's count of entering names at random,
     # seeded. Requires `chase`.
     chase_random: int | None = None
+    # Research only: cap the target weight in `sector_cap_sectors` at this
+    # fraction of equity after protected holdings are kept. None is the
+    # installed rule.
+    sector_cap: float | None = None
+    sector_cap_sectors: tuple[str, ...] = (
+        "Information Technology",
+        "Communication Services",
+    )
+    # Research placebo: remove the cap's weight from a random subset instead of
+    # the sector group, seeded. Requires `sector_cap`.
+    sector_random: int | None = None
 
 
 @dataclass
@@ -116,10 +127,21 @@ def simulate(
     start: int = 0,
     tilt: np.ndarray | None = None,
     eligible: np.ndarray | None = None,
+    sector: np.ndarray | None = None,
 ) -> Book:
     dates = [str(d)[:10] for d in dates]
     tickers = list(tickers)
     T, N = adj_close.shape
+    if rule.sector_random is not None and rule.sector_cap is None:
+        raise ValueError("sector_random requires sector_cap")
+    if rule.sector_cap is not None:
+        if not 0 <= rule.sector_cap <= 1:
+            raise ValueError("sector_cap must be within unit capital")
+        if sector is None:
+            raise ValueError("sector_cap requires one sector label per ticker")
+        sector = np.asarray(sector, dtype=str)
+        if sector.shape != (N,):
+            raise ValueError("One sector label per ticker required")
     with np.errstate(invalid="ignore", divide="ignore"):
         opens = open_ * adj_close / close
     mask = sizable(adj_close, tickers, benchmark)
@@ -144,6 +166,11 @@ def simulate(
     rng = (
         np.random.default_rng(rule.chase_random)
         if rule.chase_random is not None
+        else None
+    )
+    sector_rng = (
+        np.random.default_rng(rule.sector_random)
+        if rule.sector_random is not None
         else None
     )
     window = leader.WINDOW
@@ -236,10 +263,17 @@ def simulate(
             # weights it wants (a cycle in progress holds what it holds).
             planned = held.copy() if cycle is not None or t < window else None
             if planned is None:
-                planned = _ordinary(
-                    rule, mask[t], g, below, shares, band[t], adj_close, t, held,
-                    None if tilt is None else tilt[t], rng,
-                )
+                tilt_t = None if tilt is None else tilt[t]
+                if rule.sector_cap is not None:
+                    planned, _ = plan_target(
+                        rule, mask[t], g, below, shares, band[t], adj_close, t,
+                        held, tilt_t, rng, sector, sector_rng,
+                    )
+                else:
+                    planned = _ordinary(
+                        rule, mask[t], g, below, shares, band[t], adj_close, t,
+                        held, tilt_t, rng,
+                    )
             break
         # 2. Tonight's plan, from this close only.
         day = days[t]
@@ -286,7 +320,7 @@ def simulate(
             continue
         target, protected = plan_target(
             rule, mask[t], g, below, shares, band[t], adj_close, t, held,
-            None if tilt is None else tilt[t], rng,
+            None if tilt is None else tilt[t], rng, sector, sector_rng,
         )
         sells, buys = plan_orders(rule, target, shares, adj_close[t], value, protected)
         if sells or buys:
@@ -345,13 +379,66 @@ def _ordinary(
     return target
 
 
+# Cap the unprotected target weight in the rule's sectors at `sector_cap` of
+# equity, after protected holdings are kept at their weight. The freed weight
+# stays cash. With `rng`, the placebo removes the same weight from a random
+# subset of unprotected names instead of the sector group.
+def cap_sector_target(rule, target, sector_t, protected, rng=None):
+    """Return the target with its sector weight capped, or the placebo draw."""
+    labels = np.asarray(sector_t)
+    if labels.shape != target.shape:
+        raise ValueError("One sector label per name required")
+    group = np.array([label in rule.sector_cap_sectors for label in labels])
+    unprotected = group & ~protected
+    group_weight = float(target[unprotected].sum())
+    removed = max(0.0, float(target[group].sum()) - rule.sector_cap)
+    if removed <= 0:
+        return target
+    out = target.copy()
+    if rng is None:
+        if group_weight <= removed:
+            out[unprotected] = 0.0
+        else:
+            out[unprotected] *= (group_weight - removed) / group_weight
+        return out
+    candidates = np.flatnonzero((out > 0) & ~protected)
+    if len(candidates) == 0:
+        return out
+    picked = []
+    picked_weight = 0.0
+    for j in rng.permutation(candidates):
+        picked.append(j)
+        picked_weight += out[j]
+        if picked_weight >= removed:
+            break
+    if picked_weight <= 0:
+        return out
+    if picked_weight <= removed:
+        out[picked] = 0.0
+    else:
+        out[picked] *= (picked_weight - removed) / picked_weight
+    return out
+
+
 # Tonight's ordinary target at close t on the book's own holdings: the leader
 # plan, with a held name the grades cannot read (a protected holding) kept at
 # its weight and the rest of the book sized on the remaining capital. Returns
 # the (N,) target weights and the (N,) protected mask. The simulator and the
 # nightly plan check (`plan_parity`) both plan through this.
 def plan_target(
-    rule, mask_t, g, below, shares, band_t, adj_close, t, held, tilt_t=None, rng=None
+    rule,
+    mask_t,
+    g,
+    below,
+    shares,
+    band_t,
+    adj_close,
+    t,
+    held,
+    tilt_t=None,
+    rng=None,
+    sector_t=None,
+    sector_rng=None,
 ):
     target = _ordinary(
         rule, mask_t, g, below, shares, band_t, adj_close, t, held, tilt_t, rng
@@ -359,6 +446,8 @@ def plan_target(
     protected = (shares > 0) & (g < 0)
     if protected.any():
         target = np.where(protected, held, target * (1.0 - held[protected].sum()))
+    if rule.sector_cap is not None:
+        target = cap_sector_target(rule, target, sector_t, protected, sector_rng)
     return target, protected
 
 

@@ -276,3 +276,101 @@ def test_chase_random_requires_chase():
     grades = np.full((160, len(TICKERS)), 2, dtype=int)
     with pytest.raises(ValueError):
         _run(grades, rule=pb.Rule(fomc=False, chase_random=1))
+
+
+# The sector cap's four labels: two IT, one Industrial, the benchmark blank.
+SECTOR = np.array(
+    ["Information Technology", "Information Technology", "Industrials", ""]
+)
+
+
+# The cap scales the sector group down to the cap; the freed weight stays cash
+# and a name outside the sector keeps its leader slot.
+def test_sector_cap_scales_the_group_and_leaves_cash():
+    grades = np.full((160, len(TICKERS)), 2, dtype=int)
+    grades[:, 3] = 0
+    rule = pb.Rule(fomc=False, min_trade=0, target=10.0, floor=1.0, sector_cap=0.4)
+    book = _run(grades, rule=rule, sector=SECTOR)
+    late = book.weights[150, :3]
+    assert late[:2].sum() <= 0.4 + 1e-6
+    assert late[2] > 0
+    assert late.sum() < 0.75 - 1e-6
+
+
+# The new parameter is off by default and at unit capital: both reproduce the
+# installed book exactly, with or without labels.
+def test_sector_cap_off_and_one_reproduce_the_installed_book():
+    grades = np.full((160, len(TICKERS)), 2, dtype=int)
+    grades[:, 3] = 0
+    base = _run(grades)
+    off = _run(grades, rule=pb.Rule(fomc=False, sector_cap=None), sector=SECTOR)
+    one = _run(grades, rule=pb.Rule(fomc=False, sector_cap=1.0), sector=SECTOR)
+    for book in (off, one):
+        assert np.array_equal(base.equity, book.equity, equal_nan=True)
+        assert np.array_equal(base.weights, book.weights)
+        assert base.trades == book.trades
+
+
+# A zero cap holds no unprotected sector name once the cap applies; a name
+# outside the sector is still sized.
+def test_zero_sector_cap_holds_no_sector_name():
+    grades = np.full((160, len(TICKERS)), 2, dtype=int)
+    grades[:, 3] = 0
+    rule = pb.Rule(fomc=False, min_trade=0, target=10.0, floor=1.0, sector_cap=0.0)
+    book = _run(grades, rule=rule, sector=SECTOR)
+    assert book.weights[150, :2].sum() == 0
+    assert book.weights[150, 2] > 0
+
+
+# The placebo removes the same weight as the cap but from a random subset, and
+# a fixed seed makes it deterministic.
+def test_sector_placebo_removes_the_cap_weight():
+    target = np.array([0.3, 0.3, 0.2, 0.1])
+    protected = np.zeros(4, dtype=bool)
+    rule = pb.Rule(sector_cap=0.4)
+    capped = pb.cap_sector_target(rule, target, SECTOR, protected)
+    first = pb.cap_sector_target(
+        rule, target, SECTOR, protected, np.random.default_rng(7)
+    )
+    second = pb.cap_sector_target(
+        rule, target, SECTOR, protected, np.random.default_rng(7)
+    )
+    assert target.sum() - capped.sum() == pytest.approx(target.sum() - first.sum())
+    assert np.array_equal(first, second)
+    assert not np.array_equal(capped, first)
+
+
+# The cap reads only closes on or before the decision session: changing every
+# close after the cutoff leaves the book and its early trades unchanged.
+def test_sector_cap_reads_only_past_closes():
+    sessions = 160
+    dates, open_, close, grades, band = _market(sessions)
+    grades[:, :3] = 2
+    rule = pb.Rule(fomc=False, min_trade=0, target=10.0, floor=1.0, sector_cap=0.4)
+    base = pb.simulate(
+        dates, TICKERS, "SPY", open_, close, close.copy(), grades, band, rule,
+        sector=SECTOR,
+    )
+    changed = close.copy()
+    changed[120:] *= 10.0
+    moved = pb.simulate(
+        dates, TICKERS, "SPY", open_, changed, changed.copy(), grades, band, rule,
+        sector=SECTOR,
+    )
+    assert np.array_equal(base.weights[:120], moved.weights[:120])
+    early = [
+        trade for trade in base.trades if base.dates.index(trade["decided"]) < 118
+    ]
+    later = [
+        trade for trade in moved.trades if moved.dates.index(trade["decided"]) < 118
+    ]
+    assert early == later
+
+
+# A cap without labels, and a placebo without a cap, are configuration errors.
+def test_sector_cap_configuration_errors():
+    grades = np.full((160, len(TICKERS)), 2, dtype=int)
+    with pytest.raises(ValueError, match="sector_cap requires"):
+        _run(grades, rule=pb.Rule(fomc=False, sector_cap=0.5))
+    with pytest.raises(ValueError, match="sector_random requires"):
+        _run(grades, rule=pb.Rule(fomc=False, sector_random=1))
