@@ -118,32 +118,56 @@ class DiscoveryRunRepository:
         created: list[dict[str, Any]] = []
         for schedule in schedules:
             slot = schedule.next_run_at
-            cadence = Cadence(
-                cadence=schedule.cadence,
-                hour=schedule.hour,
-                # Omitted when minutes were added, so advancing a schedule
-                # rebuilt it at :00 and quietly moved a 9:15 sweep to 9:00 the
-                # first time it ran. The stored row kept the right minute, which
-                # is what made it invisible: only the next slot was wrong.
-                minute=schedule.minute,
-                weekday=schedule.weekday,
-                timezone=schedule.timezone,
-            )
-            # Advance first so a failure to insert still moves the schedule on
-            # rather than leaving it permanently due.
-            schedule.next_run_at = next_run_at(cadence, moment)
-            run = DiscoveryRun(
-                schedule_id=schedule.id,
-                user_id=schedule.user_id,
-                status="queued",
-                scheduled_for=slot,
-            )
-            self.session.add(run)
+            # Advance first, and flush before the savepoint below. A flush
+            # inside a savepoint that then rolls back takes the advance with
+            # it, leaving the schedule permanently due: every pass re-collides
+            # with the run already stored for this slot and never fires again.
             try:
+                if schedule.cadence == "once":
+                    # A one-time schedule has no stored day to recompute from —
+                    # the slot already on the row is the instant it was created
+                    # for — so it fires once and stops.
+                    schedule.enabled = False
+                else:
+                    cadence = Cadence(
+                        cadence=schedule.cadence,
+                        hour=schedule.hour,
+                        # Omitted when minutes were added, so advancing a
+                        # schedule rebuilt it at :00 and quietly moved a 9:15
+                        # sweep to 9:00 the first time it ran. The stored row
+                        # kept the right minute, which is what made it
+                        # invisible: only the next slot was wrong.
+                        minute=schedule.minute,
+                        weekday=schedule.weekday,
+                        timezone=schedule.timezone,
+                    )
+                    schedule.next_run_at = next_run_at(cadence, moment)
                 await self.session.flush()
+            except ValueError:
+                # A cadence this build cannot compute — a row written by an
+                # older or newer version — must not stop every other user's
+                # sweep. Disabling it keeps the producer from spinning on it.
+                schedule.enabled = False
+                await self.session.flush()
+                continue
+            try:
+                # One savepoint per schedule. A duplicate slot is an expected
+                # race, and rolling back the whole transaction to handle it also
+                # undid every earlier schedule's advance and expired the ORM
+                # rows the loop was still holding. The savepoint confines the
+                # failure to the row that caused it.
+                async with self.session.begin_nested():
+                    run = DiscoveryRun(
+                        schedule_id=schedule.id,
+                        user_id=schedule.user_id,
+                        status="queued",
+                        scheduled_for=slot,
+                    )
+                    self.session.add(run)
+                    await self.session.flush()
             except IntegrityError:
-                # Another producer already claimed this slot.
-                await self.session.rollback()
+                # Another producer already claimed this slot. The schedule has
+                # already advanced past it above.
                 continue
             created.append(run.to_dict())
         await self.session.commit()
@@ -214,6 +238,9 @@ class DiscoveryRunRepository:
         candidate_count: int,
         requests_spent: int,
         decision_json: str | None = None,
+        # False leaves the commit to the caller, so the seen rows the sweep
+        # recorded and the digest that names them become durable together.
+        commit: bool = True,
     ) -> bool:
         run = await self._owned(run_id, worker_id)
         if run is None:
@@ -227,7 +254,10 @@ class DiscoveryRunRepository:
         run.candidate_count = candidate_count
         run.requests_spent = requests_spent
         run.updated_at = datetime.now(UTC)
-        await self.session.commit()
+        if commit:
+            await self.session.commit()
+        else:
+            await self.session.flush()
         return True
 
     # Record delivery exactly once. A second attempt returns False rather than

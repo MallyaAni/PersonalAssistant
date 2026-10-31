@@ -130,7 +130,9 @@ class NotableSelector:
             # A dated find still has to be actionable; an undated one is shown
             # as a link, exactly as in the matched section.
             starts_at = candidate.event.starts_at
-            if starts_at is not None and not within_lead_time(starts_at, now):
+            if starts_at is not None and not within_lead_time(
+                starts_at, now, candidate.event.ends_at
+            ):
                 continue
             distance = await self.seen.nearest_seen_distance(
                 user_id, candidate.embedding

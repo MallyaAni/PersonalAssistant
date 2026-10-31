@@ -26,7 +26,7 @@ from backend.discovery.channels import (
     PullOnlyChannel,
 )
 from backend.discovery.delivery import DigestDelivery
-from backend.discovery.digest import render_message
+from backend.discovery.digest import render_message, write_bubbles
 from backend.discovery.events import DiscoveredEvent
 from backend.discovery.novelty import ScoredCandidate
 from backend.discovery.relevance import RankedCandidate
@@ -72,6 +72,22 @@ def _ranked(title: str, days_ahead: int = 10) -> RankedCandidate:
     return RankedCandidate(ScoredCandidate(event, None), 0.9, "jazz")
 
 
+# An unusual find matched no interest, which is the point of the section: the
+# score is unlikeness, not relevance.
+def _notable(title: str, days_ahead: int = 10) -> RankedCandidate:
+    event = DiscoveredEvent(
+        source_id="src-1",
+        external_id=f"evt-{title}",
+        title=title,
+        starts_at=_NOW + timedelta(days=days_ahead),
+        ends_at=None,
+        place="New Haven, CT",
+        url="https://example.org/e",
+        summary=None,
+    )
+    return RankedCandidate(ScoredCandidate(event, None), 0.2, None)
+
+
 async def _cleanup(user_id: str) -> None:
     async with AsyncSessionLocal() as session:
         await session.execute(
@@ -100,9 +116,15 @@ def test_the_message_carries_a_local_time_and_the_source_link():
     # A dated find now carries the two ways to add it to a calendar: a native
     # .ics file (the "Add to iMessage calendar" tap) and a Google prefill,
     # both attached from the typed record rather than written by a model.
-    assert "Add to iMessage calendar: https://example.org/api/v1/discovery/u/calendar/" in message
+    assert (
+        "Add to iMessage calendar: "
+        "https://example.org/api/v1/discovery/u/calendar/" in message
+    )
     assert ".ics" in message
-    assert "Add to Google calendar: https://calendar.google.com/calendar/render" in message
+    assert (
+        "Add to Google calendar: "
+        "https://calendar.google.com/calendar/render" in message
+    )
 
 
 def test_an_unknown_timezone_falls_back_rather_than_failing():
@@ -344,6 +366,51 @@ async def test_re_enrolling_the_same_address_updates_one_permission():
         await _cleanup(user_id)
 
 
+# The bridge sends from the operator's Apple ID, so a guest choosing an address
+# must not be able to make that account message it. Consent is the recipient's;
+# permission is the operator's, and asking grants neither on its own.
+@pytest.mark.asyncio
+async def test_a_new_imessage_request_waits_for_the_operator():
+    user_id = f"sub_{uuid.uuid4().hex[:12]}"
+    try:
+        async with AsyncSessionLocal() as session:
+            requested = await SubscriberRepository(session).request_subscription(
+                user_id, "imessage", "+15550100"
+            )
+
+            assert requested.active is False
+            assert requested.approved is False
+    finally:
+        await _cleanup(user_id)
+
+
+# A revoked address asking again is a new request, not a restoration. Without
+# this, anyone whose subscription the operator revoked could re-enable it by
+# asking, because `enroll` clears the revocation and keeps the old approval.
+@pytest.mark.asyncio
+async def test_a_revoked_address_asking_again_is_not_re_approved():
+    user_id = f"sub_{uuid.uuid4().hex[:12]}"
+    try:
+        async with AsyncSessionLocal() as session:
+            repo = SubscriberRepository(session)
+            person = await repo.enroll(
+                user_id, "imessage", "+15550100", consented=True
+            )
+            assert await repo.revoke(user_id, uuid.UUID(person.id)) is True
+
+            again = await repo.request_subscription(user_id, "imessage", "+15550100")
+
+            assert again.active is False
+            assert again.approved is False
+
+            # And the operator can still let them back in deliberately.
+            approved = await repo.approve(uuid.UUID(again.id))
+            assert approved is not None
+            assert approved.active is True
+    finally:
+        await _cleanup(user_id)
+
+
 # Something that already happened is worse than nothing: it is the clearest
 # possible signal that whatever sent it is not paying attention. Selection
 # applies a lead-time window, but a digest can be rendered from a stored run
@@ -363,6 +430,121 @@ def test_an_event_that_has_already_happened_is_never_sent():
 # sending a list of things that are over.
 def test_a_digest_of_only_past_events_sends_nothing():
     assert render_message((_ranked("Over already", days_ahead=-2),), now=_NOW) is None
+
+
+# The unusual few were selected, described and recorded as announced by the
+# sweep. A delivery that omits them leaves those finds permanently suppressed
+# without ever having been shown.
+def test_unusual_finds_render_under_their_own_heading():
+    message = render_message(
+        (_ranked("Jazz at the Green"),),
+        _BASE,
+        timezone="America/New_York",
+        notable=(_notable("Hot-air balloon rally"),),
+        now=_NOW,
+    )
+
+    assert message is not None
+    assert "Also worth knowing:" in message
+    assert "Hot-air balloon rally" in message
+
+
+# One digest carries five finds in total. The matched side is what the person
+# asked to hear about, so it gets the room first and the unusual section takes
+# only what is left.
+def test_the_unusual_section_only_gets_the_room_the_matched_side_left():
+    selected = tuple(_ranked(f"Matched {index}") for index in range(4))
+    notable = tuple(_notable(f"Unusual {index}") for index in range(3))
+
+    message = render_message(
+        selected,
+        _BASE,
+        timezone="America/New_York",
+        notable=notable,
+        now=_NOW,
+    )
+
+    assert message is not None
+    assert "Unusual 0" in message
+    assert "Unusual 1" not in message
+
+
+# A full matched digest leaves no room, and the section is an extra rather than
+# a second digest.
+def test_a_full_digest_has_no_unusual_section():
+    selected = tuple(_ranked(f"Matched {index}") for index in range(5))
+
+    message = render_message(
+        selected,
+        _BASE,
+        timezone="America/New_York",
+        notable=(_notable("Hot-air balloon rally"),),
+        now=_NOW,
+    )
+
+    assert message is not None
+    assert "Also worth knowing:" not in message
+
+
+@pytest.mark.asyncio
+async def test_unusual_finds_are_sent_as_their_own_bubbles():
+    bubbles = await write_bubbles(
+        (_ranked("Jazz at the Green"),),
+        timezone="America/New_York",
+        now=_NOW,
+        notable=(_notable("Hot-air balloon rally"),),
+    )
+
+    assert len(bubbles) == 2
+    assert "Jazz at the Green" in bubbles[0].text
+    assert bubbles[1].text.startswith("Also worth knowing:")
+    assert "Hot-air balloon rally" in bubbles[1].text
+    # Each bubble carries its own find's identity, which is what makes a
+    # tapback on it attributable.
+    assert bubbles[1].item_digest is not None
+    assert bubbles[1].label == "Hot-air balloon rally"
+
+
+# A festival that started yesterday is not over. The end date is what keeps a
+# multi-day find in the digest after its first day.
+def test_a_multi_day_event_survives_its_first_day():
+    event = DiscoveredEvent(
+        source_id="src-1",
+        external_id="evt-festival",
+        title="Harbor Festival",
+        starts_at=_NOW - timedelta(days=1),
+        ends_at=_NOW + timedelta(days=2),
+        place="New Haven, CT",
+        url="https://example.org/festival",
+        summary=None,
+    )
+    item = RankedCandidate(ScoredCandidate(event, None), 0.9, "jazz")
+
+    message = render_message((item,), timezone="America/New_York", now=_NOW)
+
+    assert message is not None
+    assert "Harbor Festival" in message
+
+
+# A date with no time is the whole day. Reading midnight as the instant it
+# began dropped a show happening that evening from a real digest at 4pm.
+def test_an_all_day_event_is_live_until_its_day_ends():
+    event = DiscoveredEvent(
+        source_id="src-1",
+        external_id="evt-all-day",
+        title="County Fair",
+        starts_at=datetime(2026, 8, 1, tzinfo=UTC),
+        ends_at=None,
+        place="New Haven, CT",
+        url="https://example.org/fair",
+        summary=None,
+    )
+    item = RankedCandidate(ScoredCandidate(event, None), 0.9, "jazz")
+
+    message = render_message((item,), timezone="America/New_York", now=_NOW)
+
+    assert message is not None
+    assert "County Fair" in message
 
 
 # An undated find cannot have passed. Nobody said when it happens, so it is a

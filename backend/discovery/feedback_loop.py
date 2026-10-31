@@ -22,14 +22,16 @@ sweep behaves exactly as it did before this module existed.
 """
 
 import json
+import uuid
 from dataclasses import dataclass
 from datetime import datetime
 
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.models.discovery_feedback import DiscoverySentFind
 from backend.models.discovery_run import DiscoveryRun
+from backend.models.discovery_subscriber import DiscoverySubscriber
 
 # Enough history to shade every interest a profile may hold, small enough
 # that one query stays cheap.
@@ -68,8 +70,18 @@ REPEAT_RECENCY_DAYS = 14
 # Fails soft like everything else here: an unreadable table means the fill
 # behaves exactly as it did before the cap existed.
 async def send_counts(session: AsyncSession, user_id: str) -> dict[str, int]:
+    # One digest can reach several subscribers, and each gets its own row. The
+    # cap is about how many times this account has been offered a find, not how
+    # many phones received it: counting rows made one send to two subscribers
+    # look like two sends, so a find hit `MAX_REPEAT_SENDS` in half the intended
+    # number of digests. A run id identifies one send; rows with no run (a
+    # manual send, or an older row) count individually by their own id.
+    send_identity = func.coalesce(DiscoverySentFind.run_id, DiscoverySentFind.id)
     rows = await session.execute(
-        select(DiscoverySentFind.item_digest, func.count())
+        select(
+            DiscoverySentFind.item_digest,
+            func.count(func.distinct(send_identity)),
+        )
         .where(
             DiscoverySentFind.user_id == user_id,
             DiscoverySentFind.item_digest.is_not(None),
@@ -112,6 +124,24 @@ class ReactedFind:
     interest: str | None
 
 
+# The subscription that most plausibly belongs to the account holder.
+#
+# The earliest row is the owner's own by convention: a person subscribes their
+# own phone before adding anyone else, and the schema has no explicit owner
+# flag to ask. Returning None (no subscription at all) leaves every reaction in
+# scope, which is the right default for legacy rows.
+async def _owner_subscriber_id(
+    session: AsyncSession, user_id: str
+) -> uuid.UUID | None:
+    stmt = (
+        select(DiscoverySubscriber.id)
+        .where(DiscoverySubscriber.user_id == user_id)
+        .order_by(DiscoverySubscriber.created_at.asc(), DiscoverySubscriber.id.asc())
+        .limit(1)
+    )
+    return (await session.execute(stmt)).scalars().first()
+
+
 # Every reacted find for this user, newest first, with the interest that
 # surfaced it. The join runs through the run's digest record by title:
 # the sent row and the digest both store the described title, and the
@@ -119,16 +149,30 @@ class ReactedFind:
 async def reacted_finds(
     session: AsyncSession, user_id: str, limit: int = MAX_REACTIONS_READ
 ) -> tuple[ReactedFind, ...]:
+    stmt = select(DiscoverySentFind).where(
+        DiscoverySentFind.user_id == user_id,
+        DiscoverySentFind.reaction.is_not(None),
+    )
+    # A digest goes to every subscriber, and a subscriber is not necessarily
+    # the account holder. A guest's thumbs-down must not shade the owner's
+    # interests or become a fact the model weighs about the owner.
+    #
+    # There is no explicit owner marker on a subscription, so the earliest one
+    # is treated as the owner's own — the account holder's phone is enrolled
+    # first in practice, and guests are added to it. Rows with no subscriber id
+    # predate per-subscriber recording and are included for the same reason.
+    owner_id = await _owner_subscriber_id(session, user_id)
+    if owner_id is not None:
+        stmt = stmt.where(
+            or_(
+                DiscoverySentFind.subscriber_id.is_(None),
+                DiscoverySentFind.subscriber_id == owner_id,
+            )
+        )
     rows = (
         (
             await session.execute(
-                select(DiscoverySentFind)
-                .where(
-                    DiscoverySentFind.user_id == user_id,
-                    DiscoverySentFind.reaction.is_not(None),
-                )
-                .order_by(DiscoverySentFind.reacted_at.desc())
-                .limit(limit)
+                stmt.order_by(DiscoverySentFind.reacted_at.desc()).limit(limit)
             )
         )
         .scalars()

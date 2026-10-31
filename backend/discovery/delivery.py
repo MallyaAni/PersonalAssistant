@@ -158,6 +158,11 @@ class DigestDelivery:
         # same reason familiarity is scoped to a place: liking a trail in
         # Arlington says nothing about one in Denver.
         locality: str | None = None,
+        # The unusual few, sent after the matched finds under their own label.
+        # They were selected, described and recorded as announced by the sweep,
+        # so a delivery that omits them leaves finds permanently suppressed
+        # without ever having been shown.
+        notable: tuple[RankedCandidate, ...] = (),
     ) -> DeliveryReport:
         # Each dated find carries the two ways to add it to a calendar — a
         # native .ics (the "Add to iMessage calendar" tap) and a Google
@@ -188,6 +193,7 @@ class DigestDelivery:
             first_digest=first_digest,
             reactions=reactions,
             calendar_base_url=calendar_base_url,
+            notable=notable,
         )
         # What a retry would resend, and what settles the run when nothing is
         # worth sending. A retry sends one message rather than the burst: the

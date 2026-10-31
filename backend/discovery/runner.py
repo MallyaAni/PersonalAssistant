@@ -37,6 +37,7 @@ from backend.agents.scout.reranking import MemoryReranker
 from backend.config.settings import settings
 from backend.core.interfaces import RerankProvider, SearchProvider, TextWriter
 from backend.discovery.decision_log import build_decision
+from backend.discovery.digest import MAX_EVENTS_IN_MESSAGE
 from backend.discovery.errors import DiscoveryError
 from backend.discovery.events import DiscoveredEvent, EventSource, FeedError
 from backend.discovery.familiarity import FamiliarItemRepository, FamiliarityFilter
@@ -55,7 +56,12 @@ from backend.discovery.fetching import (
     fetch_feed,
 )
 from backend.discovery.notable import NotableSelector
-from backend.discovery.novelty import NoveltyFilter, ScoredCandidate, SeenItemRepository
+from backend.discovery.novelty import (
+    EMBEDDING_DIMENSIONS,
+    NoveltyFilter,
+    ScoredCandidate,
+    SeenItemRepository,
+)
 from backend.discovery.personal_context import PersonalContext, PersonalContextReader
 from backend.discovery.precision import PrecisionRanker
 from backend.discovery.relevance import (
@@ -160,7 +166,12 @@ class EmbeddingClient(Protocol):
 
 # How a configured feed becomes something that can be read.
 class AdapterFactory(Protocol):
-    def __call__(self, source: "FeedSource", budget: RequestBudget) -> EventSource: ...
+    def __call__(
+        self,
+        source: "FeedSource",
+        budget: RequestBudget,
+        timezone: str | None = None,
+    ) -> EventSource: ...
 
 
 @dataclass(frozen=True, slots=True)
@@ -191,7 +202,12 @@ class SweepResult:
     def to_digest_json(self) -> str:
         return json.dumps(
             {
-                "version": 1,
+                # Version 2 stores the same fields for both sections. A resumed
+                # run rebuilds its message from this record alone, and the
+                # notable section previously lost its score, its matched
+                # interest and its end date — enough to render a different
+                # message than the one the sweep produced.
+                "version": 2,
                 "selected": [
                     {
                         "source_id": item.event.source_id,
@@ -228,10 +244,19 @@ class SweepResult:
                             if item.event.starts_at
                             else None
                         ),
-                        "ends_at": None,
+                        "ends_at": (
+                            item.event.ends_at.isoformat()
+                            if item.event.ends_at
+                            else None
+                        ),
                         "place": item.event.place,
                         "url": item.event.url,
                         "summary": item.event.summary,
+                        # The score here is unlikeness, not interest. Kept in
+                        # its own field on the candidate so a reader cannot
+                        # mistake it for a match score.
+                        "score": round(item.score, 4),
+                        "matched_interest": None,
                     }
                     for item in self.notable
                 ],
@@ -264,6 +289,65 @@ def events_from_digest(digest_json: str) -> tuple[DiscoveredEvent, ...]:
             )
         )
     return tuple(events)
+
+
+# Rebuild both sections of a persisted digest, so a run that crashed after
+# saving but before delivering resumes with the message it already decided on.
+#
+# This is what makes the save-before-deliver rule real. Re-sweeping would be
+# worse than wasteful: the first sweep recorded its finds as seen and announced,
+# so novelty would return an empty digest, and the resumed run would overwrite
+# the saved one with nothing.
+def candidates_from_digest(
+    digest_json: str,
+) -> tuple[tuple[RankedCandidate, ...], tuple[RankedCandidate, ...]]:
+    try:
+        payload = json.loads(digest_json)
+    except (TypeError, ValueError) as exc:
+        raise DiscoveryError("Stored digest is not readable JSON.") from exc
+    if not isinstance(payload, dict):
+        raise DiscoveryError("Stored digest is not an object.")
+    return (
+        _ranked_items(payload.get("selected")),
+        _ranked_items(payload.get("notable")),
+    )
+
+
+# One digest section as typed candidates. The embedding is not stored — it was
+# only needed to rank — so a rebuilt candidate carries none, which is correct
+# for rendering and delivery.
+def _ranked_items(items: object) -> tuple[RankedCandidate, ...]:
+    if not isinstance(items, list):
+        return ()
+    rebuilt: list[RankedCandidate] = []
+    for item in items:
+        if not isinstance(item, dict):
+            continue
+        try:
+            score = float(item.get("score") or 0.0)
+        except (TypeError, ValueError):
+            score = 0.0
+        matched = item.get("matched_interest")
+        rebuilt.append(
+            RankedCandidate(
+                candidate=ScoredCandidate(
+                    event=DiscoveredEvent(
+                        source_id=str(item.get("source_id", "")),
+                        external_id=str(item.get("external_id", "")),
+                        title=str(item.get("title", "")),
+                        starts_at=_parse_moment(item.get("starts_at")),
+                        ends_at=_parse_moment(item.get("ends_at")),
+                        place=item.get("place"),
+                        url=item.get("url"),
+                        summary=item.get("summary"),
+                    ),
+                    embedding=None,
+                ),
+                score=score,
+                matched_interest=str(matched) if matched else None,
+            )
+        )
+    return tuple(rebuilt)
 
 
 # What the describer's transcribed dates mean for a find: whether it is
@@ -398,6 +482,12 @@ class DiscoveryRunner:
         budget_limit: int = DEFAULT_RUN_REQUEST_BUDGET,
         limit: int = MAX_SELECTED,
         persist: bool = True,
+        # A scheduled run records what it saw but leaves the commit to its
+        # caller, so the seen rows and the saved digest land in one transaction.
+        # Committing here and saving the digest afterwards leaves a window where
+        # a crash records finds as announced that no digest ever contains, and
+        # the next attempt sees them as already shown.
+        commit_seen: bool = True,
     ) -> SweepResult:
         """Run one sweep.
 
@@ -422,7 +512,12 @@ class DiscoveryRunner:
             locality_label=primary.label if primary else None,
             scoped=True,
         )
-        events, failed = await self._collect(user_id, configured, budget)
+        events, failed = await self._collect(
+            user_id,
+            configured,
+            budget,
+            primary.timezone if primary else None,
+        )
 
         # Read once and used twice: the same approved facts aim the queries and
         # order the result. Deliberately the same context, so a sweep cannot
@@ -506,11 +601,25 @@ class DiscoveryRunner:
             user_id, selected, ranker, limit, moment
         )
 
+        # A sweep may rank wider than a message may carry, but only what the
+        # message carries may be described and recorded as announced. Capping
+        # here, before description and before the seen rows are written, is what
+        # keeps "announced" true: previously eleven finds could be described and
+        # marked announced while the delivery path sent five, so the other six
+        # were suppressed from every later sweep without ever being seen.
+        message_limit = min(limit, MAX_EVENTS_IN_MESSAGE)
+        selected = selected[:message_limit]
+
         # Chosen before anything is recorded as seen. Afterwards these
         # candidates would be in the history they are measured against, and
         # every one of them would look perfectly familiar.
         notable: tuple[RankedCandidate, ...] = ()
-        if self.notable is not None:
+        # The notable few share the digest's total bound with the matched
+        # finds, so they only get the room the matched side left. A full digest
+        # has none, and that is right: the section is an extra, not a second
+        # digest.
+        notable_room = max(0, message_limit - len(selected))
+        if self.notable is not None and notable_room > 0:
             # The matcher's own scores, so "would this have been selected?" is
             # answered by the thing that selects rather than by a second scorer
             # that could drift from it.
@@ -531,7 +640,7 @@ class DiscoveryRunner:
                     # No interest matched, which is the point of this section.
                     matched_interest=None,
                 )
-                for item in picked
+                for item in picked[:notable_room]
             )
 
         # Both sections get readable titles and descriptions; an unusual find is
@@ -570,7 +679,8 @@ class DiscoveryRunner:
                     run_id=run_id,
                     now=moment,
                 )
-            await self.seen.session.commit()
+            if commit_seen:
+                await self.seen.session.commit()
 
         return SweepResult(
             selected=selected,
@@ -650,6 +760,24 @@ class DiscoveryRunner:
             keep, starts_at = apply_described_dates(event.starts_at, described, today)
             if not keep:
                 continue
+            # A stated end is what keeps a multi-day find alive on its second
+            # day. The page's end date is inclusive, so it becomes the exclusive
+            # instant the rest of the pipeline compares against: a festival
+            # ending on the 5th is over at midnight on the 6th.
+            ends_at = event.ends_at
+            if (
+                ends_at is None
+                and described.ends_on is not None
+                and (
+                    described.starts_on is None
+                    or described.ends_on >= described.starts_on
+                )
+            ):
+                ends_at = datetime.combine(
+                    described.ends_on + timedelta(days=1),
+                    time.min,
+                    tzinfo=UTC,
+                )
             readable.append(
                 RankedCandidate(
                     candidate=ScoredCandidate(
@@ -658,6 +786,7 @@ class DiscoveryRunner:
                             title=described.title,
                             summary=described.description,
                             starts_at=starts_at,
+                            ends_at=ends_at,
                         ),
                         embedding=item.candidate.embedding,
                     ),
@@ -691,6 +820,7 @@ class DiscoveryRunner:
         user_id: str,
         configured: tuple[FeedSource, ...],
         budget: RequestBudget,
+        timezone: str | None = None,
     ) -> tuple[tuple[DiscoveredEvent, ...], tuple[str, ...]]:
         collected: list[DiscoveredEvent] = []
         failed: list[str] = []
@@ -698,7 +828,10 @@ class DiscoveryRunner:
             if budget.remaining <= 0:
                 failed.append(source.id)
                 continue
-            adapter = self.adapter_factory(source, budget)
+            # An ICS time with no TZID is a wall-clock time in the venue's own
+            # zone. Defaulting it to UTC shifted every such listing by the
+            # offset — a 7pm class in Arlington arrived as 3pm.
+            adapter = self.adapter_factory(source, budget, timezone)
             try:
                 events = await adapter.fetch()
             except FeedError:
@@ -785,7 +918,10 @@ class DiscoveryRunner:
         limit: int,
         now: datetime | None = None,
     ) -> tuple[RankedCandidate, ...]:
-        if len(selected) >= limit + MAX_UNDATED:
+        # The fill is only needed while the digest has room. A message carries
+        # `MAX_EVENTS_IN_MESSAGE` finds in total, so filling past that spends
+        # queries on finds the cap will drop.
+        if len(selected) >= min(limit, MAX_EVENTS_IN_MESSAGE):
             return selected
         moment = now or datetime.now(UTC)
         try:
@@ -950,12 +1086,33 @@ class DiscoveryRunner:
             return [None] * len(texts)
         if len(vectors) != len(texts):
             return [None] * len(texts)
-        return list(vectors)
+        # A provider that changes model or truncates its output can return a
+        # vector of the wrong width. Such a vector cannot be stored, and mixing
+        # widths makes every cosine comparison silently compare only the prefix
+        # it happens to share. Degrade that candidate to identity-only novelty
+        # rather than ranking it against a vector it does not fit.
+        return [
+            vector
+            if vector is not None and len(vector) == EMBEDDING_DIMENSIONS
+            else None
+            for vector in vectors
+        ]
 
 
-def _adapter_for(source: FeedSource, budget: RequestBudget) -> EventSource:
+def _adapter_for(
+    source: FeedSource,
+    budget: RequestBudget,
+    timezone: str | None = None,
+) -> EventSource:
     if source.kind == "ics":
-        return IcsEventSource(source.id, source.url, budget=budget)
+        # The venue's zone, not this machine's and not UTC. A floating time in
+        # a calendar feed means the wall clock where the calendar is kept.
+        return IcsEventSource(
+            source.id,
+            source.url,
+            default_timezone=timezone or "UTC",
+            budget=budget,
+        )
     if source.kind == "links":
         return LinkPageEventSource(source.id, source.url, budget=budget)
     return RssEventSource(source.id, source.url, budget=budget)

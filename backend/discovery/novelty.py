@@ -21,11 +21,11 @@ import uuid
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 
-from sqlalchemy import func, select
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.dialects.postgresql import insert
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.discovery.events import DiscoveredEvent
+from backend.discovery.events import DiscoveredEvent, event_has_passed
 from backend.models.discovery_source import DiscoverySeenItem
 
 # Cosine distance below which two events are treated as the same happening.
@@ -65,7 +65,15 @@ class SeenItemRepository:
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
 
-    # Which of these digests this user has already seen, in one round trip.
+    # Which of these digests this user has already been shown, in one round
+    # trip.
+    #
+    # Only announced rows count. Every candidate a sweep considers is recorded
+    # as seen, including the ones ranked out; treating those as identity matches
+    # would make an item that lost once ineligible forever, which contradicts
+    # the rule that a ranked-out find stays available for a later sweep. The
+    # comment on the runner's recording step has always said so; this query is
+    # what made it untrue.
     async def known_digests(
         self, user_id: str, digests: tuple[str, ...]
     ) -> frozenset[str]:
@@ -73,6 +81,7 @@ class SeenItemRepository:
             return frozenset()
         stmt = select(DiscoverySeenItem.item_digest).where(
             DiscoverySeenItem.user_id == user_id,
+            DiscoverySeenItem.announced_at.is_not(None),
             DiscoverySeenItem.item_digest.in_(digests),
         )
         rows = (await self.session.execute(stmt)).scalars().all()
@@ -157,6 +166,7 @@ class SeenItemRepository:
             "source_id": event.source_id,
             "title": event.title,
             "starts_at": event.starts_at,
+            "ends_at": event.ends_at,
             "embedding": embedding,
             "payload_json": json.dumps(_payload(event), separators=(",", ":")),
         }
@@ -177,6 +187,13 @@ class SeenItemRepository:
             update["announced_run_id"] = func.coalesce(
                 DiscoverySeenItem.announced_run_id, stmt.excluded.announced_run_id
             )
+            # A row first seen while ranked out holds the raw scraped form.
+            # Announcing it replaces that with the described form the person
+            # actually saw, which may be the only place an end date exists.
+            update["title"] = stmt.excluded.title
+            update["starts_at"] = stmt.excluded.starts_at
+            update["ends_at"] = stmt.excluded.ends_at
+            update["payload_json"] = stmt.excluded.payload_json
         if update:
             stmt = stmt.on_conflict_do_update(
                 constraint="uq_discovery_seen_item", set_=update
@@ -207,25 +224,39 @@ class SeenItemRepository:
         self, user_id: str, now: datetime | None = None, limit: int = 100
     ) -> tuple[DiscoveredEvent, ...]:
         moment = now or datetime.now(UTC)
+        # Past events are dropped rather than accumulating forever in someone
+        # else's calendar, but "past" is not `starts_at < now`: an all-day
+        # happening is live until its day ends, and a multi-day one until its
+        # `ends_at`. The SQL narrows to rows that could still be live, and the
+        # exact rule is applied below by the same function the renderer uses.
         stmt = (
             select(DiscoverySeenItem)
             .where(
                 DiscoverySeenItem.user_id == user_id,
                 DiscoverySeenItem.announced_at.is_not(None),
                 DiscoverySeenItem.starts_at.is_not(None),
-                # Past events are dropped rather than accumulating forever in
-                # someone else's calendar.
-                DiscoverySeenItem.starts_at >= moment,
+                or_(
+                    DiscoverySeenItem.starts_at >= moment - timedelta(days=1),
+                    and_(
+                        DiscoverySeenItem.ends_at.is_not(None),
+                        DiscoverySeenItem.ends_at > moment,
+                    ),
+                ),
             )
             .order_by(DiscoverySeenItem.starts_at.asc())
-            .limit(limit)
+            .limit(max(limit * 4, 64))
         )
         rows = (await self.session.execute(stmt)).scalars().all()
         events: list[DiscoveredEvent] = []
         for row in rows:
             event = _event_from_payload(row.payload_json)
-            if event is not None:
-                events.append(event)
+            if event is None:
+                continue
+            if event_has_passed(event.starts_at, event.ends_at, moment):
+                continue
+            events.append(event)
+            if len(events) >= limit:
+                break
         return tuple(events)
 
     # Every announced, still-upcoming item, with its stored embedding, so a
@@ -237,24 +268,38 @@ class SeenItemRepository:
         self, user_id: str, now: datetime | None = None, limit: int = 100
     ) -> tuple[ScoredCandidate, ...]:
         moment = now or datetime.now(UTC)
+        # The same live-event window `announced_events` uses, for the same
+        # reason: an all-day find is still offerable on its own day, and a
+        # multi-day one while it is running.
         stmt = (
             select(DiscoverySeenItem)
             .where(
                 DiscoverySeenItem.user_id == user_id,
                 DiscoverySeenItem.announced_at.is_not(None),
                 DiscoverySeenItem.starts_at.is_not(None),
-                DiscoverySeenItem.starts_at >= moment,
                 DiscoverySeenItem.embedding.is_not(None),
+                or_(
+                    DiscoverySeenItem.starts_at >= moment - timedelta(days=1),
+                    and_(
+                        DiscoverySeenItem.ends_at.is_not(None),
+                        DiscoverySeenItem.ends_at > moment,
+                    ),
+                ),
             )
             .order_by(DiscoverySeenItem.starts_at.asc())
-            .limit(limit)
+            .limit(max(limit * 4, 64))
         )
         rows = (await self.session.execute(stmt)).scalars().all()
         candidates: list[ScoredCandidate] = []
         for row in rows:
             event = _event_from_payload(row.payload_json)
-            if event is not None:
-                candidates.append(ScoredCandidate(event=event, embedding=row.embedding))
+            if event is None:
+                continue
+            if event_has_passed(event.starts_at, event.ends_at, moment):
+                continue
+            candidates.append(ScoredCandidate(event=event, embedding=row.embedding))
+            if len(candidates) >= limit:
+                break
         return tuple(candidates)
 
     async def count_seen(self, user_id: str) -> int:
@@ -381,12 +426,16 @@ def _near_any(embedding: list[float], admitted: list[list[float]]) -> bool:
     if norm == 0.0:
         return False
     for other in admitted:
-        if not other:
+        # Vectors of different widths are not comparable; zipping them would
+        # compare only the shared prefix and call the result a distance. The
+        # runner now drops wrong-width vectors before this point, so this is a
+        # second line of defence rather than the primary one.
+        if not other or len(other) != len(embedding):
             continue
         other_norm = sum(value * value for value in other) ** 0.5
         if other_norm == 0.0:
             continue
-        dot = sum(a * b for a, b in zip(embedding, other))
+        dot = sum(a * b for a, b in zip(embedding, other, strict=True))
         distance = 1.0 - dot / (norm * other_norm)
         if distance < NEAR_DUPLICATE_DISTANCE:
             return True

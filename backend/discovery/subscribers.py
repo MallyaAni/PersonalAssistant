@@ -8,9 +8,8 @@ from datetime import UTC, datetime
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from backend.discovery.addressing import normalize_address
+from backend.discovery.addressing import address_digest, normalize_address
 from backend.discovery.errors import DiscoveryProfileLimitError
-from backend.discovery.addressing import address_digest
 from backend.models.discovery_subscriber import DiscoverySubscriber
 
 # "imessage" delivers through an Apple device the operator controls.
@@ -153,14 +152,21 @@ class SubscriberRepository:
                 "Each account may have one subscription. Remove the current one first."
             )
 
+        # A revoked address asking again is a fresh permission request, not a
+        # restoration. Without this, `enroll` clears the revocation and keeps
+        # the old approval, so anyone whose subscription the operator revoked
+        # could re-enable it themselves simply by asking again.
+        existing_row = await self._by_digest(user_id, channel, digest)
+        was_revoked = existing_row is not None and existing_row.revoked_at is not None
         subscriber = await self.enroll(user_id, channel, cleaned, label, consented=True)
         if channel == "shortcuts_pull":
             return subscriber
         # Consented by the recipient, not yet permitted by the operator.
         row = await self._by_digest(user_id, channel, digest)
-        if row is not None and not already:
+        if row is not None and (not already or was_revoked):
             # A fresh request is consented by the recipient and not yet
-            # permitted by the operator, whatever enrol defaulted to.
+            # permitted by the operator, whatever enrol defaulted to. A
+            # previously revoked address is in exactly that position again.
             row.approved_at = None
             row.active = False
             await self.session.commit()

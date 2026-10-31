@@ -10,13 +10,14 @@ import uuid
 from datetime import UTC, datetime, timedelta
 
 import pytest
-from sqlalchemy import delete
+from sqlalchemy import delete, select
 
 os.environ["DEBUG"] = "false"
 os.environ.setdefault("SECRET_KEY", "test-secret-key-only-for-testing")
 
 from backend.database.session import AsyncSessionLocal
 from backend.discovery.events import DiscoveredEvent
+from backend.discovery.feedback_loop import reacted_finds, send_counts
 from backend.discovery.novelty import (
     NoveltyFilter,
     ScoredCandidate,
@@ -34,6 +35,7 @@ from backend.discovery.sources_repository import DiscoverySourceRepository
 from backend.discovery.types import DiscoveryProfile, Interest
 from backend.models.discovery_feedback import DiscoverySentFind
 from backend.models.discovery_source import DiscoverySeenItem, DiscoverySource
+from backend.models.discovery_subscriber import DiscoverySubscriber
 
 
 # The spread keeps a digest from being eight of the same thing: the top find of
@@ -215,6 +217,9 @@ async def _cleanup(user_id: str) -> None:
         await session.execute(
             delete(DiscoverySentFind).where(DiscoverySentFind.user_id == user_id)
         )
+        await session.execute(
+            delete(DiscoverySubscriber).where(DiscoverySubscriber.user_id == user_id)
+        )
         await session.commit()
 
 
@@ -287,7 +292,7 @@ async def test_a_repeated_sweep_over_an_unchanged_feed_reoffers_still_upcoming()
                 sources=sources,
                 seen=SeenItemRepository(session),
                 embeddings=_StubEmbeddings(_JAZZ_AND_BRUNCH),
-                adapter_factory=lambda _source, _budget: stub,
+                adapter_factory=lambda _source, _budget, _timezone=None: stub,
             )
             profile = DiscoveryProfile(
                 interests=(
@@ -343,7 +348,7 @@ async def test_a_find_already_sent_its_fill_of_times_is_not_reoffered():
                 sources=sources,
                 seen=SeenItemRepository(session),
                 embeddings=_StubEmbeddings(_JAZZ_AND_BRUNCH),
-                adapter_factory=lambda _source, _budget: stub,
+                adapter_factory=lambda _source, _budget, _timezone=None: stub,
             )
             profile = DiscoveryProfile(
                 interests=(
@@ -411,7 +416,7 @@ async def test_a_find_sent_within_the_recency_window_is_not_reoffered():
                 sources=sources,
                 seen=SeenItemRepository(session),
                 embeddings=_StubEmbeddings(_JAZZ_AND_BRUNCH),
-                adapter_factory=lambda _source, _budget: stub,
+                adapter_factory=lambda _source, _budget, _timezone=None: stub,
             )
             profile = DiscoveryProfile(
                 interests=(
@@ -468,7 +473,7 @@ async def test_a_find_sent_before_the_recency_window_is_reoffered():
                 sources=sources,
                 seen=SeenItemRepository(session),
                 embeddings=_StubEmbeddings(_JAZZ_AND_BRUNCH),
-                adapter_factory=lambda _source, _budget: stub,
+                adapter_factory=lambda _source, _budget, _timezone=None: stub,
             )
             profile = DiscoveryProfile(
                 interests=(
@@ -546,6 +551,156 @@ async def test_an_item_only_seen_does_not_suppress_a_later_one():
         await _cleanup(user_id)
 
 
+# Identity suppression means "already shown", not "already considered". A row
+# written while the find was ranked out must not make that find permanently
+# ineligible, or a busy week silently eats everything it did not send.
+@pytest.mark.asyncio
+async def test_an_item_only_seen_does_not_suppress_itself_by_identity():
+    user_id = f"nov_{uuid.uuid4().hex[:12]}"
+    try:
+        async with AsyncSessionLocal() as session:
+            seen = SeenItemRepository(session)
+            candidate = ScoredCandidate(
+                _event("evt-1", "Jazz at the Green"), _vec(1.0)
+            )
+            await seen.record_seen(user_id, candidate, announced=False, now=_NOW)
+            await session.commit()
+
+            novel = await NoveltyFilter(seen).novel(user_id, (candidate,), now=_NOW)
+
+            assert len(novel) == 1
+    finally:
+        await _cleanup(user_id)
+
+
+# A festival that started yesterday is still on. Novelty and the calendar used
+# to compare only `starts_at`, so a multi-day find vanished from both on its
+# second day even though it was running.
+@pytest.mark.asyncio
+async def test_a_running_multi_day_find_stays_offerable_after_its_first_day():
+    user_id = f"nov_{uuid.uuid4().hex[:12]}"
+    event = DiscoveredEvent(
+        source_id="src-1",
+        external_id="evt-festival",
+        title="Harbor Festival",
+        starts_at=_NOW - timedelta(days=1),
+        ends_at=_NOW + timedelta(days=1),
+        place=None,
+        url=None,
+        summary=None,
+    )
+    try:
+        async with AsyncSessionLocal() as session:
+            seen = SeenItemRepository(session)
+            await seen.record_seen(
+                user_id, ScoredCandidate(event, _vec(1.0)), announced=True, now=_NOW
+            )
+            await session.commit()
+
+            candidates = await seen.announced_candidates(user_id, now=_NOW)
+            events = await seen.announced_events(user_id, now=_NOW)
+
+            assert [item.event.title for item in candidates] == ["Harbor Festival"]
+            assert [item.title for item in events] == ["Harbor Festival"]
+    finally:
+        await _cleanup(user_id)
+
+
+# An all-day find is live until its day ends, not from the moment the day
+# began. Midnight UTC is how the pipeline says "this day, no time".
+@pytest.mark.asyncio
+async def test_an_all_day_find_is_still_offerable_on_its_own_day():
+    user_id = f"nov_{uuid.uuid4().hex[:12]}"
+    event = DiscoveredEvent(
+        source_id="src-1",
+        external_id="evt-fair",
+        title="County Fair",
+        starts_at=datetime(2026, 8, 1, tzinfo=UTC),
+        ends_at=None,
+        place=None,
+        url=None,
+        summary=None,
+    )
+    try:
+        async with AsyncSessionLocal() as session:
+            seen = SeenItemRepository(session)
+            await seen.record_seen(
+                user_id, ScoredCandidate(event, _vec(1.0)), announced=True, now=_NOW
+            )
+            await session.commit()
+
+            candidates = await seen.announced_candidates(user_id, now=_NOW)
+
+            assert [item.event.title for item in candidates] == ["County Fair"]
+    finally:
+        await _cleanup(user_id)
+
+
+# Vectors with a perturbation in a different dimension each, so the batch
+# near-duplicate guard does not collapse them while every one still matches
+# jazz strongly.
+class _DistinctJazzEmbeddings:
+    def embed_texts(self, texts: list[str]) -> list[list[float]]:
+        vectors: list[list[float]] = []
+        for index in range(len(texts)):
+            vector = _vec(1.0)
+            vector[1 + index] = 0.7
+            vectors.append(vector)
+        return vectors
+
+
+# A message carries five finds. Describing and recording eleven marked six of
+# them announced while delivery sent five, so the other six were suppressed
+# from every later sweep without ever having been seen.
+@pytest.mark.asyncio
+async def test_only_the_finds_a_message_carries_are_recorded_as_announced():
+    user_id = f"nov_{uuid.uuid4().hex[:12]}"
+    events = tuple(_event(f"evt-{index}", f"Jazz {index}") for index in range(7))
+    try:
+        async with AsyncSessionLocal() as session:
+            sources = DiscoverySourceRepository(session)
+            source = await sources.upsert_source(
+                user_id, "ics", "https://example.org/feed.ics"
+            )
+            runner = DiscoveryRunner(
+                sources=sources,
+                seen=SeenItemRepository(session),
+                embeddings=_DistinctJazzEmbeddings(),
+                adapter_factory=lambda _source, _budget, _timezone=None: _StubSource(
+                    source.id, events
+                ),
+            )
+            profile = DiscoveryProfile(
+                interests=(
+                    Interest(
+                        id="i1", label="jazz", strength=3, provenance="user_explicit"
+                    ),
+                ),
+                localities=(),
+            )
+
+            result = await runner.sweep(user_id, profile, now=_NOW)
+
+            rows = (
+                (
+                    await session.execute(
+                        select(DiscoverySeenItem).where(
+                            DiscoverySeenItem.user_id == user_id
+                        )
+                    )
+                )
+                .scalars()
+                .all()
+            )
+
+        assert len(result.selected) == 5
+        assert len(rows) == 7
+        announced = [row for row in rows if row.announced_at is not None]
+        assert len(announced) == 5
+    finally:
+        await _cleanup(user_id)
+
+
 @pytest.mark.asyncio
 async def test_one_feed_listing_the_same_event_twice_yields_one_candidate():
     user_id = f"nov_{uuid.uuid4().hex[:12]}"
@@ -602,7 +757,7 @@ async def test_an_embedding_failure_degrades_to_identity_novelty():
                 sources=sources,
                 seen=SeenItemRepository(session),
                 embeddings=_FailingEmbeddings(),
-                adapter_factory=lambda _source, _budget: stub,
+                adapter_factory=lambda _source, _budget, _timezone=None: stub,
             )
             result = await runner.sweep(
                 user_id,
@@ -664,7 +819,7 @@ async def test_a_rehearsal_records_nothing_and_repeats_identically():
                 sources=sources,
                 seen=seen,
                 embeddings=_StubEmbeddings(_JAZZ_AND_BRUNCH),
-                adapter_factory=lambda _source, _budget: stub,
+                adapter_factory=lambda _source, _budget, _timezone=None: stub,
             )
             profile = DiscoveryProfile(
                 interests=(
@@ -707,7 +862,7 @@ async def test_a_real_sweep_after_a_rehearsal_still_behaves_normally():
                 sources=sources,
                 seen=SeenItemRepository(session),
                 embeddings=_StubEmbeddings(_JAZZ_AND_BRUNCH),
-                adapter_factory=lambda _source, _budget: stub,
+                adapter_factory=lambda _source, _budget, _timezone=None: stub,
             )
             profile = DiscoveryProfile(
                 interests=(
@@ -748,7 +903,9 @@ async def test_a_sweep_records_the_decision_behind_its_selection():
             sources=sources,
             seen=SeenItemRepository(session),
             embeddings=_StubEmbeddings(_JAZZ_AND_BRUNCH),
-            adapter_factory=lambda _source, _budget: _StubSource(source.id, events),
+            adapter_factory=lambda _source, _budget, _timezone=None: _StubSource(
+                source.id, events
+            ),
         )
         profile = DiscoveryProfile(
             interests=(
@@ -771,3 +928,117 @@ async def test_a_sweep_records_the_decision_behind_its_selection():
     # And the context the run ranked against, so a label can be read in it.
     assert result.decision["context"]["interests"]
     assert result.decision["policy"] == "deterministic_top_k"
+
+
+# One digest is one offering, however many phones receive it. Counting rows made
+# a find sent to two subscribers look twice-sent, so it hit the repeat cap in
+# half the digests it should have. Rows that predate run recording have no run
+# to share, so each of those is still its own send.
+@pytest.mark.asyncio
+async def test_a_send_to_two_subscribers_counts_as_one_offering():
+    user_id = f"fbk_{uuid.uuid4().hex[:12]}"
+    run_id = uuid.uuid4()
+    shared_digest = "a" * 64
+    manual_digest = "b" * 64
+
+    try:
+        async with AsyncSessionLocal() as session:
+            session.add_all(
+                [
+                    DiscoverySentFind(
+                        user_id=user_id,
+                        run_id=run_id,
+                        subscriber_id=uuid.uuid4(),
+                        item_digest=shared_digest,
+                        sent_at=_NOW,
+                    ),
+                    DiscoverySentFind(
+                        user_id=user_id,
+                        run_id=run_id,
+                        subscriber_id=uuid.uuid4(),
+                        item_digest=shared_digest,
+                        sent_at=_NOW,
+                    ),
+                    DiscoverySentFind(
+                        user_id=user_id,
+                        item_digest=manual_digest,
+                        sent_at=_NOW,
+                    ),
+                    DiscoverySentFind(
+                        user_id=user_id,
+                        item_digest=manual_digest,
+                        sent_at=_NOW,
+                    ),
+                ]
+            )
+            await session.commit()
+
+            counts = await send_counts(session, user_id)
+
+        assert counts[shared_digest] == 1
+        assert counts[manual_digest] == 2
+    finally:
+        await _cleanup(user_id)
+
+
+# A subscription is a delivery permission, not an identity. A guest reacting to
+# a bubble must not become evidence about the account holder's interests, so
+# only the earliest subscription — the owner's own phone — is read back.
+@pytest.mark.asyncio
+async def test_a_guests_reaction_does_not_shade_the_owners_interests():
+    user_id = f"fbk_{uuid.uuid4().hex[:12]}"
+    owner_created = _NOW - timedelta(hours=2)
+
+    try:
+        async with AsyncSessionLocal() as session:
+            owner = DiscoverySubscriber(
+                user_id=user_id,
+                channel="imessage",
+                address="+15550100",
+                address_digest="c" * 64,
+                token="t" * 64,
+                active=True,
+                created_at=owner_created,
+            )
+            guest = DiscoverySubscriber(
+                user_id=user_id,
+                channel="imessage",
+                address="+15550199",
+                address_digest="d" * 64,
+                token="u" * 64,
+                active=True,
+                created_at=_NOW,
+            )
+            session.add_all([owner, guest])
+            await session.flush()
+
+            session.add_all(
+                [
+                    DiscoverySentFind(
+                        user_id=user_id,
+                        subscriber_id=owner.id,
+                        item_digest="e" * 64,
+                        label="Jazz at the Green",
+                        sent_at=_NOW,
+                        reaction="liked",
+                        reacted_at=_NOW,
+                    ),
+                    DiscoverySentFind(
+                        user_id=user_id,
+                        subscriber_id=guest.id,
+                        item_digest="f" * 64,
+                        label="Hot-air balloon rally",
+                        sent_at=_NOW,
+                        reaction="disliked",
+                        reacted_at=_NOW,
+                    ),
+                ]
+            )
+            await session.commit()
+
+            reacted = await reacted_finds(session, user_id)
+
+        assert [find.title for find in reacted] == ["Jazz at the Green"]
+        assert reacted[0].reaction == "liked"
+    finally:
+        await _cleanup(user_id)

@@ -12,7 +12,7 @@ entities, and the payload is already byte-bounded before it arrives here, which
 together cover the two attacks that matter for untrusted XML.
 """
 
-from datetime import datetime
+from datetime import UTC, datetime
 from email.utils import parsedate_to_datetime
 from xml.etree import ElementTree
 
@@ -142,11 +142,17 @@ def _event_start(entry: ElementTree.Element) -> datetime | None:
 def _parse_timestamp(raw: str) -> datetime | None:
     if not raw:
         return None
+    parsed: datetime | None = None
     try:
-        return datetime.fromisoformat(raw.replace("Z", "+00:00"))
+        parsed = datetime.fromisoformat(raw.replace("Z", "+00:00"))
     except ValueError:
-        pass
-    try:
-        return parsedate_to_datetime(raw)
-    except (TypeError, ValueError):
-        return None
+        try:
+            parsed = parsedate_to_datetime(raw)
+        except (TypeError, ValueError):
+            return None
+    # A timestamp with no offset is not a comparable instant. Every downstream
+    # comparison assumes an aware datetime; treating the naive value as UTC is
+    # the only reading that does not silently shift it by the machine's zone.
+    if parsed is not None and parsed.tzinfo is None:
+        return parsed.replace(tzinfo=UTC)
+    return parsed

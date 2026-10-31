@@ -12,7 +12,7 @@ to remember to do it.
 import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import UTC, datetime, timedelta
 
 # Bound what one source may contribute. A feed is someone else's data and can
 # change size without notice, so a run's cost cannot depend on their restraint.
@@ -106,6 +106,38 @@ def clean_title(value: str | None, limit: int = MAX_TITLE_CHARS) -> str | None:
         if len(candidate) >= MIN_SENTENCE_TITLE_CHARS:
             return candidate
     return cleaned
+
+
+# Whether a start carries only a date. Midnight UTC exactly is the pipeline's
+# one convention for "the source stated a day and no time" — search extraction,
+# ICS date values and described dates all produce it. Every comparison against
+# such a start has to treat it as the whole day, not the instant the day began:
+# treating it as an instant is how an event happening tonight was dropped from
+# a real digest as "already passed" at 4pm.
+def is_date_only(starts_at: datetime) -> bool:
+    stated = starts_at.astimezone(UTC)
+    return (stated.hour, stated.minute, stated.second) == (0, 0, 0)
+
+
+# Whether an event is already over.
+#
+# `ends_at` is what makes a multi-day happening survive its second day: a
+# festival that started on Friday is not over on Saturday just because its
+# `starts_at` is behind us. The end is treated as an exclusive instant — the
+# ICS convention — so an all-day event whose end is midnight on the 5th ran
+# through the 4th. A date-only start with no stated end keeps its whole day.
+def event_has_passed(
+    starts_at: datetime | None,
+    ends_at: datetime | None,
+    moment: datetime,
+) -> bool:
+    if starts_at is None:
+        return False
+    if ends_at is not None and ends_at > starts_at:
+        return moment >= ends_at
+    if is_date_only(starts_at):
+        return moment >= starts_at + timedelta(days=1)
+    return moment >= starts_at
 
 
 # Accept only web URLs. A feed may carry javascript:, data:, or file: targets,

@@ -1,5 +1,6 @@
 import os
-from datetime import UTC
+import socket
+from datetime import UTC, timedelta
 
 import httpx
 import pytest
@@ -16,6 +17,9 @@ from backend.discovery.events import (
 from backend.discovery.fetching import (
     RequestBudget,
     RequestBudgetExceededError,
+    _address_is_public,
+    _read_public,
+    _require_public_url,
     fetch_feed,
 )
 from backend.discovery.sources.ics import parse_ics
@@ -225,6 +229,27 @@ def test_rss_uses_an_explicit_event_date_when_one_is_present():
     assert events[0].is_schedulable is True
 
 
+# A stated time with no offset is not a comparable instant. Left naive, it made
+# every downstream aware comparison raise, and the item was dropped instead of
+# being offered. UTC is the only reading that does not shift it to the machine's
+# own zone.
+def test_rss_treats_a_zoneless_event_date_as_utc():
+    payload = """<?xml version="1.0"?>
+    <rss version="2.0" xmlns:dcterms="http://purl.org/dc/terms/"><channel>
+      <item>
+        <title>Night market</title>
+        <guid>market-8</guid>
+        <dcterms:date>2026-08-15T18:00:00</dcterms:date>
+      </item>
+    </channel></rss>"""
+
+    events = parse_feed(payload, "city")
+
+    assert events[0].starts_at is not None
+    assert events[0].starts_at.utcoffset() == timedelta(0)
+    assert events[0].starts_at.hour == 18
+
+
 def test_atom_entries_read_the_alternate_link_href():
     payload = """<?xml version="1.0"?>
     <feed xmlns="http://www.w3.org/2005/Atom">
@@ -292,3 +317,78 @@ async def test_fetch_returns_the_decoded_body_within_bounds():
         body = await fetch_feed("https://venue.example/feed.ics", client=client)
 
     assert body == "BEGIN:VCALENDAR"
+
+
+# A feed URL is user-supplied, so fetching one is a request-forgery primitive
+# unless the destination is checked. Everything that is not clearly public is
+# refused; the cloud metadata address is the one that turns a feed into
+# credentials, and loopback reaches this application's own API.
+@pytest.mark.parametrize(
+    "address",
+    [
+        "127.0.0.1",
+        "10.0.0.5",
+        "192.168.1.10",
+        "172.16.4.2",
+        "169.254.169.254",
+        "0.0.0.0",
+        "::1",
+        "fd00::1",
+        "::ffff:127.0.0.1",
+    ],
+)
+def test_non_public_addresses_are_refused(address):
+    assert _address_is_public(address) is False
+
+
+@pytest.mark.parametrize("address", ["93.184.216.34", "2606:4700:4700::1111"])
+def test_public_addresses_are_allowed(address):
+    assert _address_is_public(address) is True
+
+
+# Resolution is what makes the check meaningful for a hostname: a feed may name
+# a public-looking host that resolves to the metadata service.
+@pytest.mark.asyncio
+async def test_a_host_resolving_inside_the_network_is_refused(monkeypatch):
+    monkeypatch.setattr(
+        socket,
+        "getaddrinfo",
+        lambda *args, **kwargs: [
+            (socket.AF_INET, socket.SOCK_STREAM, 6, "", ("169.254.169.254", 80))
+        ],
+    )
+
+    with pytest.raises(FeedError, match="non-public"):
+        await _require_public_url("http://feeds.example/latest")
+
+
+# A redirect is another destination, and it must be checked before it is
+# contacted rather than trusted because the first hop was public.
+@pytest.mark.asyncio
+async def test_a_redirect_into_the_network_is_refused_before_it_is_followed(
+    monkeypatch,
+):
+    resolved: list[str] = []
+
+    def fake_getaddrinfo(host, port, *args, **kwargs):
+        resolved.append(host)
+        if host == "feeds.example":
+            return [
+                (socket.AF_INET, socket.SOCK_STREAM, 6, "", ("93.184.216.34", 80))
+            ]
+        return [(socket.AF_INET, socket.SOCK_STREAM, 6, "", ("127.0.0.1", 80))]
+
+    monkeypatch.setattr(socket, "getaddrinfo", fake_getaddrinfo)
+
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(302, headers={"location": "http://localhost/admin"})
+
+    transport = httpx.MockTransport(handler)
+    async with httpx.AsyncClient(transport=transport, follow_redirects=False) as client:
+        with pytest.raises(FeedError, match="non-public"):
+            await _read_public(
+                client, "http://feeds.example/latest", RequestBudget(), 1_024
+            )
+
+    # The redirect was resolved and refused; it was never requested.
+    assert resolved == ["feeds.example", "localhost"]

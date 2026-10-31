@@ -40,6 +40,7 @@ from backend.discovery.reachability import (
     is_reachable_from_other_devices,
 )
 from backend.discovery.repository import DiscoveryProfileRepository
+from backend.discovery.runner import candidates_from_digest
 from backend.discovery.runs import DiscoveryRunRepository
 from backend.discovery.subscribers import SubscriberRepository
 
@@ -172,23 +173,55 @@ class DiscoveryWorker:
                 runner = get_discovery_runner_for_session(
                     session, is_operator=is_operator, search_limit=search_limit
                 )
-                result = await runner.sweep(user_id, profile, run_id=run_id)
 
-                # Persist before delivering. A crash after this point resumes
-                # with the selection intact instead of re-reading every feed.
-                await runs.save_digest(
-                    run_id,
-                    self.worker_id,
-                    result.to_digest_json(),
-                    len(result.selected),
-                    result.requests_spent,
-                    # Written in the same transaction as the digest, so a run
-                    # can never have an outcome on file with no record of the
-                    # decision that produced it.
-                    decision_json=(
-                        to_json(result.decision) if result.decision else None
-                    ),
-                )
+                saved_digest = run.get("digest_json")
+                if saved_digest:
+                    # A previous attempt saved this digest and died before
+                    # delivering it. Rebuilding from the saved record is the
+                    # only way the resume is what it claims to be: re-sweeping
+                    # would consult novelty against the seen rows the first
+                    # attempt wrote, produce nothing, and overwrite the digest
+                    # with an empty one.
+                    selected, notable = candidates_from_digest(saved_digest)
+                    candidate_count = int(run.get("candidate_count") or 0)
+                    requests_spent = int(run.get("requests_spent") or 0)
+                else:
+                    result = await runner.sweep(
+                        user_id,
+                        profile,
+                        run_id=run_id,
+                        # The seen rows are committed below, together with the
+                        # digest. Committing them inside the sweep leaves a
+                        # window where finds are recorded as announced but no
+                        # digest exists to deliver them.
+                        commit_seen=False,
+                    )
+                    selected, notable = result.selected, result.notable
+                    candidate_count = result.candidate_count
+                    requests_spent = result.requests_spent
+                    saved = await runs.save_digest(
+                        run_id,
+                        self.worker_id,
+                        result.to_digest_json(),
+                        len(selected) + len(notable),
+                        requests_spent,
+                        # Written in the same transaction as the digest, so a
+                        # run can never have an outcome on file with no record
+                        # of the decision that produced it.
+                        decision_json=(
+                            to_json(result.decision) if result.decision else None
+                        ),
+                        commit=False,
+                    )
+                    if not saved:
+                        # The lease was lost; another worker owns this run and
+                        # delivering here would race it.
+                        raise DiscoveryRunCancelledError()
+                    # The sweep's seen rows and the digest become durable
+                    # together. A crash before this point leaves neither, so
+                    # the next attempt sweeps again rather than believing it
+                    # already announced finds it never sent.
+                    await session.commit()
 
                 report = await DigestDelivery(
                     SubscriberRepository(session),
@@ -199,13 +232,14 @@ class DiscoveryWorker:
                     SentFindRepository(session),
                 ).deliver(
                     user_id,
-                    result.selected,
+                    selected,
                     _calendar_base(user_id),
                     timezone=_timezone_for(profile),
                     run_id=run_id,
                     worker_id=self.worker_id,
                     scheduled_for=run.get("scheduled_for"),
                     locality=_locality_for(profile),
+                    notable=notable,
                 )
                 await runs.mark_ready(run_id, self.worker_id)
 
@@ -213,9 +247,10 @@ class DiscoveryWorker:
                 "discovery_run_ready",
                 extra={
                     "run_id": run_id,
-                    "selected": len(result.selected),
-                    "candidates": result.candidate_count,
-                    "requests_spent": result.requests_spent,
+                    "selected": len(selected),
+                    "notable": len(notable),
+                    "candidates": candidate_count,
+                    "requests_spent": requests_spent,
                     "delivered": report.delivered,
                 },
             )
@@ -297,7 +332,7 @@ def _locality_for(profile: Any) -> str | None:
 
 # Poll without holding a transaction open while idle. Producing and consuming
 # share one cadence: a sweep is weekly, so nothing here needs to be prompt.
-async def run() -> None:
+async def run() -> None:  # noqa: C901 - one guard per stage, deliberately inline
     worker = DiscoveryWorker()
     logger.info("discovery_worker_started", extra={"worker_id": worker.worker_id})
     # The iMessage conversation loop shares this process rather than this
@@ -319,18 +354,36 @@ async def run() -> None:
 
         asyncio.create_task(run_agent_runs())
     while True:
-        await worker.enqueue_due()
-        handled = await worker.run_once()
+        # One database hiccup must not end the loop. These were unguarded, and
+        # an exception from the producer — a lock timeout, a connection reset —
+        # killed the worker process, which the container then reported healthy
+        # because the loop had simply stopped. Each stage is isolated so the
+        # others still run, and the loop always reaches its sleep.
+        try:
+            await worker.enqueue_due()
+        except Exception:
+            logger.exception("discovery_enqueue_failed")
+        handled = False
+        try:
+            handled = await worker.run_once()
+        except Exception:
+            logger.exception("discovery_claim_failed")
         if handled:
             continue
         # Only when no sweep is waiting. A digest whose retry is due is less
         # urgent than a slot that is due now, and the retry has hours of budget.
-        if await worker.deliver_pending():
-            continue
+        try:
+            if await worker.deliver_pending():
+                continue
+        except Exception:
+            logger.exception("discovery_redelivery_failed")
         # Apple gives no callback when someone reacts, so this is a poll, and it
         # runs last on purpose: a tapback is worth reading soon and never
-        # urgently, and nothing acts on one yet.
-        await worker.collect_reactions()
+        # urgently, and it now shades the next sweep's ranking.
+        try:
+            await worker.collect_reactions()
+        except Exception:
+            logger.exception("discovery_reaction_poll_failed")
         # Sleep until the next slot rather than for a fixed interval, so a
         # sweep asked for at 17:10:00 starts then instead of somewhere in the
         # following minute. The floor keeps a due-but-unclaimable slot from

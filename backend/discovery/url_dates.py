@@ -181,11 +181,25 @@ def deadline_has_passed(text: str | None, today: date) -> bool:
             stated = date(today.year, month, int(match.group("day")))
         except ValueError:
             continue
-        # A deadline late in the year read in January is last year's phrasing
-        # only if it is wildly ahead; treat anything more than six months out as
-        # belonging to the year just gone rather than inventing a future.
+        # A bare month and day belong to the nearest year that makes sense.
+        # More than six months ahead is last year's phrasing ("through
+        # December 20" read in January); more than six months behind is next
+        # year's ("through January 5" read in December, which is a week away,
+        # not eleven months gone). Without the second rule every New Year
+        # deadline was treated as long past for the whole of December.
         if (stated - today).days > 183:
-            stated = date(today.year - 1, month, int(match.group("day")))
-        if (today - stated).days > _DEADLINE_GRACE_DAYS:
+            stated = _shift_year(stated, -1)
+        elif (today - stated).days > 183:
+            stated = _shift_year(stated, 1)
+        if stated is not None and (today - stated).days > _DEADLINE_GRACE_DAYS:
             return True
     return False
+
+
+# Move a stated month and day to another year, refusing a date that does not
+# exist there (29 February outside a leap year) rather than raising.
+def _shift_year(stated: date, offset: int) -> date | None:
+    try:
+        return date(stated.year + offset, stated.month, stated.day)
+    except ValueError:
+        return None

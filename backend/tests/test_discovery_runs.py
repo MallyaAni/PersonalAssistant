@@ -5,7 +5,7 @@ from datetime import UTC, datetime, timedelta
 from zoneinfo import ZoneInfo
 
 import pytest
-from sqlalchemy import delete
+from sqlalchemy import delete, select
 
 os.environ["DEBUG"] = "false"
 os.environ.setdefault("SECRET_KEY", "test-secret-key-only-for-testing")
@@ -130,6 +130,137 @@ async def test_due_slot_produces_exactly_one_run_however_often_it_is_polled():
             assert len(await repo.list_runs(user_id)) == 1
     finally:
         await _cleanup(user_id)
+
+
+# A slot can already have its run — a concurrent producer committed it, or an
+# older row did. Handling that collision must not roll back the schedules
+# processed in the same pass, and must not leave the colliding schedule stuck
+# on a slot it can never claim, which would silence that user forever.
+@pytest.mark.asyncio
+async def test_a_colliding_slot_does_not_stop_another_users_sweep():
+    colliding_user = f"run_{uuid.uuid4().hex[:12]}"
+    other_user = f"run_{uuid.uuid4().hex[:12]}"
+    now = datetime.now(UTC)
+    try:
+        async with AsyncSessionLocal() as session:
+            repo = DiscoveryRunRepository(session)
+            await _account(session, colliding_user)
+            await _account(session, other_user)
+            await repo.upsert_schedule(colliding_user, _daily(hour=9))
+            await repo.upsert_schedule(other_user, _daily(hour=10))
+
+            first_slot = now - timedelta(minutes=2)
+            second_slot = now - timedelta(minutes=1)
+            schedules = {
+                row.user_id: row
+                for row in (
+                    await session.execute(
+                        select(DiscoverySchedule).where(
+                            DiscoverySchedule.user_id.in_(
+                                [colliding_user, other_user]
+                            )
+                        )
+                    )
+                )
+                .scalars()
+                .all()
+            }
+            schedules[colliding_user].next_run_at = first_slot
+            schedules[other_user].next_run_at = second_slot
+            # The run the colliding slot already produced.
+            session.add(
+                DiscoveryRun(
+                    schedule_id=schedules[colliding_user].id,
+                    user_id=colliding_user,
+                    status="queued",
+                    scheduled_for=first_slot,
+                )
+            )
+            await session.commit()
+
+            created = await repo.enqueue_due_runs(now=now)
+
+            mine = [
+                run
+                for run in created
+                if run["user_id"] in (colliding_user, other_user)
+            ]
+            assert [run["user_id"] for run in mine] == [other_user]
+
+            colliding = (
+                (
+                    await session.execute(
+                        select(DiscoverySchedule).where(
+                            DiscoverySchedule.user_id == colliding_user
+                        )
+                    )
+                )
+                .scalars()
+                .one()
+            )
+            assert colliding.enabled is True
+            assert colliding.next_run_at > now
+    finally:
+        await _cleanup(colliding_user, other_user)
+
+
+# A cadence this build cannot compute — a row written by an older or newer
+# version — must be disabled rather than left due, where every pass would
+# retry it, and must not stop the rest of the pass.
+@pytest.mark.asyncio
+async def test_an_uncomputable_cadence_is_disabled_without_stopping_the_pass():
+    broken_user = f"run_{uuid.uuid4().hex[:12]}"
+    good_user = f"run_{uuid.uuid4().hex[:12]}"
+    now = datetime.now(UTC)
+    try:
+        async with AsyncSessionLocal() as session:
+            repo = DiscoveryRunRepository(session)
+            await _account(session, broken_user)
+            await _account(session, good_user)
+            await repo.upsert_schedule(good_user, _daily())
+            broken = DiscoverySchedule(
+                user_id=broken_user,
+                cadence="daily",
+                hour=99,
+                minute=0,
+                weekday=0,
+                timezone=_ZONE,
+                enabled=True,
+                next_run_at=now - timedelta(minutes=2),
+            )
+            session.add(broken)
+            good = (
+                (
+                    await session.execute(
+                        select(DiscoverySchedule).where(
+                            DiscoverySchedule.user_id == good_user
+                        )
+                    )
+                )
+                .scalars()
+                .one()
+            )
+            good.next_run_at = now - timedelta(minutes=1)
+            await session.commit()
+
+            created = await repo.enqueue_due_runs(now=now)
+
+            assert [run["user_id"] for run in created if run["user_id"] == good_user]
+            assert not [run for run in created if run["user_id"] == broken_user]
+            broken = (
+                (
+                    await session.execute(
+                        select(DiscoverySchedule).where(
+                            DiscoverySchedule.user_id == broken_user
+                        )
+                    )
+                )
+                .scalars()
+                .one()
+            )
+            assert broken.enabled is False
+    finally:
+        await _cleanup(broken_user, good_user)
 
 
 # Two workers polling at once must not both take the same run.
