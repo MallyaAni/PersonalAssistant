@@ -157,7 +157,9 @@ drawdown points. **Recommendation: keep 0.25; 0.20 is the cautious
 setting; 0.30 is not worth it.** A core-satellite 80/20 theme/SPY blend
 cuts 2.2 drawdown points for 1.1 CAGR points with a flat Sharpe; deeper
 blends trade return for risk roughly linearly. The owner chooses; no
-change without the release ceremony.
+change without the release ceremony. On 2026-10-30 the decision was
+recorded as deferred to the 252-session review, with the 0.25 target kept
+for the frozen window: `position-sizing-and-rule-freeze-2026-10-30.md`.
 
 ### P5 — Reliability (parallel, no performance claim)
 
