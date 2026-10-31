@@ -60,9 +60,12 @@ QQQ. That is the fair comparison, and the sizing is not claiming more.
 ## The forward record so far
 
 The paper account started at 100,000 on 2026-09-04 and stood at 84,166.47
-on 2026-10-30, −15.83%. The equal-weight shadow (`graded-equal-weight/5`)
-started at 100,000 on 2026-09-30 and stood at 81,549.87, −18.45%. Over the
-17 sessions both ran:
+on 2026-10-30, −15.83%. The desk also shadows `graded-equal-weight/5`
+(equal weight, every A/A+ name, fully invested, the measured reset
+cadence) on its own dry-run ledger; it started at 100,000 on 2026-09-30 and
+stood at 81,549.87, −18.45%. This is not the installed rule with only the
+sizing changed - it is a different policy - so the comparison is
+directional, not a controlled experiment. Over the 17 sessions both ran:
 
 | line | installed sizing | equal-weight shadow |
 |---|---:|---:|
@@ -72,11 +75,11 @@ started at 100,000 on 2026-09-30 and stood at 81,549.87, −18.45%. Over the
 | worst drawdown from peak | −21.36% | −22.20% |
 | daily return correlation | 0.865 | — |
 
-So the brake is doing its job in this tape: the installed book lost about
-2.4 points less than equal weight over the overlap and ran about 14 points
-less realised volatility, at a similar drawdown. This is one path of 17
-sessions, and the live account changed policy on 2026-10-21, so it is
-evidence, not proof.
+That is consistent with the brake doing its job in this tape: the installed
+book lost about 2.4 points less than the equal-weight book over the overlap
+and ran about 14 points less realised volatility, at a similar drawdown.
+It is one path of 17 sessions and the policies differ in more than sizing,
+so it is evidence, not proof.
 
 ## What the sizing is not
 
@@ -139,7 +142,9 @@ installed. None is a live change now.
 ## Caveats
 
 - The forward comparison is 17 sessions, one path, and the live account
-  changed policy on 2026-10-21.
+  changed policy on 2026-10-21. The shadow is a different policy (equal
+  weight, fully invested), so the gap measures the whole book difference,
+  not the sizing alone.
 - The risk contributions are ex-post estimates from the last 63 sessions at
   target weights, not the realised contributions of the drifted book.
 - The scorecard is tuned 2015-2022 and checked 2023-2026; the absolute
