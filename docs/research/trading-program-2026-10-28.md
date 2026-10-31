@@ -230,8 +230,11 @@ the fetch incremental: the first run backfills from 2015 for a name with no
 plausible count and otherwise from its latest filed count, and later nights
 read one submissions block per managed name. A transient failure caps the
 watermark below the failed filing, and the next run starts from the capped
-watermark, so a later filing that succeeded cannot skip it. Tests:
-`backend/tests/test_cover_class_shares.py` (35). No live rule, grade, order
+watermark, so a later filing that succeeded cannot skip it. A 20-F/6-K
+filer with no periodic form in the recent block no longer refetches every
+older submissions block nightly: the recent block's earliest filing date of
+any form bounds them all. Tests:
+`backend/tests/test_cover_class_shares.py` (36). No live rule, grade, order
 or prompt changed; none of the repaired names is in the live book.
 Residuals: the three refused names keep their stored count (V's is from
 2010); ASML, NBIS, SIMO and TSM file 20-F/6-K, have no 10-K/10-Q cover
