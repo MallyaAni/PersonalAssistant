@@ -1,5 +1,7 @@
 import functools
 import json
+import re
+from pathlib import Path
 
 import httpx
 import pytest
@@ -9,6 +11,34 @@ from backend.vision.lm_studio import (
     OpenAICompatibleVisionProvider,
     create_vision_provider,
 )
+
+_ROOT = Path(__file__).resolve().parents[2]
+
+
+# The vision role must reach the provider through settings, so promoting the
+# model is a settings change rather than a code change.
+def test_the_configured_vision_model_reaches_the_provider():
+    from backend.config.settings import settings
+    from backend.core.dependencies import get_vision_provider
+
+    provider = get_vision_provider()
+
+    assert provider.model == settings.VISION_MODEL
+
+
+# And the application default must agree with the one compose declares. When
+# they drifted, a deployment that never set the variable sent images to a
+# retired local VLM that nothing served.
+def test_the_vision_model_default_matches_compose():
+    from backend.config.settings import settings
+
+    compose = (_ROOT / "docker-compose.yml").read_text(encoding="utf-8")
+    declared = set(
+        re.findall(r"VISION_MODEL=\$\{VISION_MODEL:-([^}]+)\}", compose)
+    )
+
+    assert declared, "compose no longer declares a VISION_MODEL default"
+    assert declared == {settings.VISION_MODEL}
 
 
 # Verify the configured adapter constructs the neutral vision implementation.

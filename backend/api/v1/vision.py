@@ -148,13 +148,29 @@ async def analyze_image_upload(
     # instead of rejecting it: the storage byte limit and the pixel ceiling
     # still hold, but on the fitted image, so a retina capture that passes the
     # pixel limit while its PNG exceeds the byte limit uploads rather than 413s.
-    content, declared = await asyncio.to_thread(
-        fit_image_for_vision,
-        content,
-        declared,
-        settings.IMAGE_MAX_UPLOAD_BYTES,
-        settings.IMAGE_MAX_PIXELS,
-    )
+    try:
+        content, declared = await asyncio.to_thread(
+            fit_image_for_vision,
+            content,
+            declared,
+            settings.IMAGE_MAX_UPLOAD_BYTES,
+            settings.IMAGE_MAX_PIXELS,
+        )
+    except ValueError as exc:
+        # Fitting decodes the bytes, so unreadable content fails here rather
+        # than in the analysis call below. Left uncaught it surfaced as a 500,
+        # telling the caller to retry an image that can never be read.
+        logger.warning(
+            "Rejected image upload while fitting: %s (declared_type=%r, bytes=%d)",
+            exc,
+            declared,
+            len(content),
+            extra={"trace_id": trace_id},
+        )
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_CONTENT,
+            detail="Uploaded image is invalid or unsupported.",
+        ) from exc
     try:
         result = await service.analyze_upload(
             user_id=normalized_user_id,

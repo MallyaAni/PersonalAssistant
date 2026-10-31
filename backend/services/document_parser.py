@@ -19,6 +19,7 @@ import re
 import httpx
 
 from backend.config.settings import settings
+from backend.core.prompts import load
 
 logger = logging.getLogger(__name__)
 
@@ -98,10 +99,9 @@ def needs_parser(media_type: str) -> bool:
 # Docling's marker for a picture in its Markdown; with description on, the
 # caption follows it as a paragraph.
 PICTURE_PLACEHOLDER = "<!-- image -->"
-PICTURE_PROMPT = (
-    "Describe what this picture shows in one or two factual sentences, "
-    "including any text, names, numbers, or places in it. No opinions."
-)
+# The one instruction this module sends to a model. Loaded at import so a
+# missing or malformed file fails at startup, like every other prompt.
+PICTURE_PROMPT = load("document/picture")
 _PICTURE = re.compile(r"<!-- image -->\s*\n\s*\n(?P<caption>[^\n]+)")
 
 

@@ -10,7 +10,7 @@ from typing import Any, cast
 from uuid import uuid4
 
 import httpx
-from PIL import Image, UnidentifiedImageError
+from PIL import Image, ImageOps, UnidentifiedImageError
 
 from backend.artifacts.types import (
     GeneratedImage,
@@ -220,34 +220,53 @@ def fit_image_for_vision(
     max_pixels: int,
 ) -> tuple[bytes, str]:
     ceiling = int(max_pixels * 0.9)
-    with warnings.catch_warnings():
-        warnings.simplefilter("error", Image.DecompressionBombWarning)
-        with Image.open(io.BytesIO(content)) as image:
-            image_format = str(image.format or "").upper()
-            details = _FORMAT_DETAILS.get(image_format)
-            true_mime = details[0] if details else (declared_mime_type or "image/jpeg")
-            width, height = image.size
-            if len(content) <= max_bytes and width * height <= ceiling:
-                return content, true_mime
-            canvas = image.convert("RGB")
-            if width * height > ceiling:
-                scale = (ceiling / (width * height)) ** 0.5
-                canvas = canvas.resize(
-                    (max(1, int(width * scale)), max(1, int(height * scale)))
+    try:
+        with warnings.catch_warnings():
+            warnings.simplefilter("error", Image.DecompressionBombWarning)
+            with Image.open(io.BytesIO(content)) as image:
+                image_format = str(image.format or "").upper()
+                details = _FORMAT_DETAILS.get(image_format)
+                true_mime = details[0] if details else (
+                    declared_mime_type or "image/jpeg"
                 )
-            for quality in (88, 78, 68, 58):
+                width, height = image.size
+                if len(content) <= max_bytes and width * height <= ceiling:
+                    return content, true_mime
+                # Apply the camera's orientation before re-encoding. The pixels
+                # are rewritten to JPEG, which drops the EXIF tag that carried
+                # the rotation, so skipping this turns every portrait phone
+                # photo into a sideways one for the model.
+                upright = ImageOps.exif_transpose(image) or image
+                canvas = upright.convert("RGB")
+                if width * height > ceiling:
+                    scale = (ceiling / (width * height)) ** 0.5
+                    canvas = canvas.resize(
+                        (max(1, int(width * scale)), max(1, int(height * scale)))
+                    )
+                for quality in (88, 78, 68, 58):
+                    out = io.BytesIO()
+                    canvas.save(out, format="JPEG", quality=quality)
+                    if len(out.getvalue()) <= max_bytes:
+                        return out.getvalue(), "image/jpeg"
+                # Content JPEG cannot shrink enough even at low quality: halve
+                # the pixels once and retry, so the budget always holds.
+                half = canvas.resize(
+                    (max(1, canvas.width // 2), max(1, canvas.height // 2))
+                )
                 out = io.BytesIO()
-                canvas.save(out, format="JPEG", quality=quality)
-                if len(out.getvalue()) <= max_bytes:
-                    return out.getvalue(), "image/jpeg"
-            # Content JPEG cannot shrink enough even at low quality: halve the
-            # pixels once and retry, so the budget always holds.
-            half = canvas.resize(
-                (max(1, canvas.width // 2), max(1, canvas.height // 2))
-            )
-            out = io.BytesIO()
-            half.save(out, format="JPEG", quality=60)
-            return out.getvalue(), "image/jpeg"
+                half.save(out, format="JPEG", quality=60)
+                return out.getvalue(), "image/jpeg"
+    except (
+        Image.DecompressionBombError,
+        # Pillow warns rather than raises until the pixel count is twice its own
+        # bomb threshold, and the warning is turned into an exception above. It
+        # is a separate class from the error, so catching only the error let a
+        # huge image escape as an unhandled failure instead of a 422.
+        Image.DecompressionBombWarning,
+        UnidentifiedImageError,
+        OSError,
+    ) as exc:
+        raise ValueError("Image content could not be fitted for vision") from exc
 
 
 class ComfyUIImageProvider(ImageProvider):
