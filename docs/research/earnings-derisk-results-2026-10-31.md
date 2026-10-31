@@ -3,9 +3,9 @@
 **Status: FAILED the pre-registered gate. The overlay is not adopted.** This is
 the result of `earnings-derisk-preregistration-2026-10-31.md`, run after the
 note was committed (`983c77d4`). The overlay is not added to the rule, the
-board, or any prompt, and is not retried without a new pre-registration.
-Nothing live changed. The earnings-calendar block already on the desk is
-descriptive and stays descriptive.
+board, or any prompt, and is not retried without a new pre-registration. No
+trading rule changed. The earnings calendar deploys as descriptive alerting
+only and stays descriptive.
 
 ## The question and the gate
 
