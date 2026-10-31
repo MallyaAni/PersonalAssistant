@@ -455,7 +455,11 @@ def test_submission_uses_the_planned_order_id():
     )
     fallback = paper.PaperOrder("BBB", "sell", 5, "exit")
     submitted, refused = market_daily._submit(
-        Quiet(), [planned, fallback], "2026-09-07", live=True
+        Quiet(),
+        [planned, fallback],
+        "2026-09-07",
+        live=True,
+        decision_at=datetime(2026, 9, 8, 23, 30, tzinfo=UTC),
     )
     assert refused == []
     assert sent[0] == ("open", "anios-2026-09-07-buy-aaa-3")
@@ -483,10 +487,66 @@ def test_sells_go_to_the_close_and_buys_to_the_open(monkeypatch):
     buy = paper.PaperOrder("AAA", "buy", 10, "rebalance to 0.100")
     sell = paper.PaperOrder("BBB", "sell", 5, "leaves the book")
     submitted, refused = market_daily._submit(
-        Broker(), [buy, sell], "2026-09-07", live=True
+        Broker(),
+        [buy, sell],
+        "2026-09-07",
+        live=True,
+        decision_at=datetime(2026, 9, 8, 23, 30, tzinfo=UTC),
     )
     assert refused == []
     assert calls == [("open", "buy", "AAA"), ("close", "sell", "BBB")]
+
+
+# Nasdaq's extended session must not make the nightly refuse. From
+# 2026-12-06 the day session runs to 20:00 ET, so the broker's clock can
+# say open at 19:30 while the regular session the desk's orders are
+# measured against is closed; the calendar decides.
+def test_an_extended_hours_clock_does_not_block_the_nightly():
+    from backend.agents.trading.desk import paper
+
+    sent = []
+
+    class Extended:
+        def clock(self):
+            return {"is_open": True}
+
+        def submit_market_on_open(self, symbol, qty, side, client_order_id):
+            sent.append(("open", side, symbol))
+
+    buy = paper.PaperOrder("AAA", "buy", 10, "rebalance to 0.100")
+    submitted, refused = market_daily._submit(
+        Extended(),
+        [buy],
+        "2026-11-02",
+        live=True,
+        decision_at=datetime(2026, 11, 3, 0, 30, tzinfo=UTC),
+    )
+    assert refused == []
+    assert sent == [("open", "buy", "AAA")]
+
+
+# The calendar is authoritative during the regular session even when the
+# broker clock disagrees: a manual run at 10:00 ET refuses ordinary orders.
+def test_a_regular_session_run_is_refused():
+    from backend.agents.trading.desk import paper
+
+    class ClosedClock:
+        def clock(self):
+            return {"is_open": False}
+
+        def submit_market_on_open(self, *args):
+            raise AssertionError("must not submit during the regular session")
+
+    buy = paper.PaperOrder("AAA", "buy", 10, "rebalance to 0.100")
+    submitted, refused = market_daily._submit(
+        ClosedClock(),
+        [buy],
+        "2026-11-02",
+        live=True,
+        decision_at=datetime(2026, 11, 2, 15, 0, tzinfo=UTC),
+    )
+    assert submitted == []
+    assert "the market is open" in refused[0]
 
 
 # The desk cancels only what it wrote down, matched by its own client order

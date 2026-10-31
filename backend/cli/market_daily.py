@@ -461,6 +461,36 @@ def _settled_rows(settled, panel) -> list[dict]:
 # recovery permits only event sells; all ordinary orders keep the nightly guard.
 # Funded allocation orders and mandatory risk cuts retain their measured next-open
 # execution, rather than inheriting the legacy closing-auction sell policy.
+# Whether the regular session is open. The broker's clock may call an
+# extended-hours session open - Nasdaq's day session runs 04:00-20:00 ET
+# from 2026-12-06 - but the desk's orders are measured for the next
+# regular open and close, so the reviewed exchange calendar decides. An
+# unknown calendar year falls back to the broker's own flag; an
+# unreachable broker clock still fails closed.
+def _regular_session_open(decision_at, broker_open):
+    """Return whether the regular XNYS session is open at the decision instant."""
+    from backend.market import calendar
+
+    status = calendar.exchange_status(decision_at or datetime.now(UTC))
+    if status.get("calendar_known"):
+        return bool(status["open"])
+    return broker_open
+
+
+# The broker clock and the regular-session guard it feeds. An unreachable
+# clock is unknown, not closed: submission fails closed on it.
+def _market_clock(client, decision_at):
+    """Return (regular session open, clock known) for a live submission."""
+    from backend.market import alpaca_trading
+
+    try:
+        broker_open = bool(client.clock().get("is_open"))
+    except alpaca_trading.AlpacaTradingError as exc:
+        print(f"  clock unavailable ({exc}); refusing to submit")
+        return False, False
+    return _regular_session_open(decision_at, broker_open), True
+
+
 # The nightly run
 # is after the close; a run by hand during the session is refused whole and
 # told why.
@@ -472,6 +502,7 @@ def _submit(
     *,
     intraday_event_reduction=False,
     timing_policy=None,
+    decision_at=None,
 ) -> tuple[list[dict], list[str]]:
     """Return (submitted rows, refusals) after sending `orders` when `live`."""
     from backend.agents.trading.desk import execution_evidence, paper
@@ -483,11 +514,7 @@ def _submit(
     market_open = False
     clock_known = False
     if live and orders:
-        try:
-            market_open = bool(client.clock().get("is_open"))
-            clock_known = True
-        except alpaca_trading.AlpacaTradingError as exc:
-            print(f"  clock unavailable ({exc}); refusing to submit")
+        market_open, clock_known = _market_clock(client, decision_at)
     for order in orders:
         line = f"  {order.side:4} {order.qty:5d} {order.symbol:6} {order.reason}"
         if not live:
@@ -1370,7 +1397,12 @@ def _paper_trade(
             new_state.unconfirmed_rebalance = session
         paper.save_state(store_root, new_state)
     submitted, refused = _submit(
-        client, orders, session, live, timing_policy=timing_policy
+        client,
+        orders,
+        session,
+        live,
+        timing_policy=timing_policy,
+        decision_at=decision_at,
     )
     _remember_acknowledgments(new_state, submitted, store_root, live, orders)
     if not orders:
