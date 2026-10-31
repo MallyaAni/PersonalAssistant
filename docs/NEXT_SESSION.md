@@ -35,11 +35,20 @@
   −0.25-point mean difference); parity 3 of 4; execution all-time 134 fills, +15.55 bp
   all-in, drift +52.92 bp, slippage −34.88 bp; exposure 20.8% → 47.8% as the retired
   FOMC cut restored the October cycle. No live change; not a performance verdict.
+- **P5 multi-class and stale share counts: fixed, not yet deployed.** The cover-page
+  XBRL reader resolves ERIE 46,191,610 and STZ 169,224,220 and refreshes twelve stale
+  names (ABT, C, DTE, ETR, EXC, FE, HSY, HUM, JCI, LNT, NEE, SO); it refuses BRK-B, V
+  and ARES as ambiguous, and ASML, NBIS, SIMO and TSM have no 10-K/10-Q cover page.
+  Counts are stored as `shares` versions at the cover tier with a
+  `class_checked_through` watermark; 34 tests in
+  `backend/tests/test_cover_class_shares.py`; ruff clean; affected suites 213 passed.
+  No live rule, grade or order changed.
 - **Next:** P1 weekly tracking is the highest-priority workstream; the rule stays frozen
   for the 252-session window. The next ordinary nightly is 11-02 (the three 10-30 orders
-  fill at that open) and its parity row is the first after the 10-31 deploy. No new
-  strategy, no risk-dial change, no earnings/intraday overlay. C5 sector rotation and
-  positive-shock drift remain blocked pending an owner mandate.
+  fill at that open) and its parity row is the first after the 10-31 deploy. P5 needs the
+  release ceremony before its store repair can reach a nightly. No new strategy, no
+  risk-dial change, no earnings/intraday overlay. C5 sector rotation and positive-shock
+  drift remain blocked pending an owner mandate.
 
 ## CURRENT 2026-10-31 — event watch now runs nightly and shows on the Desk (295b148a)
 

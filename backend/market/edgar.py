@@ -51,6 +51,7 @@ from dataclasses import dataclass, field
 from datetime import UTC, date, datetime, timedelta
 from html import unescape
 from typing import Any
+from xml.etree import ElementTree
 from zoneinfo import ZoneInfo
 
 import numpy as np
@@ -60,6 +61,10 @@ from backend.market.panel import Panel
 _TICKERS_URL = "https://www.sec.gov/files/company_tickers.json"
 _SUBMISSIONS_URL = "https://data.sec.gov/submissions/{name}"
 _FACTS_URL = "https://data.sec.gov/api/xbrl/companyfacts/CIK{cik:010d}.json"
+_ARCHIVE_INDEX_URL = "https://www.sec.gov/Archives/edgar/data/{cik}/{folder}/index.json"
+_ARCHIVE_DOCUMENT_URL = (
+    "https://www.sec.gov/Archives/edgar/data/{cik}/{folder}/{name}"
+)
 _USER_AGENT = "AniOS research ani96bob@gmail.com"
 _NEW_YORK = ZoneInfo("America/New_York")
 
@@ -132,6 +137,29 @@ SHARE_COUNT_FALLBACK_TAGS: tuple[str, ...] = (
     "WeightedAverageNumberOfDilutedSharesOutstanding",
     "WeightedAverageNumberOfShareOutstandingBasicAndDiluted",
 )
+
+# The cover-page XBRL instance reports the common-share count per class when a
+# filer has more than one, and the company-facts feed drops those dimensions:
+# BRK-B's only undimensioned count is from 2011, ERIE and STZ have none, and
+# ARES and V carry only a decade-old or stale one. `fetch_cover_class_shares`
+# reads the instance and combines the classes onto the listed security's
+# basis; the result is stored in the versions frame under this synthetic tag,
+# so the standard cover and balance-sheet tags still win a tie and every
+# existing reader of the "shares" name keeps working unchanged.
+CLASS_SHARES_TAG = "dei:EntityCommonStockSharesOutstanding#class"
+# The panel starts in 2016; a 2015 filing is the earliest that can supply its
+# first cover count, so a full backfill need not walk the 1990s.
+CLASS_SHARE_EARLIEST = date(2015, 1, 1)
+# A cover count below this is not a share count (ERIE's weighted-average
+# fallback reads 2,542, BRK-B's 2011 count 941,481); the same floor
+# `levels_pit.MIN_SHARES` applies when the count is used.
+MIN_COVER_SHARES = 1e6
+# A class with no listed symbol is only folded into the listed class's count
+# when it is immaterial: above this share of the listed count, the two classes
+# are not the same economics (V's Class C converts at 4.0, ARES' Class C is
+# 47% of Class A), and summing or taking the listed count would misstate the
+# company. The count is refused instead.
+CLASS_SHARE_OTHER_TOLERANCE = 0.01
 
 # Balance-sheet facts are instants (a value at a date, no span). Shares
 # outstanding live in the dei taxonomy on the cover page; the us-gaap tag
@@ -422,6 +450,29 @@ class CompanyRecord:
     decisions_6k: Mapping[str, bool] = field(default_factory=dict)
 
 
+@dataclass(frozen=True, slots=True)
+class FilingRef:
+    """One periodic filing: its identity and the date it became public."""
+
+    accession: str
+    form: str
+    filed: date
+    accepted: datetime | None
+    primary_document: str
+
+
+@dataclass(frozen=True, slots=True)
+class CoverShareCount:
+    """A cover-page common-share count on the listed security's basis."""
+
+    end: date
+    value: float
+    filed: date
+    accepted: datetime | None
+    accession: str
+    form: str
+
+
 Transport = Callable[[str], tuple[int, bytes]]
 
 
@@ -459,10 +510,10 @@ class Pacer:
         self._last = self._clock()
 
 
-# Fetch JSON from EDGAR with pacing and bounded retries on throttling.
-def _get_json(
+# Fetch a body from EDGAR with pacing and bounded retries on throttling.
+def _get_bytes(
     url: str, transport: Transport, pacer: Pacer, sleep: Callable[[float], None]
-) -> Any:
+) -> bytes:
     last = "no attempt"
     for attempt in range(1, 4):
         pacer.wait()
@@ -473,10 +524,7 @@ def _get_json(
             sleep(2.0 * attempt)
             continue
         if status == 200:
-            try:
-                return json.loads(body)
-            except json.JSONDecodeError as exc:
-                raise EdgarUnavailableError(f"{url}: non-JSON body") from exc
+            return body
         if status == 404:
             raise EdgarUnavailableError(f"{url}: not found (404)")
         last = f"HTTP {status}"
@@ -485,6 +533,17 @@ def _get_json(
             continue
         break
     raise EdgarUnavailableError(f"{url}: refused ({last})")
+
+
+# Fetch JSON from EDGAR with the same pacing and retries.
+def _get_json(
+    url: str, transport: Transport, pacer: Pacer, sleep: Callable[[float], None]
+) -> Any:
+    body = _get_bytes(url, transport, pacer, sleep)
+    try:
+        return json.loads(body)
+    except json.JSONDecodeError as exc:
+        raise EdgarUnavailableError(f"{url}: non-JSON body") from exc
 
 
 # Ticker -> CIK from SEC's own map. Class shares appear as BRK-B there.
@@ -553,6 +612,82 @@ def parse_submissions_block(
         except (IndexError, ValueError, AttributeError):
             continue
     return events
+
+
+# Pure: the periodic filings in one submissions block, oldest first. The
+# cover-page count lives in the 10-K or 10-Q instance, so only those forms
+# are kept; a foreign private issuer files 20-F instead and has no cover
+# count in this feed.
+def parse_filings_block(
+    block: Mapping[str, Any], forms: Sequence[str] = ("10-K", "10-Q")
+) -> list[FilingRef]:
+    """Return the 10-K/10-Q filings in a submissions block."""
+    wanted = set(forms)
+    filed = block.get("filingDate") or []
+    accepted = block.get("acceptanceDateTime") or []
+    accession = block.get("accessionNumber") or []
+    primary = block.get("primaryDocument") or []
+    out: list[FilingRef] = []
+    for i, form in enumerate(block.get("form") or []):
+        if form not in wanted:
+            continue
+        try:
+            day = date.fromisoformat(filed[i])
+        except (IndexError, TypeError, ValueError):
+            continue
+        when: datetime | None = None
+        if i < len(accepted) and accepted[i]:
+            try:
+                when = datetime.fromisoformat(
+                    str(accepted[i]).replace("Z", "+00:00")
+                ).astimezone(UTC)
+            except ValueError:
+                when = None
+        out.append(
+            FilingRef(
+                accession=str(accession[i]) if i < len(accession) else "",
+                form=str(form),
+                filed=day,
+                accepted=when,
+                primary_document=str(primary[i]) if i < len(primary) else "",
+            )
+        )
+    return out
+
+
+# Fetch every 10-K and 10-Q for a company: the recent block plus each older
+# block the submissions document points at, deduplicated by accession and
+# returned oldest first. With `since`, the older blocks are read only when
+# the recent block does not reach back that far, so a nightly incremental
+# check reads one submissions document rather than the whole filing history.
+def fetch_filings(
+    cik: int,
+    forms: Sequence[str] = ("10-K", "10-Q"),
+    since: date | None = None,
+    transport: Transport = sec_transport,
+    pacer: Pacer | None = None,
+    sleep: Callable[[float], None] = time.sleep,
+) -> list[FilingRef]:
+    """Return all 10-K/10-Q filings for a CIK, oldest first."""
+    pacer = pacer or Pacer(sleep=sleep)
+    payload = _get_json(
+        _SUBMISSIONS_URL.format(name=f"CIK{cik:010d}.json"), transport, pacer, sleep
+    )
+    filings = payload.get("filings") or {}
+    out = parse_filings_block(filings.get("recent") or {}, forms)
+    earliest = min((filing.filed for filing in out), default=None)
+    need_older = since is None or earliest is None or earliest > since
+    if need_older:
+        for older in filings.get("files") or []:
+            name = older.get("name")
+            if not name:
+                continue
+            block = _get_json(
+                _SUBMISSIONS_URL.format(name=name), transport, pacer, sleep
+            )
+            out.extend(parse_filings_block(block, forms))
+    unique = {filing.accession: filing for filing in out}
+    return sorted(unique.values(), key=lambda f: (f.filed, f.accession))
 
 
 # Pure: the text of a 6-K's main document with its Form 6-K cover page
@@ -715,6 +850,432 @@ def fetch_events_with_decisions(
                 continue
         kept[event.accession] = event
     return tuple(sorted(kept.values(), key=lambda e: e.accepted)), decided
+
+
+# The local name of an XML element or attribute, without its namespace.
+def _local(name: str) -> str:
+    """Return an XML name with any namespace prefix removed."""
+    return name.rsplit("}", 1)[-1]
+
+
+# The local part of a QName, in either Clark notation (an element tag) or
+# the prefixed form XBRL uses for a dimension and its member.
+def _qname(name: str) -> str:
+    """Return the local part of a QName."""
+    return name.rsplit("}", 1)[-1].rsplit(":", 1)[-1]
+
+
+# A cover-page trading symbol on the same punctuation as a ticker, so
+# "BRK.B" and "BRK-B" compare equal.
+def _normalise_symbol(value: str) -> str:
+    """Return a trading symbol in the ticker convention."""
+    return value.strip().upper().replace(".", "-").replace("/", "-")
+
+
+# Pure: the contexts of an XBRL instance, id -> (instant, dimensions).
+def _instance_contexts(
+    root: ElementTree.Element,
+) -> dict[str, tuple[date | None, tuple[tuple[str, str], ...]]]:
+    """Return each context's instant and its explicit dimensions."""
+    contexts: dict[str, tuple[date | None, tuple[tuple[str, str], ...]]] = {}
+    for element in root.iter():
+        if _local(element.tag) != "context":
+            continue
+        context_id = element.get("id")
+        if not context_id:
+            continue
+        instant: date | None = None
+        members: list[tuple[str, str]] = []
+        for child in element.iter():
+            local = _local(child.tag)
+            if local == "instant" and child.text:
+                try:
+                    instant = date.fromisoformat(child.text.strip())
+                except ValueError:
+                    instant = None
+            elif local == "explicitMember":
+                dimension = child.get("dimension") or ""
+                if dimension:
+                    members.append((dimension, (child.text or "").strip()))
+        contexts[context_id] = (instant, tuple(members))
+    return contexts
+
+
+# Pure: the cover counts and trading symbols in an instance. A context whose
+# two count facts disagree is marked ambiguous and never used.
+def _cover_facts(
+    root: ElementTree.Element,
+    contexts: Mapping[str, tuple[date | None, tuple[tuple[str, str], ...]]],
+) -> tuple[dict[str, float], set[str], dict[str, str]]:
+    """Return (counts by context, ambiguous contexts, symbols by context)."""
+    counts: dict[str, float] = {}
+    ambiguous: set[str] = set()
+    symbols: dict[str, str] = {}
+    for element in root.iter():
+        local = _local(element.tag)
+        context_id = element.get("contextRef")
+        if context_id is None:
+            continue
+        if local == "TradingSymbol":
+            symbol = _normalise_symbol(element.text or "")
+            if symbol:
+                symbols[context_id] = symbol
+        elif local == "EntityCommonStockSharesOutstanding":
+            if context_id not in contexts:
+                continue
+            try:
+                value = float((element.text or "").strip().replace(",", ""))
+            except ValueError:
+                continue
+            if not np.isfinite(value) or value <= 0:
+                continue
+            if context_id in counts and counts[context_id] != value:
+                ambiguous.add(context_id)
+            counts[context_id] = value
+    return counts, ambiguous, symbols
+
+
+# Pure: the contexts that carry a common-share cover count for one class.
+# A preferred class is not a common share; a context with another dimension
+# beside the class axis is not a cover count; a context with disagreeing
+# facts is ambiguous.
+def _common_classes(
+    contexts: Mapping[str, tuple[date | None, tuple[tuple[str, str], ...]]],
+    counts: Mapping[str, float],
+    ambiguous: set[str],
+) -> dict[str, str]:
+    """Return {context: class member} for the common classes."""
+    out: dict[str, str] = {}
+    for context_id, (instant, members) in contexts.items():
+        if context_id not in counts or instant is None or context_id in ambiguous:
+            continue
+        if len(members) != 1:
+            continue
+        dimension, member = members[0]
+        if _qname(dimension) != "StatementClassOfStockAxis":
+            continue
+        if "preferred" in _qname(member).lower():
+            continue
+        out[context_id] = member
+    return out
+
+
+# Pure: the one cover date the common classes share, or None.
+def _class_end(
+    contexts: Mapping[str, tuple[date | None, tuple[tuple[str, str], ...]]],
+    classes: Mapping[str, str],
+) -> date | None:
+    """Return the classes' common instant date, or None."""
+    ends: set[date] = set()
+    for context_id in classes:
+        instant = contexts[context_id][0]
+        if instant is None:
+            return None
+        ends.add(instant)
+    return ends.pop() if len(ends) == 1 else None
+
+
+# Pure: the listed class's count when every other common class is
+# immaterial. None when more than one common class is listed (BRK.A and
+# BRK.B do not share economics, and the instance carries no conversion
+# ratio), the ticker is not the listed class, or another common class is
+# material (V's Class C converts at 4.0, ARES' Class C is 47% of Class A).
+def _listed_class_count(
+    listed: Mapping[str, str],
+    classes: Mapping[str, str],
+    counts: Mapping[str, float],
+    wanted: str,
+) -> float | None:
+    """Return the listed class's count, or None when it is ambiguous."""
+    if len(set(listed.values())) != 1 or set(listed.values()) != {wanted}:
+        return None
+    matching = [cid for cid, symbol in listed.items() if symbol == wanted]
+    if len(matching) != 1:
+        return None
+    listed_id = matching[0]
+    others = [cid for cid in classes if cid != listed_id]
+    if any(
+        counts[cid] > counts[listed_id] * CLASS_SHARE_OTHER_TOLERANCE
+        for cid in others
+    ):
+        return None
+    return float(counts[listed_id])
+
+
+# Pure: whether a class member names common equity. Ordinary shares are
+# common stock under another name (JCI, an Irish plc, lists
+# jci:OrdinarySharesParValue001Member); preferred classes are not.
+def _is_common_member(member: str) -> bool:
+    """Return whether a class member names common equity."""
+    lower = _qname(member).lower()
+    return ("common" in lower or "ordinary" in lower) and "preferred" not in lower
+
+
+# Pure: whether a trading-symbol context names a common share listing. An
+# undimensioned symbol is the registrant's own cover-page line; an exchange
+# listing is the same security on another exchange (ABT lists on XNYS and
+# XCHI); a stock-class member is common only when its name says so. Notes,
+# debentures and preferred classes are not common.
+def _is_common_symbol_context(
+    members: tuple[tuple[str, str], ...],
+) -> bool:
+    """Return whether a symbol context names a common share listing."""
+    if not members:
+        return True
+    if len(members) != 1:
+        return False
+    dimension, member = members[0]
+    name = _qname(dimension)
+    if name == "EntityListingsExchangeAxis":
+        return True
+    if name != "StatementClassOfStockAxis":
+        return False
+    return _is_common_member(member)
+
+
+# Pure: the one undimensioned cover count when the filing reports no
+# common-class count. This is the ordinary single-class filer (ABT, C) and
+# the utility filers that add subsidiary counts on dei:LegalEntityAxis
+# beside the registrant's total (DTE, EXC, SO). The total is the listed
+# security's count only when the ticker is a common or exchange listing and
+# no other common class is listed: BRK.A beside BRK.B would make it a
+# cross-class total. A preferred count or a subsidiary count does not
+# disqualify the total, because neither is a common share of the registrant.
+def _undimensioned_count(
+    contexts: Mapping[str, tuple[date | None, tuple[tuple[str, str], ...]]],
+    counts: Mapping[str, float],
+    ambiguous: set[str],
+    symbols: Mapping[str, str],
+    wanted: str,
+) -> tuple[date, float] | None:
+    """Return (cover date, shares) for a single-class filer, or None."""
+    candidates = [
+        context_id
+        for context_id, (instant, members) in contexts.items()
+        if context_id in counts
+        and context_id not in ambiguous
+        and not members
+        and instant is not None
+    ]
+    if len(candidates) != 1:
+        return None
+    listed = [
+        symbol
+        for context_id, symbol in symbols.items()
+        if context_id in contexts
+        and _is_common_symbol_context(contexts[context_id][1])
+    ]
+    if wanted not in listed or any(symbol != wanted for symbol in listed):
+        return None
+    # A common-class count the class reader could not use (no instant, or an
+    # extra dimension beside the class axis) means the total is a cross-class
+    # sum the filing does not split here; refuse rather than overstate.
+    for context_id, (_, members) in contexts.items():
+        if context_id not in counts or context_id == candidates[0]:
+            continue
+        if any(
+            _qname(dimension) == "StatementClassOfStockAxis"
+            and _is_common_member(member)
+            for dimension, member in members
+        ):
+            return None
+    context_id = candidates[0]
+    instant = contexts[context_id][0]
+    if instant is None:
+        return None
+    return instant, float(counts[context_id])
+
+
+# Pure: the sum of the common classes when the filing lists one security
+# undimensioned and reports its classes without symbols (STZ, ERIE).
+def _undimensioned_sum(
+    contexts: Mapping[str, tuple[date | None, tuple[tuple[str, str], ...]]],
+    classes: Mapping[str, str],
+    counts: Mapping[str, float],
+    symbols: Mapping[str, str],
+    wanted: str,
+) -> float | None:
+    """Return the sum of the common classes, or None when not one security."""
+    undimensioned = {
+        symbols[context_id]
+        for context_id, (_, members) in contexts.items()
+        if context_id in symbols and not members
+    }
+    if undimensioned != {wanted}:
+        return None
+    return float(sum(counts[cid] for cid in classes))
+
+
+# Pure: the common-share count on one cover-page instance, on the listed
+# security's basis. None whenever the filing does not support one number:
+# no usable count, classes dated differently, a preferred class mixed in, an
+# undimensioned count beside class counts, more than one listed common class
+# (BRK.A and BRK.B have different economics, and the instance carries no
+# conversion ratio), or a material unlisted class (V's Class C converts at
+# 4.0, ARES' Class C is 47% of Class A). A refusal is the honest answer; a
+# raw sum would misstate the company by tens of percent.
+def parse_cover_class_shares(body: bytes, ticker: str) -> tuple[date, float] | None:
+    """Return (cover date, common shares) for the listed security, or None."""
+    try:
+        root = ElementTree.fromstring(body)
+    except ElementTree.ParseError:
+        return None
+    wanted = _normalise_symbol(ticker)
+    contexts = _instance_contexts(root)
+    counts, ambiguous, symbols = _cover_facts(root, contexts)
+    classes = _common_classes(contexts, counts, ambiguous)
+    if not classes:
+        return _undimensioned_count(contexts, counts, ambiguous, symbols, wanted)
+    end = _class_end(contexts, classes)
+    if end is None:
+        return None
+    # An undimensioned count beside class counts presents the total and its
+    # split; which one is the company is a judgement the filing does not make.
+    if any(not contexts[context_id][1] for context_id in counts):
+        return None
+    listed = {
+        context_id: symbols[context_id]
+        for context_id in classes
+        if context_id in symbols
+    }
+    if listed:
+        value = _listed_class_count(listed, classes, counts, wanted)
+        return None if value is None else (end, value)
+    total = _undimensioned_sum(contexts, classes, counts, symbols, wanted)
+    return None if total is None else (end, total)
+
+
+# Pure: the XBRL instance among a filing index's items. The instance is the
+# XML document that is not a linkbase and not the filing summary; the
+# largest is chosen because the instance carries the facts and the others
+# are small.
+def _instance_name(items: Sequence[Mapping[str, Any]]) -> str | None:
+    """Return the XBRL instance document's name, or None."""
+    best: tuple[int, str] | None = None
+    for item in items:
+        name = str(item.get("name") or "")
+        if not name.lower().endswith(".xml"):
+            continue
+        base = name.rsplit("/", 1)[-1].lower()
+        if base == "filingsummary.xml" or base.endswith(
+            ("_cal.xml", "_def.xml", "_lab.xml", "_pre.xml")
+        ):
+            continue
+        try:
+            size = int(item.get("size") or 0)
+        except (TypeError, ValueError):
+            size = 0
+        candidate = (size, name)
+        if best is None or candidate > best:
+            best = candidate
+    return best[1] if best else None
+
+
+# Read the cover-page class counts from each periodic filing filed after
+# `since` (or from 2015, when `since` is None). A filing whose index,
+# instance or class structure cannot be read is skipped and named in the
+# second return value; one refusal must not discard the others. The
+# earliest-filed count for a cover date wins, matching the point-in-time
+# rule that a later restatement never leaks backwards.
+#
+# The third return value is the latest filing date the reader got all the
+# way through (index and instance fetched, structure judged), capped one
+# day before the earliest transient fetch failure. The caller stores it as
+# a watermark so the next night reads only newer filings: a name whose
+# class structure is refused every time (V, ARES, BRK-B) must not download
+# its whole filing history again each night, while a failed fetch must not
+# be skipped permanently.
+# Read one filing's cover-page class count. The third value is False when
+# the fetch failed transiently, so the watermark must not advance past the
+# filing; a structure the parser refuses is deterministic and does advance.
+def _filing_cover_count(
+    cik: int,
+    ticker: str,
+    filing: FilingRef,
+    transport: Transport,
+    pacer: Pacer,
+    sleep: Callable[[float], None],
+) -> tuple[CoverShareCount | None, str | None, bool]:
+    """Return (count, refusal reason, fetched successfully)."""
+    folder = filing.accession.replace("-", "")
+    try:
+        index = _get_json(
+            _ARCHIVE_INDEX_URL.format(cik=cik, folder=folder),
+            transport,
+            pacer,
+            sleep,
+        )
+    except EdgarUnavailableError as exc:
+        return None, f"{filing.accession}: {exc}", False
+    items = (index.get("directory") or {}).get("item") or []
+    name = _instance_name(items)
+    if name is None:
+        return None, f"{filing.accession}: no XBRL instance", True
+    try:
+        body = _get_bytes(
+            _ARCHIVE_DOCUMENT_URL.format(cik=cik, folder=folder, name=name),
+            transport,
+            pacer,
+            sleep,
+        )
+    except EdgarUnavailableError as exc:
+        return None, f"{filing.accession}: {exc}", False
+    parsed = parse_cover_class_shares(body, ticker)
+    if parsed is None:
+        return None, f"{filing.accession}: no unambiguous class count", True
+    end, value = parsed
+    return (
+        CoverShareCount(
+            end=end,
+            value=value,
+            filed=filing.filed,
+            accepted=filing.accepted,
+            accession=filing.accession,
+            form=filing.form,
+        ),
+        None,
+        True,
+    )
+
+
+def fetch_cover_class_shares(
+    cik: int,
+    ticker: str,
+    filings: Sequence[FilingRef],
+    since: date | None = None,
+    transport: Transport = sec_transport,
+    pacer: Pacer | None = None,
+    sleep: Callable[[float], None] = time.sleep,
+) -> tuple[list[CoverShareCount], list[str], date | None]:
+    """Return (cover counts oldest first, skipped filings, checked-through)."""
+    pacer = pacer or Pacer(sleep=sleep)
+    by_end: dict[date, CoverShareCount] = {}
+    skipped: list[str] = []
+    checked: date | None = None
+    failed: date | None = None
+    for filing in filings:
+        if since is not None:
+            if filing.filed <= since:
+                continue
+        elif filing.filed < CLASS_SHARE_EARLIEST:
+            continue
+        count, reason, ok = _filing_cover_count(
+            cik, ticker, filing, transport, pacer, sleep
+        )
+        if reason is not None:
+            skipped.append(reason)
+        if not ok:
+            failed = filing.filed if failed is None else min(failed, filing.filed)
+            continue
+        if count is not None:
+            held = by_end.get(count.end)
+            if held is None or count.filed < held.filed:
+                by_end[count.end] = count
+        checked = filing.filed if checked is None else max(checked, filing.filed)
+    if failed is not None:
+        cap = failed - timedelta(days=1)
+        checked = cap if checked is None else min(checked, cap)
+    return sorted(by_end.values(), key=lambda c: c.end), skipped, checked
 
 
 # Six- and nine-month spans of a year-to-date fact, earliest filed.

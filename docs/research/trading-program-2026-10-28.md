@@ -206,12 +206,35 @@ ET nightly; a partition is immutable, so a name today's partition already
 holds is reported as failed and is not reclassified. After that the nightly
 carries the corrected decisions forward.
 
-The multi-class names remain open. The company-facts feed drops class
-dimensions; BRK-B's only undimensioned count is from 2011 and below the
-plausibility floor, and ERIE and STZ have none, so they have no market cap
-and no value score in the research universe (none is in the live book). A
-correct fix needs the cover-page XBRL instance with dimensions, which the
-store does not fetch; a static multiplier would go stale and is refused.
+The multi-class and stale cover-count defects are fixed for the names a
+cover page can support. The company-facts feed drops class dimensions, so
+the reader now fetches each 10-K/10-Q's cover-page XBRL instance and
+combines it fail-closed. One undimensioned symbol with class counts that
+carry no symbol is summed on the listed security's basis (ERIE 46,191,610
+at 2026-10-23, STZ 169,224,220 at 2026-09-30). A filing that reports no
+common-class count yields its single undimensioned count, which covers
+single-class filers and the utilities that add subsidiary counts on
+dei:LegalEntityAxis (ABT 1,730,383,296, C 1,677,436,783, DTE 208,088,069,
+EXC 1,034,896,686, SO 1,150,362,966, NEE 2,097,306,049, LNT 259,361,652,
+ETR 466,631,498, FE 578,893,330, HUM 120,080,308, HSY 200,980,389, JCI
+605,741,470, each at its filing's cover date). A listed class is taken only
+when every other common class is immaterial. The reader refuses BRK-B (two
+listed common classes and no conversion ratio in the instance), V (Class B3
+and Class C are material to Class A) and ARES (Class C is 47% of Class A).
+Counts are stored as `shares` versions under
+dei:EntityCommonStockSharesOutstanding#class at the cover tier, after the
+standard tags, so `levels_for` and `levels_pit.versions_levels` read them
+exactly as a standard cover count; the weighted fallback stays out of the
+instant readers. The frame metadata watermark `class_checked_through` makes
+the fetch incremental: the first run backfills from 2015 for a name with no
+plausible count and otherwise from its latest filed count, and later nights
+read one submissions block per managed name. Tests:
+`backend/tests/test_cover_class_shares.py` (34). No live rule, grade, order
+or prompt changed; none of the repaired names is in the live book.
+Residuals: the three refused names keep their stored count (V's is from
+2010); ASML, NBIS, SIMO and TSM file 20-F/6-K, have no 10-K/10-Q cover
+page, and keep their annual count. The store repair reaches the nightly only
+after this fix is deployed.
 
 ## Operating model for the owner
 

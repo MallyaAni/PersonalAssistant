@@ -73,6 +73,11 @@ _FLOW_TO_LEVEL = {"net_income": "earnings"}
 # restrict it to the frozen set to separate coverage from correction.
 FROZEN_YTD_NAMES = frozenset({"capex", "operating_cash_flow"})
 ALL_YTD_NAMES = frozenset(FLOW_NAMES)
+# A share count older than this is stale enough to repair from the cover-page
+# class counts even when the company-facts feed carries a count: the feed can
+# stop at a filer's Q1 (DTE's last fact is 2026-03-31) while the 10-Q cover
+# instances carry Q2 and Q3.
+CLASS_SHARE_STALE_DAYS = 200
 
 
 @dataclass(frozen=True, slots=True)
@@ -211,7 +216,13 @@ def _tag_tiers(name: str) -> dict[str, int]:
         for tier, tags in enumerate(edgar.FALLBACK_FACT_TAGS.get(name, ()), 1):
             out.update({f"us-gaap:{tag}": tier for tag in tags})
         return out
-    return {f"{tx}:{tag}": 0 for tx, tag in edgar.INSTANT_TAGS.get(name, ())}
+    out = {f"{tx}:{tag}": 0 for tx, tag in edgar.INSTANT_TAGS.get(name, ())}
+    # The cover-page class counts are the same kind of fact as the standard
+    # cover count, and come after it so a filing that has both reads the
+    # standard tag; the class tag is chosen only when it is the later fact.
+    if name == "shares":
+        out[edgar.CLASS_SHARES_TAG] = 0
+    return out
 
 
 # Preserve quarterly spans and original YTD priority without changing arithmetic.
@@ -516,6 +527,89 @@ def fetch_versions(
         sleep,
     )
     return parse_versions(payload)
+
+
+# The latest share count in a set, whichever tag carries it, or None. The
+# weighted-average fallback is a duration, but its end date and value are
+# enough to tell whether the name has a count at all and whether it is
+# plausible.
+def latest_share_count(versions: Iterable[Version]) -> Version | None:
+    """Return the share-count Version with the latest period end."""
+    return max(
+        (
+            v
+            for v in versions
+            if v.name in ("shares", edgar.WEIGHTED_SHARES_NAME)
+        ),
+        key=lambda v: (v.end, v.filed),
+        default=None,
+    )
+
+
+# Fetch the cover-page class counts for a company as Versions under the
+# synthetic tag. `since` is a watermark: only filings filed after it are
+# read. The checked-through date is returned beside the versions and the
+# skipped filings so the caller can advance the watermark even when a
+# filing's class structure is refused.
+def class_share_versions(
+    cik: int,
+    ticker: str,
+    since: date | None = None,
+    transport: Callable[[str], tuple[int, bytes]] = edgar.sec_transport,
+    pacer: edgar.Pacer | None = None,
+    sleep: Callable[[float], None] = time.sleep,
+) -> tuple[list[Version], list[str], date | None]:
+    """Return (class share Versions oldest first, skipped, checked-through)."""
+    pacer = pacer or edgar.Pacer(sleep=sleep)
+    filings = edgar.fetch_filings(
+        cik, since=since, transport=transport, pacer=pacer, sleep=sleep
+    )
+    counts, skipped, checked = edgar.fetch_cover_class_shares(
+        cik, ticker, filings, since, transport, pacer, sleep
+    )
+    return (
+        [
+            Version(
+                "shares",
+                edgar.CLASS_SHARES_TAG,
+                None,
+                count.end,
+                count.value,
+                count.filed,
+                count.accepted,
+                count.accession,
+                count.form,
+            )
+            for count in counts
+        ],
+        skipped,
+        checked,
+    )
+
+
+# Stored class Versions plus newly fetched ones, one per filing and period.
+# The stored frame is the history; a fetch may repeat the filing that
+# supplied the latest stored count.
+def merge_versions(
+    stored: Iterable[Version], new: Iterable[Version]
+) -> list[Version]:
+    """Return the union of two Version sets, deduplicated and sorted."""
+    seen: set[tuple] = set()
+    out: list[Version] = []
+    for version in (*stored, *new):
+        key = (
+            version.name,
+            version.tag,
+            version.start,
+            version.end,
+            version.filed,
+            version.accession,
+        )
+        if key in seen:
+            continue
+        seen.add(key)
+        out.append(version)
+    return sorted(out, key=lambda v: (v.name, v.tag, v.end, v.filed, v.accession))
 
 
 # The frozen path's own choice for the whole snapshot, for the audit: which
