@@ -1,5 +1,46 @@
 # Next session
 
+## CURRENT 2026-10-31 (later) — four-step path closed; P1 forward record is the workstream
+
+- **Step 2, sector cap: failed and closed.** The pre-registered cap never binds on the
+  honest S&P 500 PIT book: 0 of 2,970 sessions active, mean IT+Comm target 16.48%, max
+  39.67%. The gate fails on drawdown (0.00 points vs 2.0) and the placebo (0 > 0); the
+  all-tech sensitivity binds but costs 3.95 points of CAGR and 0.074 of Sharpe for 14.69
+  points of drawdown. Not adopted, not retried (`fb0e94df`,
+  `docs/research/sector-cap-results-2026-10-31.md`).
+- **Step 3, earnings calendar: live; de-risking overlay: failed and closed.** The calendar
+  is on the Desk and in the nightly with `|| true`, descriptive only. The pre-registered
+  pre-release trim/blackout overlay failed criteria 1, 3 and 4: choosing drawdown 0.5079
+  points deeper, Sharpe 0.0470 lower, placebo p95 +7.2808 points against the primary's
+  −0.5079. Active in 78.48% of sessions and removing up to 20.01% of equity, it still did
+  not cut the worst drawdown. Not adopted, not retried (`983c77d4` pre-registration,
+  `08199b65` result, `e74d77c8`/`b8d170bc` wording).
+- **Step 4, intraday reaction: measured, null, closed.** On the 98-name 15-minute cubes,
+  6,414 shocks on 1,667 sessions; selling at the next bar versus the live next-open fill
+  is −28.75 bp mean, −24.43 bp median, 47.19% positive, session-clustered 95% CI
+  [−68.40, +10.48] bp. Descriptive, not a pre-registered gate; no overlay (`ca904dc4`,
+  `docs/research/intraday-shock-reaction-2026-10-31.md`).
+- **10-29 plan parity: mismatch explained and fixed.** The ordinary plan refused with
+  `inconsistent_account_equity`; broker equity 85,661.85 was $8.72 (1.0 bp) below cash
+  43,910.22 plus quote marks 41,760.353, two separately fetched broker snapshots. Fixed
+  in `6b66598e` (`MARK_RECONCILIATION_TOLERANCE = 1e-3`, marks scaled to implied equity).
+  The 10-30 receipt carries the fixed source and its parity row is ok. Installed in the
+  2026-10-31 release (`approved_at` 2026-10-31T00:54:18Z), deployed with `983c77d4`,
+  admission ADMITTED, `.post-deploy-status` ok. The 10-29 row stays as written.
+- **P1 weekly record: first entry written.** The note
+  `docs/research/forward-record-week-2026-10-26-2026-10-30.md` records the week: paper
+  equity 86,989.84 → 84,166.47 (−3.25% week, −15.83% since 2026-09-04); SPY −0.56%,
+  QQQ −1.97%, equal-weight 94 names −1.32%; forward shadow installed planned −2.25% vs
+  SPY −0.96% over five sessions (daily-difference stdev 1.10 points against a
+  −0.25-point mean difference); parity 3 of 4; execution all-time 134 fills, +15.55 bp
+  all-in, drift +52.92 bp, slippage −34.88 bp; exposure 20.8% → 47.8% as the retired
+  FOMC cut restored the October cycle. No live change; not a performance verdict.
+- **Next:** P1 weekly tracking is the highest-priority workstream; the rule stays frozen
+  for the 252-session window. The next ordinary nightly is 11-02 (the three 10-30 orders
+  fill at that open) and its parity row is the first after the 10-31 deploy. No new
+  strategy, no risk-dial change, no earnings/intraday overlay. C5 sector rotation and
+  positive-shock drift remain blocked pending an owner mandate.
+
 ## CURRENT 2026-10-31 — event watch now runs nightly and shows on the Desk (295b148a)
 
 - Pre-registration committed first (9ddb5ab3), then the detector, CLI, tests and result
