@@ -2505,6 +2505,49 @@ export interface DeskEventWatch {
   counts: {names: number; shocks: number; price_shocks: number};
 }
 
+// One name's next predicted earnings release, from its stored 8-K item 2.02
+// dates. `low`/`high` are the same-quarter candidates' spread, not a promise.
+export interface DeskEarningsRelease {
+  ticker: string;
+  theme?: string;
+  grade: string;
+  grade_headline?: string | null;
+  action: string | null;
+  target_weight: number | null;
+  current_weight: number | null;
+  last_release: string;
+  predicted: string;
+  low: string;
+  high: string;
+  years: number;
+  method: 'same_quarter' | 'interval';
+  confidence: 'high' | 'medium' | 'low';
+  overdue: boolean;
+  sessions_until: number | null;
+  sessions_since_release: number | null;
+}
+
+export interface DeskEarningsCalendar {
+  version: string;
+  asof: string;
+  written: string | null;
+  session: string | null;
+  // True when the scan belongs to a different session than the desk shows.
+  stale: boolean;
+  rule: {
+    source: string;
+    horizon_years: number;
+    match_days: number;
+    quarter_days: number;
+    min_releases: number;
+    confidence_high_days: number;
+    confidence_medium_days: number;
+  };
+  upcoming: DeskEarningsRelease[];
+  names: DeskEarningsRelease[];
+  counts: {names: number; upcoming: number; overdue: number; held_upcoming: number};
+}
+
 export interface DeskForwardEvidence {
   status: string;
   reason?: string;
@@ -3328,6 +3371,28 @@ export const getDeskEventWatch = async (userId: string): Promise<DeskEventWatch 
   }
   const body = (await response.json()) as {event_watch?: DeskEventWatch | null};
   return body.event_watch ?? null;
+};
+
+// The nightly forward earnings calendar, separate from the desk record. A
+// missing scan is null rather than an error: the page can say it has not run.
+export const getDeskEarningsCalendar = async (userId: string): Promise<DeskEarningsCalendar | null> => {
+  const response = await authenticatedFetch(
+    `${API_BASE_URL}/api/v1/market/${encodeURIComponent(userId)}/desk/earnings-calendar`,
+  );
+  if (!response.ok) {
+    if (response.status === 403) {
+      throw new Error(
+        'The desk is not open to this account. The server does not think this is it '
+          + '- check MARKET_DESK_USER / MARKET_DESK_USERS in the deployment environment.',
+      );
+    }
+    if (response.status === 401) {
+      throw new Error('Signed out. Sign in again to read the desk.');
+    }
+    throw new Error(`Could not load the earnings calendar (HTTP ${response.status}).`);
+  }
+  const body = (await response.json()) as {earnings_calendar?: DeskEarningsCalendar | null};
+  return body.earnings_calendar ?? null;
 };
 
 // One name's drill-down from the file the nightly run wrote.

@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { RefreshCw, X } from 'lucide-react'
 import { EconomicContext } from './EconomicContext'
+import { EarningsCalendar } from './EarningsCalendar'
 import { EventWatch } from './EventWatch'
 import { ForwardEvidence } from './ForwardEvidence'
 import { FomcGate } from './FomcGate'
@@ -23,6 +24,7 @@ import { ANALYST_MEANINGS, EVENING_VOTE_CONTEXT, analystLabel } from './analystL
 import {
   getDesk,
   getDeskEarnings,
+  getDeskEarningsCalendar,
   getDeskEventWatch,
   getDeskHistory,
   getDeskStrategyStock,
@@ -41,6 +43,7 @@ import {
   type DeskDecisions,
   type DeskBrief,
   type DeskEarnings,
+  type DeskEarningsCalendar,
   type DeskEventWatch,
   type DeskGrade,
   type DeskHolding,
@@ -1014,6 +1017,7 @@ const GettingStarted = ({ hasRecord, hasPositions, onEnterPositions }: { hasReco
 const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
   const [payload, setPayload] = useState<DeskPayload | null>(null)
   const [eventWatch, setEventWatch] = useState<DeskEventWatch | null>(null)
+  const [earningsCalendar, setEarningsCalendar] = useState<DeskEarningsCalendar | null>(null)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
   const [live, setLive] = useState<DeskLive>({ as_of: null, quotes: {} })
@@ -1118,12 +1122,14 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
     try {
       // The scan is descriptive and separate from the record; a failure there
       // must not hide the desk the owner trades from.
-      const [nextPayload, nextWatch] = await Promise.all([
+      const [nextPayload, nextWatch, nextCalendar] = await Promise.all([
         getDesk(userId),
         getDeskEventWatch(userId).catch(() => null),
+        getDeskEarningsCalendar(userId).catch(() => null),
       ])
       setPayload(nextPayload)
       setEventWatch(nextWatch)
+      setEarningsCalendar(nextCalendar)
       setError('')
     } catch (err) {
       setError(err instanceof Error ? err.message : 'The desk could not be loaded.')
@@ -1489,6 +1495,10 @@ const DeskPanel = ({ userId, canWrite }: DeskPanelProps) => {
       {/* Mechanical event context from the nightly scan, shown in every view.
           Descriptive only; the live rule does not read it. */}
       {!loading && <EventWatch watch={eventWatch} />}
+
+      {/* Predicted next earnings releases from stored 8-K dates. Descriptive
+          only; the live rule does not read it. */}
+      {!loading && <EarningsCalendar calendar={earningsCalendar} />}
 
       {strategyView && !research && latest && <div className="flex flex-col sm:max-h-[75vh]">
           <SignalBoard latest={latest} live={live} allocation={modelAllocation} now={now} onOpen={setOpenName} closes={closes}
