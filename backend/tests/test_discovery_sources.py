@@ -1,6 +1,6 @@
 import os
 import socket
-from datetime import UTC, timedelta
+from datetime import UTC, date, datetime, timedelta
 
 import httpx
 import pytest
@@ -13,6 +13,7 @@ from backend.discovery.events import (
     FeedError,
     clean_text,
     clean_url,
+    is_date_only,
 )
 from backend.discovery.fetching import (
     RequestBudget,
@@ -23,7 +24,7 @@ from backend.discovery.fetching import (
     fetch_bytes,
     fetch_feed,
 )
-from backend.discovery.sources.ics import parse_ics
+from backend.discovery.sources.ics import MAX_OCCURRENCES_PER_EVENT, parse_ics
 from backend.discovery.sources.rss import parse_feed
 
 
@@ -370,6 +371,224 @@ def test_ics_reads_the_image_property():
     events = parse_ics(payload, "venue")
 
     assert events[0].media_url == "https://venue.example/recital.png"
+
+
+# A venue's weekly calendar usually began months ago and has no end date. Read
+# literally, it contributes one stale date; expanded, it contributes the
+# instances a sweep can actually act on.
+def test_a_weekly_series_expands_into_upcoming_occurrences():
+    payload = _calendar(
+        "BEGIN:VEVENT",
+        "UID:weekly-yoga",
+        "SUMMARY:Yoga",
+        "DTSTART;TZID=America/New_York:20261005T180000",
+        "RRULE:FREQ=WEEKLY;BYDAY=MO,WE",
+        "END:VEVENT",
+    )
+
+    events = parse_ics(
+        payload,
+        "venue",
+        "America/New_York",
+        now=datetime(2026, 10, 31, 12, 0, tzinfo=UTC),
+    )
+
+    assert len(events) > 1
+    # The first actionable instance is the Monday after the sweep, at the
+    # calendar's own wall-clock time rather than a shifted UTC hour.
+    assert events[0].starts_at is not None
+    assert events[0].starts_at.date() == date(2026, 11, 2)
+    assert events[0].starts_at.hour == 18
+    assert all(
+        event.starts_at is not None and event.starts_at.hour == 18
+        for event in events
+    )
+    # Each instance is its own find with its own stable identity.
+    assert len({event.external_id for event in events}) == len(events)
+
+
+# COUNT and UNTIL are the two ways a feed says a series ends, and both are
+# inclusive of the day they name.
+def test_count_and_until_bound_a_series():
+    payload = _calendar(
+        "BEGIN:VEVENT",
+        "UID:daily",
+        "SUMMARY:Workshop",
+        "DTSTART:20261102T190000Z",
+        "RRULE:FREQ=DAILY;COUNT=3",
+        "END:VEVENT",
+        "BEGIN:VEVENT",
+        "UID:until",
+        "SUMMARY:Class",
+        "DTSTART:20261102T190000Z",
+        "RRULE:FREQ=DAILY;UNTIL=20261104T190000Z",
+        "END:VEVENT",
+    )
+
+    events = parse_ics(
+        payload, "venue", now=datetime(2026, 11, 1, 12, 0, tzinfo=UTC)
+    )
+
+    by_uid: dict[str, list] = {}
+    for event in events:
+        by_uid.setdefault(event.external_id.split("|", 1)[0], []).append(event)
+    assert len(by_uid["daily"]) == 3
+    assert len(by_uid["until"]) == 3
+
+
+# EXDATE removes an instance the venue is closed, and RDATE adds one that the
+# weekly pattern does not describe.
+def test_exdate_removes_an_occurrence_and_rdate_adds_one():
+    payload = _calendar(
+        "BEGIN:VEVENT",
+        "UID:market",
+        "SUMMARY:Market",
+        "DTSTART:20261102T100000Z",
+        "RRULE:FREQ=WEEKLY;BYDAY=MO",
+        "RDATE:20261105T100000Z",
+        "EXDATE:20261109T100000Z",
+        "END:VEVENT",
+    )
+
+    events = parse_ics(
+        payload, "venue", now=datetime(2026, 11, 1, 12, 0, tzinfo=UTC)
+    )
+    starts = {event.starts_at for event in events}
+
+    assert datetime(2026, 11, 2, 10, 0, tzinfo=UTC) in starts
+    assert datetime(2026, 11, 5, 10, 0, tzinfo=UTC) in starts
+    assert datetime(2026, 11, 9, 10, 0, tzinfo=UTC) not in starts
+
+
+# An unsupported frequency must not discard the listing; it degrades to the one
+# date the entry states.
+def test_an_unsupported_rule_leaves_a_single_event():
+    payload = _calendar(
+        "BEGIN:VEVENT",
+        "UID:hourly",
+        "SUMMARY:Tour",
+        "DTSTART:20261102T190000Z",
+        "RRULE:FREQ=HOURLY;COUNT=4",
+        "END:VEVENT",
+    )
+
+    events = parse_ics(
+        payload, "venue", now=datetime(2026, 11, 1, 12, 0, tzinfo=UTC)
+    )
+
+    assert len(events) == 1
+    assert events[0].external_id == "hourly"
+
+
+# A series whose COUNT ran out before the sweep is over, not a happening to
+# offer. Emitting its old dates would put stale finds in a digest.
+def test_a_series_that_already_ended_is_not_offered():
+    payload = _calendar(
+        "BEGIN:VEVENT",
+        "UID:over",
+        "SUMMARY:Past workshop",
+        "DTSTART:20260901T190000Z",
+        "RRULE:FREQ=DAILY;COUNT=3",
+        "END:VEVENT",
+    )
+
+    events = parse_ics(
+        payload, "venue", now=datetime(2026, 11, 1, 12, 0, tzinfo=UTC)
+    )
+
+    assert events == ()
+
+
+# One feed entry must not be able to flood a source's allowance, no matter how
+# long its rule runs.
+def test_a_recurring_series_is_bounded_per_event():
+    payload = _calendar(
+        "BEGIN:VEVENT",
+        "UID:forever",
+        "SUMMARY:Daily class",
+        "DTSTART:20261101T190000Z",
+        "RRULE:FREQ=DAILY",
+        "END:VEVENT",
+    )
+
+    events = parse_ics(
+        payload, "venue", now=datetime(2026, 11, 1, 12, 0, tzinfo=UTC)
+    )
+
+    assert len(events) == MAX_OCCURRENCES_PER_EVENT
+
+
+# An override is the venue moving one instance. The master series must not also
+# offer the slot it replaced.
+def test_an_override_replaces_its_occurrence():
+    payload = _calendar(
+        "BEGIN:VEVENT",
+        "UID:series",
+        "SUMMARY:Talk",
+        "DTSTART:20261102T190000Z",
+        "RRULE:FREQ=WEEKLY;BYDAY=MO",
+        "END:VEVENT",
+        "BEGIN:VEVENT",
+        "UID:series",
+        "RECURRENCE-ID:20261109T190000Z",
+        "SUMMARY:Talk (late start)",
+        "DTSTART:20261109T200000Z",
+        "END:VEVENT",
+    )
+
+    events = parse_ics(
+        payload, "venue", now=datetime(2026, 11, 1, 12, 0, tzinfo=UTC)
+    )
+    ninth = [event for event in events if event.starts_at.date() == date(2026, 11, 9)]
+
+    assert len(ninth) == 1
+    assert ninth[0].starts_at.hour == 20
+    assert ninth[0].title == "Talk (late start)"
+
+
+# An all-day series keeps whole days: the date is the fact the feed stated, and
+# it must stay readable as a date after expansion.
+def test_a_recurring_all_day_series_keeps_whole_days():
+    payload = _calendar(
+        "BEGIN:VEVENT",
+        "UID:fair",
+        "SUMMARY:Street fair",
+        "DTSTART;VALUE=DATE:20261102",
+        "RRULE:FREQ=WEEKLY;BYDAY=MO",
+        "END:VEVENT",
+    )
+
+    events = parse_ics(
+        payload,
+        "venue",
+        "America/New_York",
+        now=datetime(2026, 11, 1, 12, 0, tzinfo=UTC),
+    )
+
+    assert len(events) > 1
+    for event in events:
+        assert event.starts_at is not None
+        assert is_date_only(event.starts_at)
+
+
+# The first instance keeps the bare identifier it had before expansion existed,
+# so a series already announced is not announced again under a new name.
+def test_the_first_occurrence_keeps_the_bare_identifier():
+    payload = _calendar(
+        "BEGIN:VEVENT",
+        "UID:compat",
+        "SUMMARY:Class",
+        "DTSTART:20261102T190000Z",
+        "RRULE:FREQ=WEEKLY;COUNT=2",
+        "END:VEVENT",
+    )
+
+    events = parse_ics(
+        payload, "venue", now=datetime(2026, 11, 1, 12, 0, tzinfo=UTC)
+    )
+
+    assert events[0].external_id == "compat"
+    assert events[1].external_id == "compat|2026-11-09T19:00:00+00:00"
 
 
 def test_malformed_xml_raises_a_feed_error():

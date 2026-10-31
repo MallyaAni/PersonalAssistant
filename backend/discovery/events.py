@@ -12,7 +12,7 @@ to remember to do it.
 import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta
 
 # Bound what one source may contribute. A feed is someone else's data and can
 # change size without notice, so a run's cost cannot depend on their restraint.
@@ -112,15 +112,20 @@ def clean_title(value: str | None, limit: int = MAX_TITLE_CHARS) -> str | None:
     return cleaned
 
 
-# Whether a start carries only a date. Midnight UTC exactly is the pipeline's
-# one convention for "the source stated a day and no time" — search extraction,
-# ICS date values and described dates all produce it. Every comparison against
+# Whether a start carries only a date. Midnight in the zone the source stated is
+# the pipeline's one convention for "the source stated a day and no time" —
+# search extraction and described dates produce midnight UTC, and an ICS date
+# value produces midnight in the calendar's own zone. Every comparison against
 # such a start has to treat it as the whole day, not the instant the day began:
 # treating it as an instant is how an event happening tonight was dropped from
 # a real digest as "already passed" at 4pm.
+#
+# The check reads the datetime's own wall clock rather than converting to UTC
+# first. A calendar date in New York is midnight at -04:00, which is 04:00 UTC,
+# and converting before checking is exactly what made those all-day entries
+# look like timed ones.
 def is_date_only(starts_at: datetime) -> bool:
-    stated = starts_at.astimezone(UTC)
-    return (stated.hour, stated.minute, stated.second) == (0, 0, 0)
+    return (starts_at.hour, starts_at.minute, starts_at.second) == (0, 0, 0)
 
 
 # Whether an event is already over.
