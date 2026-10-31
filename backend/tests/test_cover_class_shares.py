@@ -666,3 +666,23 @@ def test_refresh_merges_the_class_count_into_the_nightly_frame():
         if columns["name"][i] == "shares"
     ]
     assert shares == [(CLASS, "2026-08-31", 169224220.0)]
+
+
+def test_a_failure_capped_watermark_is_not_moved_by_a_later_class_filing(monkeypatch):
+    # The prior run failed at 2026-05-02 (watermark capped to 2026-05-01)
+    # but a later filing succeeded and stored a class count. The retry must
+    # start at the capped watermark, not at the later filing.
+    prior = v("shares", CLASS, None, "2026-06-30", 1_000_000, "2026-07-24")
+    store = Store((fa.frame([prior]), {"class_checked_through": "2026-05-01"}))
+    seen = {}
+
+    monkeypatch.setattr(edgar, "fetch_cik_map", lambda **_kwargs: {"STZ": 1})
+    monkeypatch.setattr(fa, "fetch_versions", lambda _cik, **_kwargs: [])
+
+    def fake_class_versions(_cik, _ticker, since=None, **_kwargs):
+        seen["since"] = since
+        return [], [], None
+
+    monkeypatch.setattr(fa, "class_share_versions", fake_class_versions)
+    cli.refresh(store, ("STZ",), date(2026, 10, 30), transport=None)
+    assert seen["since"] == date(2026, 5, 1)

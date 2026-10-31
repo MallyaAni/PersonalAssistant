@@ -61,6 +61,24 @@ def _meta_date(value: object) -> date | None:
         return None
 
 
+# The first filing the class reader must examine: the stored watermark when
+# there is one (capped below a transient failure, so a later filing that
+# succeeded cannot move the start past the one still to retry), else the
+# newest stored class filing, else nothing when no plausible count exists,
+# else the latest count's filing date.
+def _class_since(
+    checked: date | None, stored_class: list[fa.Version], latest: fa.Version | None
+) -> date | None:
+    """Return the filing date the class fetch starts after, or None."""
+    if checked is not None:
+        return checked
+    if stored_class:
+        return max(v.filed for v in stored_class)
+    if latest is None or latest.value < edgar.MIN_COVER_SHARES:
+        return None
+    return latest.filed
+
+
 # Fetch and store the versions for the names; return the failures.
 def refresh(
     store: MarketStore, names, asof: date, transport=edgar.sec_transport
@@ -102,14 +120,7 @@ def refresh(
         )
         class_versions: list[fa.Version] = []
         if managed:
-            marks = [checked] if checked is not None else []
-            marks.extend(v.filed for v in stored_class)
-            if marks:
-                since = max(marks)
-            elif latest is None or latest.value < edgar.MIN_COVER_SHARES:
-                since = None
-            else:
-                since = latest.filed
+            since = _class_since(checked, stored_class, latest)
             try:
                 class_versions, skipped, checked_now = fa.class_share_versions(
                     cik, ticker, since=since, transport=transport, pacer=pacer
