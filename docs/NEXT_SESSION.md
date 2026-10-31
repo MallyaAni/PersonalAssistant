@@ -1,6 +1,6 @@
 # Next session
 
-## CURRENT 2026-10-31 — event-shock detector and study (adcd4a2d), A1 stopped, A2 failed
+## CURRENT 2026-10-31 — event watch now runs nightly and shows on the Desk (295b148a)
 
 - Pre-registration committed first (9ddb5ab3), then the detector, CLI, tests and result
   (adcd4a2d, pushed). `backend/market/event_watch.py` is the pure detection layer;
@@ -17,9 +17,27 @@
   bounce, not continuation. A2 ran on 3 hyperscaler events, no contagion (-0.21% at 20,
   +2.97% at 60). A3 descriptive only (n=2 midterms). Positive-shock drift +2.44%/+3.06% is
   diagnostic, not gated. Nothing goes live; the live rule stays frozen.
-- Scan writes only under `data/market/research/event-watch/`; it is not called by the
-  nightly. Open: owner decides whether to schedule it nightly or surface the brief on the
-  dashboard; either is a live-pipeline change needing the release ceremony.
+- **Wiring (295b148a):** `~/desk_daily.sh` runs
+  `backend.cli.market_event_watch --scan` after `market_daily` with `|| true`, so a scan
+  failure cannot fail a nightly that traded. With no `--asof`, the CLI scans the newest
+  `desk/asof=` record, not today's calendar date, so a holiday or a failed nightly scans the
+  last record instead of inventing an empty session. The scan still writes only under
+  `data/market/research/event-watch/`.
+- **Reader and page:** `backend/market/event_watch_report.py` returns the newest scan with
+  `stale` against the displayed session and skips a corrupt or foreign-version file;
+  `backend/api/v1/event_watch.py` serves `/market/{user_id}/desk/event-watch`, registered
+  before `market_router` so the dated-session wildcard cannot swallow it;
+  `frontend/src/components/DeskPanel/EventWatch.tsx` shows the shocks, price moves, book
+  contagion and calendar in every desk view. The scan is fetched beside `getDesk`; its
+  failure cannot hide the desk.
+- **No bound source changed.** `learned_live_holding.source_identity()` is untouched (all 44
+  files byte-identical), so the installed release stays ADMITTED and no new approval bundle
+  is needed. Verified: 14 event-watch tests passed in the test container (6 reader, 1 HTTP
+  route/ownership, 8 detector); ruff clean on all changed Python; `tsc --noEmit` clean.
+- The live rule still does not react to the scan: grades update nightly, orders execute at
+  the next open, and no grade, target, order or prompt reads this block. Next: deploy the
+  wiring; then step 2, a pre-registered sector-factor exposure cap/hedge through
+  `policy_book.simulate`.
 
 ## CURRENT 2026-10-28 — enums live (5a8f8305), map fixes live (f432d837), chart-judgment test failed
 
