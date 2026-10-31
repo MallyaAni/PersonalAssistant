@@ -53,7 +53,11 @@
   eight archived ledger origins and from the live ML-forward ledger's last
   observation policy (`c75ae9a3`, 2026-10-30 sequence 31) to `a652a8ad`; a new
   pinned test covers the live-ledger origin. Without the live row the forward
-  shadow would have refused to continue after deploy.
+  shadow would have refused to continue after deploy. Full unit gate on
+  `anios_gate_p5`: 11,808 passed, 94 skipped, 10 xfailed, 0 failed, gate passed
+  (2026-10-31, `98e9ff45`). A concurrent agent suite on the shared `anios_gate`
+  exhausted Postgres's 100 connections and failed 42 unrelated tests on the
+  first rerun; the trap is recorded in `AGENTS.md`.
 - **Next:** P1 weekly tracking is the highest-priority workstream; the rule stays frozen
   for the 252-session window. The next ordinary nightly is 11-02 (the three 10-30 orders
   fill at that open) and its parity row is the first after the 10-31 deploy. P5 touches
