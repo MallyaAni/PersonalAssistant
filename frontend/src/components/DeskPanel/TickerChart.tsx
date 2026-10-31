@@ -379,7 +379,10 @@ const replayRealisedLine = (replay: DeskPolicyReplay, ticker: string): string =>
 
 // The chart's own marker shape, shared by every layer drawn on the candles.
 type MarkerKind = 'replay' | 'recorded' | 'current'
-type MarkerSample = 'in_sample' | 'out_of_sample' | 'live' | 'unknown'
+// `research` is the installed-policy replay: its decisions read only data up to
+// each close, but its rule parameters were chosen over the same history, so it
+// is neither an out-of-sample test nor a live record.
+type MarkerSample = 'in_sample' | 'out_of_sample' | 'research' | 'live' | 'unknown'
 type ChartMarker = {
   id?: string
   recommendations?: {id: string; at: string; action: PlanTrade; weight: number; evidence?: DeskStrategyDecision['evidence']; simulated: boolean;
@@ -412,6 +415,7 @@ const sizePercent = (weight: number): string => weight > 0 && weight < .001 ? '<
 const markerSample = (value: unknown): MarkerSample => value === 'in_sample' || value === 'out_of_sample' ? value : 'unknown'
 
 // Mute a historical replay that the model saw while fitting, without changing a live record.
+// The installed-policy replay keeps its colour but is labelled research, not out-of-sample.
 const replayColor = (action: PlanTrade, sample: MarkerSample) => action === 'Buy'
   ? sample === 'in_sample' ? 'rgba(36,138,61,.45)' : '#248a3d'
   : sample === 'in_sample' ? 'rgba(180,35,24,.45)' : '#b42318'
@@ -500,7 +504,7 @@ const policyReplayMarkers = (replay: DeskPolicyReplay | null | undefined, bars: 
       : group.role === 'fomc' ? `FOMC ${up ? 'restore' : 'cut'} ${change}`
       : `${up ? 'Add' : 'Trim'} ${change}`
     markers.push({id: `strategy:replay:${group.time}:${index}`, time: group.time as UTCTimestamp, position: up ? 'belowBar' : 'aboveBar',
-      color: replayColor(action, 'out_of_sample'), shape: 'circle', text, size: 1, kind: 'replay', role: group.role, sample: 'out_of_sample', policy,
+      color: replayColor(action, 'research'), shape: 'circle', text, size: 1, kind: 'replay', role: group.role, sample: 'research', policy,
       recommendations: group.trades.map(trade => {
         const side = trade.action === 'BUY' ? 'Buy' : 'Sell'
         const atClose = trade.timing === 'decision_close'
@@ -1836,7 +1840,7 @@ export const TickerChart = ({
           <details className="mt-1 text-[11px] text-[#6e6e73]" aria-label="Chart legend">
             <summary className="cursor-pointer">Chart key</summary>
             <p>
-            {strategy ? showPaperFills ? 'Circles: confirmed actual paper executions. Original fills and prices are listed below.' : 'Filled circles: replayed BUY/SELL/TRIM sizes, muted when in-sample. Hollow circles: recorded live recommendations. Square: the current call. Arrows: grade changes, not additional trades.' : `Circles: shares filled per ${timeframe === 'weekly' ? 'week' : timeframe === 'daily' ? 'day' : '15-minute bar'}. Individual fills and prices below (unadjusted).`}{showSignals ? ' Grade readings are labelled Saved or Recalculated when known.' : ''}{!strategy && showDecisions && !replayHidden ? policyReplay ? ' Buy/Sell circles: the installed policy replay, not fills.' : ' Signal and RESET labels: policy replay, not trades.' : ''}{!strategy && personalHistory && showRecommendations ? ' Saved Buy/Sell labels: recommendations, not fills.' : ''}
+            {strategy ? showPaperFills ? 'Circles: confirmed actual paper executions. Original fills and prices are listed below.' : 'Filled circles: replayed BUY/SELL/TRIM sizes, muted when in-sample. Hollow circles: recorded live recommendations. Square: the current call. Arrows: grade changes, not additional trades.' : `Circles: shares filled per ${timeframe === 'weekly' ? 'week' : timeframe === 'daily' ? 'day' : '15-minute bar'}. Individual fills and prices below (unadjusted).`}{showSignals ? ' Grade readings are labelled Saved or Recalculated when known.' : ''}{!strategy && showDecisions && !replayHidden ? policyReplay ? ' Buy/Sell circles: the installed policy replay, in-sample research, not fills.' : ' Signal and RESET labels: policy replay, in-sample research, not trades.' : ''}{!strategy && personalHistory && showRecommendations ? ' Saved Buy/Sell labels: recommendations, not fills.' : ''}
             </p>
           </details>
           {!strategy && timeframe === '15m' && fills.some(fill => !recordedInstant(fill.filled_at)) && <p aria-label="Fill timing" className="mt-1 text-[11px] text-[#6e6e73]">Some fills have no recorded time; listed below, not marked on 15m.</p>}
