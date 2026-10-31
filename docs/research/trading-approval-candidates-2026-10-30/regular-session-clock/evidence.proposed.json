@@ -1,0 +1,37 @@
+{
+  "authorization": "<owner writes this>",
+  "comparative_performance": "Execution guard only; no rule, sizing, timing, model, cost or parameter change. The nightly refuses ordinary orders when the broker's /clock reports the market open, because a market-on-open day order sent then could fill at the current price instead of the measured next open. From 2026-12-06 Nasdaq runs a day session from 04:00 to 20:00 ET, so at the 19:30 nightly the broker's flag can be true while the regular session the desk's orders are measured against closed at 16:00; the old guard would have refused every ordinary order and the book would stop rebalancing. The guard now reads the reviewed XNYS calendar (calendar.exchange_status) for the regular session. During the regular session it still refuses; an unknown calendar year falls back to the broker flag; an unreachable broker clock still fails closed. The installed rule, account simulator, policy replay and measured execution are unchanged.",
+  "contract": "grade-led-leader-weight/1 (revision 6: entry at A, hold while B, 1% minimum trade, P/E-history sizing tilt 0.5; split-corrected valuation history); valuation analyst at three votes; FOMC pre-meeting cut retired 2026-10-28 (fomc-hold-through-meeting/1), full exposure through meetings; an unknown FOMC calendar no longer blocks ordinary planning while retired; a cycle already open still restores at the decision-day close",
+  "execution": "every leg a market-on-open order at the nightly (revision 1); EWMA-20 volatility estimate (revision 2); entry at A or better, held while B, exit below B (revision 5); resizes under 1% of equity not traded, exits always (revision 5); no FOMC reduction is planned after 2026-10-28; the open 2026-10-28 cycle restores on the decision session's 3:45 PM candle (decision_close), and a cycle finished on the decision night hands the account back to the ordinary plan the same night; the market-open submission guard reads the reviewed regular XNYS session, not the broker's extended-hours flag",
+  "fresh_ordinary_paper_acceptance": "UNVERIFIED; required after installation",
+  "model_publications_unchanged": true,
+  "no_new_fits": true,
+  "original_evidence_sha256": "a23ea1e12c8629c1407a995f23373536e25911e99d4f648d4e7339fe21014b3d",
+  "parameters": {
+    "analyst_weights": {
+      "fundamental": 1,
+      "rotation": 0.5,
+      "sentiment": 1,
+      "technical": 1,
+      "value": 3
+    },
+    "annualisation": 252,
+    "entry_grade": "A",
+    "exposure_floor": 0.5,
+    "hold_grade": "B",
+    "min_trade": 0.01,
+    "pe_history_tilt": {
+      "min_readings": 250,
+      "strength": 0.5,
+      "window_sessions": 756
+    },
+    "per_name_cap": 0.25,
+    "tilt_strength": 0.5,
+    "volatility_estimator": "ewma_span_20",
+    "volatility_target": 0.25,
+    "window_sessions": 63
+  },
+  "source_revision": "<the commit on main carrying the change>",
+  "source_sha256": "<computed at installation>",
+  "targeted_tests": "<written at installation>"
+}
