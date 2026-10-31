@@ -81,6 +81,33 @@ def _log(tmp_path, *lines):
     return path
 
 
+# The health verdict the dead-man's switch reads.
+def _health_verdict(
+    market,
+    *,
+    session="2026-10-30",
+    status="ok",
+    at="2026-10-30T23:54:29+00:00",
+    reasons=(),
+):
+    desk = market / "desk"
+    desk.mkdir(parents=True, exist_ok=True)
+    (desk / "nightly-health.json").write_text(
+        json.dumps(
+            {
+                "session": session,
+                "status": status,
+                "at": at,
+                "reasons": list(reasons),
+            }
+        )
+    )
+
+
+# 20:15 ET on Friday 2026-10-30, when the dead-man's switch runs.
+FRESH_NOW = datetime(2026, 10, 31, 0, 15, tzinfo=UTC)
+
+
 def test_preflight_passes_and_writes_the_verdict(tmp_path):
     market = _market(tmp_path)
     messages = []
@@ -315,5 +342,96 @@ def test_a_naive_instant_is_refused(tmp_path):
             datetime(2026, 10, 30, 23, 30),
             log_path=None,
             state=_healthy_state(),
+            notify=lambda _: None,
+        )
+
+
+def test_freshness_passes_on_todays_health_verdict(tmp_path):
+    market = _market(tmp_path)
+    _health_verdict(market)
+    messages = []
+    result = check.freshness(tmp_path, FRESH_NOW, notify=messages.append)
+    assert result["status"] == "ok"
+    assert result["reasons"] == []
+    assert messages == []
+    written = json.loads((market / "desk" / "nightly-freshness.json").read_text())
+    assert written["status"] == "ok"
+    assert written["checks"]["health_session"] == "2026-10-30"
+
+
+def test_freshness_fails_when_the_health_verdict_is_missing(tmp_path):
+    market = _market(tmp_path)
+    messages = []
+    result = check.freshness(tmp_path, FRESH_NOW, notify=messages.append)
+    assert result["status"] == "failed"
+    assert "no nightly health verdict for today" in result["reasons"]
+    assert messages
+    assert "freshness failed" in messages[0]
+    written = json.loads((market / "desk" / "nightly-freshness.json").read_text())
+    assert written["status"] == "failed"
+
+
+def test_freshness_fails_when_the_health_verdict_is_yesterday(tmp_path):
+    market = _market(tmp_path)
+    _health_verdict(market, session="2026-10-29")
+    result = check.freshness(tmp_path, FRESH_NOW, notify=lambda _: None)
+    assert result["status"] == "failed"
+    assert (
+        "nightly health verdict is for 2026-10-29, not today"
+        in result["reasons"][0]
+    )
+
+
+def test_freshness_fails_when_the_health_verdict_is_red(tmp_path):
+    market = _market(tmp_path)
+    _health_verdict(
+        market,
+        status="failed",
+        reasons=["funded receipt unavailable: inconsistent_account_equity"],
+    )
+    result = check.freshness(tmp_path, FRESH_NOW, notify=lambda _: None)
+    assert result["status"] == "failed"
+    assert (
+        "nightly health verdict is red: funded receipt unavailable"
+        in result["reasons"][0]
+    )
+
+
+def test_freshness_fails_on_an_unreadable_health_verdict(tmp_path):
+    market = _market(tmp_path)
+    desk = market / "desk"
+    desk.mkdir(parents=True, exist_ok=True)
+    (desk / "nightly-health.json").write_text("not json")
+    result = check.freshness(tmp_path, FRESH_NOW, notify=lambda _: None)
+    assert result["status"] == "failed"
+    assert "nightly health verdict unreadable" in result["reasons"]
+
+
+def test_freshness_fails_when_the_verdict_timestamp_is_not_today(tmp_path):
+    market = _market(tmp_path)
+    _health_verdict(market, at="2026-10-29T23:54:29+00:00")
+    result = check.freshness(tmp_path, FRESH_NOW, notify=lambda _: None)
+    assert result["status"] == "failed"
+    assert any(
+        "was written at 2026-10-29T23:54:29+00:00, not today" in reason
+        for reason in result["reasons"]
+    )
+
+
+def test_freshness_is_green_on_a_non_session_day(tmp_path):
+    market = _market(tmp_path)
+    saturday = datetime(2026, 10, 31, 16, 0, tzinfo=UTC)
+    result = check.freshness(tmp_path, saturday, notify=lambda _: None)
+    assert result["status"] == "ok"
+    assert result["checks"]["session_open"] is False
+    assert (market / "desk" / "nightly-freshness.json").exists()
+
+
+def test_freshness_refuses_a_naive_instant(tmp_path):
+    _market(tmp_path)
+    with pytest.raises(ValueError, match="timezone-aware"):
+        check.freshness(
+            tmp_path,
+            datetime(2026, 10, 30, 23, 30),
             notify=lambda _: None,
         )

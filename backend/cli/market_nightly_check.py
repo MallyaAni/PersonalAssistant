@@ -2,6 +2,7 @@
 
     python -m backend.cli.market_nightly_check preflight --root <repo>
     python -m backend.cli.market_nightly_check health    --root <repo>
+    python -m backend.cli.market_nightly_check freshness --root <repo>
 
 The 19:30 nightly can stop without crashing, and when it does the dashboard
 keeps showing yesterday's book and nobody is told. It has happened three
@@ -23,10 +24,16 @@ after the nightly and checks what it wrote: today's history entry, an
 available funded receipt, no refused orders, a strategy publication for
 today, and the last "paper book" line in the log.
 
-Both write their verdict where a person or a later session can read it
-(`data/market/desk/nightly-readiness.json`, `nightly-health.json`) and page
-the operator through `scripts/notify-operator.sh` when the verdict is red.
-Neither ever blocks the nightly: `~/desk_daily.sh` runs each with `|| true`.
+`freshness` is the dead-man's switch for the case none of those cover: the
+nightly never starts at all, so `health` never runs and never pages. A
+separate 20:15 cron asks whether today's health verdict exists; a missing
+or yesterday's verdict pages the operator.
+
+All three write their verdict where a person or a later session can read it
+(`data/market/desk/nightly-readiness.json`, `nightly-health.json`,
+`nightly-freshness.json`) and page the operator through
+`scripts/notify-operator.sh` when the verdict is red. None ever blocks the
+nightly: `~/desk_daily.sh` runs each with `|| true`.
 """
 
 import argparse
@@ -363,12 +370,83 @@ def health(
     return result
 
 
+# Today's health verdict, as the dead-man's switch reads it: written after
+# tonight's nightly, stamped today, and green. A red verdict is still a
+# verdict; it is reported here because the health check's page may not have
+# reached the operator, and a second page on a bad night is cheaper than
+# silence.
+def _health_status(market: Path, session: str):
+    path = market / "desk" / "nightly-health.json"
+    checks = {"health_session": None, "health_at": None, "health_status": None}
+    if not path.exists():
+        return checks, "no nightly health verdict for today"
+    try:
+        verdict = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return checks, "nightly health verdict unreadable"
+    checks.update(
+        health_session=verdict.get("session"),
+        health_at=verdict.get("at"),
+        health_status=verdict.get("status"),
+    )
+    if verdict.get("session") != session:
+        return checks, (
+            f"nightly health verdict is for {verdict.get('session')}, not today; "
+            "the nightly may not have started"
+        )
+    written = verdict.get("at")
+    try:
+        stamp = datetime.fromisoformat(written)
+    except (TypeError, ValueError):
+        return checks, f"nightly health verdict has an unreadable timestamp {written!r}"
+    if (
+        stamp.tzinfo is None
+        or stamp.astimezone(calendar.NEW_YORK).date().isoformat() != session
+    ):
+        return checks, f"nightly health verdict was written at {written}, not today"
+    if verdict.get("status") != "ok":
+        reasons = verdict.get("reasons") or []
+        first = reasons[0] if reasons else "no reason recorded"
+        return checks, f"nightly health verdict is red: {first}"
+    return checks, None
+
+
+# The dead-man's switch: today's nightly produced a health verdict at all.
+# A closed day has no nightly to miss, and a page on one would train the
+# operator to ignore the alert.
+def freshness(
+    root: Path,
+    now: datetime | None = None,
+    *,
+    notify=None,
+) -> dict:
+    now = now or datetime.now(UTC)
+    if now.tzinfo is None or now.utcoffset() is None:
+        raise ValueError("a timezone-aware instant is required")
+    market = _market_root(root)
+    status = calendar.exchange_status(now)
+    session = str(status["session"])
+    if _closed_day(status):
+        result = _verdict("freshness", now, session, [], {"session_open": False})
+        _write_status(market / "desk" / "nightly-freshness.json", result)
+        return result
+    checks = {"session_open": bool(status.get("open"))}
+    health_checks, reason = _health_status(market, session)
+    checks.update(health_checks)
+    reasons = [reason] if reason else []
+    result = _verdict("freshness", now, session, reasons, checks)
+    _write_status(market / "desk" / "nightly-freshness.json", result)
+    if reasons:
+        _page(root, "freshness", session, reasons, notify)
+    return result
+
+
 # Run one mode and exit red when the verdict is red.
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(
         description="Check the nightly before and after it runs."
     )
-    parser.add_argument("mode", choices=("preflight", "health"))
+    parser.add_argument("mode", choices=("preflight", "health", "freshness"))
     parser.add_argument("--root", default=".")
     parser.add_argument("--log", default=str(Path.home() / "desk_daily.log"))
     parser.add_argument("--now")
@@ -380,8 +458,10 @@ def main(argv=None) -> int:
     root = Path(args.root).resolve()
     if args.mode == "preflight":
         result = preflight(root, now)
-    else:
+    elif args.mode == "health":
         result = health(root, now, log_path=Path(args.log))
+    else:
+        result = freshness(root, now)
     print(json.dumps(result, sort_keys=True))
     return 0 if result["status"] == "ok" else 1
 
