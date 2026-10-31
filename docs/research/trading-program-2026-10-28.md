@@ -228,8 +228,10 @@ exactly as a standard cover count; the weighted fallback stays out of the
 instant readers. The frame metadata watermark `class_checked_through` makes
 the fetch incremental: the first run backfills from 2015 for a name with no
 plausible count and otherwise from its latest filed count, and later nights
-read one submissions block per managed name. Tests:
-`backend/tests/test_cover_class_shares.py` (34). No live rule, grade, order
+read one submissions block per managed name. A transient failure caps the
+watermark below the failed filing, and the next run starts from the capped
+watermark, so a later filing that succeeded cannot skip it. Tests:
+`backend/tests/test_cover_class_shares.py` (35). No live rule, grade, order
 or prompt changed; none of the repaired names is in the live book.
 Residuals: the three refused names keep their stored count (V's is from
 2010); ASML, NBIS, SIMO and TSM file 20-F/6-K, have no 10-K/10-Q cover

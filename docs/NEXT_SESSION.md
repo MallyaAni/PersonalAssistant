@@ -40,9 +40,10 @@
   names (ABT, C, DTE, ETR, EXC, FE, HSY, HUM, JCI, LNT, NEE, SO); it refuses BRK-B, V
   and ARES as ambiguous, and ASML, NBIS, SIMO and TSM have no 10-K/10-Q cover page.
   Counts are stored as `shares` versions at the cover tier with a
-  `class_checked_through` watermark; 34 tests in
-  `backend/tests/test_cover_class_shares.py`; ruff clean; affected suites 213 passed.
-  No live rule, grade or order changed.
+  `class_checked_through` watermark that a transient failure cannot advance
+  past the failed filing (`4dd9c328`); 35 tests in
+  `backend/tests/test_cover_class_shares.py`; ruff clean; affected gate 212
+  passed, 2 skipped. No live rule, grade or order changed.
 - **Next:** P1 weekly tracking is the highest-priority workstream; the rule stays frozen
   for the 252-session window. The next ordinary nightly is 11-02 (the three 10-30 orders
   fill at that open) and its parity row is the first after the 10-31 deploy. P5 needs the
