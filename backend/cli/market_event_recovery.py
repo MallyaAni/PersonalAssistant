@@ -183,8 +183,15 @@ def recover(root, latest, snapshot, policy, client, now):  # noqa: C901 - one br
             for o in orders
         ]
         paper.save_state(root, state)
+    # The regular-session guard reads the decision instant, not the wall clock:
+    # recovery is a decision made at `now`, and tests inject it.
     submitted, refused = market_daily._submit(
-        client, orders, today.isoformat(), True, intraday_event_reduction=True
+        client,
+        orders,
+        today.isoformat(),
+        True,
+        intraday_event_reduction=True,
+        decision_at=now,
     )
     market_daily._remember_acknowledgments(state, submitted, root, True, orders)
     return {
