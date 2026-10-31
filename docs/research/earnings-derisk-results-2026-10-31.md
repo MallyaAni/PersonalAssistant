@@ -190,11 +190,13 @@ giving up 0.99 points of CAGR and 0.047 of Sharpe. Random removal of the same
 weight does far better (+4.93 points mean, +7.28 at the 95th percentile), so
 the flags are not identifying the drawdown risk.
 
-The economic reading is consistent with the prior event-shock study's bounce
-finding: pre-release names tend to drift up into the release, so trimming them
-gives up return; the book's worst drawdowns come from broad market moves, not
-from the flagged names' releases. A pre-release overlay is the wrong
-instrument for the owner's concern on this universe.
+The economic reading is a hypothesis, not a measured decomposition: pre-release
+names may drift up into the release, so trimming them gives up return, while
+the book's worst drawdowns may come from broad market moves rather than the
+flagged names' releases. The prior event-shock study's post-shock bounce is
+consistent with the first half, though that study was underpowered. Either way,
+a pre-release overlay is the wrong instrument for the owner's concern on this
+universe.
 
 The earnings calendar stays live as descriptive alerting: it tells the desk
 which names have a predicted release and how confident the prediction is. It
