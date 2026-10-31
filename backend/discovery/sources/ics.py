@@ -98,11 +98,17 @@ def _build_event(
     fallback: timezone | ZoneInfo,
 ) -> DiscoveredEvent | None:
     fields: dict[str, tuple[dict[str, str], str]] = {}
+    # Attachments are collected separately because a calendar may carry several
+    # and the first is often a PDF rather than the poster.
+    attachments: list[tuple[str, dict[str, str], str]] = []
     for line in lines:
         parsed = _content_line(line)
         if parsed is None:
             continue
         name, params, value = parsed
+        if name in ("ATTACH", "IMAGE"):
+            attachments.append((name, params, value))
+            continue
         # First occurrence wins; a repeated property is not merged.
         fields.setdefault(name, (params, value))
 
@@ -128,7 +134,29 @@ def _build_event(
         place=clean_text(_value(fields, "LOCATION"), MAX_PLACE_CHARS),
         url=clean_url(_value(fields, "URL")),
         summary=clean_text(_value(fields, "DESCRIPTION"), MAX_SUMMARY_CHARS),
+        media_url=_image_url(attachments),
     )
+
+
+# The event's poster from its attachments. RFC 7986's IMAGE property is a
+# picture by definition; an ATTACH needs FMTTYPE image/* or, when untyped, an
+# image file extension. A calendar commonly attaches a PDF or another .ics, so
+# an untyped attachment is never assumed to be a picture.
+_IMAGE_SUFFIXES = (".jpg", ".jpeg", ".png", ".gif", ".webp", ".avif")
+
+
+def _image_url(attachments: list[tuple[str, dict[str, str], str]]) -> str | None:
+    for name, params, value in attachments:
+        candidate = clean_url(value)
+        if candidate is None:
+            continue
+        declared = params.get("FMTTYPE", "").lower()
+        path = candidate.lower().split("?", 1)[0].split("#", 1)[0]
+        if name == "IMAGE" or declared.startswith("image/") or (
+            not declared and path.endswith(_IMAGE_SUFFIXES)
+        ):
+            return candidate
+    return None
 
 
 def _value(fields: dict[str, tuple[dict[str, str], str]], name: str) -> str | None:

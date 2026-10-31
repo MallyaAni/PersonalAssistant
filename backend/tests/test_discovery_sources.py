@@ -20,6 +20,7 @@ from backend.discovery.fetching import (
     _address_is_public,
     _read_public,
     _require_public_url,
+    fetch_bytes,
     fetch_feed,
 )
 from backend.discovery.sources.ics import parse_ics
@@ -267,6 +268,110 @@ def test_atom_entries_read_the_alternate_link_href():
     assert events[0].external_id == "gallery-9"
 
 
+# The poster is what often states the date and venue the listing's prose omits,
+# so the image-typed enclosure is read as the event's picture.
+def test_rss_reads_an_image_enclosure_as_the_event_picture():
+    payload = """<?xml version="1.0"?>
+    <rss version="2.0"><channel>
+      <item>
+        <title>Lantern festival</title>
+        <guid>lantern-1</guid>
+        <enclosure url="https://city.example/poster.jpg" type="image/jpeg" length="1"/>
+      </item>
+    </channel></rss>"""
+
+    events = parse_feed(payload, "city")
+
+    assert events[0].media_url == "https://city.example/poster.jpg"
+
+
+# A podcast's audio enclosure is not a poster, and media:content often sits
+# inside media:group rather than directly under the item.
+def test_rss_ignores_audio_and_reads_a_nested_media_content_image():
+    payload = """<?xml version="1.0"?>
+    <rss version="2.0" xmlns:media="http://search.yahoo.com/mrss/"><channel>
+      <item>
+        <title>Night market</title>
+        <guid>market-1</guid>
+        <enclosure url="https://city.example/episode.mp3" type="audio/mpeg"/>
+        <media:group>
+          <media:content url="https://city.example/poster.png"
+                         type="image/png" medium="image"/>
+        </media:group>
+      </item>
+    </channel></rss>"""
+
+    events = parse_feed(payload, "city")
+
+    assert events[0].media_url == "https://city.example/poster.png"
+
+
+# A thumbnail is an image by definition, so it is the last resort when the feed
+# states no larger picture.
+def test_rss_falls_back_to_a_media_thumbnail():
+    payload = """<?xml version="1.0"?>
+    <rss version="2.0" xmlns:media="http://search.yahoo.com/mrss/"><channel>
+      <item>
+        <title>Open studio</title>
+        <guid>studio-1</guid>
+        <media:thumbnail url="https://studio.example/thumb.jpg"/>
+      </item>
+    </channel></rss>"""
+
+    events = parse_feed(payload, "studio")
+
+    assert events[0].media_url == "https://studio.example/thumb.jpg"
+
+
+def test_atom_reads_an_image_enclosure_link():
+    payload = """<?xml version="1.0"?>
+    <feed xmlns="http://www.w3.org/2005/Atom">
+      <entry>
+        <title>Gallery opening</title>
+        <id>gallery-1</id>
+        <link rel="alternate" href="https://gallery.example/opening"/>
+        <link rel="enclosure" type="image/jpeg" href="https://gallery.example/poster.jpg"/>
+      </entry>
+    </feed>"""
+
+    events = parse_feed(payload, "gallery")
+
+    assert events[0].media_url == "https://gallery.example/poster.jpg"
+
+
+# A calendar commonly attaches a PDF or another .ics first. Only an image-typed
+# or image-suffixed attachment is the poster.
+def test_ics_reads_an_image_attachment_and_skips_a_pdf():
+    payload = _calendar(
+        "BEGIN:VEVENT",
+        "UID:poster",
+        "SUMMARY:Film night",
+        "DTSTART:20260815T200000Z",
+        "ATTACH;FMTTYPE=application/pdf:https://venue.example/program.pdf",
+        "ATTACH;FMTTYPE=image/jpeg:https://venue.example/poster.jpg",
+        "END:VEVENT",
+    )
+
+    events = parse_ics(payload, "venue")
+
+    assert events[0].media_url == "https://venue.example/poster.jpg"
+
+
+def test_ics_reads_the_image_property():
+    payload = _calendar(
+        "BEGIN:VEVENT",
+        "UID:image",
+        "SUMMARY:Recital",
+        "DTSTART:20260815T200000Z",
+        "IMAGE;VALUE=URI:https://venue.example/recital.png",
+        "END:VEVENT",
+    )
+
+    events = parse_ics(payload, "venue")
+
+    assert events[0].media_url == "https://venue.example/recital.png"
+
+
 def test_malformed_xml_raises_a_feed_error():
     with pytest.raises(FeedError, match="not well-formed"):
         parse_feed("<rss><channel><item>", "broken")
@@ -317,6 +422,27 @@ async def test_fetch_returns_the_decoded_body_within_bounds():
         body = await fetch_feed("https://venue.example/feed.ics", client=client)
 
     assert body == "BEGIN:VCALENDAR"
+
+
+# A picture is bytes, not text, and the host's declared type is what tells the
+# caller whether it is worth showing to a vision model.
+@pytest.mark.asyncio
+async def test_fetch_bytes_returns_the_body_and_its_declared_type():
+    def handler(request: httpx.Request) -> httpx.Response:
+        return httpx.Response(
+            200,
+            content=b"\x89PNG\r\n\x1a\nrest",
+            headers={"content-type": "image/png"},
+        )
+
+    transport = httpx.MockTransport(handler)
+    async with httpx.AsyncClient(transport=transport) as client:
+        body, declared = await fetch_bytes(
+            "https://venue.example/poster.png", client=client
+        )
+
+    assert body.startswith(b"\x89PNG")
+    assert declared == "image/png"
 
 
 # A feed URL is user-supplied, so fetching one is a request-forgery primitive

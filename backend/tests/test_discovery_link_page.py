@@ -33,7 +33,19 @@ _WITH_EVENT = """
 <html><head>
 <script type="application/ld+json">
 {"@type":"Event","name":"Jazz in the Garden","url":"https://venue.example/e/1",
- "startDate":"2026-08-16T18:00:00-04:00","description":"An outdoor concert."}
+ "startDate":"2026-08-16T18:00:00-04:00","description":"An outdoor concert.",
+ "image":{"@type":"ImageObject","url":"https://venue.example/e/1/poster.jpg"}}
+</script>
+</head><body></body></html>
+"""
+
+_WITH_CARD_IMAGE = """
+<html><head>
+<script id="__NEXT_DATA__" type="application/json">
+{"props":{"links":[
+  {"title":"Water Lantern Festival","url":"https://waterlanternfestival.com/dc",
+   "image":"https://waterlanternfestival.com/poster.jpg"}
+]}}
 </script>
 </head><body></body></html>
 """
@@ -87,6 +99,16 @@ async def test_a_stated_event_date_is_read(monkeypatch):
     assert events[0].title == "Jazz in the Garden"
     assert events[0].starts_at is not None
     assert events[0].starts_at.hour == 18
+    # schema.org states the picture as an ImageObject here, not a bare string.
+    assert events[0].media_url == "https://venue.example/e/1/poster.jpg"
+
+
+# The link-in-bio shape carries the card's picture as its own field.
+@pytest.mark.asyncio
+async def test_a_card_picture_is_read(monkeypatch):
+    events = await _fetch(monkeypatch, _WITH_CARD_IMAGE)
+
+    assert events[0].media_url == "https://waterlanternfestival.com/poster.jpg"
 
 
 # A page whose shape changed and a page with nothing on it look identical from

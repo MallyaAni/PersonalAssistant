@@ -1312,6 +1312,10 @@ async def get_discovery_runner(
         structured_writer=get_structured_llm_client(),
         search_budget=get_search_budget(),
         cross_encoder=get_cross_encoder(),
+        # The primary model sees the posters feeds publish, so a selected find
+        # whose listing carries one is described with it rather than from text
+        # alone.
+        vision=get_vision_provider(),
         is_operator=is_operator,
         search_limit=search_limit,
     )
@@ -1341,6 +1345,7 @@ def get_discovery_runner_for_session(
         structured_writer=get_structured_llm_client(),
         search_budget=get_search_budget(),
         cross_encoder=get_cross_encoder(),
+        vision=get_vision_provider(),
         is_operator=is_operator,
         search_limit=search_limit,
     )

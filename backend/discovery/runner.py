@@ -34,8 +34,14 @@ logger = logging.getLogger(__name__)
 from backend.agents.scout.aiming import AimPlanner
 from backend.agents.scout.describing import EventDescriber, Readable
 from backend.agents.scout.reranking import MemoryReranker
+from backend.agents.scout.seeing import PictureCaptioner
 from backend.config.settings import settings
-from backend.core.interfaces import RerankProvider, SearchProvider, TextWriter
+from backend.core.interfaces import (
+    RerankProvider,
+    SearchProvider,
+    TextWriter,
+    VisionProvider,
+)
 from backend.discovery.decision_log import build_decision
 from backend.discovery.digest import MAX_EVENTS_IN_MESSAGE
 from backend.discovery.errors import DiscoveryError
@@ -226,6 +232,9 @@ class SweepResult:
                         "place": item.event.place,
                         "url": item.event.url,
                         "summary": item.event.summary,
+                        # Kept so a resumed run and a later preview can still
+                        # say what picture the find published.
+                        "media_url": item.event.media_url,
                         "score": round(item.score, 4),
                         "matched_interest": item.matched_interest,
                     }
@@ -252,6 +261,7 @@ class SweepResult:
                         "place": item.event.place,
                         "url": item.event.url,
                         "summary": item.event.summary,
+                        "media_url": item.event.media_url,
                         # The score here is unlikeness, not interest. Kept in
                         # its own field on the candidate so a reader cannot
                         # mistake it for a match score.
@@ -286,6 +296,7 @@ def events_from_digest(digest_json: str) -> tuple[DiscoveredEvent, ...]:
                 place=item.get("place"),
                 url=item.get("url"),
                 summary=item.get("summary"),
+                media_url=item.get("media_url"),
             )
         )
     return tuple(events)
@@ -340,6 +351,7 @@ def _ranked_items(items: object) -> tuple[RankedCandidate, ...]:
                         place=item.get("place"),
                         url=item.get("url"),
                         summary=item.get("summary"),
+                        media_url=item.get("media_url"),
                     ),
                     embedding=None,
                 ),
@@ -403,6 +415,10 @@ class DiscoveryRunner:
         is_operator: bool = False,
         search_limit: int | None = None,
         cross_encoder: RerankProvider | None = None,
+        # The model that sees. Optional so a sweep with no vision runtime -
+        # and every test that does not exercise pictures - behaves exactly as
+        # it did before pictures were read.
+        vision: VisionProvider | None = None,
     ) -> None:
         self.sources = sources
         self.seen = seen
@@ -430,6 +446,10 @@ class DiscoveryRunner:
         # an answer that does not survive it, and the judge of the focused
         # location question.
         self.describer = EventDescriber(writer, structured)
+        # Reads a selected find's poster before it is described. Constructed
+        # even without a provider so the call site has one shape; caption()
+        # returns nothing when there is nothing to see with.
+        self.pictures = PictureCaptioner(vision)
         # What memory knows about the person this sweep is for. Reading it is
         # the whole reason a query can be about someone rather than about a
         # topic; without it both stages below fall back to bare labels.
@@ -720,6 +740,13 @@ class DiscoveryRunner:
         for item in selected:
             event = item.event
             source = event.summary or await self._page_text(event.url, budget)
+            # The poster is read before the page is described, so a listing
+            # whose text omits the date or venue still gives the describer
+            # something that states them. It shares the sweep's request budget
+            # and is skipped whenever that budget is spent.
+            caption = await self.pictures.caption(event.media_url, budget)
+            if caption is not None:
+                source = f"{caption}\n\n{source}" if source else caption
             described = await self.describer.describe(
                 event.title, source, today, place, event.url, facts
             )

@@ -53,6 +53,10 @@ class DiscoveredEvent:
     place: str | None
     url: str | None
     summary: str | None
+    # A picture the listing published with the event - a poster carrying the
+    # date, venue and performers the text often omits. Read once for a selected
+    # find so the model can see it; None whenever the source stated none.
+    media_url: str | None = None
 
     # A calendar entry needs a start; a listing without one can still be shown
     # but cannot become a VEVENT, so the distinction is explicit rather than

@@ -125,6 +125,7 @@ def _events_from_json_ld(source_id: str, document: str) -> list[DiscoveredEvent]
                     summary=clean_text(
                         _first_string(node.get("description")), MAX_SUMMARY_CHARS
                     ),
+                    media_url=_image_url(node.get("image")),
                 )
             )
     return found
@@ -168,6 +169,11 @@ def _events_from_embedded_links(source_id: str, document: str) -> list[Discovere
                 place=None,
                 url=url,
                 summary=None,
+                media_url=_image_url(
+                    node.get("image")
+                    or node.get("imageUrl")
+                    or node.get("thumbnailUrl")
+                ),
             )
         )
     return found
@@ -185,6 +191,26 @@ def _walk(node: Any) -> list[dict[str, Any]]:
         for value in node:
             found.extend(_walk(value))
     return found
+
+
+# The first usable picture URL in a schema.org image value. The field is
+# legally a string, a list of strings, or an ImageObject carrying its own url,
+# and real pages use all three.
+def _image_url(value: Any) -> str | None:
+    if isinstance(value, str):
+        return clean_url(value)
+    if isinstance(value, list):
+        for item in value:
+            found = _image_url(item)
+            if found is not None:
+                return found
+        return None
+    if isinstance(value, dict):
+        for key in ("url", "contentUrl", "src"):
+            found = _image_url(value.get(key))
+            if found is not None:
+                return found
+    return None
 
 
 def _first_string(value: Any) -> str | None:

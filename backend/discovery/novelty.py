@@ -388,6 +388,7 @@ def _event_from_payload(payload_json: str | None) -> DiscoveredEvent | None:
         place=payload.get("place"),
         url=payload.get("url"),
         summary=payload.get("summary"),
+        media_url=payload.get("media_url"),
     )
 
 
@@ -413,6 +414,7 @@ def _payload(event: DiscoveredEvent) -> dict[str, object]:
         "place": event.place,
         "url": event.url,
         "summary": event.summary,
+        "media_url": event.media_url,
     }
 
 
