@@ -56,10 +56,12 @@
   shadow would have refused to continue after deploy.
 - **Next:** P1 weekly tracking is the highest-priority workstream; the rule stays frozen
   for the 252-session window. The next ordinary nightly is 11-02 (the three 10-30 orders
-  fill at that open) and its parity row is the first after the 10-31 deploy. P5 needs the
-  release ceremony before its store repair can reach a nightly. No new strategy, no
-  risk-dial change, no earnings/intraday overlay. C5 sector rotation and positive-shock
-  drift remain blocked pending an owner mandate.
+  fill at that open) and its parity row is the first after the 10-31 deploy. P5 touches
+  none of the 44 bound release sources (`learned_live_holding.source_identity()` does not
+  include `edgar.py`), so its store repair needs only a deploy, not a new release, and
+  trading admission is unchanged. No new strategy, no risk-dial change, no
+  earnings/intraday overlay. C5 sector rotation and positive-shock drift remain blocked
+  pending an owner mandate.
 
 ## CURRENT 2026-10-31 — event watch now runs nightly and shows on the Desk (295b148a)
 
