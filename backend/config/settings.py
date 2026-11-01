@@ -311,7 +311,9 @@ class Settings(BaseSettings):
     # reach - the LAN address, not a compose name). Empty leaves pictures as
     # placeholders. Only pictures above the area share are described, so a
     # logo or a thumbnail does not become a paragraph of noise; measured
-    # 2026-09-02: one picture, 17 s, on spark2's Qwen3-VL-8B.
+    # 2026-09-02: one picture, 17 s, on the then-vision model (Qwen3-VL-8B on
+    # spark2). The current runtime is the same DeepSeek-V4.1 server the vision
+    # role uses.
     DOCLING_PICTURE_API_URL: str = ""
     # The model that endpoint serves. Kept in step with VISION_MODEL: the
     # retired local VLM was still the default here after images moved to the

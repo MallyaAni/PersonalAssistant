@@ -948,8 +948,10 @@ the bullets here are the architectural consequences.
   context and an NVFP4 KV cache. With the Sparks in place every text role -
   routing, conversation, structured output, diagrams, decks, memory
   classification - moved onto it, and the single-RTX-5080 Qwen 4B profile was
-  retired. Vision stays a separate model (Qwen3-VL-8B on spark2) because the
-  DeepSeek build cannot read pixels.
+  retired. Vision stayed a separate model (Qwen3-VL-8B on spark2) because that
+  DeepSeek build could not read pixels; since the 2026-10-27 cutover to
+  DeepSeek-V4.1-Flash-1017, which does read images, the vision role is the
+  same server and the second model is stopped.
 - **Memory headroom is a safety margin, not an optimisation.** Over-allocating
   GPU memory hangs a Spark, and a Spark has no remote console - recovery is a
   physical button. Utilisation is pinned at the measured safe value on spark2
@@ -1142,8 +1144,9 @@ the two data stores are published on the host's loopback only.
 | `db` | `pgvector/pgvector:pg16` | `127.0.0.1:5432` | PostgreSQL: every conversation, memory, artifact record, job, and account; pgvector HNSW indexes |
 | `redis` | `redis:7-alpine`, append-only | `127.0.0.1:6379` | Model-execution lease, login attempt windows, the iMessage cursor; never prompt or response text |
 | `vllm-embedding` | Pinned vLLM, `nomic-embed-text-v1.5` | host `8004` | 768-d text embeddings |
-| `ds4-head` (systemd, not compose) | vLLM, DeepSeek-V4-Flash, tensor-parallel rank 0 | host `8000` | Every text role; rank 1 is `ds4-worker` on spark2 |
-| `anios-vlm` (systemd on **spark2**) | vLLM, Qwen3-VL-8B | spark2 `8001` | Vision |
+| `ds41-head` (systemd, not compose) | vLLM, DeepSeek-V4.1-Flash-1017, tensor-parallel rank 0 | host `8000` | Every model role, text and vision; rank 1 is `ds41-worker` on spark2 |
+| spark2 `:8001` forwarder (socat, not compose) | TCP forward to spark1 `:8000` | spark2 `8001` | The transitional vision endpoint that `VISION_LLM_BASE_URL` still points at |
+| `anios-vlm` (systemd on **spark2**, stopped) | vLLM, Qwen3-VL-8B | spark2 `8001` (retired) | The separate vision model before the V4.1 cutover; returns only on a rollback |
 | ComfyUI (Docker on the **desktop**) | `docker/comfyui/`, host ComfyUI bind-mounted | desktop `8188` | FLUX.2 Klein generation and editing; only while the desktop is on |
 | iMessage bridge (**Mac**) | `bridges/imessage_mac`, MCP over HTTP | Mac | `allow_recipient`, `send_imessage`, `read_messages`; the only process that touches Messages |
 | image embeddings | `nomic-embed-vision-v1.5` ONNX | in-process, CPU | Aligned 768-d image vectors |
@@ -1632,9 +1635,9 @@ changing one role never silently moves another.
 
 | Role | Setting prefix | Model today | What calls it |
 | --- | --- | --- | --- |
-| Conversational | `MAIN_LLM_*` | DeepSeek-V4-Flash, vLLM tensor-parallel across spark1+spark2 (`animallya-spark1.local:8000`) | `build_assistant_graph` replies, `ConversationService`, visual reasoning, MCP tool orchestration, image style, Scout digests and place suggestions |
+| Conversational | `MAIN_LLM_*` | DeepSeek-V4.1-Flash-1017, vLLM tensor-parallel across spark1+spark2 (`animallya-spark1.local:8000`) | `build_assistant_graph` replies, `ConversationService`, visual reasoning, MCP tool orchestration, image style, Scout digests and place suggestions |
 | Routing / tool-calling | `ROUTING_LLM_*` | DeepSeek (same deployment), temperature 0 | `MainActionSelector`, `ImageIntentClassifier`, the `VisualSearchGrounding` search decision |
-| Vision | `VISION_*` | Qwen3-VL-8B (`anios-vlm` on spark2, `:8001`) | Canonical image observation and question-specific answers |
+| Vision | `VISION_*` | DeepSeek-V4.1-Flash-1017 (same server, alias `qwen3-vl-8b`; spark2 `:8001` forwards to spark1 `:8000`) | Canonical image observation and question-specific answers |
 | Vision escalation | `VISION_ESCALATION_*` | Unconfigured | One specialist retry only when the primary reports visible diagnostic evidence it cannot interpret |
 | Presentation | `PRESENTATION_LLM_*` | DeepSeek | Deck outline planning and slide microtasks |
 | Diagram | `DIAGRAM_LLM_*` | DeepSeek | Diagram source generation |

@@ -1023,11 +1023,14 @@ acceptance after such changes.
 Two NVIDIA DGX Sparks (GB10 Grace Blackwell Superchip, 128 GB unified
 CPU/GPU memory each, Ubuntu 24.04, sm_121) are the system's only inference
 hosts. The first joined on 2026-08-13; the migration off the Windows desktop
-finished on 2026-08-23 (`DGX_MIGRATION.md`). DeepSeek-V4-Flash is served
-across both of them by `ds4-tp2.sh` under systemd: tensor-parallel 2, a
-1,048,576-token context, six concurrent sequences, and 0.81 GPU-memory
-utilization, on vLLM 0.25.2. Qwen3-VL-8B serves vision on spark2 at `:8001`.
-The desktop keeps only ComfyUI, Docling and Gotenberg, at `172.16.8.6`.
+finished on 2026-08-23 (`DGX_MIGRATION.md`). DeepSeek-V4.1-Flash-1017 is
+served across both of them by `ds41-tp2.sh` under systemd (units `ds41-head`
+on spark1 and `ds41-worker` on spark2): tensor-parallel 2, a 262,144-token
+context, on vLLM `0.31.1.dev0+g6e517b15.dsv41gb10`. It reads images, so the
+vision role is the same server, reached through a `socat` forwarder on spark2
+`:8001`; the separate Qwen3-VL-8B unit (`anios-vlm`) that served vision until
+the 2026-10-27 cutover is stopped. The desktop keeps only ComfyUI, Docling and
+Gotenberg, at `172.16.8.6`.
 
 - Hostnames: `animallya-spark1.local` (`172.16.8.3`) and
   `animallya-spark2.local` (`172.16.8.5`), both mDNS. SSH as `animallya96`,

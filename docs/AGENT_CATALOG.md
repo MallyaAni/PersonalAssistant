@@ -282,13 +282,14 @@ Listed so the distinction is a decision rather than an oversight.
 
 ## Every model call, and what it costs
 
-One text model serves all of it: DeepSeek-V4-Flash, served by vLLM
+One model serves all of it: DeepSeek-V4.1-Flash-1017, served by vLLM
 tensor-parallel across the two DGX Sparks. The role-specific settings —
 `MAIN_LLM_MODEL`, `ROUTING_LLM_MODEL`, `PRESENTATION_LLM_MODEL`,
 `DIAGRAM_LLM_MODEL`, `MEMORY_PROPOSAL_LLM_MODEL` — are pinned to it
 explicitly in compose so that changing one never silently moves another;
-Scout has no role setting and follows the main role. Vision is the one
-separate model (Qwen3-VL-8B on spark2), because DeepSeek cannot read pixels.
+Scout has no role setting and follows the main role. Vision is not a separate
+model: `VISION_MODEL` points at the same server under its compatibility alias
+`qwen3-vl-8b`, because V4.1 reads images.
 
 The constraint that decides this is memory: DeepSeek holds about 97 GiB on
 *each* Spark, so "a better model for this call" still means replacing the one
