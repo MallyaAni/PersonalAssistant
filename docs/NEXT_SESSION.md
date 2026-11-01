@@ -48,9 +48,17 @@
   clean; affected gate passed (128 passed, 2 skipped across the five EDGAR
   and fundamentals suites). No live rule, grade or order changed. Deployed
   2026-11-01T05:37:32Z in `79a4824f` (both gates passed; admission ADMITTED;
-  post-deploy ok). The deployed `edgar.py` is byte-identical to the tested
-  tree. The 11-02 nightly's `_refresh_versions` (531-name research universe,
-  which contains every repaired name) performs the store repair.
+  post-deploy ok). All four P5 code files (`edgar.py`, `fundamentals_asof.py`,
+  `market_fundamentals_asof.py`, `test_cover_class_shares.py`) are
+  byte-identical to the tested tree. The 11-02 nightly's `_refresh_versions` (531-name research universe,
+  which contains every repaired name) performs the store repair. A real-SEC
+  check with the deployed reader on 2026-11-01 returned ERIE 46,191,610 (10-Q
+  filed 2026-10-29, accession `0001628280-26-068274`) and STZ 169,224,220
+  (10-Q filed 2026-10-07, accession `0000016918-26-000040`), the expected
+  repair values. Two research-only members fail CIK mapping nightly: WBD
+  (Form 15-15D filed 2026-10-16) and PSKY (no SEC ticker-map entry). Neither
+  is in the 94-name book, so no live grade is affected; their fundamentals
+  stay stale until the universe snapshot is refreshed.
 - **Shadow identity continuation: added.** `opportunity_shadow.identity` hashes
   `edgar.py`, so the P5 change moved the source identity to `a652a8ad`. The
   full unit gate caught the drift: declared continuation rows now run from the
