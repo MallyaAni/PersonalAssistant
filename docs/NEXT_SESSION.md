@@ -35,7 +35,7 @@
   −0.25-point mean difference); parity 3 of 4; execution all-time 134 fills, +15.55 bp
   all-in, drift +52.92 bp, slippage −34.88 bp; exposure 20.8% → 47.8% as the retired
   FOMC cut restored the October cycle. No live change; not a performance verdict.
-- **P5 multi-class and stale share counts: fixed, not yet deployed** (`b8f11366`). The cover-page
+- **P5 multi-class and stale share counts: fixed and deployed** (`b8f11366`). The cover-page
   XBRL reader resolves ERIE 46,191,610 and STZ 169,224,220 and refreshes twelve stale
   names (ABT, C, DTE, ETR, EXC, FE, HSY, HUM, JCI, LNT, NEE, SO); it refuses BRK-B, V
   and ARES as ambiguous, and ASML, NBIS, SIMO and TSM have no 10-K/10-Q cover page.
@@ -46,7 +46,11 @@
   form in the recent block no longer refetches every older block nightly
   (`89dc627b`); 36 tests in `backend/tests/test_cover_class_shares.py`; ruff
   clean; affected gate passed (128 passed, 2 skipped across the five EDGAR
-  and fundamentals suites). No live rule, grade or order changed.
+  and fundamentals suites). No live rule, grade or order changed. Deployed
+  2026-11-01T05:37:32Z in `79a4824f` (both gates passed; admission ADMITTED;
+  post-deploy ok). The deployed `edgar.py` is byte-identical to the tested
+  tree. The 11-02 nightly's `_refresh_versions` (531-name research universe,
+  which contains every repaired name) performs the store repair.
 - **Shadow identity continuation: added.** `opportunity_shadow.identity` hashes
   `edgar.py`, so the P5 change moved the source identity to `a652a8ad`. The
   full unit gate caught the drift: declared continuation rows now run from the
@@ -60,10 +64,10 @@
   first rerun; the trap is recorded in `AGENTS.md`.
 - **Next:** P1 weekly tracking is the highest-priority workstream; the rule stays frozen
   for the 252-session window. The next ordinary nightly is 11-02 (the three 10-30 orders
-  fill at that open) and its parity row is the first after the 10-31 deploy. P5 touches
+  fill at that open) and its parity row is the first after the 11-01 deploy. P5 touched
   none of the 44 bound release sources (`learned_live_holding.source_identity()` does not
-  include `edgar.py`), so its store repair needs only a deploy, not a new release, and
-  trading admission is unchanged. No new strategy, no risk-dial change, no
+  include `edgar.py`), so it needed only a deploy, not a new release, and trading
+  admission stayed ADMITTED. No new strategy, no risk-dial change, no
   earnings/intraday overlay. C5 sector rotation and positive-shock drift remain blocked
   pending an owner mandate.
 

@@ -241,8 +241,10 @@ policy to the new identity, with a pinned test. Tests:
 or prompt changed; none of the repaired names is in the live book.
 Residuals: the three refused names keep their stored count (V's is from
 2010); ASML, NBIS, SIMO and TSM file 20-F/6-K, have no 10-K/10-Q cover
-page, and keep their annual count. The store repair reaches the nightly only
-after this fix is deployed.
+page, and keep their annual count. Deployed 2026-11-01T05:37:32Z in
+`79a4824f` (both gates passed; admission ADMITTED; post-deploy ok); the
+11-02 nightly's `_refresh_versions`, which covers the 531-name research
+universe and therefore every repaired name, performs the store repair.
 
 ## Operating model for the owner
 
