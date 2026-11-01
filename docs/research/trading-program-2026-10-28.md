@@ -84,6 +84,17 @@ AI-and-software mandate; that is a deliberate bet, not alpha.
   95th percentile; reported CAGR 26.29% to 23.45%, full period 14.27% to
   13.71%. The 0.40 sensitivity is worse. Closed; not retried without a new
   pre-registration (`chase-guard-results-2026-10-28.md`).
+- **The ranked candidate list.** Residual momentum (C1), the value ×
+  residual-momentum blend (C2), 52-week-high proximity (C3) and SUE (C4) each
+  failed its pre-registered gate on the honest universe and is closed. C1
+  lost 0.0129 choosing Sharpe and deepened the drawdown by 2.1 points; C2's
+  blend landed at 0.6748 against the 0.6903 value-only arm; C3 lost 0.0062
+  Sharpe and was beaten by its own reverse-high placebo; C4's SUE rank IC was
+  negative at 20 and 60 sessions. Not retried without a new pre-registration
+  (`residual-momentum-results-2026-10-28.md`,
+  `value-momentum-blend-results-2026-10-28.md`,
+  `high-proximity-results-2026-10-28.md`, `sue-rank-ic-results-2026-10-29.md`).
+  C5 sector rotation is a separate mandate and remains owner-blocked.
 
 ## Objective
 
