@@ -185,7 +185,16 @@ async def test_a_line_says_more_than_the_name_it_was_given(llm):
 
     by_index = {find.index: find for find in FINDS}
     for line in result.lines:
-        name = by_index[line.index].name.casefold()
+        find = by_index[line.index]
+        # An undescribed find was handed a name, a date and nothing else, and
+        # the prompt tells the writer to say only that it is on. Asking for
+        # five more words here would force it to invent, which is exactly what
+        # `test_an_undescribed_find_gains_no_invented_detail` exists to catch.
+        # V4.1 follows the instruction literally - "Annual Bird Count, Sat Nov
+        # 21." - and that is the correct line, not a thin one.
+        if find.description is None:
+            continue
+        name = find.name.casefold()
         stripped = line.text.casefold().replace(name, "").strip(" .,—-")
         # A line that is the name plus punctuation has told the reader nothing
         # they could not see from the heading, and spent a line doing it.

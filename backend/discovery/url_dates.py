@@ -133,7 +133,7 @@ def _safe_date(year: int, month: int, day: int) -> date | None:
 # This exists because asking the model was not enough. The describe call already
 # says "Today is {today}. Set already_happened true when a deadline has gone by",
 # and a real digest still offered a vote that closed on August 3 to someone
-# reading it on August 10. Date arithmetic is not what a 4B model is for; it is
+# reading it on August 10. Date arithmetic is not what a model is for; it is
 # what a date library is for.
 _MONTH_INDEX = {
     month: index

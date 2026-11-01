@@ -22,7 +22,7 @@ So the prose is the model's now, and the boundary moved rather than went away:
   date-only handling was hard-won: an event listed for Oct 3 was once announced
   as "Fri Oct 2, 8:00pm" because a date with no time had been shifted into a
   zone. The model is told to reproduce that text exactly, and a functional test
-  asserts it did. A 4B model recomputing a weekday is a wrong appointment, and a
+  asserts it did. A model recomputing a weekday is a wrong appointment, and a
   wrong appointment is worse than no message;
 - **it cannot invent a find.** Lines are returned against the indices it was
   given, and an index that was not offered is dropped.
@@ -36,12 +36,15 @@ ends: warmth that survives, and hype that does not.
 
 import asyncio
 import json
+import logging
 import re
 from dataclasses import dataclass
 from typing import Any
 
 from backend.core.interfaces import TextWriter
 from backend.core.prompts import render
+
+logger = logging.getLogger(__name__)
 
 # One opening line. Long enough to say something about this batch, short enough
 # that the first find is visible without scrolling on a phone.
@@ -204,7 +207,16 @@ class DigestWriter:
                 # an entry rather than colour one.
                 if int(item["index"]) in offered
             )
-        except Exception:
+        except Exception as exc:
+            # The fallback is deliberate, but a silent one made an unreachable
+            # runtime or a schema change look like a normal assembled digest:
+            # every message still arrived, only worse, and nothing said why.
+            logger.warning(
+                "scout_digest_write_failed finds=%d error=%s",
+                len(finds),
+                exc,
+                exc_info=True,
+            )
             return None
         if not greeting or not lines:
             return None

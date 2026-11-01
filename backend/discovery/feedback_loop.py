@@ -122,6 +122,10 @@ class ReactedFind:
     # The interest that surfaced the find, or None when the find matched
     # nothing (a notable, or a near-tie the ranker declined to name).
     interest: str | None
+    # The find's novelty identity, so a disliked find can be kept out of the
+    # repeat fill by the same key novelty and familiarity use. None for a
+    # rehearsal, which has no stored identity to carry.
+    digest: str | None = None
 
 
 # The subscription that most plausibly belongs to the account holder.
@@ -207,6 +211,7 @@ async def reacted_finds(
             title=str(row.label or ""),
             reaction=str(row.reaction),
             interest=matched.get(str(row.run_id), {}).get(str(row.label or "")),
+            digest=str(row.item_digest) if row.item_digest else None,
         )
         for row in rows
     )

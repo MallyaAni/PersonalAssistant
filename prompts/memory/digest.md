@@ -10,10 +10,10 @@ has already been sent, so it never delays an answer.
 
 Why the main model and not the small one. This is prose compression, which is
 the reasoning model's job, and it is not schema-bound so it avoids the engine
-defect that pins six other callers to the 4B. More importantly a bad summary is
-worse than no summary: truncation drops material honestly, while a weak model
-invents a tidy narrative, and that invention then enters every later prompt as
-though the user had said it.
+defect that once pinned six other callers to the small model. More importantly
+a bad summary is worse than no summary: truncation drops material honestly,
+while a weak model invents a tidy narrative, and that invention then enters
+every later prompt as though the user had said it.
 
 The single most important instruction here is that it must not add anything. A
 digest is read later as a record of what happened, so a plausible detail

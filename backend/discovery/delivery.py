@@ -24,6 +24,7 @@ first releases the claim. An ambiguous failure still loses the digest on
 purpose, because the alternative is sending it twice.
 """
 
+import logging
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
@@ -36,6 +37,8 @@ from backend.discovery.feedback_loop import reacted_finds
 from backend.discovery.relevance import RankedCandidate
 from backend.discovery.runs import DiscoveryRunRepository
 from backend.discovery.subscribers import Subscriber, SubscriberRepository
+
+logger = logging.getLogger(__name__)
 
 # Permitting one address on the machine that sends, returning what happened.
 # A plain callable so this module depends on the capability rather than on the
@@ -173,18 +176,42 @@ class DigestDelivery:
         # can teach its own feedback loop: whether this is the first digest
         # they have ever received (the one moment a light invitation to react
         # belongs), and what they reacted to before (so a pick that continues
-        # a thumbs-up can say so, which shows the thumbs did something).
+        # a thumbs-up can say so, which shows the thumbs did something). The
+        # second is withheld when the text will reach anyone but the owner,
+        # for the reason set out below.
         subscribers = await self.subscribers.list_subscribers(
             user_id, deliverable_only=True
         )
         first_digest = bool(subscribers) and all(
             subscriber.delivery_count == 0 for subscriber in subscribers
         )
-        reactions = (
-            await reacted_finds(self.sent_finds.session, user_id)
-            if self.sent_finds is not None
-            else ()
-        )
+        # The digest is written once and the same text goes to every deliverable
+        # subscriber, and a subscriber is not necessarily the account holder -
+        # the same rule that keeps a guest's tapback out of the owner's
+        # interests. Reactions are the owner's private verdicts, so a line
+        # written to show they were remembered reaches a guest as though it
+        # were addressed to them, about a digest they never received. So the
+        # prose is personalised only when the owner is the only recipient;
+        # with anyone else on the list it is written plainly.
+        owner_alone = len(subscribers) == 1
+        # Reactions shape how the digest is written, not whether it is sent.
+        # This read sits on the only irreversible path in the loop, so a
+        # failure here must not cost the person their message: the same rule
+        # the module already applies to a failing subscriber.
+        try:
+            reactions = (
+                await reacted_finds(self.sent_finds.session, user_id)
+                if self.sent_finds is not None and owner_alone
+                else ()
+            )
+        except Exception as exc:
+            logger.warning(
+                "discovery_reactions_read_failed user=%s error=%s",
+                user_id,
+                exc,
+                exc_info=True,
+            )
+            reactions = ()
         bubbles = await write_bubbles(
             selected,
             writer=self.digest_writer,

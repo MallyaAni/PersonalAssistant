@@ -12,7 +12,7 @@ attention.
 worse to read and impossible to subvert, and a digest that arrives beats one
 that does not.
 
-What stays in code either way is what a 4B model must not be trusted with. The
+What stays in code either way is what the model must not be trusted with. The
 clock is the sharp one: `_format_when` distinguishes a date the source stated
 with no time from a real start, after a concert listed for Oct 3 was announced
 as "Fri Oct 2, 8:00pm" — a date shifted into a zone it was never in. The written
@@ -231,72 +231,6 @@ def _calendar_lines(
     )
     lines.append(f"Add to Google calendar: {google}")
     return lines
-
-
-async def write_message(
-    selected: tuple[RankedCandidate, ...],
-    writer: DigestWriter | None = None,
-    timezone: str = "America/New_York",
-    limit: int = MAX_EVENTS_IN_MESSAGE,
-    now: datetime | None = None,
-    calendar_base_url: str | None = None,
-) -> str | None:
-    """Return the digest text, written by the model where one is available."""
-    zone = _zone(timezone)
-    moment = now or datetime.now(UTC)
-    live = tuple(item for item in selected if not _has_passed(item, moment))
-    if not live:
-        return None
-    if writer is None:
-        return render_message(
-            selected,
-            calendar_base_url=calendar_base_url,
-            timezone=timezone,
-            limit=limit,
-            now=now,
-        )
-
-    # The facts, rendered here because the clock is not the model's to compute.
-    kept = list(live)[:limit]
-    finds = tuple(
-        Find(
-            index=position,
-            name=" ".join(item.event.title.split()),
-            description=item.event.summary,
-            when=_format_when(item.event.starts_at, zone),
-            place=item.event.place or None,
-        )
-        for position, item in enumerate(kept)
-    )
-    written = await writer.write(finds)
-    if written is None:
-        # No model answer. The assembled shape is worse to read and always
-        # arrives, which is the right way round for a weekly message.
-        return render_message(
-            selected,
-            calendar_base_url=calendar_base_url,
-            timezone=timezone,
-            limit=limit,
-            now=now,
-        )
-
-    lines = [written.greeting, ""]
-    for line in written.lines:
-        item = kept[line.index]
-        lines.append(f"• {line.text}")
-        # The source's own link, from the typed record, never from the model.
-        # Not every find has one — a trail or a park is a place rather than a
-        # page — and a line saying nothing is worse than no line.
-        clean = _clean_url(item.event.url)
-        if clean:
-            lines.append(f"  {clean}")
-        for calendar_line in _calendar_lines(item, calendar_base_url):
-            lines.append(f"  {calendar_line}")
-        lines.append("")
-    remaining = len(live) - len(written.lines)
-    if remaining > 0:
-        lines.append(f"and {remaining} more")
-    return "\n".join(lines).strip()
 
 
 def render_message(

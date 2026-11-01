@@ -506,6 +506,69 @@ async def test_a_find_sent_before_the_recency_window_is_reoffered():
         await _cleanup(user_id)
 
 
+# A thumbs-down is a verdict on the find itself. The recency window expires
+# after two weeks, and without this the same evening comes back as though
+# nobody had said anything.
+@pytest.mark.asyncio
+async def test_a_disliked_find_is_never_reoffered():
+    user_id = f"nov_{uuid.uuid4().hex[:12]}"
+    events = (_event("evt-1", "Jazz at the Green"), _event("evt-2", "Jazz brunch"))
+    try:
+        async with AsyncSessionLocal() as session:
+            sources = DiscoverySourceRepository(session)
+            source = await sources.upsert_source(
+                user_id, "ics", "https://example.org/feed.ics"
+            )
+            stub = _StubSource(source.id, events)
+            runner = DiscoveryRunner(
+                sources=sources,
+                seen=SeenItemRepository(session),
+                embeddings=_StubEmbeddings(_JAZZ_AND_BRUNCH),
+                adapter_factory=lambda _source, _budget, _timezone=None: stub,
+            )
+            profile = DiscoveryProfile(
+                interests=(
+                    Interest(
+                        id="i1", label="jazz", strength=3, provenance="user_explicit"
+                    ),
+                ),
+                localities=(),
+            )
+            first = await runner.sweep(user_id, profile, now=_NOW)
+            by_title = {
+                item.event.title: item.candidate.digest for item in first.selected
+            }
+            # Sent long enough ago to clear the recency window, and waved off.
+            session.add(
+                DiscoverySentFind(
+                    user_id=user_id,
+                    item_digest=by_title["Jazz at the Green"],
+                    message_guid=f"guid-disliked-{uuid.uuid4().hex[:8]}",
+                    sent_at=_NOW - timedelta(days=30),
+                    reaction="disliked",
+                    reacted_at=_NOW - timedelta(days=29),
+                )
+            )
+            # The other find is equally old but drew no verdict.
+            session.add(
+                DiscoverySentFind(
+                    user_id=user_id,
+                    item_digest=by_title["Jazz brunch"],
+                    message_guid=f"guid-unreacted-{uuid.uuid4().hex[:8]}",
+                    sent_at=_NOW - timedelta(days=30),
+                )
+            )
+            await session.commit()
+
+            second = await runner.sweep(user_id, profile, now=_NOW)
+
+            titles = {item.event.title for item in second.selected}
+            assert "Jazz at the Green" not in titles
+            assert "Jazz brunch" in titles
+    finally:
+        await _cleanup(user_id)
+
+
 @pytest.mark.asyncio
 async def test_an_announced_item_suppresses_a_near_duplicate():
     user_id = f"nov_{uuid.uuid4().hex[:12]}"
@@ -1040,5 +1103,8 @@ async def test_a_guests_reaction_does_not_shade_the_owners_interests():
 
         assert [find.title for find in reacted] == ["Jazz at the Green"]
         assert reacted[0].reaction == "liked"
+        # The find's own identity travels with the verdict, so the repeat fill
+        # can keep that exact find out by the key novelty uses.
+        assert reacted[0].digest == "e" * 64
     finally:
         await _cleanup(user_id)

@@ -276,9 +276,15 @@ own answers all call both "Scout".
 runs, sent finds, subscribers. *The model decides:* the search subject, the
 scoring vector, the order of a qualified shortlist, how a find reads. *Code
 decides:* what qualifies. *You control:* interests and strength, home versus
-current place, sources, subscribers, thumbs-up/down (recorded, deliberately
-not yet fed back into ranking), "already known" dismissals, export and
-delete-all.
+current place, sources, subscribers, thumbs-up/down, "already known"
+dismissals, export and delete-all. Thumbs-up/down are read back every sweep as
+statements the aimer, reranker and describer weigh, and their net sign shades
+each interest's stored strength rather than overwriting it. A thumbs-down also
+keeps that find out of the repeat fill, so it cannot return when the recency
+window expires. The digest's prose is written once and sent to every deliverable
+subscriber, so it shows the owner what it remembered only when they are the only
+recipient; a digest that also reaches guests is written plainly, because those
+verdicts are the owner's and the same text arrives on every phone.
 
 ### Scout, second shape - scheduled tasks and skills ([design](TASKS_ARCHITECTURE.md), [diagram](diagrams/scheduled-tasks-subsystem.svg))
 

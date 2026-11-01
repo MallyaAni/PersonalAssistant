@@ -16,6 +16,7 @@ from sqlalchemy import delete
 os.environ["DEBUG"] = "false"
 os.environ.setdefault("SECRET_KEY", "test-secret-key-only-for-testing")
 
+from backend.agents.scout.digesting import DigestWriter
 from backend.database.session import AsyncSessionLocal
 from backend.discovery.channels import (
     Attachment,
@@ -28,6 +29,8 @@ from backend.discovery.channels import (
 from backend.discovery.delivery import DigestDelivery
 from backend.discovery.digest import render_message, write_bubbles
 from backend.discovery.events import DiscoveredEvent
+from backend.discovery.feedback import SentFindRepository
+from backend.discovery.feedback_loop import ReactedFind
 from backend.discovery.novelty import ScoredCandidate
 from backend.discovery.relevance import RankedCandidate
 from backend.discovery.subscribers import SubscriberRepository
@@ -590,3 +593,151 @@ def test_an_undated_digest_explains_the_uncertainty_naturally():
     assert message.startswith("Scout · ")
     assert "I found this, but couldn't confirm the date:" in message
     assert "Worth a look" not in message
+
+
+# A reaction read is personalisation, not a precondition for sending. It sits
+# on the only irreversible path in the loop, so a failure there must cost the
+# shade on the prose and never the message itself.
+@pytest.mark.asyncio
+async def test_a_reaction_read_failure_does_not_stop_the_digest(monkeypatch):
+    user_id = f"sub_{uuid.uuid4().hex[:12]}"
+    try:
+        async with AsyncSessionLocal() as session:
+            repo = SubscriberRepository(session)
+            await repo.enroll(user_id, "imessage", "+15550100", consented=True)
+            channel = _RecordingChannel()
+
+            async def _broken(*args, **kwargs):
+                raise RuntimeError("reaction table unavailable")
+
+            monkeypatch.setattr("backend.discovery.delivery.reacted_finds", _broken)
+            delivery = DigestDelivery(
+                repo,
+                {"imessage": channel},
+                sent_finds=SentFindRepository(session),
+            )
+
+            report = await delivery.deliver(
+                user_id, (_ranked("Jazz"),), _BASE, now=_NOW
+            )
+
+            assert report.delivered == 1
+            assert len(channel.sent) == 1
+            assert "Jazz" in channel.sent[0][1]
+    finally:
+        await _cleanup(user_id)
+
+
+# Capture what the writer was told about the reader's reactions.
+#
+# The digest is written once and the same text goes to every deliverable
+# subscriber, so the question these two tests answer is who is allowed to hear
+# it. `write_bubbles` is wrapped rather than the model, because what is being
+# pinned is the plumbing: the prose path is exercised elsewhere.
+def _capture_reactions(monkeypatch) -> list[tuple[object, ...]]:
+    seen: list[tuple[object, ...]] = []
+    real = write_bubbles
+
+    async def _wrapped(*args, **kwargs):
+        seen.append(kwargs.get("reactions", ()))
+        return await real(*args, **kwargs)
+
+    monkeypatch.setattr("backend.discovery.delivery.write_bubbles", _wrapped)
+    return seen
+
+
+# The owner alone is the only reader, so the digest may show them it remembered.
+@pytest.mark.asyncio
+async def test_the_owner_alone_gets_a_digest_that_remembers_their_reactions(
+    monkeypatch,
+):
+    user_id = f"sub_{uuid.uuid4().hex[:12]}"
+    seen = _capture_reactions(monkeypatch)
+    try:
+        async with AsyncSessionLocal() as session:
+            repo = SubscriberRepository(session)
+            await repo.enroll(user_id, "imessage", "+15550100", consented=True)
+
+            async def _reacted(*_args, **_kwargs):
+                return (
+                    ReactedFind(
+                        title="Winery evening", reaction="liked", interest="wine"
+                    ),
+                )
+
+            monkeypatch.setattr("backend.discovery.delivery.reacted_finds", _reacted)
+            delivery = DigestDelivery(
+                repo,
+                {"imessage": _RecordingChannel()},
+                sent_finds=SentFindRepository(session),
+            )
+
+            await delivery.deliver(user_id, (_ranked("Jazz"),), _BASE, now=_NOW)
+
+            assert len(seen) == 1
+            assert [find.title for find in seen[0]] == ["Winery evening"]
+    finally:
+        await _cleanup(user_id)
+
+
+# A guest reads the same text the owner does. The owner's verdicts are theirs,
+# and a line written to show they were remembered reads to a guest as addressed
+# to the wrong person, about a digest they never received - so it is withheld
+# rather than reworded.
+@pytest.mark.asyncio
+async def test_a_digest_guests_receive_carries_no_reaction_of_the_owners(
+    monkeypatch,
+):
+    user_id = f"sub_{uuid.uuid4().hex[:12]}"
+    seen = _capture_reactions(monkeypatch)
+    try:
+        async with AsyncSessionLocal() as session:
+            repo = SubscriberRepository(session)
+            await repo.enroll(user_id, "imessage", "+15550100", consented=True)
+            await repo.enroll(user_id, "imessage", "+15550101", consented=True)
+
+            async def _reacted(*_args, **_kwargs):
+                return (
+                    ReactedFind(
+                        title="Winery evening", reaction="liked", interest="wine"
+                    ),
+                )
+
+            monkeypatch.setattr("backend.discovery.delivery.reacted_finds", _reacted)
+            channel = _RecordingChannel()
+            delivery = DigestDelivery(
+                repo,
+                {"imessage": channel},
+                sent_finds=SentFindRepository(session),
+            )
+
+            report = await delivery.deliver(
+                user_id, (_ranked("Jazz"),), _BASE, now=_NOW
+            )
+
+            assert report.delivered == 2
+            assert len(seen) == 1
+            assert seen[0] == ()
+    finally:
+        await _cleanup(user_id)
+
+
+# A writer that fails must not lose the digest. The assembled shape is the
+# fallback the written path was built to fall back to, and this pins the
+# behaviour so a future writer change cannot turn a runtime fault into silence.
+@pytest.mark.asyncio
+async def test_a_writer_failure_falls_back_to_the_assembled_message():
+    class _BrokenWriter:
+        def chat(self, *args, **kwargs):
+            raise RuntimeError("model unreachable")
+
+    bubbles = await write_bubbles(
+        (_ranked("Jazz at the Green"),),
+        writer=DigestWriter(_BrokenWriter()),
+        timezone="America/New_York",
+        now=_NOW,
+        calendar_base_url=_BASE,
+    )
+
+    assert len(bubbles) == 1
+    assert "Jazz at the Green" in bubbles[0].text

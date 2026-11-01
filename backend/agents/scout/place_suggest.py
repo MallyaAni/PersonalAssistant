@@ -18,7 +18,7 @@ The local model has neither problem. It knows world geography, it costs no
 egress, and it answers the actual question: given some letters, which real
 places might this be, and what tells them apart.
 
-What measurement changed, all against the live 4B, greedily:
+What measurement changed, all against the live model at the time (a 4B), greedily:
 
 - **it pads.** Asked for "up to six", it returned exactly six every time,
   inventing "Tuscaloosa, Alaska", "Tuscaloosa, California" and "Silver Spring,

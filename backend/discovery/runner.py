@@ -47,14 +47,16 @@ from backend.discovery.digest import MAX_EVENTS_IN_MESSAGE
 from backend.discovery.errors import DiscoveryError
 from backend.discovery.events import DiscoveredEvent, EventSource, FeedError
 from backend.discovery.familiarity import FamiliarItemRepository, FamiliarityFilter
+from backend.discovery.feedback import DISLIKED
 from backend.discovery.feedback_loop import (
     MAX_REPEAT_SENDS,
     REPEAT_RECENCY_DAYS,
+    ReactedFind,
     adjusted_strengths,
     last_send_dates,
     reacted_finds,
-    send_counts,
     reaction_statements,
+    send_counts,
 )
 from backend.discovery.fetching import (
     DEFAULT_RUN_REQUEST_BUDGET,
@@ -440,8 +442,8 @@ class DiscoveryRunner:
         structured = structured_writer or writer
         # Only the selected finds are described, so the model runs a handful of
         # times per sweep rather than once per candidate. The best prose model
-        # writes first - this text reaches a person's phone, and a 4B's
-        # descriptions read small - with its answer held to the schema by
+        # writes first - this text reaches a person's phone, and a weaker
+        # model's descriptions read thin - with its answer held to the schema by
         # validation in the describer; the grammar engine is the fallback for
         # an answer that does not survive it, and the judge of the focused
         # location question.
@@ -546,12 +548,24 @@ class DiscoveryRunner:
         # What they reacted to is a fact about them like any approved
         # statement, and the model stages weigh it as one: a thumbs-down on
         # the winery evening is judgement no strength arithmetic reaches.
-        reacted = await reacted_finds(self.seen.session, user_id)
+        # A reaction read is personalisation, not safety: losing it must not
+        # lose the sweep, and the fallback is logged so a silently generic
+        # digest is distinguishable from a genuinely unpersonalised one.
+        try:
+            reacted = await reacted_finds(self.seen.session, user_id)
+        except Exception as exc:
+            logger.warning(
+                "discovery_reactions_read_failed user=%s error=%s",
+                user_id,
+                exc,
+                exc_info=True,
+            )
+            reacted = ()
         if reacted:
             context = PersonalContext(
                 statements=context.statements + reaction_statements(reacted)
             )
-        aim = await self._aim(profile, context, primary)
+        aim = await self._aim(user_id, profile, context, primary)
 
         events = events + await self._search_events(user_id, profile, budget, aim, moment)
 
@@ -606,6 +620,7 @@ class DiscoveryRunner:
         # rest fills behind it, and nothing below the ranker's floor is added.
         interest_vectors = ranker.interest_vectors
         ordered = await self._order(
+            user_id,
             shortlist,
             context,
             moment,
@@ -618,7 +633,7 @@ class DiscoveryRunner:
         # A thin novel side does not mean a silent day: fill what is left with
         # the best still-upcoming finds this account was already offered.
         selected = await self._repeat_fill(
-            user_id, selected, ranker, limit, moment
+            user_id, selected, ranker, limit, reacted, moment
         )
 
         # A sweep may rank wider than a message may carry, but only what the
@@ -772,7 +787,7 @@ class DiscoveryRunner:
             # ask — "Today is {today}, set already_happened when a deadline has
             # gone by" — and a real digest still offered a vote that closed on
             # August 3 to someone reading it on August 10. A stated deadline is
-            # arithmetic, and arithmetic belongs here rather than in a 4B model.
+            # arithmetic, and arithmetic belongs here rather than in a model.
             if deadline_has_passed(source, today) or deadline_has_passed(
                 event.summary, today
             ):
@@ -880,7 +895,13 @@ class DiscoveryRunner:
             return PersonalContext()
         try:
             return await self.personal.read(user_id, now=now)
-        except Exception:
+        except Exception as exc:
+            logger.warning(
+                "discovery_personal_context_failed user=%s error=%s",
+                user_id,
+                exc,
+                exc_info=True,
+            )
             return PersonalContext()
 
     # Aim every interest at this person, or leave them as bare labels. The
@@ -888,6 +909,7 @@ class DiscoveryRunner:
     # searched and ranked.
     async def _aim(
         self,
+        user_id: str,
         profile: DiscoveryProfile,
         context: PersonalContext,
         primary: Locality | None,
@@ -900,7 +922,13 @@ class DiscoveryRunner:
             place = f"{place}, {primary.region}"
         try:
             return await self.aiming.plan(labels, context, place)
-        except Exception:
+        except Exception as exc:
+            logger.warning(
+                "discovery_aim_failed user=%s error=%s",
+                user_id,
+                exc,
+                exc_info=True,
+            )
             return SweepAim.from_labels(labels)
 
     # Order the shortlist against approved memory. Returns the full order, not
@@ -910,6 +938,7 @@ class DiscoveryRunner:
     # unavailable this is the plain deterministic order.
     async def _order(
         self,
+        user_id: str,
         shortlist: tuple[RankedCandidate, ...],
         context: PersonalContext,
         now: datetime,
@@ -922,7 +951,13 @@ class DiscoveryRunner:
             return await self.reranker.order(
                 shortlist, context, now=now, limit=limit, undated_limit=undated_limit
             )
-        except Exception:
+        except Exception as exc:
+            logger.warning(
+                "discovery_memory_rerank_failed user=%s error=%s",
+                user_id,
+                exc,
+                exc_info=True,
+            )
             return shortlist
 
     # Fill a thin digest with the best still-upcoming finds already suggested,
@@ -937,12 +972,17 @@ class DiscoveryRunner:
     # is empty most days and the fill supplies every line. What the person then
     # receives is the same handful of events for as long as they remain
     # upcoming, which reads as an assistant that has stopped looking.
+    #
+    # A find the person gave a thumbs-down is excluded outright, whatever its
+    # send count or recency: that verdict is about the find itself, and unlike
+    # the other two bounds it does not expire.
     async def _repeat_fill(
         self,
         user_id: str,
         selected: tuple[RankedCandidate, ...],
         ranker: RelevanceRanker,
         limit: int,
+        reacted: tuple[ReactedFind, ...],
         now: datetime | None = None,
     ) -> tuple[RankedCandidate, ...]:
         # The fill is only needed while the digest has room. A message carries
@@ -953,7 +993,13 @@ class DiscoveryRunner:
         moment = now or datetime.now(UTC)
         try:
             repeats = await self.seen.announced_candidates(user_id, now=moment)
-        except Exception:
+        except Exception as exc:
+            logger.warning(
+                "discovery_repeat_candidates_failed user=%s error=%s",
+                user_id,
+                exc,
+                exc_info=True,
+            )
             return selected
         if not repeats:
             return selected
@@ -962,23 +1008,47 @@ class DiscoveryRunner:
         # indexed column, against a table that only this fill needs to consult.
         try:
             already_sent = await send_counts(self.seen.session, user_id)
-        except Exception:
+        except Exception as exc:
             # The cap is a quality bound, not a safety one. Losing it must not
             # cost the person their digest, so an unreadable table falls back to
             # the unbounded behaviour rather than to an empty fill.
+            logger.warning(
+                "discovery_send_counts_failed user=%s error=%s",
+                user_id,
+                exc,
+                exc_info=True,
+            )
             already_sent = {}
         # Recency is read the same way and fails the same way: a find sent
         # within the recency window is not re-offered even if it has not hit its
         # cap, so the same event does not come back on consecutive quiet days.
         try:
             last_sent = await last_send_dates(self.seen.session, user_id)
-        except Exception:
+        except Exception as exc:
+            logger.warning(
+                "discovery_last_send_dates_failed user=%s error=%s",
+                user_id,
+                exc,
+                exc_info=True,
+            )
             last_sent = {}
         window = moment - timedelta(days=REPEAT_RECENCY_DAYS)
+        # A thumbs-down is a verdict on the find, not only on its interest.
+        # Without this, the recency window expires and the same evening comes
+        # back as though nobody had said anything - the one piece of feedback
+        # the loop collects that can be read unambiguously. A disliked find
+        # with no digest (a rehearsal, or a row written before identities
+        # existed) cannot be matched and is left alone rather than guessed at.
+        disliked = {
+            find.digest
+            for find in reacted
+            if find.reaction == DISLIKED and find.digest is not None
+        }
         candidates = tuple(
             c
             for c in repeats
             if c.digest not in chosen
+            and c.digest not in disliked
             and already_sent.get(c.digest, 0) < MAX_REPEAT_SENDS
             and not (
                 last_sent.get(c.digest) is not None
