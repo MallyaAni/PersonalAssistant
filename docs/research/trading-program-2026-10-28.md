@@ -84,6 +84,15 @@ AI-and-software mandate; that is a deliberate bet, not alpha.
   95th percentile; reported CAGR 26.29% to 23.45%, full period 14.27% to
   13.71%. The 0.40 sensitivity is worse. Closed; not retried without a new
   pre-registration (`chase-guard-results-2026-10-28.md`).
+- **Statement reading (A2).** The anonymised eight-quarter net-income direction
+  failed its pre-registered gate on coverage and stance significance: the model
+  committed on 73.0% of 378 labelled names against an 80% gate, and its 67.4%
+  accuracy was below the 71.7% majority baseline. The 20-session residual
+  stance's mean daily IC was 0.0177 against 0.02, Newey–West t 0.68 against
+  2.0, and the weekly bootstrap lower bound was −0.0222. The calm window was
+  +0.0423 and the earnings window −0.0411; the book relevance check passed at
+  0.0690 but is survivor-biased and not significant. Closed; not retried
+  without a new pre-registration (`statement-reading-results-2026-11-01.md`).
 - **The ranked candidate list.** Residual momentum (C1), the value ×
   residual-momentum blend (C2), 52-week-high proximity (C3) and SUE (C4) each
   failed its pre-registered gate on the honest universe and is closed. C1

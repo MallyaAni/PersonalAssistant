@@ -1,5 +1,36 @@
 # Next session
 
+## CURRENT 2026-11-01 (later) — A2 statement reading failed and closed; P1 forward record is the workstream
+
+- **A2 statement reading: failed and closed.** The anonymised eight-quarter packet
+  produced a committed direction on 73.0% of 378 labelled names (102 `uncertain`),
+  below the 80% coverage gate; accuracy was 67.4% (186/276), above chance
+  (binomial p 5.1e-7 vs 52.7%) and above the 54.7% label-shuffle placebo p95, but
+  below the 71.7% majority baseline. The PIT sign stance's mean daily 20-session
+  residual IC was 0.0177 against 0.02, Newey–West t 0.68 against 2.0, weekly
+  bootstrap 95% lower bound −0.0222 against 0; the within-day placebo p95 was
+  0.0138. The confidence-weighted sensitivity (0.0235) and the strict-alignment
+  sensitivity (0.0171) do not turn the failed primary into a pass. The calm window
+  (2026-08-03..2026-09-15) was +0.0423 over 31 sessions; the earnings window
+  (2026-09-16..2026-10-02) was −0.0411 over 13. The book relevance check passed at
+  0.0690 (survivor-biased, NW t 1.12, bootstrap lower −0.0099). The pre-cutoff
+  accuracy at 2024-08-01 was 67.8% versus 67.4% post-cutoff, so the lookahead
+  diagnostic shows no memorisation advantage. G3, G4 and G5 pass; the verdict is
+  **FAIL** on G1 coverage and G2 significance. Not adopted, not retried without a
+  new pre-registration (`36eddfc8` pre-registration,
+  `docs/research/statement-reading-results-2026-11-01.md`,
+  `docs/research/scorecards/statement-reading/result.json`).
+- **Run and verification.** 1,374 unique packets; the first pass was stopped at the
+  2-hour background limit after 930 calls and the resume completed 385 calls from
+  the cache, 0 failures. The unit tests are 20 passed; ruff clean; the functional
+  prompt test passed in the Docker gate. No live rule, grade, order, prompt or
+  risk-dial change; the A2 module is research-only.
+- **Next:** P1 weekly tracking is the highest-priority workstream; the rule stays
+  frozen for the 252-session window. The next ordinary nightly is 11-02 (the three
+  10-30 orders fill at that open) and its parity row is the first after the 11-01
+  deploy. C5 sector rotation and positive-shock drift remain blocked pending an
+  owner mandate.
+
 ## CURRENT 2026-10-31 (later) — four-step path closed; P1 forward record is the workstream
 
 - **Step 2, sector cap: failed and closed.** The pre-registered cap never binds on the
