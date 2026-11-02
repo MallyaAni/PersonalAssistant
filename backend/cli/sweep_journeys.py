@@ -117,6 +117,16 @@ JOURNEYS = [
             must_not=(),
             holds=("The reply says it has no record of the reader mentioning a dentist, or asks what they would like remembered.",),
             does_not_hold=("The reply invents a detail about a dentist appointment as if the reader had mentioned it.",)),
+    # Scout is push-only: its digest goes to a phone and never enters the
+    # transcript, so "what did Scout send me" must read the sent record rather
+    # than the conversation. A fresh sweep account has been sent nothing, and
+    # that empty path is walked here over HTTP - the honest answer is that
+    # there is no digest on record. The populated read is pinned by
+    # test_scout_digest_tool.py, and the routing and reply context by
+    # functional/test_scout_digest_behaviour.py.
+    Journey("what Scout already sent", "what did scout send me?", ("What Scout sent",),
+            holds=("The reply says Scout has no digest on record for them, or that it has not sent them one.",),
+            does_not_hold=("The reply invents finds, events, or recommendations Scout supposedly sent.",)),
     Journey("schedule a reminder", "remind me tomorrow at 9am to call the bank", ("Scheduled tasks",),
             holds=("The reply confirms a reminder for tomorrow at 9 am.",)),
     # The plan the assistant just wrote, asked for as a file. Live on
