@@ -41,6 +41,9 @@ does the P/E-history tilt add return over the same rule without it?
   unchanged.
 - 20 offsets, costs 10 and 25 bp, through `market_pit_scorecard.build`, the
   same sessions, membership mask and controls as the published scorecards.
+- Run script: `~/dsv41/universe/joint_config.py`; it writes
+  `joint_<arm>.json` and `joint_config_summary.json` under
+  `~/dsv41/universe/`.
 
 ## Arms
 
