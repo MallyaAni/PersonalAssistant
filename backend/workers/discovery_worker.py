@@ -223,6 +223,10 @@ class DiscoveryWorker:
                     # already announced finds it never sent.
                     await session.commit()
 
+                # The message is written for this person, so it is handed the
+                # same approved context the sweep aimed with. Delivery withholds
+                # it when anyone but the owner is on the recipient list.
+                person_context = (await runner.personal_context(user_id)).render()
                 report = await DigestDelivery(
                     SubscriberRepository(session),
                     get_discovery_channels(),
@@ -240,6 +244,7 @@ class DiscoveryWorker:
                     scheduled_for=run.get("scheduled_for"),
                     locality=_locality_for(profile),
                     notable=notable,
+                    person_context=person_context,
                 )
                 await runs.mark_ready(run_id, self.worker_id)
 

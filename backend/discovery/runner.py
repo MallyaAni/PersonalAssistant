@@ -884,6 +884,15 @@ class DiscoveryRunner:
             collected.extend(events)
         return tuple(collected), tuple(failed)
 
+    # The same approved context the sweep aims with, for prose written about
+    # this person. Public because the delivery path reads it too: the digest
+    # writer is handed what the sweep already knows rather than a second
+    # reading that could disagree with it.
+    async def personal_context(
+        self, user_id: str, now: datetime | None = None
+    ) -> PersonalContext:
+        return await self._personal_context(user_id, now or datetime.now(UTC))
+
     # What this account has approved being known by, or nothing. A sweep must
     # never fail because memory could not be read, and with both personalizing
     # stages switched off there is nothing to read it for.

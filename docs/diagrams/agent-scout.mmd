@@ -23,6 +23,7 @@ flowchart TB
     Ranking --> Precision[MiniLM cross-encoder<br/>reads each pair together]
     Precision --> Reorder[DeepSeek V4 Flash<br/>orders the shortlist]
     Facts --> Reorder
+    Facts -->|owner alone| Message
     Reorder --> Poster[DeepSeek V4.1 vision<br/>captions a selected find's poster]
     Poster --> Description[DeepSeek V4 Flash<br/>writes descriptions]
     Description --> Message[DeepSeek V4 Flash<br/>writes the message]

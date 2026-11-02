@@ -266,6 +266,46 @@ async def test_the_first_digest_invites_a_reaction(llm):
     assert "thumb" in result.greeting.casefold(), result.greeting
 
 
+# What the person told the assistant is what makes the message theirs.
+# Delivery withholds the block when a guest is on the recipient list, so the
+# property here is that it changes the writing rather than being carried along
+# unused - and that it colours the message instead of being recited back.
+PERSON = (
+    "1. They are a devoted jazz listener and go to small seated gigs most weeks.\n"
+    "2. They are recovering from a knee injury and cannot stand for long."
+)
+
+
+async def test_what_they_told_the_assistant_shapes_the_message(llm):
+    plain = await DigestWriter(llm).write(FINDS)
+    personal = await DigestWriter(llm).write(FINDS, person_context=PERSON)
+
+    assert plain is not None
+    assert personal is not None
+    plain_text = " ".join([plain.greeting] + [line.text for line in plain.lines])
+    everything = " ".join(
+        [personal.greeting] + [line.text for line in personal.lines]
+    )
+    # Same finds, a different reader. The block is the only difference in the
+    # input, so a message that came back word-for-word identical was written
+    # without it.
+    assert everything != plain_text, everything
+    # It is context, not a recital: the message never announces that it keeps
+    # notes about them, which is what turns warmth into surveillance. How
+    # deeply the facts are woven in is a reading judgement - the model
+    # paraphrases ("plenty of standing still ... should suit you fine") rather
+    # than repeating the record, which is the behaviour wanted.
+    lowered = everything.casefold()
+    for meta in ("you told me", "i know you", "your profile", "notes about you"):
+        assert meta not in lowered, everything
+    # And the facts that must survive still do. A block about the reader is
+    # the kind of extra context that could pull attention off the clock.
+    joined = " ".join(line.text for line in personal.lines)
+    for find in FINDS:
+        if find.when:
+            assert find.when in joined, f"{find.when!r} missing from: {joined}"
+
+
 async def test_a_later_digest_never_mentions_the_machinery(llm):
     from backend.discovery.feedback_loop import ReactedFind
 

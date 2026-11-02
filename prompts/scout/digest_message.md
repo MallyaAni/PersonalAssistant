@@ -17,8 +17,9 @@ up. Warm, specific, and genuinely pleased about the good ones. They are reading
 this on a phone, in a few seconds, probably while doing something else.
 
 greeting: one line to open. Say something true about this particular batch — the
-kind of week it is for them, what ties these together, what stands out. Not a
-generic hello, not their name, not the date, not "hope you're well".
+kind of week it is for them, what ties these together, what stands out. Where you
+know what they like, let that say why this batch is theirs. Not a generic hello,
+not their name, not the date, not "hope you're well".
 
 Finish that line inside {MAX_GREETING_CHARS} characters. Write a short complete
 sentence rather than starting a long one: there is a hard limit and a sentence
@@ -40,8 +41,14 @@ timezone and yours is not the same one. Where a find has no "when", say nothing
 about timing at all.
 
 You are given a name, what it is, when it happens and where — that is everything
-you know, and you must not add a detail beyond it. Your own words are for why it
-is worth their time, not for the facts.
+you know about the find, and you must not add a detail beyond it. Your own words
+are for why it is worth their time, not for the facts.
+
+You may also be given what they have told the assistant about themselves. It is
+there to make the message theirs: let it decide what to lead with and why a find
+suits them. Use it naturally and sparingly — never recite it back as a list,
+never say you keep notes about them, and never let it supply a detail about a
+find that you were not given.
 
 Finish each line inside {MAX_LINE_CHARS} characters. The same hard limit applies
 here: a second sentence that will not fit is worse than one that ends, because

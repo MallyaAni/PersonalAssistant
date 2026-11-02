@@ -88,6 +88,9 @@ async def write_bubbles(
     now: datetime | None = None,
     first_digest: bool = False,
     reactions: tuple[object, ...] = (),
+    # What the reader told the assistant about themselves. Supplied only when
+    # the message is theirs alone; delivery is where that is decided.
+    person_context: str = "",
     calendar_base_url: str | None = None,
     *,
     notable: tuple[RankedCandidate, ...] = (),
@@ -119,7 +122,12 @@ async def write_bubbles(
     written = (
         None
         if writer is None or not kept
-        else await writer.write(finds, first_digest=first_digest, reactions=reactions)
+        else await writer.write(
+            finds,
+            first_digest=first_digest,
+            reactions=reactions,
+            person_context=person_context,
+        )
     )
     if written is None:
         # No model. Each find still gets its own bubble, because the feedback

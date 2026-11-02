@@ -763,6 +763,102 @@ async def test_a_guest_who_is_the_only_recipient_gets_no_reaction_prose(monkeypa
         await _cleanup(user_id)
 
 
+# Capture the personal context the writer was given. Same plumbing question as
+# the reaction capture above: approved memory is the owner's record, so prose
+# written from it may reach the owner and no one else.
+def _capture_person_context(monkeypatch) -> list[str]:
+    seen: list[str] = []
+    real = write_bubbles
+
+    async def _wrapped(*args, **kwargs):
+        seen.append(kwargs.get("person_context", ""))
+        return await real(*args, **kwargs)
+
+    monkeypatch.setattr("backend.discovery.delivery.write_bubbles", _wrapped)
+    return seen
+
+
+# The owner alone is the only reader, so the message may be written from what
+# they told the assistant about themselves.
+@pytest.mark.asyncio
+async def test_the_owner_alone_gets_a_digest_written_from_their_memory(monkeypatch):
+    user_id = f"sub_{uuid.uuid4().hex[:12]}"
+    seen = _capture_person_context(monkeypatch)
+    try:
+        async with AsyncSessionLocal() as session:
+            repo = SubscriberRepository(session)
+            await repo.enroll(user_id, "imessage", "+15550100", consented=True)
+            delivery = DigestDelivery(repo, {"imessage": _RecordingChannel()})
+
+            await delivery.deliver(
+                user_id,
+                (_ranked("Jazz"),),
+                _BASE,
+                now=_NOW,
+                person_context="1. They are a devoted jazz listener.",
+            )
+
+            assert seen == ["1. They are a devoted jazz listener."]
+    finally:
+        await _cleanup(user_id)
+
+
+# A guest reads the same text the owner does, and approved memory is a record
+# of the owner's life rather than a fact about the guest. It is withheld, not
+# reworded.
+@pytest.mark.asyncio
+async def test_a_digest_guests_receive_carries_no_personal_context(monkeypatch):
+    user_id = f"sub_{uuid.uuid4().hex[:12]}"
+    seen = _capture_person_context(monkeypatch)
+    try:
+        async with AsyncSessionLocal() as session:
+            repo = SubscriberRepository(session)
+            await repo.enroll(user_id, "imessage", "+15550100", consented=True)
+            await repo.enroll(user_id, "imessage", "+15550101", consented=True)
+            delivery = DigestDelivery(repo, {"imessage": _RecordingChannel()})
+
+            report = await delivery.deliver(
+                user_id,
+                (_ranked("Jazz"),),
+                _BASE,
+                now=_NOW,
+                person_context="1. They are a devoted jazz listener.",
+            )
+
+            assert report.delivered == 2
+            assert seen == [""]
+    finally:
+        await _cleanup(user_id)
+
+
+# One recipient is not the same as the owner being the recipient: an owner who
+# revoked leaves a guest alone on the list, and memory written for the owner
+# would then be addressed to that guest.
+@pytest.mark.asyncio
+async def test_a_guest_who_is_the_only_recipient_gets_no_personal_context(monkeypatch):
+    user_id = f"sub_{uuid.uuid4().hex[:12]}"
+    seen = _capture_person_context(monkeypatch)
+    try:
+        async with AsyncSessionLocal() as session:
+            repo = SubscriberRepository(session)
+            owner = await repo.enroll(user_id, "imessage", "+15550100", consented=True)
+            await repo.enroll(user_id, "imessage", "+15550101", consented=True)
+            assert await repo.revoke(user_id, uuid.UUID(owner.id))
+            delivery = DigestDelivery(repo, {"imessage": _RecordingChannel()})
+
+            await delivery.deliver(
+                user_id,
+                (_ranked("Jazz"),),
+                _BASE,
+                now=_NOW,
+                person_context="1. They are a devoted jazz listener.",
+            )
+
+            assert seen == [""]
+    finally:
+        await _cleanup(user_id)
+
+
 # A writer that fails must not lose the digest. The assembled shape is the
 # fallback the written path was built to fall back to, and this pins the
 # behaviour so a future writer change cannot turn a runtime fault into silence.

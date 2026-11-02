@@ -166,6 +166,10 @@ class DigestDelivery:
         # so a delivery that omits them leaves finds permanently suppressed
         # without ever having been shown.
         notable: tuple[RankedCandidate, ...] = (),
+        # What the owner told the assistant about themselves, read from the
+        # same approved context the sweep aims with. Used only when the owner
+        # is the sole recipient; see below.
+        person_context: str = "",
     ) -> DeliveryReport:
         # Each dated find carries the two ways to add it to a calendar — a
         # native .ics (the "Add to iMessage calendar" tap) and a Google
@@ -188,16 +192,22 @@ class DigestDelivery:
         # The digest is written once and the same text goes to every deliverable
         # subscriber, and a subscriber is not necessarily the account holder -
         # the same rule that keeps a guest's tapback out of the owner's
-        # interests. Reactions are the owner's private verdicts, so a line
-        # written to show they were remembered reaches a guest as though it
-        # were addressed to them, about a digest they never received. So the
-        # prose is personalised only when the owner is the only recipient;
-        # with anyone else on the list it is written plainly.
+        # interests. Reactions are the owner's private verdicts, and approved
+        # memory is a record of the owner's life, so prose written to show
+        # either reaches a guest as though it were addressed to them, about a
+        # digest they never received. So the prose is personalised only when
+        # the owner is the only recipient; with anyone else on the list it is
+        # written plainly.
         # One recipient is not the same as the owner being the recipient: an
         # owner who revoked leaves a guest as the only deliverable subscriber,
         # and prose written from the owner's reactions would then be addressed
         # to that guest. Both conditions are required.
         owner_alone = len(subscribers) == 1 and subscribers[0].is_owner
+        # Withheld rather than reworded, for the reason above. The guard is
+        # here rather than at the call site because this is where the
+        # recipient list is known, and a caller that forgets it must not be
+        # able to leak the owner's memory to a guest.
+        person_context = person_context if owner_alone else ""
         # Reactions shape how the digest is written, not whether it is sent.
         # This read sits on the only irreversible path in the loop, so a
         # failure here must not cost the person their message: the same rule
@@ -223,6 +233,7 @@ class DigestDelivery:
             now=now,
             first_digest=first_digest,
             reactions=reactions,
+            person_context=person_context,
             calendar_base_url=calendar_base_url,
             notable=notable,
         )
