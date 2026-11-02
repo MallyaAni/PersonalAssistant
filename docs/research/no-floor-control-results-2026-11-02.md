@@ -62,9 +62,9 @@ arms), 25 bp:
 - Per-offset CAGR: the floor arm is above the no-floor arm in **19 of 20
   offsets**, median +0.341 points, worst -0.049, best +0.602.
 - The floor binds on **944 of 2,012 sessions in 2016-2023**, with a maximum
-  daily weight difference of 3.24%. The +0.303 bp/day mean over the window's
-  2,012 sessions compounds to about +6.1% cumulative, which is why the
-  2016-2023 CAGR gain is +0.428 points.
+  daily return difference of 3.24%. The +0.303 bp/day mean over the window's
+  2,012 sessions sums to about +6.1% cumulative, which is why the 2016-2023
+  CAGR gain is +0.428 points.
 - In **2024-2026 the floor never binds**: the two arms hold identical weights
   to machine precision (47 sessions differ by at most 1.0e-11 in daily return;
   the paired mean is 6e-12 bp/day). The 2024-2026 floor effect is exactly zero
