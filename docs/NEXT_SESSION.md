@@ -1,5 +1,47 @@
 # Next session
 
+## CURRENT 2026-11-02 — A hold installed and deployed; forward record restarts under /2
+
+- **Installed rule.** `grade-led-leader-weight/2` admits at A or better and holds
+  while it keeps A; exit below A. `ENTRY_GRADE = 2`, `HOLD_GRADE = 2`,
+  `exit_letter = "A"`, `MIN_TRADE = 0.01`. Every other parameter is unchanged:
+  63-session leader tilt 0.5, EWMA-20 volatility target 0.25 with exposure floor
+  0.5, 25% per-name cap, P/E-history tilt 0.5, valuation analyst at three votes,
+  next-open execution.
+- **Evidence.** Honest S&P 500 point-in-time universe at 25 bp, 20 offsets,
+  medians: A hold 17.1% CAGR, -34.7% worst drawdown, 1.00 Sharpe; B hold 14.4%,
+  -38.3%, 0.87; SPY 13.9%, -33.7%, 0.83; QQQ 19.0%, -35.1%, 0.91. The A hold is
+  the only tested arm reaching the program's Sharpe-at-least-1.0 objective on
+  that universe; it beats SPY on CAGR and Sharpe while its worst drawdown is 1.0
+  point deeper, and trails QQQ's raw CAGR while beating QQQ's Sharpe and
+  drawdown. On the live 94-name book it gives up 1.6 points of CAGR (25.0%
+  against 26.6%) at the same Sharpe 1.11 and a 0.7-point deeper drawdown (-34.1%
+  against -33.4%). There is no formal significance test and no forward record;
+  the joint configuration was not scored together; the 252-session forward
+  record restarts under `/2`.
+- **Acceptance and install.** Candidate
+  `docs/research/trading-approval-candidates-2026-11-02/entry-grade-a/`. Full unit
+  gate: 11828 passed, 94 skipped, 10 xfailed, 508 warnings, 48 subtests passed
+  in 1083.03s (18:03), run on fresh `anios_gate_leader2` because `anios_gate`
+  was stale at another branch's `20261101_0023`; targeted gate 119 passed, 2
+  expected xfails. Seven submission-clock tests were pinned to after-close
+  decision instants; the production reviewed-XNYS guard is unchanged. Release
+  ceremony under the paper lock on the owner directive of 2026-11-01,
+  `approved_at` 2026-11-02T16:55:45Z, archive
+  `20261102T165545-leader-ba46ac7222cd47da9ca2e195514de5fc`; evidence
+  `7a315eb2...`, release `deb96b65...`, config `2889633c...`; policy `/2`.
+- **Deploy.** `scripts/deploy.sh` deployed
+  `15462e00de9eecf4686e6b936f3d063048370c5a` (pushed to `origin/main`); the
+  checkout and `data/.deployed-commit` are at `15462e00`; admission `ADMITTED`
+  (host and container); `.post-deploy-status` reads
+  `2026-11-02T17:24:07Z 15462e00 ok (cheap)`. Admission was red with `Exact
+  installed learned holding configuration required` between install and
+  fast-forward, as expected.
+- **Next.** Fresh ordinary paper acceptance is the 2026-11-02 19:30 ET nightly;
+  the first forward-record week under `/2` closes 2026-11-06. The 20:40 ET
+  replay defaults to `/2` and writes `leader_ewma_minA_floor50`. The rule stays
+  frozen for the 252-session window; P1 weekly tracking remains the workstream.
+
 ## CURRENT 2026-11-01 (later) — A2 statement reading failed and closed; P1 forward record is the workstream
 
 - **A2 statement reading: failed and closed.** The anonymised eight-quarter packet
