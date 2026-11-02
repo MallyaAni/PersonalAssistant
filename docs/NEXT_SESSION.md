@@ -16,9 +16,19 @@
   point deeper, and trails QQQ's raw CAGR while beating QQQ's Sharpe and
   drawdown. On the live 94-name book it gives up 1.6 points of CAGR (25.0%
   against 26.6%) at the same Sharpe 1.11 and a 0.7-point deeper drawdown (-34.1%
-  against -33.4%). There is no formal significance test and no forward record;
-  the joint configuration was not scored together; the 252-session forward
-  record restarts under `/2`.
+  against -33.4%). The joint configuration was not scored together; the
+  252-session forward record restarts under `/2`.
+- **Significance result (2026-11-02): FAIL on the pre-registered primary gate.**
+  The paired A-minus-B daily difference over 2,957 sessions at 25 bp is
+  +0.77 bp/day, Newey-West t 1.02, month-block bootstrap -0.73..+2.25 bp/day.
+  A is above B in 20 of 20 offsets (median +2.76 CAGR points, worst +1.53), and
+  the paired mean is positive in both windows (+0.32 bp/day 2016-2023, +1.69
+  2024-2026), but neither is significant. The A hold's edge is a CAGR, Sharpe
+  and drawdown effect, not a statistically significant mean-return effect;
+  A-minus-QQQ is -1.24 bp/day (t -0.82), so the QQQ claim is Sharpe and
+  drawdown, not mean return. No live change; the B hold remains the fallback at
+  the 252-session review. Result:
+  `docs/research/installed-rule-significance-results-2026-11-02.md`.
 - **Acceptance and install.** Candidate
   `docs/research/trading-approval-candidates-2026-11-02/entry-grade-a/`. Full unit
   gate: 11828 passed, 94 skipped, 10 xfailed, 508 warnings, 48 subtests passed
@@ -41,6 +51,10 @@
   the first forward-record week under `/2` closes 2026-11-06. The 20:40 ET
   replay defaults to `/2` and writes `leader_ewma_minA_floor50`. The rule stays
   frozen for the 252-session window; P1 weekly tracking remains the workstream.
+  The next research question is the exact installed joint configuration (A hold
+  plus the P/E-history tilt at strength 0.5), whose honest-universe scorecard
+  was never run; it will be pre-registered before its first run and is research
+  only. Positive-shock drift remains owner-blocked.
 
 ## CURRENT 2026-11-01 (later) — A2 statement reading failed and closed; P1 forward record is the workstream
 
