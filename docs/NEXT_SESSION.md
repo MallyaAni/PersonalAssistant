@@ -16,9 +16,14 @@
   point deeper, and trails QQQ's raw CAGR while beating QQQ's Sharpe and
   drawdown. On the live 94-name book it gives up 1.6 points of CAGR (25.0%
   against 26.6%) at the same Sharpe 1.11 and a 0.7-point deeper drawdown (-34.1%
-  against -33.4%). The exact installed joint configuration's honest-universe
-  scorecard is now run and **fails** the program objective (next bullet but one);
-  the 252-session forward record restarts under `/2`.
+  against -33.4%). The 17.1% A-hold row is a 2026-10-21-code measurement: the
+  2026-11-02 current-code no-floor control shows the same no-floor arm earns
+  12.95% CAGR, -39.43% worst drawdown and 0.806 Sharpe, and the floor 0.5 arm
+  13.28%, -39.43% and 0.815, so the published A/B/SPY/QQQ table and the
+  significance result are historical, not current-code evidence. The exact
+  installed joint configuration's honest-universe scorecard is now run and
+  **fails** the program objective (next bullet but one); the 252-session forward
+  record restarts under `/2`.
 - **Significance result (2026-11-02): FAIL on the pre-registered primary gate.**
   The paired A-minus-B daily difference over 2,957 sessions at 25 bp is
   +0.77 bp/day, Newey-West t 1.02, month-block bootstrap -0.66..+2.18 bp/day.
@@ -47,6 +52,24 @@
   evidence paragraph overstates the installed rule. No live change; the
   252-session forward record remains the arbiter. Result:
   `docs/research/installed-joint-configuration-results-2026-11-02.md`.
+- **No-floor control (2026-11-02): drift dominant; the floor is not the gap.**
+  On the same honest universe, all sessions, 25 bp, medians across 20 offsets,
+  the published no-floor A cut earns 12.95% CAGR at -33.82% median drawdown,
+  -39.43% worst drawdown and 0.806 Sharpe on current code, against the
+  published 2026-10-21 payload's 17.09%, -30.19%, -34.68% and 1.002. The floor
+  0.5 arm earns 13.28%, -34.42%, -39.43% and 0.815. Decomposition: total gap
+  -3.80 CAGR points = floor effect +0.33 and drift -4.13; the drift is 12.5
+  times the floor effect. The floor binds on 944 of 2,012 sessions in 2016-2023
+  and never in 2024-2026; it adds +0.33 CAGR points and +0.009 Sharpe, costs
+  0.605 median-drawdown points and leaves the worst drawdown unchanged. The
+  2016-2023 window has identical sessions in both payloads and still drifts
+  -3.55 points, so the drift is code/data, not the seven extra sessions; it is
+  consistent with the 2026-10-24 simulator/split-corrected valuation-history
+  commits, which this study cannot isolate. The published 17.1% should not be
+  cited again; the contract is a bound release source, so the correction
+  belongs to the next authorized contract/release update, not a silent edit.
+  No live change; the 252-session forward record remains the arbiter. Result:
+  `docs/research/no-floor-control-results-2026-11-02.md`.
 - **Acceptance and install.** Candidate
   `docs/research/trading-approval-candidates-2026-11-02/entry-grade-a/`. Full unit
   gate: 11828 passed, 94 skipped, 10 xfailed, 508 warnings, 48 subtests passed
@@ -70,11 +93,13 @@
   replay defaults to `/2` and writes `leader_ewma_minA_floor50`. The rule stays
   frozen for the 252-session window; P1 weekly tracking remains the workstream.
   The joint configuration is scored and failed the honest-universe objective;
-  the next research question is a pre-registered current-code no-floor control
-  to separate the 0.5 floor from the 2026-10-24 simulator/split drift, and
-  possibly a floor comparison (0 against 0.5) on the A hold. It must be
-  pre-registered before its first run and is research only. Positive-shock
-  drift remains owner-blocked.
+  the no-floor control shows the gap to the published 17.1% is code/data drift,
+  not the floor (floor effect +0.33 CAGR points, drift -4.13), and the floor
+  binds only in the 2016-2023 high-volatility episodes. The current-code
+  numbers are the ones to use. A drift bisect is a separate question, not a
+  retry; it would need the old code and the old data state, may not be
+  recoverable, and must be pre-registered before its first run. Research only.
+  Positive-shock drift remains owner-blocked.
 
 ## CURRENT 2026-11-01 (later) — A2 statement reading failed and closed; P1 forward record is the workstream
 
