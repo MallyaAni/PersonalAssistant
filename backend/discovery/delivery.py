@@ -193,7 +193,11 @@ class DigestDelivery:
         # were addressed to them, about a digest they never received. So the
         # prose is personalised only when the owner is the only recipient;
         # with anyone else on the list it is written plainly.
-        owner_alone = len(subscribers) == 1
+        # One recipient is not the same as the owner being the recipient: an
+        # owner who revoked leaves a guest as the only deliverable subscriber,
+        # and prose written from the owner's reactions would then be addressed
+        # to that guest. Both conditions are required.
+        owner_alone = len(subscribers) == 1 and subscribers[0].is_owner
         # Reactions shape how the digest is written, not whether it is sent.
         # This read sits on the only irreversible path in the loop, so a
         # failure here must not cost the person their message: the same rule

@@ -722,6 +722,47 @@ async def test_a_digest_guests_receive_carries_no_reaction_of_the_owners(
         await _cleanup(user_id)
 
 
+# One recipient is not the same as the owner being the recipient. Revoking the
+# owner leaves a guest as the only deliverable subscriber, and prose written
+# from the owner's reactions would then be addressed to someone who never
+# reacted, about a digest they did not receive.
+@pytest.mark.asyncio
+async def test_a_guest_who_is_the_only_recipient_gets_no_reaction_prose(monkeypatch):
+    user_id = f"sub_{uuid.uuid4().hex[:12]}"
+    seen = _capture_reactions(monkeypatch)
+    try:
+        async with AsyncSessionLocal() as session:
+            repo = SubscriberRepository(session)
+            owner = await repo.enroll(user_id, "imessage", "+15550100", consented=True)
+            await repo.enroll(user_id, "imessage", "+15550101", consented=True)
+            assert await repo.revoke(user_id, uuid.UUID(owner.id))
+
+            async def _reacted(*_args, **_kwargs):
+                return (
+                    ReactedFind(
+                        title="Winery evening", reaction="liked", interest="wine"
+                    ),
+                )
+
+            monkeypatch.setattr("backend.discovery.delivery.reacted_finds", _reacted)
+            channel = _RecordingChannel()
+            delivery = DigestDelivery(
+                repo,
+                {"imessage": channel},
+                sent_finds=SentFindRepository(session),
+            )
+
+            report = await delivery.deliver(
+                user_id, (_ranked("Jazz"),), _BASE, now=_NOW
+            )
+
+            assert report.delivered == 1
+            assert len(seen) == 1
+            assert seen[0] == ()
+    finally:
+        await _cleanup(user_id)
+
+
 # A writer that fails must not lose the digest. The assembled shape is the
 # fallback the written path was built to fall back to, and this pins the
 # behaviour so a future writer change cannot turn a runtime fault into silence.

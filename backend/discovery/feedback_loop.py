@@ -128,22 +128,40 @@ class ReactedFind:
     digest: str | None = None
 
 
-# The subscription that most plausibly belongs to the account holder.
+# The subscription that belongs to the account holder.
 #
-# The earliest row is the owner's own by convention: a person subscribes their
-# own phone before adding anyone else, and the schema has no explicit owner
-# flag to ask. Returning None (no subscription at all) leaves every reaction in
-# scope, which is the right default for legacy rows.
+# Recorded rather than inferred. The earliest row was the owner by convention
+# until the owner revoked and subscribed again behind a guest: the guest's row
+# was then earliest, so the guest's tapback was read as the owner's verdict and
+# the owner's own was discarded. Rows written before the flag existed are
+# backfilled by the migration that added it, so the fallback below is for the
+# rare account whose rows predate both.
+#
+# Returning None (no subscription at all) leaves every reaction in scope, which
+# is the right default for legacy rows.
 async def _owner_subscriber_id(
     session: AsyncSession, user_id: str
 ) -> uuid.UUID | None:
     stmt = (
         select(DiscoverySubscriber.id)
+        .where(
+            DiscoverySubscriber.user_id == user_id,
+            DiscoverySubscriber.is_owner.is_(True),
+        )
+        .limit(1)
+    )
+    owner = (await session.execute(stmt)).scalars().first()
+    if owner is not None:
+        return owner
+    # No row is flagged. Rather than treat every guest's reaction as the
+    # owner's, fall back to the convention this replaced.
+    fallback = (
+        select(DiscoverySubscriber.id)
         .where(DiscoverySubscriber.user_id == user_id)
         .order_by(DiscoverySubscriber.created_at.asc(), DiscoverySubscriber.id.asc())
         .limit(1)
     )
-    return (await session.execute(stmt)).scalars().first()
+    return (await session.execute(fallback)).scalars().first()
 
 
 # Every reacted find for this user, newest first, with the interest that

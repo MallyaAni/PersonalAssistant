@@ -36,6 +36,10 @@ class Subscriber:
     # Set when the operator permitted this machine to message the address. A
     # pull subscription needs none, because nothing is sent.
     approved: bool
+    # Whether this is the account holder's own subscription. Their reactions
+    # are the only ones allowed to shape their feed or their digest's prose,
+    # so this is a permission boundary and not a label.
+    is_owner: bool
     delivery_count: int
     last_error: str | None
 
@@ -57,6 +61,10 @@ class SubscriberRepository:
     # Enroll or update one permission. Consent is passed explicitly and never
     # inferred: an address arriving without it is stored inactive, so the
     # default outcome of a mistake is that nothing is sent.
+    #
+    # `owner` says whether this is the account holder's own subscription. The
+    # operator knows that and the row cannot: an address is an address. None
+    # leaves the first-row rule in place for callers that do not say.
     async def enroll(
         self,
         user_id: str,
@@ -64,6 +72,7 @@ class SubscriberRepository:
         address: str,
         label: str | None = None,
         consented: bool = False,
+        owner: bool | None = None,
     ) -> Subscriber:
         if channel not in SUBSCRIBER_CHANNELS:
             raise ValueError(f"Unsupported subscriber channel: {channel}")
@@ -91,6 +100,16 @@ class SubscriberRepository:
                 active=consented,
                 consented_at=now if consented else None,
                 approved_at=now if consented else None,
+                # The first subscription an account ever has is its own, by the
+                # convention the old inference used. A guest added afterwards
+                # is not.
+                #
+                # An explicit `owner=True` is not written here even though it
+                # is known: the row that currently holds the flag has to be
+                # demoted first, and the partial unique index would reject this
+                # insert before that could happen. `_claim_ownership` promotes
+                # it after the commit instead.
+                is_owner=owner is None and not await self._has_owner(user_id),
             )
             self.session.add(row)
         else:
@@ -104,6 +123,15 @@ class SubscriberRepository:
                 row.active = True
         await self.session.commit()
         await self.session.refresh(row)
+        # An explicit decision is recorded even for a row that already existed:
+        # that is how an operator corrects a subscription the first-row rule
+        # had made the owner.
+        if owner is True:
+            await self._claim_ownership(user_id, row)
+        elif owner is False and row.is_owner:
+            row.is_owner = False
+            await self.session.commit()
+            await self.session.refresh(row)
         return _to_subscriber(row)
 
     # Stop delivery immediately while keeping the record of what was already
@@ -159,8 +187,15 @@ class SubscriberRepository:
         existing_row = await self._by_digest(user_id, channel, digest)
         was_revoked = existing_row is not None and existing_row.revoked_at is not None
         subscriber = await self.enroll(user_id, channel, cleaned, label, consented=True)
+        row = await self._by_digest(user_id, channel, digest)
+        if row is not None:
+            # The account asking for its own digest is the one moment ownership
+            # is known rather than guessed, so it is recorded here. That is what
+            # returns the owner's own row to them after they revoked and
+            # subscribed again behind a guest.
+            await self._claim_ownership(user_id, row)
         if channel == "shortcuts_pull":
-            return subscriber
+            return _to_subscriber(row) if row is not None else subscriber
         # Consented by the recipient, not yet permitted by the operator.
         row = await self._by_digest(user_id, channel, digest)
         if row is not None and (not already or was_revoked):
@@ -235,6 +270,46 @@ class SubscriberRepository:
             row.delivery_count += 1
         await self.session.commit()
 
+    # Whether this account already has a recorded owner.
+    async def _has_owner(self, user_id: str) -> bool:
+        stmt = (
+            select(DiscoverySubscriber.id)
+            .where(
+                DiscoverySubscriber.user_id == user_id,
+                DiscoverySubscriber.is_owner.is_(True),
+            )
+            .limit(1)
+        )
+        return (await self.session.execute(stmt)).scalars().first() is not None
+
+    # Make one row the account holder's own subscription.
+    #
+    # Called from the path where the account itself asks to be subscribed - the
+    # one place ownership is known rather than guessed. That is also what fixes
+    # the inversion: an owner who revoked and subscribed again after a guest
+    # was added is the earliest-row inference's failure case, and this hands
+    # ownership back to them.
+    #
+    # The old owner is demoted and flushed first. The partial unique index
+    # allows one owner per account, so a flush that set the new flag before
+    # clearing the old one would violate it.
+    async def _claim_ownership(
+        self, user_id: str, row: DiscoverySubscriber
+    ) -> None:
+        stmt = select(DiscoverySubscriber).where(
+            DiscoverySubscriber.user_id == user_id,
+            DiscoverySubscriber.is_owner.is_(True),
+            DiscoverySubscriber.id != row.id,
+        )
+        demoted = (await self.session.execute(stmt)).scalars().all()
+        for other in demoted:
+            other.is_owner = False
+        if demoted:
+            await self.session.flush()
+        row.is_owner = True
+        await self.session.commit()
+        await self.session.refresh(row)
+
     async def _by_digest(
         self, user_id: str, channel: str, digest: str
     ) -> DiscoverySubscriber | None:
@@ -263,6 +338,7 @@ def _to_subscriber(row: DiscoverySubscriber) -> Subscriber:
         active=row.active,
         deliverable=row.deliverable,
         approved=row.approved_at is not None or row.channel == "shortcuts_pull",
+        is_owner=row.is_owner,
         delivery_count=row.delivery_count,
         last_error=row.last_error,
     )
