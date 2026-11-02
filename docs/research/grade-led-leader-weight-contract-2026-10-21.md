@@ -6,12 +6,13 @@ drawdown on the point-in-time book, and the scorecard of 2026-10-21
 named it: equal weight across every eligible name, tilted by trailing-return
 rank, scaled to a volatility target, never levered. This is a behavioral
 contract for installing that sizing beside the existing grade rules, not a
-claim of higher returns. Five revisions since the first install are recorded
+claim of higher returns. Seven revisions since the first install are recorded
 at the end: open fills for every leg, an EWMA volatility estimate, the entry
-boundary at B, an exposure floor, and the entry at A held while B with a 1%
-minimum trade.
+boundary at B, an exposure floor, the entry at A held while B with a 1%
+minimum trade, the P/E-history sizing tilt, and the entry at A held while A
+(revision 7, the installed boundary since 2026-11-02).
 
-Candidate policy `grade-led-leader-weight/1` (`backend/market/grade_led_leader_policy.py`)
+Candidate policy `grade-led-leader-weight/2` (`backend/market/grade_led_leader_policy.py`)
 keeps every rule of the installed `grade-led-learned-sizing/1` except where
 this document says otherwise: a grade at or above the policy's entry grade
 permits entry; a held stock below it exits; a missing grade protects the
@@ -29,8 +30,8 @@ session from the completed report and nothing after it:
 1. Eligible = every name graded at or above the entry grade that is not
    buy-blocked, plus every held name graded at or above the hold grade (a
    held blocked name is kept but may not grow). The entry grade is A and the
-   hold grade B (`ENTRY_GRADE = 2`, `HOLD_GRADE = 1` on the policy class;
-   revision 5 below); revision 3 drew both at B.
+   hold grade A (`ENTRY_GRADE = 2`, `HOLD_GRADE = 2` on the policy class;
+   revision 7 below); revisions 3-6 held at B.
 2. Each eligible name starts with an equal slot. The slots are tilted by the
    name's trailing 63-session return rank among the eligible names, linearly
    from 0.5x for the weakest to 1.5x for the strongest (strength 0.5), and
@@ -131,26 +132,6 @@ account's forward record is the only out-of-sample evidence that counts.
    (+0.1 to +0.9 points between 0.25% and 2%) but cuts the daily resize
    churn; holding grace sessions, dropping the band block and the entry at
    A+ did not lead in both windows. `docs/research/account-simulator-rule-2026-10-24.md`.
-5. Entry at A, hold while B, 1% minimum trade (supersedes the entry of
-   revision 3). A name is admitted at A or better and held while it keeps
-   at least B (`entry_grade = 2`, `minimum_held_grade = 1`; exits are still
-   labelled "Grade below B"), and a resize smaller than 1% of equity is not
-   traded (`min_trade = 0.01`, passed to the funded planner, which never
-   suppresses a full exit). Basis: the account-faithful simulator
-   (`backend/market/policy_book.py`, the same engine that draws the strategy
-   charts): the nightly's own grades (the current fundamentals mode; the
-   scorecard behind revision 3 graded with the research mode, which puts
-   8,264 name-sessions on the other side of the B line), market-on-open
-   fills from the cash on hand before the day's sells, whole shares, 10 bp,
-   the band buy block and the FOMC cycle. Admitting and holding at B earned
-   34.0% a year at worst drawdown -29.5%, Sharpe 1.39, 82,446 fills; this
-   rule 39.4% at -26.9%, Sharpe 1.51, 6,703 fills; ahead in the window it was
-   chosen on (2015-2022: 25.0% against 19.8%) and in the one it was not
-   (2023-2026: 74.4% against 68.5%), in 7 of 11 calendar years, and at 25 bp
-   (37.6% against 29.9%). The minimum trade alone is worth little return
-   (+0.1 to +0.9 points between 0.25% and 2%) but cuts the daily resize
-   churn; holding grace sessions, dropping the band block and the entry at
-   A+ did not lead in both windows. `docs/research/account-simulator-rule-2026-10-24.md`.
 6. P/E-history sizing tilt and split-corrected valuation history. Each sized
    name's leader slot is multiplied by 1 + 0.5 (1 - 2h), h the percentile of
    its price/earnings within its own trailing 756 sessions (the valuation
@@ -166,3 +147,26 @@ account's forward record is the only out-of-sample evidence that counts.
    -30.0% for entering and holding at B. With the tilt: 37.6% at -27.7%,
    Sharpe 1.46, to 2022 21.2%, after 78.1%, at 25 bp 34.9% (B rule 27.5%).
    `docs/research/pe-history-tilt-2026-10-24.md`.
+7. Entry at A, hold while A (2026-11-02, the installed boundary). A name is
+   admitted at A or better and held while it keeps at least A
+   (`entry_grade = 2`, `minimum_held_grade = 2`; exits are labelled "Grade
+   below A"). Basis: the valuation-weighted regrade, 25 bp, 20 offsets,
+   medians (`docs/research/value-weighted-grading-2026-10-22.md`). On the
+   S&P 500 point-in-time book the A hold earned 17.1% a year at worst
+   drawdown -34.7% and Sharpe 1.00 against the B hold's 14.4%, -38.3% and
+   0.87; it is the only tested arm that reaches the program's
+   Sharpe-at-least-1.0 objective on the honest universe; it beats SPY on
+   CAGR and Sharpe (17.1% against 13.9%, 1.00 against 0.83) while its worst
+   drawdown is 1.0 point deeper (-34.7% against -33.7%). It trails QQQ's
+   19.0% raw CAGR, while beating QQQ's 0.91 Sharpe and -35.1% drawdown.
+   On the live 94-name book it gives up 1.6 points of CAGR (25.0% against
+   26.6%) at the same Sharpe
+   1.11 and a 0.7-point deeper drawdown (-34.1% against -33.4%); that is the
+   disclosed cost of the honest-universe robustness. Walk-forward, the A
+   hold makes 18.3% at 0.98 on the S&P 500 against equal votes' 16.0% at
+   0.88, and 23.8% at 0.95 on the book against 19.6% at 0.82. The owner's
+   directive of 2026-11-01 authorizes the install; the 252-session forward
+   record restarts under `grade-led-leader-weight/2`. The P/E-history tilt
+   of revision 6 is unchanged; the joint configuration's exact scorecard is
+   the A-cut study plus the tilt's separate evidence, and the forward record
+   is the out-of-sample test.

@@ -284,8 +284,20 @@ def test_dispatcher_rejects_non_reduction_orders(tmp_path, side, event_id, opene
     broker = Broker(tmp_path)
     broker.is_open = opened
     order = paper.PaperOrder("AAA", side, 5, "test", "id", event_id)
+    # Pin the decision instant to the regular session or after its close, so
+    # the reviewed-calendar guard does not read the wall clock.
+    decision_at = (
+        datetime(2026, 9, 14, 18, 0, tzinfo=UTC)
+        if opened
+        else datetime(2026, 9, 14, 21, 30, tzinfo=UTC)
+    )
     submitted, refused = market_daily._submit(
-        broker, [order], "2026-09-14", True, intraday_event_reduction=True
+        broker,
+        [order],
+        "2026-09-14",
+        True,
+        intraday_event_reduction=True,
+        decision_at=decision_at,
     )
     assert not submitted
     assert refused

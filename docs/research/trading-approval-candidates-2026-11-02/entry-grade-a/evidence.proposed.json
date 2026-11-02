@@ -1,0 +1,37 @@
+{
+  "authorization": "<owner writes this>",
+  "comparative_performance": "Hold-boundary change only; no sizing, timing, model, cost or execution-parameter change. On the honest S&P 500 point-in-time universe at 25 bp, 20 offsets, medians, holding at A earned 17.1% a year at worst drawdown -34.7% and Sharpe 1.00, against the B hold's 14.4%, -38.3% and 0.87; SPY earned 13.9%, -33.7% and 0.83, and QQQ 19.0%, -35.1% and 0.91. The A hold is the only tested arm that reaches the program's Sharpe-at-least-1.0 objective on that universe; it beats SPY on CAGR and Sharpe (17.1% against 13.9%, 1.00 against 0.83) while its worst drawdown is 1.0 point deeper (-34.7% against -33.7%). It trails QQQ's raw CAGR while beating QQQ's Sharpe and drawdown. On the live 94-name book in the same regrade scorecard it gives up 1.6 points of CAGR (25.0% against 26.6%) at the same Sharpe 1.11 and a 0.7-point deeper drawdown (-34.1% against -33.4%); that is the disclosed cost of the honest-universe robustness. Walk-forward, the A hold makes 18.3% at 0.98 on the S&P 500 against equal votes' 16.0% at 0.88, and 23.8% at 0.95 on the book against 19.6% at 0.82. The joint configuration's exact scorecard is the A-cut study plus the P/E-history tilt's separate evidence (docs/research/pe-history-tilt-2026-10-24.md); the two were not scored together. There is no formal significance test and no forward record; the scorecard is in-sample research, not forward proof. The 252-session forward record restarts under grade-led-leader-weight/2.",
+  "contract": "grade-led-leader-weight/2 (revision 7: entry at A, hold while A, exit below A, 1% minimum trade, P/E-history sizing tilt 0.5; split-corrected valuation history); valuation analyst at three votes; FOMC pre-meeting cut retired 2026-10-28 (fomc-hold-through-meeting/1), full exposure through meetings; an unknown FOMC calendar no longer blocks ordinary planning while retired; a cycle already open still restores at the decision-day close",
+  "execution": "every leg a market-on-open order at the nightly (revision 1); EWMA-20 volatility estimate (revision 2); entry at A or better, held while A, exit below A (revision 7); resizes under 1% of equity not traded, exits always (revision 5); no FOMC reduction is planned after 2026-10-28; the open 2026-10-28 cycle restores on the decision session's 3:45 PM candle (decision_close), and a cycle finished on the decision night hands the account back to the ordinary plan the same night; the market-open submission guard reads the reviewed regular XNYS session, not the broker's extended-hours flag",
+  "fresh_ordinary_paper_acceptance": "UNVERIFIED; required after installation",
+  "model_publications_unchanged": true,
+  "no_new_fits": true,
+  "original_evidence_sha256": "0bb4a0fca77ec50fe482b5e538f1ecd6cb51eb580858ae427e3b19247066bd20",
+  "parameters": {
+    "analyst_weights": {
+      "fundamental": 1,
+      "rotation": 0.5,
+      "sentiment": 1,
+      "technical": 1,
+      "value": 3
+    },
+    "annualisation": 252,
+    "entry_grade": "A",
+    "exposure_floor": 0.5,
+    "hold_grade": "A",
+    "min_trade": 0.01,
+    "pe_history_tilt": {
+      "min_readings": 250,
+      "strength": 0.5,
+      "window_sessions": 756
+    },
+    "per_name_cap": 0.25,
+    "tilt_strength": 0.5,
+    "volatility_estimator": "ewma_span_20",
+    "volatility_target": 0.25,
+    "window_sessions": 63
+  },
+  "source_revision": "<the commit on main carrying the change>",
+  "source_sha256": "<computed at installation>",
+  "targeted_tests": "<written at installation>"
+}

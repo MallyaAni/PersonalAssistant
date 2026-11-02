@@ -275,7 +275,7 @@ def test_plan_labels_orders_by_leader_sizing(reader, monkeypatch):
     reasons = {order.symbol: order.reason for order in orders}
     assert reasons == {
         "AAA": "Grade-led leader-weight sizing adjustment",
-        "BBB": "Grade below B; exit",
+        "BBB": "Grade below A; exit",
     }
     assert state.policy_version == leader.POLICY
     assert state.allocation_state["receipt"]["target_basis"] == leader.BASIS

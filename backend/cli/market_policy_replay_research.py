@@ -59,9 +59,12 @@ SCHEMA = "policy-replay-research/1"
 # The installed rule's simulated account curve beside its benchmark.
 BOOK_FILE = "book.json"
 BOOK_SCHEMA = "policy-replay-book/1"
-# The arm that reproduces each installed policy's rule, and the policy it stands for.
+# The arm that reproduces each installed policy's rule, and the policy it stands
+# for. The /1 entry is historical: its stored replay stays readable under the
+# B-hold arm. /2 is the installed A hold, replayed under the A-cut arm.
 INSTALLED_ARMS = {
     "grade-led-leader-weight/1": "leader_ewma_minB_floor50",
+    "grade-led-leader-weight/2": "leader_ewma_minA_floor50",
 }
 # A target move the size column would print as 0.0% is no trade.
 DUST = 0.0005
@@ -578,7 +581,7 @@ def check_plan(root: Path, report, session: str) -> dict | None:
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     parser.add_argument("--root", required=True)
-    parser.add_argument("--policy", default="grade-led-leader-weight/1")
+    parser.add_argument("--policy", default="grade-led-leader-weight/2")
     parser.add_argument("--arm")
     parser.add_argument("--membership")
     args = parser.parse_args(argv)

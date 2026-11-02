@@ -13,8 +13,8 @@ from backend.tests.test_market_pit_scorecard import _report, history  # noqa: F4
 # with the letters on the rows the trades are read from.
 def test_replay_records_every_grade_change_once(history):  # noqa: F811
     report = _report()
-    manifest, stocks = research.replay(report, history, "leader_ewma_minB_floor50")
-    assert manifest["arm"] == "leader_ewma_minB_floor50"
+    manifest, stocks = research.replay(report, history, "leader_ewma_minA_floor50")
+    assert manifest["arm"] == "leader_ewma_minA_floor50"
     assert stocks
     for stock in stocks.values():
         grades = stock["grades"]
@@ -52,7 +52,7 @@ def test_replay_grades_like_the_nightly(monkeypatch):
 # after its decision, and the chart's held weights move only on fill days.
 def test_installed_replay_is_the_account_simulation(history):  # noqa: F811
     report = _report()
-    manifest, stocks = research.replay(report, history, "leader_ewma_minB_floor50")
+    manifest, stocks = research.replay(report, history, "leader_ewma_minA_floor50")
     book = research.installed_book(report)
     assert manifest["book"]["fills"] == len(book.trades)
     dates = manifest and [str(d)[:10] for d in report.panel.dates]
@@ -124,7 +124,7 @@ def test_signal_outcomes_start_at_the_fill(monkeypatch):
 # summary's total returns.
 def test_the_box_reads_the_replays_book_verbatim(history, tmp_path):  # noqa: F811
     report = _report()
-    manifest, stocks = research.replay(report, history, "leader_ewma_minB_floor50")
+    manifest, stocks = research.replay(report, history, "leader_ewma_minA_floor50")
     book = manifest["book"]
     curve = manifest["curve"]
     assert book["curve_file"] == research.BOOK_FILE
@@ -136,7 +136,7 @@ def test_the_box_reads_the_replays_book_verbatim(history, tmp_path):  # noqa: F8
     assert curve["equity"][-1] == pytest.approx(book["all"]["total"])
     assert curve["benchmark"][-1] == pytest.approx(book["benchmark"]["total"])
     assert book["benchmark"]["symbol"] == report.panel.benchmark
-    policy = "grade-led-leader-weight/1"
+    policy = "grade-led-leader-weight/2"
     research.write(tmp_path, policy, manifest, stocks)
     shown = research.read_book(tmp_path, policy, manifest["through"])
     on_disk = json.loads(
