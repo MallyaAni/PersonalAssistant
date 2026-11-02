@@ -34,6 +34,9 @@ _SUBSCRIBER = Subscriber(
     active=True,
     deliverable=True,
     approved=True,
+    # Retry behaviour is the same for a guest and the account holder; this
+    # fixture is not the owner so nothing here leans on owner-only prose.
+    is_owner=False,
     delivery_count=0,
     last_error=None,
 )
