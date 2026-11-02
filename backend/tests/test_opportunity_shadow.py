@@ -213,6 +213,14 @@ def test_a_declared_migration_continues_the_ledger(tmp_path):
         )
 
 
+# The live ML-forward ledger's last observation (2026-10-30, sequence 31)
+# carries the identity current before the P5 class-share change; it must
+# continue into the current source identity, not only the archived origins.
+def test_the_live_ledger_policy_continues_into_the_current_identity():
+    live = "c75ae9a398097e58c3f7d6e119841c550b923a176701def5234be97f36e75f32"
+    assert shadow.migration(live, shadow.identity(shadow.BUNDLE)) is not None
+
+
 # The latest archived ledger identity must continue into exactly the current
 # source identity, without rewriting its observations or accepting strangers.
 def test_the_deployed_ledger_continues_into_the_current_identity():

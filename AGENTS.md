@@ -130,6 +130,15 @@ If functional validation cannot be performed, do not label the behavior verified
   `--ignore` paths must be container paths (`/app/...`): a host path is
   silently not matched, which once ran the entire real-model suite under
   `--unit`.
+- **Run one full unit suite at a time; the connection limit is server-wide.**
+  On 2026-10-31 a full `scripts/gate.sh --unit` held 84 `anios_gate`
+  connections `idle in transaction` against `max_connections = 100`. A second
+  agent's suite on a *different* gate database still failed 42 unrelated tests
+  with `asyncpg.exceptions.TooManyConnectionsError`, because the limit counts
+  every database on the server. The failures look like test defects; they are
+  not. Check `SELECT datname, state, count(*) FROM pg_stat_activity GROUP BY
+  1,2` before blaming the code, and wait for another suite to exit rather than
+  running beside it.
 - **The free SIP plan refuses any request whose end is recent.** Alpaca
   answers HTTP 403 `subscription does not permit querying recent SIP data`
   when a request's `end` is in the future or within the last 15 minutes, and

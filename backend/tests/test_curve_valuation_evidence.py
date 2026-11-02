@@ -11,7 +11,7 @@ from backend.core.auth import issue_user_token
 from backend.main import app
 from backend.tests.test_market_desk_api import _write
 
-POLICY = "grade-led-leader-weight/1"
+POLICY = "grade-led-leader-weight/2"
 SESSION = "2026-09-11"
 
 

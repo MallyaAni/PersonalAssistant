@@ -460,6 +460,23 @@ def test_graded_arm_and_concentration(history):
     assert f"ew_graded_cap{round(0.15 * 100):02d}" == "ew_graded_cap15"
 
 
+# The live-ordering arms size the A-or-better book through the policy's own
+# `leader_weights`; the P/E arm refuses a report with no P/E evidence rather
+# than silently becoming the control.
+def test_live_leader_arms_size_the_a_book():
+    report = _report()
+    panel = report.panel
+    mask = np.ones_like(report.graded.grades, dtype=bool)
+    mask[:, panel.index(panel.benchmark)] = False
+    control = sc.ARMS["leader_ewma_minA_floor50_live"](report, mask)
+    weights = control(report, panel, None, 200)
+    assert weights.sum() <= 1 + 1e-9
+    assert weights.max() <= 0.25 + 1e-9
+    assert int((weights > 0).sum()) == len(NAMES)
+    with pytest.raises(ValueError, match="P/E evidence"):
+        sc.ARMS["leader_ewma_minA_floor50_pe"](report, mask)
+
+
 # The equal-risk arm sizes each eligible name inversely to its own trailing
 # volatility, fully invested, reads nothing after the decision session, and
 # leaves a name without a volatility unsized rather than guessed.

@@ -42,7 +42,7 @@ def test_rule_defaults_are_the_installed_policy():
     rule = pb.Rule()
     policy = leader.GradeLedLeaderFundedPolicy
     assert rule.entry_grade == policy.entry_grade == 2
-    assert rule.hold_grade == policy.minimum_held_grade == 1
+    assert rule.hold_grade == policy.minimum_held_grade == 2
     assert rule.min_trade == policy.min_trade
     assert (rule.floor, rule.target) == (leader.EXPOSURE_FLOOR, leader.TARGET)
 
@@ -57,8 +57,8 @@ def test_sizable_starts_at_the_full_window():
     assert not mask[:, 3].any()
 
 
-# Bought when graded A, kept while B, sold at C; a name only ever B is never bought.
-def test_entry_at_a_hold_at_b():
+# Bought when graded A, kept while A, sold at B; a name only ever B is never bought.
+def test_entry_at_a_hold_at_a():
     T = 160
     grades = np.zeros((T, len(TICKERS)), dtype=int)
     grades[80:91, 0] = 2
@@ -68,10 +68,11 @@ def test_entry_at_a_hold_at_b():
     x = [t for t in book.trades if t["ticker"] == "XXX"]
     assert x[0]["action"] == "BUY" and x[0]["decided"] == book.dates[80]
     assert x[0]["date"] == book.dates[81]
-    assert (book.weights[81:102, 0] > 0).all() and (book.weights[102:, 0] == 0).all()
-    assert x[-1]["action"] == "SELL" and x[-1]["decided"] == book.dates[101]
+    assert (book.weights[81:92, 0] > 0).all() and (book.weights[92:, 0] == 0).all()
+    assert x[-1]["action"] == "SELL" and x[-1]["decided"] == book.dates[91]
+    assert x[-1]["date"] == book.dates[92]
     assert not [t for t in book.trades if t["ticker"] == "YYY"]
-    # Under the old B rule the B name is bought.
+    # Under the old B-entry/B-hold rule the B name is bought.
     old = _run(grades, rule=pb.Rule(fomc=False, entry_grade=1, hold_grade=1, min_trade=0))
     assert [t for t in old.trades if t["ticker"] == "YYY"]
 

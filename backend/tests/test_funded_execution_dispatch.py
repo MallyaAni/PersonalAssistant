@@ -8,6 +8,10 @@ from backend.agents.trading.desk import paper
 from backend.cli import market_balancer, market_daily
 from backend.market import alpaca_trading
 
+# The nightly decision instant after the reviewed close, so the submission
+# guard is independent of the wall clock the suite happens to run at.
+DECISION_AT = datetime(2026, 9, 10, 23, 30, tzinfo=UTC)
+
 
 class Broker:
     # Keep a local queue so tests inspect what the broker would actually retain.
@@ -37,7 +41,9 @@ class Broker:
 def test_risk_reduction_dispatches_at_next_open():
     broker = Broker()
     order = paper.PaperOrder("AAA", "sell", 10, "risk reduction", priority="event cap")
-    submitted, refused = market_daily._submit(broker, [order], "2026-09-10", live=True)
+    submitted, refused = market_daily._submit(
+        broker, [order], "2026-09-10", live=True, decision_at=DECISION_AT
+    )
     assert not refused
     assert len(submitted) == 1
     assert broker.queued[0][:4] == ("open", "AAA", 10, "sell")
@@ -95,7 +101,9 @@ def test_funded_rotation_dispatches_at_next_open():
         "rebalance",
         execution_timing="next_open",
     )
-    submitted, refused = market_daily._submit(broker, [order], "2026-09-10", live=True)
+    submitted, refused = market_daily._submit(
+        broker, [order], "2026-09-10", live=True, decision_at=DECISION_AT
+    )
     assert not refused
     assert len(submitted) == 1
     assert broker.queued[0][:4] == ("open", "AAA", 10, "sell")
@@ -133,7 +141,9 @@ def test_funded_plan_retains_execution_policy_through_persistence(tmp_path):
     assert all(row["execution_timing"] == "next_open" for row in restored.pending)
     assert all(row["priority"] for row in restored.pending if row["side"] == "sell")
     broker = Broker()
-    submitted, refused = market_daily._submit(broker, orders, session, live=True)
+    submitted, refused = market_daily._submit(
+        broker, orders, session, live=True, decision_at=DECISION_AT
+    )
     assert not refused
     assert len(submitted) == len(orders)
     assert all(row[0] == "open" for row in broker.queued)

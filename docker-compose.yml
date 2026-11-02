@@ -146,6 +146,11 @@ services:
       # on spark1 sets the live values; the defaults are what a fresh checkout
       # gets.
       - VISION_LLM_BASE_URL=${VISION_LLM_BASE_URL:-http://animallya-spark1.local:8000}
+      # The A2 statement-reading functional test sends the registered prompt
+      # to the registered checkpoint. Without these it skips, and under
+      # ANIOS_REQUIRE_FUNCTIONAL a skip is a gate failure (2026-11-01).
+      - STATEMENT_READING_URL=${STATEMENT_READING_URL:-http://animallya-spark1.local:8000}
+      - STATEMENT_READING_MODEL=${STATEMENT_READING_MODEL:-deepseek-v4.1-flash-1017}
       # The picture tests reach the desktop's ComfyUI with the deployed
       # recipe; without these the test container asked for a model file the
       # desktop does not have (400) and read pictures back from a server

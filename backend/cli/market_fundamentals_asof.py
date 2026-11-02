@@ -16,7 +16,7 @@ Research only; the frozen production experiment reads none of this.
 
 import argparse
 import json
-from datetime import UTC, date, datetime
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
 import numpy as np
@@ -52,6 +52,33 @@ def _names(args) -> tuple[str, ...]:
     return tuple(dict.fromkeys(names))
 
 
+# A stored metadata date, or None when it is missing or malformed.
+def _meta_date(value: object) -> date | None:
+    """Return a date from frame metadata, or None."""
+    try:
+        return date.fromisoformat(str(value)) if value else None
+    except ValueError:
+        return None
+
+
+# The first filing the class reader must examine: the stored watermark when
+# there is one (capped below a transient failure, so a later filing that
+# succeeded cannot move the start past the one still to retry), else the
+# newest stored class filing, else nothing when no plausible count exists,
+# else the latest count's filing date.
+def _class_since(
+    checked: date | None, stored_class: list[fa.Version], latest: fa.Version | None
+) -> date | None:
+    """Return the filing date the class fetch starts after, or None."""
+    if checked is not None:
+        return checked
+    if stored_class:
+        return max(v.filed for v in stored_class)
+    if latest is None or latest.value < edgar.MIN_COVER_SHARES:
+        return None
+    return latest.filed
+
+
 # Fetch and store the versions for the names; return the failures.
 def refresh(
     store: MarketStore, names, asof: date, transport=edgar.sec_transport
@@ -72,6 +99,41 @@ def refresh(
             print(f"{ticker:6} FAILED {exc}")
             failed.append(ticker)
             continue
+        # The class counts are not in the company-facts feed. Read them from
+        # the cover-page instances when the name has no plausible count, when
+        # its count is stale, or when a prior refresh already stored class
+        # counts (so a new filing is picked up the night it is filed). The
+        # stored class Versions and the checked-through watermark make the
+        # next fetch incremental.
+        found = store.read_frame(fa.KIND, ticker, asof)
+        stored = fa.versions_from_frame(found[0]) if found is not None else []
+        metadata = found[1] if found is not None else {}
+        stored_class = [v for v in stored if v.tag == edgar.CLASS_SHARES_TAG]
+        checked = _meta_date(metadata.get("class_checked_through"))
+        latest = fa.latest_share_count([*versions, *stored_class])
+        managed = (
+            bool(stored_class)
+            or checked is not None
+            or latest is None
+            or latest.value < edgar.MIN_COVER_SHARES
+            or latest.end < asof - timedelta(days=fa.CLASS_SHARE_STALE_DAYS)
+        )
+        class_versions: list[fa.Version] = []
+        if managed:
+            since = _class_since(checked, stored_class, latest)
+            try:
+                class_versions, skipped, checked_now = fa.class_share_versions(
+                    cik, ticker, since=since, transport=transport, pacer=pacer
+                )
+            except edgar.EdgarUnavailableError as exc:
+                class_versions, skipped, checked_now = [], [str(exc)], None
+            for reason in skipped:
+                print(f"{ticker:6} class skip {reason}")
+            if checked_now is not None:
+                checked = checked_now if checked is None else max(checked, checked_now)
+        versions = fa.merge_versions(stored_class, class_versions) + [
+            v for v in versions if v.tag != edgar.CLASS_SHARES_TAG
+        ]
         written = store.write_frame(
             fa.KIND,
             asof,
@@ -81,9 +143,13 @@ def refresh(
                 "cik": str(cik),
                 "source_time": datetime.now(UTC).isoformat(timespec="seconds"),
                 "version": fa.VERSION,
+                "class_checked_through": checked.isoformat() if checked else "",
             },
         )
-        print(f"{ticker:6} {'ok' if written else 'kept'} {len(versions):5d} versions")
+        print(
+            f"{ticker:6} {'ok' if written else 'kept'} {len(versions):5d} versions"
+            f" ({len(class_versions):2d} class)"
+        )
     return failed
 
 

@@ -1,6 +1,7 @@
 """Exercise durable FOMC intent and broker receipts without placing broker orders."""
 
 from dataclasses import asdict
+from datetime import UTC, datetime
 
 import pytest
 
@@ -33,6 +34,15 @@ def receipt(root, state, status, qty):
     updated = paper.apply_settlements(state, paper.settle(state.pending, [outcome]))
     paper.save_state(root, updated)
     return paper.load_state(root)
+
+
+# The nightly submission runs after the reviewed close; pin the instant so the
+# regular-session guard is independent of when the suite happens to run.
+class AfterClose(datetime):
+    @classmethod
+    def now(cls, tz=None):
+        moment = cls(2026, 11, 2, 22, 0, tzinfo=UTC)
+        return moment if tz is None else moment.astimezone(tz)
 
 
 # A partial reduction survives restart, retries only its remainder, then restores fills.
@@ -171,7 +181,13 @@ def test_event_sell_uses_open_and_ordinary_sell_uses_close():
         paper.PaperOrder("AAA", "sell", 50, "risk", "event-id", event_risk.VERSION),
         paper.PaperOrder("BBB", "sell", 10, "rebalance", "normal-id"),
     ]
-    submitted, refused = market_daily._submit(broker, orders, "2026-09-11", True)
+    submitted, refused = market_daily._submit(
+        broker,
+        orders,
+        "2026-09-11",
+        True,
+        decision_at=datetime(2026, 9, 11, 23, 30, tzinfo=UTC),
+    )
     assert not refused
     assert len(submitted) == 2
     assert [r[0] for r in broker.sent] == ["open", "close"]
@@ -240,6 +256,7 @@ def test_daily_pipeline_persists_before_submission_and_reconciles(
 
     broker = Broker()
     monkeypatch.setattr(alpaca_trading, "client_from_env", lambda: broker)
+    monkeypatch.setattr(market_daily, "datetime", AfterClose)
     monkeypatch.setattr(event_risk, "decision", lambda panel: policy())
     original = paper.PaperState(last_rebalance="2026-09-10", sessions_since_rebalance=1)
     paper.save_state(tmp_path, original)
@@ -443,6 +460,7 @@ def test_nightly_holds_the_decision_close_restoration_and_hands_back(
 
     broker = Broker()
     monkeypatch.setattr(alpaca_trading, "client_from_env", lambda: broker)
+    monkeypatch.setattr(market_daily, "datetime", AfterClose)
     monkeypatch.setattr(event_risk, "decision", lambda panel: policy())
     paper.save_state(
         tmp_path, paper.PaperState(last_rebalance="2026-09-10", sessions_since_rebalance=1)

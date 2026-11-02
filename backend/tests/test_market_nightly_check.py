@@ -195,7 +195,7 @@ def test_health_passes_on_a_written_book(tmp_path):
         NOW,
         log_path=_log(
             tmp_path,
-            "paper book (grade-led-leader-weight/1; joint-funded), equity 100000",
+            "paper book (grade-led-leader-weight/2; joint-funded), equity 100000",
         ),
         state=_healthy_state(),
         notify=messages.append,
@@ -267,7 +267,7 @@ def test_health_reads_the_last_paper_book_line_only(tmp_path):
         tmp_path,
         "paper book: not traded "
         "(ValueError: Exact reviewed learned holding release required)",
-        "paper book (grade-led-leader-weight/1; joint-funded), equity 100000",
+        "paper book (grade-led-leader-weight/2; joint-funded), equity 100000",
     )
     result = check.health(
         tmp_path, NOW, log_path=log, state=_healthy_state(), notify=lambda _: None

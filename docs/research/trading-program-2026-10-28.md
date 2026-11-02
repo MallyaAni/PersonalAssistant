@@ -84,6 +84,26 @@ AI-and-software mandate; that is a deliberate bet, not alpha.
   95th percentile; reported CAGR 26.29% to 23.45%, full period 14.27% to
   13.71%. The 0.40 sensitivity is worse. Closed; not retried without a new
   pre-registration (`chase-guard-results-2026-10-28.md`).
+- **Statement reading (A2).** The anonymised eight-quarter net-income direction
+  failed its pre-registered gate on coverage and stance significance: the model
+  committed on 73.0% of 378 labelled names against an 80% gate, and its 67.4%
+  accuracy was below the 71.7% majority baseline. The 20-session residual
+  stance's mean daily IC was 0.0177 against 0.02, Newey–West t 0.68 against
+  2.0, and the weekly bootstrap lower bound was −0.0222. The calm window was
+  +0.0423 and the earnings window −0.0411; the book relevance check passed at
+  0.0690 but is survivor-biased and not significant. Closed; not retried
+  without a new pre-registration (`statement-reading-results-2026-11-01.md`).
+- **The ranked candidate list.** Residual momentum (C1), the value ×
+  residual-momentum blend (C2), 52-week-high proximity (C3) and SUE (C4) each
+  failed its pre-registered gate on the honest universe and is closed. C1
+  lost 0.0129 choosing Sharpe and deepened the drawdown by 2.1 points; C2's
+  blend landed at 0.6748 against the 0.6903 value-only arm; C3 lost 0.0062
+  Sharpe and was beaten by its own reverse-high placebo; C4's SUE rank IC was
+  negative at 20 and 60 sessions. Not retried without a new pre-registration
+  (`residual-momentum-results-2026-10-28.md`,
+  `value-momentum-blend-results-2026-10-28.md`,
+  `high-proximity-results-2026-10-28.md`, `sue-rank-ic-results-2026-10-29.md`).
+  C5 sector rotation is a separate mandate and remains owner-blocked.
 
 ## Objective
 
@@ -206,12 +226,45 @@ ET nightly; a partition is immutable, so a name today's partition already
 holds is reported as failed and is not reclassified. After that the nightly
 carries the corrected decisions forward.
 
-The multi-class names remain open. The company-facts feed drops class
-dimensions; BRK-B's only undimensioned count is from 2011 and below the
-plausibility floor, and ERIE and STZ have none, so they have no market cap
-and no value score in the research universe (none is in the live book). A
-correct fix needs the cover-page XBRL instance with dimensions, which the
-store does not fetch; a static multiplier would go stale and is refused.
+The multi-class and stale cover-count defects are fixed for the names a
+cover page can support. The company-facts feed drops class dimensions, so
+the reader now fetches each 10-K/10-Q's cover-page XBRL instance and
+combines it fail-closed. One undimensioned symbol with class counts that
+carry no symbol is summed on the listed security's basis (ERIE 46,191,610
+at 2026-10-23, STZ 169,224,220 at 2026-09-30). A filing that reports no
+common-class count yields its single undimensioned count, which covers
+single-class filers and the utilities that add subsidiary counts on
+dei:LegalEntityAxis (ABT 1,730,383,296, C 1,677,436,783, DTE 208,088,069,
+EXC 1,034,896,686, SO 1,150,362,966, NEE 2,097,306,049, LNT 259,361,652,
+ETR 466,631,498, FE 578,893,330, HUM 120,080,308, HSY 200,980,389, JCI
+605,741,470, each at its filing's cover date). A listed class is taken only
+when every other common class is immaterial. The reader refuses BRK-B (two
+listed common classes and no conversion ratio in the instance), V (Class B3
+and Class C are material to Class A) and ARES (Class C is 47% of Class A).
+Counts are stored as `shares` versions under
+dei:EntityCommonStockSharesOutstanding#class at the cover tier, after the
+standard tags, so `levels_for` and `levels_pit.versions_levels` read them
+exactly as a standard cover count; the weighted fallback stays out of the
+instant readers. The frame metadata watermark `class_checked_through` makes
+the fetch incremental: the first run backfills from 2015 for a name with no
+plausible count and otherwise from its latest filed count, and later nights
+read one submissions block per managed name. A transient failure caps the
+watermark below the failed filing, and the next run starts from the capped
+watermark, so a later filing that succeeded cannot skip it. A 20-F/6-K
+filer with no periodic form in the recent block no longer refetches every
+older submissions block nightly: the recent block's earliest filing date of
+any form bounds them all. Because `opportunity_shadow.identity` hashes
+`edgar.py`, the change also carries declared continuations from the eight
+archived ledger origins and from the live ML-forward ledger's 2026-10-30
+policy to the new identity, with a pinned test. Tests:
+`backend/tests/test_cover_class_shares.py` (36). No live rule, grade, order
+or prompt changed; none of the repaired names is in the live book.
+Residuals: the three refused names keep their stored count (V's is from
+2010); ASML, NBIS, SIMO and TSM file 20-F/6-K, have no 10-K/10-Q cover
+page, and keep their annual count. Deployed 2026-11-01T05:37:32Z in
+`79a4824f` (both gates passed; admission ADMITTED; post-deploy ok); the
+11-02 nightly's `_refresh_versions`, which covers the 531-name research
+universe and therefore every repaired name, performs the store repair.
 
 ## Operating model for the owner
 

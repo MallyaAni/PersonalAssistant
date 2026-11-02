@@ -83,6 +83,7 @@ from backend.agents.trading.desk import (
     simulate,
 )
 from backend.market import benchmarks, candidate_stats, tone_expiry, universe
+from backend.market import grade_led_leader_policy as leader
 from backend.market import tone_expiry_study as tes
 from backend.market.universe import MARKET_INDICES
 
@@ -509,6 +510,74 @@ def _leader_ewma(
     )
 
 
+# The P/E-history tilt for every session of a report, computed once per report
+# and cached with the report itself held: the rank reads only the trailing 756
+# readings ending on each session, so row t is the tilt a plan at t could know.
+# The cache matters because `price_offset` rebuilds the arm factory for every
+# offset; without it the O(T * N * window) rank would run forty times a build.
+_PE_TILTS: dict[int, tuple[object, np.ndarray | None]] = {}
+
+
+def _pe_tilts(report) -> np.ndarray | None:
+    """Return the report's (T, N) P/E-history multipliers, or None."""
+    key = id(report)
+    cached = _PE_TILTS.get(key)
+    if cached is not None and cached[0] is report:
+        return cached[1]
+    value = leader.report_pe_tilts(report)
+    _PE_TILTS[key] = (report, value)
+    return value
+
+
+# The installed rule's own sizing, session by session: the A-or-better held
+# set, sized by the live `leader_weights` (leader tilt, optional P/E
+# multiplier, volatility target with floor, then the cap). This is the
+# installed ordering; the registered `leader_ewma_minA_floor50` arm applies
+# the cap before the volatility scale instead. `pe=False` is the control that
+# isolates the live ordering from the P/E tilt.
+def _leader_live(
+    min_grade: int, floor: float = leader.EXPOSURE_FLOOR, pe: bool = False
+):
+    """Return an ARMS-style factory for the live leader sizing, with or without P/E."""
+
+    def factory(report, mask):
+        tilts = _pe_tilts(report) if pe else None
+        if pe and tilts is None:
+            raise ValueError("P/E evidence missing from the report")
+        equal = point_in_time.graded_equal_weight_allocator(
+            mask, min_grade=min_grade, cap=1.0, gross=1.0
+        )
+        fallback = _leader_ewma(min_grade=min_grade, floor=floor)(report, mask)
+
+        def allocate(rep, panel, config, t: int) -> np.ndarray:
+            held = equal(rep, panel, config, t) > 0
+            columns = np.flatnonzero(held)
+            if len(columns) == 0 or t < leader.WINDOW:
+                return fallback(rep, panel, config, t)
+            closes = np.asarray(
+                panel.adj_close[t - leader.WINDOW : t + 1], dtype=float
+            )[:, columns]
+            with np.errstate(invalid="ignore"):
+                known = np.isfinite(closes).all(axis=0) & (closes > 0).all(axis=0)
+            columns, closes = columns[known], closes[:, known]
+            if len(columns) == 0:
+                return np.zeros(len(panel.tickers))
+            extra = None if tilts is None else np.asarray(tilts[t], float)[columns]
+            weights, _ = leader.leader_weights(
+                closes,
+                np.ones(len(columns), dtype=bool),
+                floor=floor,
+                extra=extra,
+            )
+            targets = np.zeros(len(panel.tickers))
+            targets[columns] = weights
+            return targets
+
+        return allocate
+
+    return factory
+
+
 # The 8-K item 2.02 acceptance dates on file for every name on the panel, in
 # New York, from the newest events frame; the report carries no filings.
 def _releases(report) -> dict:
@@ -619,6 +688,12 @@ ARMS.update(
         "leader_ewma_minB_floor50": _leader_ewma(
             min_grade=grading.ORDINAL[grading.B], floor=0.5
         ),
+        # The A hold with the installed exposure floor in the scorecard's
+        # ordering: the registered arm beside the no-floor A cut, and the
+        # control for the live-ordering arms below.
+        "leader_ewma_minA_floor50": _leader_ewma(
+            min_grade=grading.ORDINAL[grading.A], floor=0.5
+        ),
         "leader_ewma_aplus": _leader_ewma(min_grade=grading.ORDINAL[grading.A_PLUS]),
         "leader_ewma_minB_t20": _leader_ewma(
             min_grade=grading.ORDINAL[grading.B], target=0.20
@@ -685,6 +760,16 @@ ARMS.update(
                 days_before=7,
                 known=True,
             )
+        ),
+        # The installed rule's own sizing on the honest universe: the A-or-
+        # better held set sized by the live `leader_weights`, with and
+        # without the P/E-history tilt. The first is the control for the
+        # second; both are research arms, not live changes.
+        "leader_ewma_minA_floor50_live": _leader_live(
+            grading.ORDINAL[grading.A]
+        ),
+        "leader_ewma_minA_floor50_pe": _leader_live(
+            grading.ORDINAL[grading.A], pe=True
         ),
     }
 )

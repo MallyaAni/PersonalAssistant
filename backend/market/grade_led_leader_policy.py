@@ -2,7 +2,7 @@
 
 The candidate keeps every rule of the installed grade-led policy except how an
 eligible name is sized: instead of the learned scenario optimiser, each name
-graded A or better (held while it keeps B) takes an equal slot tilted by its
+graded A or better (held while it keeps A) takes an equal slot tilted by its
 trailing-return rank among the sized names, the book is scaled down to a
 realised-volatility target, and each name is capped. Nothing after the
 decision session is read, no model is fitted, and the receipt says the
@@ -19,7 +19,7 @@ from backend.agents.trading.desk import point_in_time
 from backend.market import adaptive_growth_policy as growth
 from backend.market import joint_funded_policy as funded
 
-POLICY = "grade-led-leader-weight/1"
+POLICY = "grade-led-leader-weight/2"
 PROTOCOL = "docs/research/grade-led-leader-weight-contract-2026-10-21.md"
 BASIS = "grade_led_leader_weight"
 WINDOW = 63
@@ -49,18 +49,30 @@ EWMA_SPAN = 20
 EXPOSURE_FLOOR = 0.5
 # The ordinal grades (C 0, B 1, A 2, A+ 3) at which a name is admitted and at
 # which a held name keeps its place, and the least resize worth trading as a
-# share of equity (an exit always trades). Chosen on the account-faithful
-# simulator (`backend.market.policy_book`: the nightly's grades, fills at the
-# next open from cash on hand, whole shares, 10 bp, the FOMC cycle), tuned on
-# 2015-2022 and checked on 2023-2026 (docs/research/
-# account-simulator-rule-2026-10-24.md), on split-corrected grades: admitting
-# at A and holding while B earned 34.9% a year at worst drawdown -28.3% and
-# Sharpe 1.38 against 31.5%, -30.0% and 1.31 for admitting and holding at B,
-# ahead in both windows (19.0% against 16.4% to 2022, 74.2% against 68.7%
-# after) and at 25 bp costs; the 1% minimum trade cut fills from 81,000 to
-# 7,000 without giving up return.
+# share of equity (an exit always trades). The entry is A in every revision;
+# revision 5 held at B and revision 7 (2026-11-02) holds at A.
+#
+# The B hold won on the account-faithful simulator with equal analyst votes:
+# admitting at A and holding while B earned 34.9% a year at worst drawdown
+# -28.3% and Sharpe 1.38 against 31.5%, -30.0% and 1.31 for admitting and
+# holding at B, ahead in both windows (19.0% against 16.4% to 2022, 74.2%
+# against 68.7% after) and at 25 bp costs. The 1% minimum trade cut fills
+# from 81,000 to 7,000 without giving up return.
+#
+# The A hold is the revision the honest point-in-time universe prefers once
+# the valuation analyst carries three votes (docs/research/
+# value-weighted-grading-2026-10-22.md, 25 bp, 20 offsets, medians): on the
+# S&P 500 point-in-time book it earned 17.1% a year at worst drawdown -34.7%
+# and Sharpe 1.00 against the B hold's 14.4%, -38.3% and 0.87, and it is the
+# only tested arm that reaches the program's Sharpe-at-least-1.0 objective on
+# that universe. On the live 94-name book it gives up 1.6 points of CAGR
+# (25.0% against 26.6%) at the same Sharpe 1.11 and a 0.7-point deeper
+# drawdown (-34.1% against -33.4%); the owner chose the honest-universe
+# robustness for the top-tier objective, and the forward record restarts
+# under grade-led-leader-weight/2. The P/E-history tilt (revision 6) is
+# unchanged; its separate evidence is docs/research/pe-history-tilt-2026-10-24.md.
 ENTRY_GRADE = 2
-HOLD_GRADE = 1
+HOLD_GRADE = 2
 MIN_TRADE = 0.01
 # The P/E-history tilt: each sized name's leader slot is multiplied by
 # 1 + PE_HISTORY_TILT * (1 - 2 h), where h is where its price/earnings sits in
@@ -245,13 +257,13 @@ class GradeLedLeaderFundedPolicy(funded.GradeLedFundedPolicy):
     protocol = PROTOCOL
     sizing_reason = BASIS
     target_basis = BASIS
-    # A name is admitted at A or better and held while it keeps at least B
-    # (ENTRY_GRADE, HOLD_GRADE). The scorecard that once preferred the B cut
-    # graded with the research fundamentals mode, not the nightly's; on the
-    # nightly's grades the A entry with a B hold leads in both windows.
+    # A name is admitted at A or better and held while it keeps at least A
+    # (ENTRY_GRADE, HOLD_GRADE, revision 7). The honest point-in-time
+    # universe prefers this hold once valuation carries three votes; the
+    # live book gives up 1.6 points of CAGR at the same Sharpe for it.
     entry_grade = ENTRY_GRADE
     minimum_held_grade = HOLD_GRADE
-    exit_letter = "B"
+    exit_letter = "A"
     min_trade = MIN_TRADE
 
     # Bind the sizing source beside the funded policy source the parent already pins;

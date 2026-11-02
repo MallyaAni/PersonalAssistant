@@ -1,5 +1,137 @@
 # Next session
 
+## CURRENT 2026-11-02 — A hold installed and deployed; forward record restarts under /2
+
+- **Installed rule.** `grade-led-leader-weight/2` admits at A or better and holds
+  while it keeps A; exit below A. `ENTRY_GRADE = 2`, `HOLD_GRADE = 2`,
+  `exit_letter = "A"`, `MIN_TRADE = 0.01`. Every other parameter is unchanged:
+  63-session leader tilt 0.5, EWMA-20 volatility target 0.25 with exposure floor
+  0.5, 25% per-name cap, P/E-history tilt 0.5, valuation analyst at three votes,
+  next-open execution.
+- **Evidence.** Honest S&P 500 point-in-time universe at 25 bp, 20 offsets,
+  medians: A hold 17.1% CAGR, -34.7% worst drawdown, 1.00 Sharpe; B hold 14.4%,
+  -38.3%, 0.87; SPY 13.9%, -33.7%, 0.83; QQQ 19.0%, -35.1%, 0.91. The A hold is
+  the only tested arm reaching the program's Sharpe-at-least-1.0 objective on
+  that universe; it beats SPY on CAGR and Sharpe while its worst drawdown is 1.0
+  point deeper, and trails QQQ's raw CAGR while beating QQQ's Sharpe and
+  drawdown. On the live 94-name book it gives up 1.6 points of CAGR (25.0%
+  against 26.6%) at the same Sharpe 1.11 and a 0.7-point deeper drawdown (-34.1%
+  against -33.4%). The 17.1% A-hold row is a 2026-10-21-code measurement: the
+  2026-11-02 current-code no-floor control shows the same no-floor arm earns
+  12.95% CAGR, -39.43% worst drawdown and 0.806 Sharpe, and the floor 0.5 arm
+  13.28%, -39.43% and 0.815, so the published A/B/SPY/QQQ table and the
+  significance result are historical, not current-code evidence. The exact
+  installed joint configuration's honest-universe scorecard is now run and
+  **fails** the program objective (next bullet but one); the 252-session forward
+  record restarts under `/2`.
+- **Significance result (2026-11-02): FAIL on the pre-registered primary gate.**
+  The paired A-minus-B daily difference over 2,957 sessions at 25 bp is
+  +0.77 bp/day, Newey-West t 1.02, month-block bootstrap -0.66..+2.18 bp/day.
+  A is above B in 20 of 20 offsets (median +2.76 CAGR points, worst +1.53), and
+  the paired mean is positive in both windows (+0.32 bp/day 2016-2023, +1.69
+  2024-2026), but neither is significant. The A hold's edge is a CAGR, Sharpe
+  and drawdown effect, not a statistically significant mean-return effect;
+  A-minus-QQQ is -1.24 bp/day (t -0.82), so the QQQ claim is Sharpe and
+  drawdown, not mean return. No live change; the B hold remains the fallback at
+  the 252-session review. Result:
+  `docs/research/installed-rule-significance-results-2026-11-02.md`.
+- **Joint-configuration result (2026-11-02): FAIL on the pre-registered primary
+  gate.** On the honest S&P 500 point-in-time universe, all sessions, 25 bp,
+  medians across 20 offsets, the exact installed rule (A hold, live
+  `leader_weights`, floor 0.5, P/E tilt 0.5) earned 13.65% CAGR at -34.56%
+  median drawdown and 0.837 Sharpe, against SPY's 13.67% CAGR and QQQ's 18.48%.
+  Median Sharpe misses 1.0 and median CAGR misses SPY by 1.8 bp a year; the
+  median drawdown passes narrowly, but the worst offset is -39.24%. The P/E
+  overlay adds +0.375 CAGR points and +0.021 Sharpe all-window, but the paired
+  mean is +0.053 bp/day, Newey-West t 0.39, bootstrap -0.215..+0.323, and the
+  2016-2023 mean is negative (-0.093 bp/day); it is not distinguishable. The
+  live ordering and the scorecard ordering agree closely (all-window CAGR
+  differs by 0.009 points). The published no-floor A-cut (17.1%, -34.7%, 1.00)
+  predates the 2026-10-24
+  simulator/split commits and is not a same-code control; the contract's
+  evidence paragraph overstates the installed rule. No live change; the
+  252-session forward record remains the arbiter. Result:
+  `docs/research/installed-joint-configuration-results-2026-11-02.md`.
+- **No-floor control (2026-11-02): drift dominant; the floor is not the gap.**
+  On the same honest universe, all sessions, 25 bp, medians across 20 offsets,
+  the published no-floor A cut earns 12.95% CAGR at -33.82% median drawdown,
+  -39.43% worst drawdown and 0.806 Sharpe on current code, against the
+  published 2026-10-21 payload's 17.09%, -30.19%, -34.68% and 1.002. The floor
+  0.5 arm earns 13.28%, -34.42%, -39.43% and 0.815. Decomposition: total gap
+  -3.80 CAGR points = floor effect +0.33 and drift -4.13; the drift is 12.5
+  times the floor effect. The floor binds on 944 of 2,012 sessions in 2016-2023
+  and never in 2024-2026; it adds +0.33 CAGR points and +0.009 Sharpe, costs
+  0.605 median-drawdown points and leaves the worst drawdown unchanged. The
+  2016-2023 window has identical sessions in both payloads and still drifts
+  -3.55 points, so the drift is code/data, not the seven extra sessions; it is
+  consistent with the 2026-10-24 simulator/split-corrected valuation-history
+  commits, which this study cannot isolate. The published 17.1% should not be
+  cited again; the contract is a bound release source, so the correction
+  belongs to the next authorized contract/release update, not a silent edit.
+  No live change; the 252-session forward record remains the arbiter. Result:
+  `docs/research/no-floor-control-results-2026-11-02.md`.
+- **Acceptance and install.** Candidate
+  `docs/research/trading-approval-candidates-2026-11-02/entry-grade-a/`. Full unit
+  gate: 11828 passed, 94 skipped, 10 xfailed, 508 warnings, 48 subtests passed
+  in 1083.03s (18:03), run on fresh `anios_gate_leader2` because `anios_gate`
+  was stale at another branch's `20261101_0023`; targeted gate 119 passed, 2
+  expected xfails. Seven submission-clock tests were pinned to after-close
+  decision instants; the production reviewed-XNYS guard is unchanged. Release
+  ceremony under the paper lock on the owner directive of 2026-11-01,
+  `approved_at` 2026-11-02T16:55:45Z, archive
+  `20261102T165545-leader-ba46ac7222cd47da9ca2e195514de5fc`; evidence
+  `7a315eb2...`, release `deb96b65...`, config `2889633c...`; policy `/2`.
+- **Deploy.** `scripts/deploy.sh` deployed
+  `15462e00de9eecf4686e6b936f3d063048370c5a` (pushed to `origin/main`); the
+  checkout and `data/.deployed-commit` are at `15462e00`; admission `ADMITTED`
+  (host and container); `.post-deploy-status` reads
+  `2026-11-02T17:24:07Z 15462e00 ok (cheap)`. Admission was red with `Exact
+  installed learned holding configuration required` between install and
+  fast-forward, as expected.
+- **Next.** Fresh ordinary paper acceptance is the 2026-11-02 19:30 ET nightly;
+  the first forward-record week under `/2` closes 2026-11-06. The 20:40 ET
+  replay defaults to `/2` and writes `leader_ewma_minA_floor50`. The rule stays
+  frozen for the 252-session window; P1 weekly tracking remains the workstream.
+  The joint configuration is scored and failed the honest-universe objective;
+  the no-floor control shows the gap to the published 17.1% is code/data drift,
+  not the floor (floor effect +0.33 CAGR points, drift -4.13), and the floor
+  binds only in the 2016-2023 high-volatility episodes. The current-code
+  numbers are the ones to use. A drift bisect is a separate question, not a
+  retry; it would need the old code and the old data state, may not be
+  recoverable, and must be pre-registered before its first run. Research only.
+  Positive-shock drift remains owner-blocked.
+
+## CURRENT 2026-11-01 (later) — A2 statement reading failed and closed; P1 forward record is the workstream
+
+- **A2 statement reading: failed and closed.** The anonymised eight-quarter packet
+  produced a committed direction on 73.0% of 378 labelled names (102 `uncertain`),
+  below the 80% coverage gate; accuracy was 67.4% (186/276), above chance
+  (binomial p 5.1e-7 vs 52.7%) and above the 54.7% label-shuffle placebo p95, but
+  below the 71.7% majority baseline. The PIT sign stance's mean daily 20-session
+  residual IC was 0.0177 against 0.02, Newey–West t 0.68 against 2.0, weekly
+  bootstrap 95% lower bound −0.0222 against 0; the within-day placebo p95 was
+  0.0138. The confidence-weighted sensitivity (0.0235) and the strict-alignment
+  sensitivity (0.0171) do not turn the failed primary into a pass. The calm window
+  (2026-08-03..2026-09-15) was +0.0423 over 31 sessions; the earnings window
+  (2026-09-16..2026-10-02) was −0.0411 over 13. The book relevance check passed at
+  0.0690 (survivor-biased, NW t 1.12, bootstrap lower −0.0099). The pre-cutoff
+  accuracy at 2024-08-01 was 67.8% versus 67.4% post-cutoff, so the lookahead
+  diagnostic shows no memorisation advantage. G3, G4 and G5 pass; the verdict is
+  **FAIL** on G1 coverage and G2 significance. Not adopted, not retried without a
+  new pre-registration (`36eddfc8` pre-registration,
+  `docs/research/statement-reading-results-2026-11-01.md`,
+  `docs/research/scorecards/statement-reading/result.json`).
+- **Run and verification.** 1,374 unique packets; the first pass was stopped at the
+  2-hour background limit after 930 calls and the resume completed 385 calls from
+  the cache, 0 failures. The unit tests are 20 passed; ruff clean; the functional
+  prompt test passed in the Docker gate. No live rule, grade, order, prompt or
+  risk-dial change; the A2 module is research-only.
+- **Next:** P1 weekly tracking is the highest-priority workstream; the rule stays
+  frozen for the 252-session window. The next ordinary nightly is 11-02 (the three
+  10-30 orders fill at that open) and its parity row is the first after the 11-01
+  deploy. C5 sector rotation and positive-shock drift remain blocked pending an
+  owner mandate.
+
 ## CURRENT 2026-10-31 (later) — four-step path closed; P1 forward record is the workstream
 
 - **Step 2, sector cap: failed and closed.** The pre-registered cap never binds on the
@@ -35,11 +167,49 @@
   −0.25-point mean difference); parity 3 of 4; execution all-time 134 fills, +15.55 bp
   all-in, drift +52.92 bp, slippage −34.88 bp; exposure 20.8% → 47.8% as the retired
   FOMC cut restored the October cycle. No live change; not a performance verdict.
+- **P5 multi-class and stale share counts: fixed and deployed** (`b8f11366`). The cover-page
+  XBRL reader resolves ERIE 46,191,610 and STZ 169,224,220 and refreshes twelve stale
+  names (ABT, C, DTE, ETR, EXC, FE, HSY, HUM, JCI, LNT, NEE, SO); it refuses BRK-B, V
+  and ARES as ambiguous, and ASML, NBIS, SIMO and TSM have no 10-K/10-Q cover page.
+  Counts are stored as `shares` versions at the cover tier with a
+  `class_checked_through` watermark that a transient failure cannot advance
+  past the failed filing (`4dd9c328`); the incremental fetch reads one
+  submissions block per managed name, and a 20-F/6-K filer with no periodic
+  form in the recent block no longer refetches every older block nightly
+  (`89dc627b`); 36 tests in `backend/tests/test_cover_class_shares.py`; ruff
+  clean; affected gate passed (128 passed, 2 skipped across the five EDGAR
+  and fundamentals suites). No live rule, grade or order changed. Deployed
+  2026-11-01T05:37:32Z in `79a4824f` (both gates passed; admission ADMITTED;
+  post-deploy ok). All four P5 code files (`edgar.py`, `fundamentals_asof.py`,
+  `market_fundamentals_asof.py`, `test_cover_class_shares.py`) are
+  byte-identical to the tested tree. The 11-02 nightly's `_refresh_versions` (531-name research universe,
+  which contains every repaired name) performs the store repair. A real-SEC
+  check with the deployed reader on 2026-11-01 returned ERIE 46,191,610 (10-Q
+  filed 2026-10-29, accession `0001628280-26-068274`) and STZ 169,224,220
+  (10-Q filed 2026-10-07, accession `0000016918-26-000040`), the expected
+  repair values. Two research-only members fail CIK mapping nightly: WBD
+  (Form 15-15D filed 2026-10-16) and PSKY (no SEC ticker-map entry). Neither
+  is in the 94-name book, so no live grade is affected; their fundamentals
+  stay stale until the universe snapshot is refreshed.
+- **Shadow identity continuation: added.** `opportunity_shadow.identity` hashes
+  `edgar.py`, so the P5 change moved the source identity to `a652a8ad`. The
+  full unit gate caught the drift: declared continuation rows now run from the
+  eight archived ledger origins and from the live ML-forward ledger's last
+  observation policy (`c75ae9a3`, 2026-10-30 sequence 31) to `a652a8ad`; a new
+  pinned test covers the live-ledger origin. Without the live row the forward
+  shadow would have refused to continue after deploy. Full unit gate on
+  `anios_gate_p5`: 11,808 passed, 94 skipped, 10 xfailed, 0 failed, gate passed
+  (2026-10-31, `98e9ff45`). A concurrent agent suite on the shared `anios_gate`
+  exhausted Postgres's 100 connections and failed 42 unrelated tests on the
+  first rerun; the trap is recorded in `AGENTS.md`.
 - **Next:** P1 weekly tracking is the highest-priority workstream; the rule stays frozen
   for the 252-session window. The next ordinary nightly is 11-02 (the three 10-30 orders
-  fill at that open) and its parity row is the first after the 10-31 deploy. No new
-  strategy, no risk-dial change, no earnings/intraday overlay. C5 sector rotation and
-  positive-shock drift remain blocked pending an owner mandate.
+  fill at that open) and its parity row is the first after the 11-01 deploy. P5 touched
+  none of the 44 bound release sources (`learned_live_holding.source_identity()` does not
+  include `edgar.py`), so it needed only a deploy, not a new release, and trading
+  admission stayed ADMITTED. No new strategy, no risk-dial change, no
+  earnings/intraday overlay. C5 sector rotation and positive-shock drift remain blocked
+  pending an owner mandate.
 
 ## CURRENT 2026-10-31 — event watch now runs nightly and shows on the Desk (295b148a)
 
