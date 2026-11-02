@@ -328,6 +328,41 @@ class SubscriberRepository:
             )
 
 
+# The subscription that belongs to the account holder, or None when the account
+# has none.
+#
+# Recorded rather than inferred. The earliest row was the owner by convention
+# until the owner removed theirs and a guest was added first: the guest's row
+# was then earliest, so a guest's tapback was read as the owner's verdict and
+# the owner's own was discarded. Rows written before the flag existed are
+# backfilled by the migration that added it, so the fallback below is for the
+# rare account whose rows predate both.
+#
+# The fallback is the old convention rather than "everyone", because treating
+# every guest's reaction as the owner's is the failure this replaced.
+async def owner_subscriber_id(
+    session: AsyncSession, user_id: str
+) -> uuid.UUID | None:
+    flagged = (
+        select(DiscoverySubscriber.id)
+        .where(
+            DiscoverySubscriber.user_id == user_id,
+            DiscoverySubscriber.is_owner.is_(True),
+        )
+        .limit(1)
+    )
+    owner = (await session.execute(flagged)).scalars().first()
+    if owner is not None:
+        return owner
+    earliest = (
+        select(DiscoverySubscriber.id)
+        .where(DiscoverySubscriber.user_id == user_id)
+        .order_by(DiscoverySubscriber.created_at.asc(), DiscoverySubscriber.id.asc())
+        .limit(1)
+    )
+    return (await session.execute(earliest)).scalars().first()
+
+
 def _to_subscriber(row: DiscoverySubscriber) -> Subscriber:
     return Subscriber(
         id=str(row.id),

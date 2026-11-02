@@ -22,16 +22,15 @@ sweep behaves exactly as it did before this module existed.
 """
 
 import json
-import uuid
 from dataclasses import dataclass
 from datetime import datetime
 
 from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.discovery.subscribers import owner_subscriber_id
 from backend.models.discovery_feedback import DiscoverySentFind
 from backend.models.discovery_run import DiscoveryRun
-from backend.models.discovery_subscriber import DiscoverySubscriber
 
 # Enough history to shade every interest a profile may hold, small enough
 # that one query stays cheap.
@@ -128,42 +127,6 @@ class ReactedFind:
     digest: str | None = None
 
 
-# The subscription that belongs to the account holder.
-#
-# Recorded rather than inferred. The earliest row was the owner by convention
-# until the owner revoked and subscribed again behind a guest: the guest's row
-# was then earliest, so the guest's tapback was read as the owner's verdict and
-# the owner's own was discarded. Rows written before the flag existed are
-# backfilled by the migration that added it, so the fallback below is for the
-# rare account whose rows predate both.
-#
-# Returning None (no subscription at all) leaves every reaction in scope, which
-# is the right default for legacy rows.
-async def _owner_subscriber_id(
-    session: AsyncSession, user_id: str
-) -> uuid.UUID | None:
-    stmt = (
-        select(DiscoverySubscriber.id)
-        .where(
-            DiscoverySubscriber.user_id == user_id,
-            DiscoverySubscriber.is_owner.is_(True),
-        )
-        .limit(1)
-    )
-    owner = (await session.execute(stmt)).scalars().first()
-    if owner is not None:
-        return owner
-    # No row is flagged. Rather than treat every guest's reaction as the
-    # owner's, fall back to the convention this replaced.
-    fallback = (
-        select(DiscoverySubscriber.id)
-        .where(DiscoverySubscriber.user_id == user_id)
-        .order_by(DiscoverySubscriber.created_at.asc(), DiscoverySubscriber.id.asc())
-        .limit(1)
-    )
-    return (await session.execute(fallback)).scalars().first()
-
-
 # Every reacted find for this user, newest first, with the interest that
 # surfaced it. The join runs through the run's digest record by title:
 # the sent row and the digest both store the described title, and the
@@ -179,11 +142,10 @@ async def reacted_finds(
     # the account holder. A guest's thumbs-down must not shade the owner's
     # interests or become a fact the model weighs about the owner.
     #
-    # There is no explicit owner marker on a subscription, so the earliest one
-    # is treated as the owner's own — the account holder's phone is enrolled
-    # first in practice, and guests are added to it. Rows with no subscriber id
-    # predate per-subscriber recording and are included for the same reason.
-    owner_id = await _owner_subscriber_id(session, user_id)
+    # The owner is the recorded one, resolved beside the repository that
+    # records it. Rows with no subscriber id predate per-subscriber recording
+    # and are included for the same reason.
+    owner_id = await owner_subscriber_id(session, user_id)
     if owner_id is not None:
         stmt = stmt.where(
             or_(

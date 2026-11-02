@@ -1174,6 +1174,18 @@ DependencyDiscoverySubscribers = Annotated[
 ]
 
 
+# Reads back what Scout already sent this person, for the chat tool that
+# answers "what did you send me?".
+def get_sent_find_repository(db: DbDependency) -> SentFindRepository:
+    return SentFindRepository(db)
+
+
+DependencyDiscoverySentFinds = Annotated[
+    SentFindRepository,
+    Depends(get_sent_find_repository),
+]
+
+
 def get_discovery_familiar_repository(db: DbDependency) -> FamiliarItemRepository:
     return FamiliarItemRepository(db)
 
@@ -1652,6 +1664,7 @@ def get_conversation_service(
     presentation_jobs: PresentationJobDependency,
     discovery_profile: DependencyDiscoveryProfileService,
     discovery_runs: DependencyDiscoveryRuns,
+    sent_finds: DependencyDiscoverySentFinds,
     scheduled_tasks: DependencyScheduledTasks,
     skills: DependencySkills,
     memory_proposals: MemoryProposalDependency,
@@ -1695,6 +1708,7 @@ def get_conversation_service(
         ),
         discovery_profile=discovery_profile,
         discovery_runs=discovery_runs,
+        sent_finds=sent_finds,
         scheduled_tasks=scheduled_tasks,
         skills=skills,
         memory_proposals=memory_proposals,

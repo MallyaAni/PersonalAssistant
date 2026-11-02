@@ -28,7 +28,11 @@ flowchart TB
     Description --> Message[DeepSeek V4 Flash<br/>writes the message]
     Message --> Digest[One message per find]
     Digest --> Tapback([Thumbs up or down])
-    Tapback --> Signal[(Recorded, unused so far)]
+    Tapback --> Signal[(Recorded per subscriber<br/>the owner's own opinion only)]
+    Signal --> Feedback[Every sweep reads it back<br/>interest strength shaded, reranker weighs it]
+    Feedback --> Aim
+    Feedback --> Ranking
+    Signal --> ReadBack([scout_digest<br/>reads it back in chat])
 
     Rule[Application code owns persistence,<br/>qualification, budgets and delivery]
     Rule -.-> Review
@@ -43,8 +47,8 @@ flowchart TB
     classDef data fill:#eef7ee,stroke:#5f9562,color:#183b1b;
     classDef model fill:#f1edff,stroke:#8872c6,color:#2e2450;
     classDef warning fill:#fff3cd,stroke:#b78b20,color:#4d3900,stroke-dasharray:5 4;
-    class Statement,Review,NoWrite,Trigger,Digest,Tapback interface;
-    class Sweep,Sources,Safety,Ranking application;
+    class Statement,Review,NoWrite,Trigger,Digest,Tapback,ReadBack interface;
+    class Sweep,Sources,Safety,Ranking,Feedback application;
     class Profile,Facts,Signal data;
     class Extract,Aim,Precision,Reorder,Poster,Description,Message model;
     class Rule,Clock warning;

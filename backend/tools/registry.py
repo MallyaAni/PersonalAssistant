@@ -25,6 +25,7 @@ from . import (
     presentation,
     save_skill,
     schedule_task,
+    scout_digest,
     scout_schedule,
     search_history,
     send_event_links,
@@ -46,6 +47,7 @@ from .actions import (
     RecallHistoryAction,
     SaveSkillAction,
     ScheduleTaskAction,
+    ScoutDigestAction,
     ScoutScheduleAction,
     SearchAction,
     SendEventLinksAction,
@@ -88,6 +90,7 @@ _MODULES: tuple[ModuleType, ...] = (
     save_skill,
     manage_skills,
     manage_runs,
+    scout_digest,
     send_event_links,
 )
 
@@ -266,6 +269,7 @@ _ROW_FOR_ACTION: dict[type, BuiltinTool] = {
     ScheduleTaskAction: schedule_task.TOOL,
     ManageTasksAction: manage_tasks.TOOL,
     ManageCheckInsAction: manage_check_ins.TOOL,
+    ScoutDigestAction: scout_digest.TOOL,
     ScoutScheduleAction: scout_schedule.TOOL,
     SaveSkillAction: save_skill.TOOL,
     ManageSkillsAction: manage_skills.TOOL,
@@ -291,6 +295,8 @@ def _detail(action: MainAction) -> str:
         return action.subject
     if isinstance(action, CreateDocumentAction | EditDocumentAction):
         return f"{action.title} ({action.format})"
+    if isinstance(action, ScoutDigestAction):
+        return " ".join(part for part in (action.since, action.until) if part) or "all"
     if isinstance(action, ScoutScheduleAction) and action.operation == "show":
         return "show"
     if isinstance(action, ScoutScheduleAction):

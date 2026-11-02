@@ -40,6 +40,7 @@ from backend.core.interfaces import (
 )
 from backend.core.links import URL_IN_TEXT, LinkFence, allowed_urls
 from backend.core.llm import LLMClient
+from backend.discovery.feedback import SentFind, SentFindRepository
 from backend.discovery.projection import interest_fact, locality_fact
 from backend.discovery.runs import DiscoveryRunRepository
 from backend.discovery.schedule import Cadence
@@ -89,6 +90,7 @@ from backend.services.main_action_selector import (
     MainActionSelector,
     ManageSkillsAction,
     ManageTasksAction,
+    ScoutDigestAction,
     ScoutScheduleAction,
     RecallHistoryAction,
     SaveSkillAction,
@@ -1232,6 +1234,21 @@ def _stated_window(
     return start, end
 
 
+# One find Scout sent, as the reply context carries it: the date in the
+# person's own zone when one is known, so "yesterday's digest" is not reported
+# a day off, and the reaction as it was recorded rather than inferred.
+def _sent_find_record(find: SentFind, zone: Any | None) -> dict[str, Any]:
+    moment = find.sent_at
+    if zone is not None and moment.tzinfo is not None:
+        moment = moment.astimezone(zone)
+    return {
+        "title": find.title,
+        "locality": find.locality,
+        "when": moment.strftime("%Y-%m-%d"),
+        "reaction": find.reaction,
+    }
+
+
 # The retrieval distance an excerpt carries, for merging and ordering; an
 # excerpt without one sorts last rather than first.
 _GENERIC_SUBJECTS = ("the user", "user", "i am", "i'm", "i", "me", "my")
@@ -1391,6 +1408,9 @@ class ConversationService:
         presentation_model: str | None = None,
         discovery_profile: DiscoveryProfileService | None = None,
         discovery_runs: DiscoveryRunRepository | None = None,
+        # What Scout already sent this person, for the chat read-back. None
+        # leaves the tool unavailable rather than answering from nothing.
+        sent_finds: SentFindRepository | None = None,
         scheduled_tasks: ScheduledTaskRepository | None = None,
         skills: SkillRepository | None = None,
         memory_proposals: MemoryProposalAgent | None = None,
@@ -1465,6 +1485,7 @@ class ConversationService:
         self.presentation_model = presentation_model
         self.discovery_profile = discovery_profile
         self.discovery_runs = discovery_runs
+        self.sent_finds = sent_finds
         self.scheduled_tasks = scheduled_tasks
         self.skills = skills
         self.memory_proposals = memory_proposals
@@ -3905,6 +3926,7 @@ class ConversationService:
         task_outcomes = [s.outcome for s in steps if s.kind == "task"]
         skill_outcomes = [s.outcome for s in steps if s.kind == "skill"]
         scout_outcomes = [s.outcome for s in steps if s.kind == "scout"]
+        digest_outcomes = [s.outcome for s in steps if s.kind == "digest"]
         run_outcomes = [s.outcome for s in steps if s.kind == "run"]
         link_outcomes = [s.outcome for s in steps if s.kind == "links"]
         _trace(
@@ -3929,6 +3951,8 @@ class ConversationService:
             outcomes["skill_outcomes"] = skill_outcomes
         if scout_outcomes:
             outcomes["scout_schedule_outcomes"] = scout_outcomes
+        if digest_outcomes:
+            outcomes["digest_outcomes"] = digest_outcomes
         if run_outcomes:
             outcomes["run_outcomes"] = run_outcomes
         if link_outcomes:
@@ -4192,12 +4216,26 @@ class ConversationService:
                 and getattr(self, "discovery_runs", None) is not None
             ):
                 return "scout", await self._apply_scout_schedule(user_id, action)
+            # The link follow-up belongs to this block only so a firing cannot
+            # deliver one; it is a read, not a schedule, and it has to run on
+            # an ordinary turn. Before this line existed the branch below was
+            # unreachable, because the union above caught the action first and
+            # fell through to `return None` - the tool was offered, chosen, and
+            # then quietly did nothing.
+            if isinstance(action, SendEventLinksAction):
+                return "links", await self._apply_event_links(user_id, action)
             return None
         if isinstance(action, SearchAction):
             return "search", await self._search_step(frame, action)
-        if isinstance(action, SendEventLinksAction):
-            return "links", await self._apply_event_links(user_id, action)
         if isinstance(action, RecallHistoryAction):
+            return "recall", await self._recall_step(user_id, frame, action)
+        # A read, like recall, so it runs on any attended turn. With no
+        # repository wired the tool is unavailable rather than answered from
+        # nothing.
+        if isinstance(action, ScoutDigestAction):
+            if getattr(self, "sent_finds", None) is None:
+                return "digest", {"kind": "unavailable"}
+            return "digest", await self._apply_scout_digest(user_id, action)
             return "recall", await self._recall_step(user_id, frame, action)
         if isinstance(action, ToolboxAction):
             return "tool", await self._toolbox_step(user_id, frame, action)
@@ -4354,6 +4392,42 @@ class ConversationService:
                 "scout_schedule_action_failed: %s: %s", type(exc).__name__, str(exc)[:200]
             )
             return {"kind": "failed", "requested": requested}
+
+    # What Scout already sent this person, read back from the stored bubbles
+    # so the reply reports it rather than guessing. A read, so nothing changes;
+    # the bounds are the model's words resolved to instants by `_stated_window`,
+    # and a malformed date degrades to an unbounded read rather than to no read.
+    async def _apply_scout_digest(
+        self, user_id: str, action: ScoutDigestAction
+    ) -> dict[str, Any]:
+        since, until = _stated_window(action.since, action.until)
+        try:
+            finds = await self.sent_finds.sent_for(user_id, since=since, until=until)
+        except Exception:
+            logger.warning("Reading back what Scout sent failed", exc_info=True)
+            return {"kind": "failed"}
+        if not finds:
+            return {"kind": "empty"}
+        zone_name = (
+            await self._primary_timezone(user_id)
+            if self.discovery_profile is not None
+            else None
+        )
+        zone = None
+        if zone_name:
+            try:
+                from zoneinfo import ZoneInfo
+
+                zone = ZoneInfo(zone_name)
+            except Exception:
+                zone = None
+        return {
+            "kind": "digest",
+            # The loop's next decision reads this to know the evidence is in
+            # hand rather than reading again.
+            "count": len(finds),
+            "items": [_sent_find_record(find, zone) for find in finds],
+        }
 
     # The routed action, announced. A skill is a stored instruction; what
     # runs is that instruction, routed again with the ordinary tools, and

@@ -54,6 +54,7 @@ outcome and means the turn is answered as an ordinary reply.
 
 | tool | what it does | arguments | loaded | effect |
 | --- | --- | --- | --- | --- |
+| `scout_digest` | Reads back the finds Scout has already sent this person - what each one was, when it went, and whether they gave it a thumbs-up or thumbs-down | `since`, `until` | catalogued | `read` · `fast` |
 | `send_event_links` | Sends the map, calendar and event-page links for events already shown in a listing, for exactly the ones the person asks about - 'send me the links for the salsa night', 'maps for the first two', 'share the calendar for all of them' | `which` | always | `read` · `fast` |
 
 

@@ -735,6 +735,55 @@ def _render_scout_schedule_outcomes(outcomes: list[dict[str, Any]]) -> str:
     return "".join(_render_scout_schedule_outcome(outcome) for outcome in outcomes)
 
 
+# What Scout already sent, read back from the stored record this turn. The
+# titles, dates and reactions come from rows rather than from the conversation,
+# which never contains a digest, so the reply must report these and invent
+# nothing - and must not treat the list as a new recommendation.
+def _render_scout_digest_outcome(outcome: dict[str, Any]) -> str:
+    if not outcome:
+        return ""
+    kind = str(outcome.get("kind") or "")
+    if kind == "empty":
+        return (
+            "Scout digest read-back: nothing sent in that window.\n"
+            "- Scout has no digest on record for the period asked about. Say so "
+            "plainly; do not invent finds or describe an earlier digest from "
+            "memory.\n\n"
+        )
+    if kind != "digest":
+        return (
+            "Scout digest read-back failed.\n"
+            "- The record could not be read this turn. Say you could not check; "
+            "do not guess at what was sent.\n\n"
+        )
+    items = [item for item in (outcome.get("items") or []) if isinstance(item, dict)]
+    lines = ["What Scout already sent this person, newest first:\n"]
+    for item in items:
+        title = str(item.get("title") or "").strip()
+        if not title:
+            continue
+        where = f" ({item['locality']})" if item.get("locality") else ""
+        reaction = str(item.get("reaction") or "")
+        opinion = (
+            " - they gave it a thumbs-up"
+            if reaction == "liked"
+            else " - they gave it a thumbs-down"
+            if reaction == "disliked"
+            else " - no reaction"
+        )
+        lines.append(f'- "{title}"{where}, sent {item.get("when") or "earlier"}{opinion}\n')
+    lines.append(
+        "- Report exactly these as what was already sent, with their reactions. "
+        "They are history, not new suggestions: do not offer them again or add "
+        "finds that are not listed.\n\n"
+    )
+    return "".join(lines)
+
+
+def _render_scout_digest_outcomes(outcomes: list[dict[str, Any]]) -> str:
+    return "".join(_render_scout_digest_outcome(outcome) for outcome in outcomes)
+
+
 # The event links this turn delivered, as the exact block the reply relays
 # verbatim. The links were built by code from typed records, so the reply must
 # not rewrite, re-order or invent any of them - the person asked for the links
@@ -953,6 +1002,7 @@ def _build_turn_context(
         _render_scout_schedule_outcomes(
             _outcome_list(context_data, "scout_schedule_outcome")
         ),
+        _render_scout_digest_outcomes(_outcome_list(context_data, "digest_outcome")),
         _render_event_links(_outcome_list(context_data, "event_link")),
         _render_skill_context(context_data),
         _render_handed_off(context_data.get("handed_off") or {}),
