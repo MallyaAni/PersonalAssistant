@@ -16,8 +16,9 @@
   point deeper, and trails QQQ's raw CAGR while beating QQQ's Sharpe and
   drawdown. On the live 94-name book it gives up 1.6 points of CAGR (25.0%
   against 26.6%) at the same Sharpe 1.11 and a 0.7-point deeper drawdown (-34.1%
-  against -33.4%). The joint configuration was not scored together; the
-  252-session forward record restarts under `/2`.
+  against -33.4%). The exact installed joint configuration's honest-universe
+  scorecard is now run and **fails** the program objective (next bullet but one);
+  the 252-session forward record restarts under `/2`.
 - **Significance result (2026-11-02): FAIL on the pre-registered primary gate.**
   The paired A-minus-B daily difference over 2,957 sessions at 25 bp is
   +0.77 bp/day, Newey-West t 1.02, month-block bootstrap -0.66..+2.18 bp/day.
@@ -29,6 +30,23 @@
   drawdown, not mean return. No live change; the B hold remains the fallback at
   the 252-session review. Result:
   `docs/research/installed-rule-significance-results-2026-11-02.md`.
+- **Joint-configuration result (2026-11-02): FAIL on the pre-registered primary
+  gate.** On the honest S&P 500 point-in-time universe, all sessions, 25 bp,
+  medians across 20 offsets, the exact installed rule (A hold, live
+  `leader_weights`, floor 0.5, P/E tilt 0.5) earned 13.65% CAGR at -34.56%
+  median drawdown and 0.837 Sharpe, against SPY's 13.67% CAGR and QQQ's 18.48%.
+  Median Sharpe misses 1.0 and median CAGR misses SPY by 1.8 bp a year; the
+  median drawdown passes narrowly, but the worst offset is -39.24%. The P/E
+  overlay adds +0.375 CAGR points and +0.021 Sharpe all-window, but the paired
+  mean is +0.053 bp/day, Newey-West t 0.39, bootstrap -0.215..+0.323, and the
+  2016-2023 mean is negative (-0.093 bp/day); it is not distinguishable. The
+  live ordering and the scorecard ordering agree closely (all-window CAGR
+  differs by 0.009 points). The published no-floor A-cut (17.1%, -34.7%, 1.00)
+  predates the 2026-10-24
+  simulator/split commits and is not a same-code control; the contract's
+  evidence paragraph overstates the installed rule. No live change; the
+  252-session forward record remains the arbiter. Result:
+  `docs/research/installed-joint-configuration-results-2026-11-02.md`.
 - **Acceptance and install.** Candidate
   `docs/research/trading-approval-candidates-2026-11-02/entry-grade-a/`. Full unit
   gate: 11828 passed, 94 skipped, 10 xfailed, 508 warnings, 48 subtests passed
@@ -51,10 +69,12 @@
   the first forward-record week under `/2` closes 2026-11-06. The 20:40 ET
   replay defaults to `/2` and writes `leader_ewma_minA_floor50`. The rule stays
   frozen for the 252-session window; P1 weekly tracking remains the workstream.
-  The next research question is the exact installed joint configuration (A hold
-  plus the P/E-history tilt at strength 0.5), whose honest-universe scorecard
-  was never run; it will be pre-registered before its first run and is research
-  only. Positive-shock drift remains owner-blocked.
+  The joint configuration is scored and failed the honest-universe objective;
+  the next research question is a pre-registered current-code no-floor control
+  to separate the 0.5 floor from the 2026-10-24 simulator/split drift, and
+  possibly a floor comparison (0 against 0.5) on the A hold. It must be
+  pre-registered before its first run and is research only. Positive-shock
+  drift remains owner-blocked.
 
 ## CURRENT 2026-11-01 (later) — A2 statement reading failed and closed; P1 forward record is the workstream
 
