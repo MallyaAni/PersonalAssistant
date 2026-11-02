@@ -30,7 +30,7 @@ def test_the_configured_vision_model_reaches_the_provider():
 # they drifted, a deployment that never set the variable sent images to a
 # retired local VLM that nothing served.
 def test_the_vision_model_default_matches_compose():
-    from backend.config.settings import settings
+    from backend.config.settings import Settings
 
     compose = (_ROOT / "docker-compose.yml").read_text(encoding="utf-8")
     declared = set(
@@ -38,7 +38,15 @@ def test_the_vision_model_default_matches_compose():
     )
 
     assert declared, "compose no longer declares a VISION_MODEL default"
-    assert declared == {settings.VISION_MODEL}
+    # The declared default, not `settings.VISION_MODEL`. That attribute is the
+    # value the environment resolved, and a deployment that sets the variable
+    # in its own .env is configuring the role - which is the whole point of it.
+    # Comparing the resolved value failed this test on a correct override (this
+    # deployment runs `qwen3-vl-8b`, an alias the second Spark still serves for
+    # the same DeepSeek model) and would have failed the gate for every
+    # deployment that ever changed the vision model.
+    default = Settings.model_fields["VISION_MODEL"].default
+    assert declared == {default}
 
 
 # Verify the configured adapter constructs the neutral vision implementation.
