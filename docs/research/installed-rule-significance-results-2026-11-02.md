@@ -16,9 +16,9 @@ All sessions, 25 bp, 2,957 paired sessions, median offset:
 
 | comparison | mean | Newey-West t (lag 20) | 95% month-block bootstrap |
 |---|---:|---:|---:|
-| A hold minus B hold | **+0.77 bp/day** | **1.02** | −0.73 .. +2.25 bp/day |
+| A hold minus B hold | **+0.77 bp/day** | **1.02** | −0.66 .. +2.18 bp/day |
 | A hold minus SPY | +0.86 bp/day | 0.85 | −1.14 .. +2.73 bp/day |
-| A hold minus QQQ | −1.24 bp/day | −0.82 | −4.15 .. +1.78 bp/day |
+| A hold minus QQQ | −1.24 bp/day | −0.82 | −4.17 .. +1.67 bp/day |
 
 The primary gate required a positive mean, t at least 2.0 and a bootstrap lower
 bound above zero. The mean is positive, but the t is 1.02 and the interval
@@ -71,10 +71,17 @@ estimate is larger but the sample is shorter and the interval is wider.
 |---|---|
 | primary mean > 0 | pass (+0.77 bp/day) |
 | primary HAC t >= 2.0 | **fail (1.02)** |
-| primary bootstrap lower > 0 | **fail (−0.73 bp/day)** |
+| primary bootstrap lower > 0 | **fail (−0.66 bp/day)** |
 | offset sign >= 15 of 20 | pass (20 of 20) |
 | both sub-period means > 0 | pass (+0.32, +1.69) |
 | **verdict** | **FAIL** |
+
+Correction (2026-11-02): the first write filtered the daily differences before
+building the month blocks, so the block index was shifted one session against
+the calendar and the all-session bootstrap interval moved by about 0.1 bp/day.
+The script now keeps the raw row aligned with the month index; the corrected
+intervals are above. The mean, Newey-West t, PSR, metrics and offset counts are
+unchanged, and the verdict remains FAIL.
 
 A failure is not retried with a different lag, bootstrap, window or universe
 without a new pre-registration saying what changed and why. The next research

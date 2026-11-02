@@ -20,7 +20,7 @@
   252-session forward record restarts under `/2`.
 - **Significance result (2026-11-02): FAIL on the pre-registered primary gate.**
   The paired A-minus-B daily difference over 2,957 sessions at 25 bp is
-  +0.77 bp/day, Newey-West t 1.02, month-block bootstrap -0.73..+2.25 bp/day.
+  +0.77 bp/day, Newey-West t 1.02, month-block bootstrap -0.66..+2.18 bp/day.
   A is above B in 20 of 20 offsets (median +2.76 CAGR points, worst +1.53), and
   the paired mean is positive in both windows (+0.32 bp/day 2016-2023, +1.69
   2024-2026), but neither is significant. The A hold's edge is a CAGR, Sharpe
