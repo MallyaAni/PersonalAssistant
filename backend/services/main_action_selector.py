@@ -812,17 +812,20 @@ class MainActionSelector:
         # about the sent record ("what do I like that you sent me?") keeps the
         # tool; the judgement reads the message and the conversation it sits
         # in, and fails open to the router's choice.
-        if isinstance(decision, Act) and isinstance(
-            decision.action, (ScoutDigestAction, ScoutScheduleAction)
+        if (
+            isinstance(decision, Act)
+            and isinstance(
+                decision.action, (ScoutDigestAction, ScoutScheduleAction)
+            )
+            and not await judge_scout_record(self.llm, query, history_text)
         ):
-            if not await judge_scout_record(self.llm, query, history_text):
-                logger.info(
-                    "A Scout tool was chosen for a question about people; "
-                    "taking no tool"
-                )
-                return Done(
-                    "a question about what people like, not Scout's own record"
-                )
+            logger.info(
+                "A Scout tool was chosen for a question about people; "
+                "taking no tool"
+            )
+            return Done(
+                "a question about what people like, not Scout's own record"
+            )
         # Someone changing the wording of a draft is not asking what is
         # running in the background. Measured on the real router 2026-09-06:
         # "More casual" after a drafted email was answered with a report on
