@@ -267,6 +267,10 @@ scale without coupling the system to the current RTX 5080 or planned DGX Spark.
   byte-identical defaults), with the diagnostics, the floors and the
   [pre-registered plan](research/midcycle-ew-plan-2026-09-27.md) fixed before
   the run. Until it runs the executor keeps the live rule.
+- **Trading direction is superseded** by
+  [trading/PROGRAM-DIRECTION.md](trading/PROGRAM-DIRECTION.md) (2026-11-03). The
+  trading statements in this milestone are historical; the direction document is
+  canonical.
 - Trading research remains `IN PROGRESS`: the optional account journal and
   independent replay are verified on synthetic accounting paths (292 tests;
   five archive/CLI journeys), not qualified market performance. Source-complete

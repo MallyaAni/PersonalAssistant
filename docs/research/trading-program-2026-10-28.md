@@ -1,8 +1,12 @@
 # Trading program: the best system this desk can defend — 2026-10-28
 
-Status: program of record. Research and planning only. The only live change
-in flight is the FOMC retirement candidate, which is implemented, tested and
-not yet installed.
+Status: **superseded for direction and live state** by
+[docs/trading/PROGRAM-DIRECTION.md](../trading/PROGRAM-DIRECTION.md); historical
+record. Its body is not updated. The direction document is canonical.
+
+Historical status at the time: program of record. Research and planning only.
+The only live change in flight was the FOMC retirement candidate, which was
+implemented, tested and not yet installed.
 
 This note exists because the owner asked for the project to be led, not for
 another experiment. It fixes the objective, the honest baseline, what the

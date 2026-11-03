@@ -1,6 +1,6 @@
 # AniOS Agent Instructions
 
-**Trading work** (backend/market, backend/agents/trading, backend/cli/market_*, the Desk panel): first read [docs/trading/RULES.md](docs/trading/RULES.md). Every trading label is an enum; every model answer the code acts on is schema-constrained.
+**Trading work** (backend/market, backend/agents/trading, backend/cli/market_*, the Desk panel): first read [docs/trading/RULES.md](docs/trading/RULES.md) and [docs/trading/PROGRAM-DIRECTION.md](docs/trading/PROGRAM-DIRECTION.md). Every trading label is an enum; every model answer the code acts on is schema-constrained.
 
 ## Source of truth
 
@@ -13,6 +13,7 @@ Before changing the repository, read:
 - [Architecture](docs/ARCHITECTURE.md)
 - [Development and validation guide](docs/DEVELOPMENT_GUIDE.md)
 - [Roadmap](docs/ROADMAP.md)
+- [Trading program direction](docs/trading/PROGRAM-DIRECTION.md) (trading work only)
 
 Read [Security](docs/SECURITY.md) when a task affects data, credentials, authentication, logging, external access, or permissions.
 

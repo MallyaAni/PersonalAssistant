@@ -1,5 +1,9 @@
 # The trading system: what "best" means here, and the order of work
 
+Status: **superseded** by [PROGRAM-DIRECTION.md](trading/PROGRAM-DIRECTION.md)
+(2026-11-03); historical record. Its measurements and order of work are not
+current. The direction document is canonical.
+
 Written 2026-09-15 from the evidence of the last two weeks. The desk's
 purpose is a book of AI and software names sized by a fixed, explained
 rule, run every night, traded in a paper account, judged only on sessions

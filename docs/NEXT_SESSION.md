@@ -2,6 +2,14 @@
 
 ## CURRENT 2026-11-02 — A hold installed and deployed; forward record restarts under /2
 
+**Direction (2026-11-03).** [trading/PROGRAM-DIRECTION.md](trading/PROGRAM-DIRECTION.md)
+is the binding direction document; it supersedes this note's direction and
+live-state claims. It records that the installed `/2` evidence still marks
+fresh ordinary paper acceptance `UNVERIFIED` (last verified store session
+2026-10-30), so the `/2` forward record has zero verified sessions until that
+acceptance is confirmed. The next atomic task is milestone 1: pre-register the
+simplicity/ablation audit, then run it. No live change before its result.
+
 - **Installed rule.** `grade-led-leader-weight/2` admits at A or better and holds
   while it keeps A; exit below A. `ENTRY_GRADE = 2`, `HOLD_GRADE = 2`,
   `exit_letter = "A"`, `MIN_TRADE = 0.01`. Every other parameter is unchanged:

@@ -4,7 +4,8 @@ Written 2026-10-27 from main at 2cad22de; updated 2026-10-28 for the map fixes (
 simulation box reads the installed rule's replay, the nightly plan check, dead code removed).
 Every claim was checked against the code and against
 spark1 (crontab, scripts, data folders). All times are New York time; spark1's clock is set to it.
-The rules for changing anything are in [RULES.md](RULES.md).
+The rules for changing anything are in [RULES.md](RULES.md); the direction and what is closed
+are in [PROGRAM-DIRECTION.md](PROGRAM-DIRECTION.md).
 
 Words used below:
 - **Book**: the 94 stocks the desk grades and may buy (AI and software names, two "sides").
@@ -69,9 +70,9 @@ Words used below:
    core analyst caps the grade at B. (This file is in the desk folder, not in backend/market.)
 
 9. **Target weights and orders (the live rule).** The installed rule is
-   **grade-led-leader-weight/1** (`backend/market/grade_led_leader_policy.py`; the contract is
-   `docs/research/grade-led-leader-weight-contract-2026-10-21.md`). In plain words:
-   - It buys a name graded A or A+. It keeps a held name while it is B or better and sells it below B.
+   **grade-led-leader-weight/2** (`backend/market/grade_led_leader_policy.py`; the contract is
+   `docs/research/grade-led-leader-weight-contract-2026-10-21.md`, revision 7). In plain words:
+   - It buys a name graded A or A+. It keeps a held name while it keeps A and sells it below A.
    - Each eligible name gets an equal slot. The slot is tilted from 0.5x to 1.5x by the name's
      last-63-day return rank. It is also tilted by where its P/E sits in its own last 3 years
      (cheaper than usual means a bigger slot).
@@ -121,10 +122,11 @@ Words used below:
     15-minute bars to `data/market/bars_15m_sip/`. At 20:40,
     `backend/cli/market_policy_replay_research.py` replays the installed rule over the whole price
     history with the account simulator `backend/market/policy_book.py`, and writes
-    `data/market/research/policy-replay/leader_ewma_minB_floor50/DATE/`. The folder name is old;
-    the run uses the current rule's settings. The stock charts draw their buy/sell markers from
-    this, and the paper account's real fills come from the record and history files. The chart
-    endpoint is `/desk/chart/{ticker}` and the replay endpoint is
+    `data/market/research/policy-replay/leader_ewma_minA_floor50/DATE/` for the installed `/2`
+    rule. The existing `leader_ewma_minB_floor50/` folder is the `/1` replay and is historical;
+    the first `/2` replay runs after the first `/2` nightly. The stock charts draw their buy/sell
+    markers from this, and the paper account's real fills come from the record and history files.
+    The chart endpoint is `/desk/chart/{ticker}` and the replay endpoint is
     `/desk/strategy-simulation/{ticker}`. The replay folder also holds `book.json`, the simulated
     account's equity beside SPY, which with the manifest's `book` summary is the Paper account
     view's "Historical simulation" box (`/desk` serves it as `policy_simulation`). Right after the

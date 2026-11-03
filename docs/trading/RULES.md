@@ -5,6 +5,10 @@ Applies to `backend/market/`, `backend/agents/trading/`, `backend/cli/market_*`,
 on spark1. Every rule here is mandatory. If a rule blocks you, stop and ask the owner. Do not
 work around it. What each part does is in [CODE_MAP.md](CODE_MAP.md).
 
+Direction is fixed by [PROGRAM-DIRECTION.md](PROGRAM-DIRECTION.md): read it before planning
+trading work. This file is process; the direction document is what the program is trying to
+achieve and what is closed.
+
 ## 1. Labels are enums, never free text
 - Every trading label is a member of an enum: actions, sides, signals, grades, sessions, timing,
   states and verdicts. Backend: `backend/market/labels.py` (StrEnum, one enum per wire
@@ -61,6 +65,9 @@ work around it. What each part does is in [CODE_MAP.md](CODE_MAP.md).
 - Corrections to data must not degrade results (non-inferiority). New signals must win (superiority).
 - A failed idea is written down with its evidence and not retried without a new pre-registration.
 - Passing a research gate leads to a forward shadow first, never straight to a live change.
+- The closed-experiment list and the current milestones are in
+  [PROGRAM-DIRECTION.md](PROGRAM-DIRECTION.md). Do not retry a closed experiment without a new
+  pre-registration saying what changed and why.
 
 ## 6. Data
 - Free sources first. API keys live in files with permission 600 and are never printed.
@@ -72,6 +79,9 @@ work around it. What each part does is in [CODE_MAP.md](CODE_MAP.md).
 - 44 "bound sources" (`learned_live_holding.source_identity()`) need the release ceremony: a
   candidate folder under `docs/research/trading-approval-candidates-<date>/`, then
   `~/dsv41/cand-release/install_leader_release.py` from the merged tree. Never backdate `approved_at`.
+- A live install is an owner decision and follows the direction document's rules of engagement.
+  No live change during the forward record except an owner-authorized simplification or a
+  correctness fix.
 - If `market_daily.py` or `live_model_decision.py` change, recompute the AST pins in
   `test_reconciliation_release_admission.py`.
 - Proof before merge:
