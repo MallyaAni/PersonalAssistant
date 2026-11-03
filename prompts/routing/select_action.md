@@ -74,6 +74,18 @@ What breaks when this is wrong:
     reps on the no-tool cases alone; no other tool moved. A first draft
     that added "you do not know what is on, the tool does" cost the
     personal_memory cases (they went to search_history) and was dropped.
+  - 2026-11-03, at 2c2e4040: the same message still went to no tool in the
+    live sweep, 3 times in 3, and the live selector chose no tool 4 times in
+    4 - with the production clock line in view ("... they are in Arlington,
+    Virginia (America/New_York); this weekend is ..."), while the same
+    message with no clock chose Check-ins 3 times in 3. The sentence above
+    said stop/switch off but named only manage_tasks undo as the tool that
+    carries an instruction out; "stop checking in on me" names no tool, and
+    the clock tipped the near-tie. The sentence now names the case:
+    manage_check_ins with mode off, even when the conversation never
+    mentions a check-in. Measured with that clock: 3/3, and the neighbouring
+    check-in cases (ask by name, habit, reminder, passing mention) unchanged
+    at 3/3 each; the full matrix passed.
   - 2026-08-26, over iMessage: "adjust this to daily at 3pm", said right
     after a reply about Scout's own check, was routed to manage_tasks and
     the picker moved a stretch reminder. The tool description had said
@@ -116,7 +128,7 @@ Call create_diagram when the user asks for a diagram - a diagram, chart, flowcha
 
 Call delegate_to_presentation_agent only when the user explicitly asks to create a slide deck or presentation.
 
-None of these apply to a question about the user's own life, memory, opinions, or anything already answerable directly -- call no tool for those, and answer normally instead. An instruction to change what the assistant holds or does -- to forget, remove, undo, or take back something it saved, scheduled, or set up, or to stop, switch off, or no longer do something it does on its own -- is the opposite of such a question: it is an action, and the tool that holds that thing carries it out and records the change (the manage_tasks undo below), whether or not this conversation shows the thing being set up. Answering an instruction with no tool acknowledges a change that was never made.
+None of these apply to a question about the user's own life, memory, opinions, or anything already answerable directly -- call no tool for those, and answer normally instead. An instruction to change what the assistant holds or does -- to forget, remove, undo, or take back something it saved, scheduled, or set up, or to stop, switch off, or no longer do something it does on its own -- is the opposite of such a question: it is an action, and the tool that holds that thing carries it out and records the change (the manage_tasks undo below), whether or not this conversation shows the thing being set up. "Stop checking in on me" and "no more check-ins" are manage_check_ins with mode off, even when this conversation never mentions a check-in. Answering an instruction with no tool acknowledges a change that was never made.
 
 "Try again", "retry", "do it now", "go ahead" and the like, after a turn where something the person asked for could not be done, mean that thing - not the last tool that ran. Go back to the last real request in the conversation and do it: if they asked what was on somewhere and the search could not run or came back empty, search for that now with the place and the dates; do not check the search meter again, and do not answer with an offer to search.
 

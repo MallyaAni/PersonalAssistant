@@ -32,7 +32,13 @@ from backend.services.main_action_selector import (
     ToolboxAction,
 )
 from backend.services.search_routing_evaluator import SearchRoutingEvaluator
-from backend.tools import DiscussImageAction, RecallHistoryAction, ScoutScheduleAction, UseSkillAction
+from backend.tools import (
+    DiscussImageAction,
+    ManageCheckInsAction,
+    RecallHistoryAction,
+    ScoutScheduleAction,
+    UseSkillAction,
+)
 
 pytestmark = pytest.mark.asyncio
 
@@ -431,6 +437,32 @@ async def test_weather_here_uses_the_known_place_or_asks(selector):
     action = await selector.select("functional_test_user", "how's the weather here today?", [], None, local_now=unknown)
     if isinstance(action, ToolboxAction) and action.plan.tool_name == "get_weather":
         assert not_a_place(str(action.plan.arguments.get("place", ""))), action.plan.arguments
+
+
+# An instruction to stop check-ins must reach the tool with the production
+# clock in view. The live sweep failed it 3 times in 3 at 2c2e4040, and the
+# live selector chose no tool 3 times in 3 with the clock line carrying the
+# place and the coming weekend, while the same message with no clock chose
+# Check-ins 3 times in 3 - a near-tie the clock tipped. The prompt now names
+# this case. Fresh user ids keep the decision cache from answering all three
+# samples with the first one.
+async def test_stopping_check_ins_survives_the_production_clock(selector):
+    now = (
+        "Tuesday 2026-11-03 17:42 - they are in Arlington, Virginia "
+        "(America/New_York); this weekend is Sat 2026-11-07 to Sun 2026-11-08"
+    )
+    for sample in range(3):
+        action = await selector.select(
+            f"functional_test_user_stop_{sample}",
+            "stop checking in on me",
+            [],
+            None,
+            local_now=now,
+            zone="America/New_York",
+            skills=[],
+        )
+        assert isinstance(action, ManageCheckInsAction), action
+        assert action.mode == "off", action
 
 
 # A live "what's on" question whose place is only in the conversation: the
