@@ -42,7 +42,7 @@ def test_the_vision_model_default_matches_compose():
     # value the environment resolved, and a deployment that sets the variable
     # in its own .env is configuring the role - which is the whole point of it.
     # Comparing the resolved value failed this test on a correct override (this
-    # deployment runs `qwen3-vl-8b`, an alias the second Spark still serves for
+    # deployment ran `qwen3-vl-8b`, an alias the second Spark still serves for
     # the same DeepSeek model) and would have failed the gate for every
     # deployment that ever changed the vision model.
     default = Settings.model_fields["VISION_MODEL"].default

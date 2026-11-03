@@ -910,9 +910,10 @@ described both shapes and their positions.
 
 `VISION_MODEL` and `VISION_LLM_BASE_URL` pointed at spark2:8001, and a
 systemd unit started it at boot. That was the state on 2026-08-23; since the
-V4.1 cutover, `VISION_MODEL` is `deepseek-v4.1-flash-1017` on spark1 `:8000`,
-reached through the spark2 `:8001` forwarder, and the `anios-vlm` unit is
-stopped. Retiring `vllm-main` also meant removing
+V4.1 cutover, `VISION_MODEL` is `deepseek-v4.1-flash-1017` on spark1 `:8000`
+directly, Docling's picture descriptions still reach the same server through
+the spark2 `:8001` forwarder, and the `anios-vlm` unit is stopped. Retiring
+`vllm-main` also meant removing
 four `depends_on` clauses that would otherwise have blocked the whole stack
 from starting, and repointing the generic `LLM_BASE_URL` fallback, which
 still aimed at the stopped service.
