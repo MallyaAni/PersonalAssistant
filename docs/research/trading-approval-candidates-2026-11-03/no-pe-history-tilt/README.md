@@ -64,8 +64,11 @@ Targeted gate: `test_policy_book`, `test_grade_led_leader_policy`,
 `test_market_policy_replay_research`, `test_curve_valuation_evidence`,
 `test_market_nightly_check`, `test_model_allocation_view`,
 `test_strategy_reference_source_review`, `test_strategy_publication_admission`.
-The full unit gate runs before
-installation and its result is recorded in the installed evidence.
+Targeted gate result: 130 passed, 2 expected xfails in 16.98s. Full unit gate
+result: 11,928 passed, 94 skipped, 10 xfailed, 508 warnings and 48 subtests
+passed in 1,166.79s (19:26) on fresh database `anios_gate_leader3`; exit 0.
+Both ran before installation and the full result is recorded in the installed
+evidence.
 Installation is through the release ceremony under the paper lock, then the
 deploy, then a fresh ordinary nightly and the following real session on the
 paper account. The candidate does not install itself.
