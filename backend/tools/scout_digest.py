@@ -35,17 +35,19 @@ TOOL = BuiltinTool(
     name=NAME,
     label="What Scout sent",
     description=(
-        "Reads back the finds Scout has already sent this person - what each "
-        "one was, when it went, and whether they gave it a thumbs-up or "
-        "thumbs-down. Call it when the request asks what Scout or you already "
-        "sent, found, or recommended for them: 'what did scout send me?', "
-        "'what was in yesterday's digest?', 'did you ever send me that "
-        "pottery thing?', 'which ones did I like?'. Not the sweep's schedule "
-        "or when it next runs - that is scout_schedule. Not what was said in "
-        "past conversations - that is search_history. Not what is happening "
-        "now or soon - that is search_web, even when the request says 'find "
-        "me'. Not links for a listing already shown in this conversation - "
-        "that is send_event_links."
+        "Reads back only the delivery record of Scout's push digest: the finds "
+        "it has already sent this person, when each went, and whether they "
+        "gave it a thumbs-up or thumbs-down. Call it when the request asks "
+        "what Scout already sent, found, or recommended for them: 'what did "
+        "scout send me?', 'what was in yesterday's digest?', 'did you ever "
+        "send me that pottery thing?', 'which of those did I like?'. Not what "
+        "someone likes, prefers, or has in common with someone else - that is "
+        "search_history, even when the request names Scout. Not the sweep's "
+        "schedule or when it next runs - that is scout_schedule. Not what was "
+        "said in past conversations - that is search_history. Not what is "
+        "happening now or soon - that is search_web, even when the request "
+        "says 'find me'. Not links for a listing already shown in this "
+        "conversation - that is send_event_links."
     ),
     schema=_SCHEMA,
     waiting=(

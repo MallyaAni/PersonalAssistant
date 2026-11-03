@@ -567,6 +567,15 @@ SELECTION_CASES: tuple[SelectionCase, ...] = (
         "scout_digest",
         history=_DIGEST_HISTORY,
     ),
+    # Naming Scout does not make a question about two people's shared tastes a
+    # digest read-back. The live sweep journey caught this on 2026-11-03: with
+    # the room's Thai-dinner chatter in history, this routed to scout_digest.
+    SelectionCase(
+        "Scout, what do we both like?",
+        SEARCH_HISTORY,
+        "history",
+        history=(("ok so we all settled on thai for friday dinner, 7pm", ""),),
+    ),
     # --- links for events from a just-given listing: send_event_links --------
     # The listing ends by offering links rather than printing them, so a
     # follow-up naming events from it ("the salsa night", "the second one",

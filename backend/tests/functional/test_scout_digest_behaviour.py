@@ -74,6 +74,34 @@ async def test_what_they_said_is_recall_not_what_scout_sent(selector):
     assert isinstance(action, RecallHistoryAction), action
 
 
+async def test_a_shared_interest_is_recall_not_the_digest_record(selector):
+    # "What do we both like?" is memory, not what the sweep sent. Naming Scout
+    # must not turn it into a digest read-back; the live sweep journey caught
+    # this route on 2026-11-03.
+    action = await selector.select(
+        "functional_test_user", "Scout, what do we both like?", [], None
+    )
+    assert not isinstance(action, ScoutDigestAction), action
+    assert action is None or isinstance(action, RecallHistoryAction), action
+
+
+async def test_room_chatter_does_not_turn_a_shared_interest_into_a_digest(selector):
+    # The failing journey is a group whose room has just settled on Thai for
+    # Friday. That chatter is what the router sees beside the question, and
+    # the same question with it in history must not become a digest read-back.
+    history = [
+        {
+            "query": "ok so we all settled on thai for friday dinner, 7pm",
+            "response": "Thai, Friday at 7pm. Want me to put it in the calendar?",
+        },
+    ]
+    action = await selector.select(
+        "functional_test_user", "Scout, what do we both like?", history, None
+    )
+    assert not isinstance(action, ScoutDigestAction), action
+    assert action is None or isinstance(action, RecallHistoryAction), action
+
+
 def test_the_reply_is_told_the_read_back_is_history_not_a_new_shortlist():
     context = _build_turn_context(
         {
