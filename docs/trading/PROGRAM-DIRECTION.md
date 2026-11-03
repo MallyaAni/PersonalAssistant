@@ -449,5 +449,14 @@ Gate: the pre-registered review. Owner: owner and program.
   all 8 A/A+ IT; the honest universe's 84 A/A+ names are 31.0% IT across
   eleven sectors; the prior utilities widening improves return and Sharpe but
   is -42.05% worst drawdown, beyond the -35% mandate. Three options, program
-  recommendation to pre-register a widening study; owner decision pending.
-  Result: `docs/research/universe-mandate-memo-2026-11-03.md`.
+  recommendation to pre-register a widening study. Result:
+  `docs/research/universe-mandate-memo-2026-11-03.md`.
+- **2026-11-03:** milestone 3 decision taken under the owner's delegation of
+  next steps: keep the AI/software mandate live for the `/3` forward record,
+  and authorize the pre-registered widening study. No install unless the
+  study passes the objective and the -35% worst-offset mandate and the owner
+  authorizes the release. Pre-registration:
+  `docs/research/universe-widening-preregistration-2026-11-03.md`. Six fixed
+  arms: H0 (installed `/3` on the honest universe, anchor
+  `0.13275424766467725`), H50/H35 (IT caps), HR (volatility target 0.20), L0
+  (installed `/3` on the live book) and LU (the live book plus Utilities).
