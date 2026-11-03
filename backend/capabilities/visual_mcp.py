@@ -20,6 +20,7 @@ from backend.core.dependencies import (
     get_image_artifact_service,
     get_image_edit_provider,
     get_image_provider,
+    get_llm_client,
     get_memory_service,
     get_presentation_agent,
     get_presentation_job_repository,
@@ -27,6 +28,7 @@ from backend.core.dependencies import (
     get_presentation_llm_client,
     get_presentation_repository,
     get_presentation_service,
+    get_routing_llm_client,
     get_vision_analysis_service,
     get_vision_embedding_provider,
     get_vision_provider,
@@ -205,6 +207,11 @@ class VisualCapabilityRuntime:
                 repository,
                 get_binary_artifact_store(),
                 get_vision_embedding_provider(),
+                # Without the memory writer the generated picture is stored
+                # but never indexed, so a later "the picture I made of X"
+                # resolves to nothing. The factory makes this optional for
+                # callers that have no session; this one does.
+                get_memory_service(session, get_embedding_provider()),
             )
             ready = await service.generate(
                 user_id=context.user_id,
@@ -236,12 +243,21 @@ class VisualCapabilityRuntime:
                 repository,
                 get_binary_artifact_store(),
                 get_vision_embedding_provider(),
+                get_memory_service(session, get_embedding_provider()),
             )
+            # The factory takes every role the service can use: the reasoner
+            # that answers with the strongest model, the routing model that
+            # decides whether to search, and the session the profile and
+            # artifact lookups read from. Passing only the first four raised a
+            # TypeError before the tool could answer anything.
             service = get_vision_analysis_service(
                 images,
                 repository,
                 get_vision_provider(),
                 get_memory_service(session, get_embedding_provider()),
+                get_llm_client(),
+                get_routing_llm_client(),
+                session,
             )
             answer = await service.ask_about_artifact(
                 context.user_id,

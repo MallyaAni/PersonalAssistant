@@ -52,3 +52,17 @@ def test_a_deadline_already_gone_is_refused(text):
 )
 def test_anything_else_is_left_alone(text):
     assert deadline_has_passed(text, TODAY) is False
+
+
+# A bare month and day belong to the nearest year that makes sense. Read in
+# January, "through December 20" is last month's phrasing, not a date eleven
+# months away.
+def test_a_december_deadline_read_in_january_is_last_years():
+    assert deadline_has_passed("Open through December 20.", date(2026, 1, 10)) is True
+
+
+# The other direction: read in December, "closes January 5" is a week away, not
+# eleven months gone. Without the shift, every New Year deadline was rejected
+# for the whole of December.
+def test_a_january_deadline_read_in_december_is_next_years():
+    assert deadline_has_passed("Entries close January 5.", date(2026, 12, 20)) is False

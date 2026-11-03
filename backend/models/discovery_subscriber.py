@@ -17,6 +17,7 @@ from sqlalchemy import (
     Integer,
     String,
     UniqueConstraint,
+    text,
 )
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import Mapped, mapped_column
@@ -41,6 +42,14 @@ class DiscoverySubscriber(Base):
         # must resolve without knowing which user it belongs to.
         UniqueConstraint("token", name="uq_discovery_subscriber_token"),
         Index("ix_discovery_subscribers_user", "user_id", "active"),
+        # At most one owner per account, enforced rather than assumed. A
+        # partial index so the other rows can all be False without colliding.
+        Index(
+            "uq_discovery_subscriber_owner",
+            "user_id",
+            unique=True,
+            postgresql_where=text("is_owner"),
+        ),
     )
 
     id: Mapped[uuid.UUID] = mapped_column(
@@ -62,6 +71,16 @@ class DiscoverySubscriber(Base):
     # False stops delivery immediately without destroying the audit of what was
     # already sent. Deleting the row is a separate, also-supported action.
     active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
+    # The account holder's own subscription, as distinct from a guest's.
+    #
+    # This was inferred from the earliest row, which inverted the moment the
+    # owner revoked and subscribed again after a guest had been added: the
+    # guest's row was then the earliest, so the guest's tapback was read as the
+    # owner's verdict and the owner's own was discarded. Ownership is recorded
+    # rather than guessed.
+    is_owner: Mapped[bool] = mapped_column(
+        Boolean, nullable=False, default=False, server_default=text("false")
+    )
     # Recorded rather than assumed. Sending to someone who never agreed is the
     # failure this column exists to make visible.
     consented_at: Mapped[datetime | None] = mapped_column(
@@ -108,6 +127,7 @@ class DiscoverySubscriber(Base):
             "address": self.address,
             "label": self.label,
             "active": self.active,
+            "is_owner": self.is_owner,
             "deliverable": self.deliverable,
             "consented_at": (
                 self.consented_at.isoformat() if self.consented_at else None

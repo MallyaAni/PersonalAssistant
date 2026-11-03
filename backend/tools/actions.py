@@ -185,6 +185,21 @@ class ScoutScheduleAction:
 
 
 @dataclass(frozen=True, slots=True)
+class ScoutDigestAction:
+    """The model decided this turn asks what Scout already sent.
+
+    Scout pushes its digest on its own schedule, and until this action existed
+    nothing in the chat could read one back: "what did you send me?" was
+    answered from conversation history, which never contains a digest, or from
+    guesswork. The bounds are the model's to state, resolved against its clock
+    like `search_history`'s, and absent bounds mean everything sent so far.
+    """
+
+    since: str | None = None
+    until: str | None = None
+
+
+@dataclass(frozen=True, slots=True)
 class SaveSkillAction:
     """The model decided this turn teaches a skill: a name and what it does."""
 

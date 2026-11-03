@@ -228,6 +228,11 @@ class SubscriberRequest(BaseModel):
     # Consent is stated, never inferred. Without it the permission is stored
     # inactive, so the default outcome of a mistake is that nothing is sent.
     consented: bool = False
+    # Whether this is the operator's own subscription rather than a guest's.
+    # Only the person enrolling knows; the row cannot tell. Left unset, the
+    # first subscription an account has is its own, which is the convention
+    # that predates the flag.
+    owner: bool | None = None
 
 
 # Who this machine may message.
@@ -272,10 +277,18 @@ async def put_subscriber(
     body: SubscriberRequest,
     subscribers: DependencyDiscoverySubscribers,
 ) -> dict[str, object]:
-    owner = _operator_id(identity)
+    # Named for what it is: the account every subscriber on this machine hangs
+    # off. `body.owner` is the different question of which row is the account
+    # holder's own.
+    operator_id = _operator_id(identity)
     try:
         person = await subscribers.enroll(
-            owner, body.channel, body.address, body.label, body.consented
+            operator_id,
+            body.channel,
+            body.address,
+            body.label,
+            body.consented,
+            body.owner,
         )
     except ValueError as exc:
         raise HTTPException(

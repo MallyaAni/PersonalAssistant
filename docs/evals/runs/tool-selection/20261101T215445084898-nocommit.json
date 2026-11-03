@@ -1,0 +1,285 @@
+{
+  "at": "2026-11-01T21:54:45+00:00",
+  "commit": "",
+  "extra": {
+    "arguments": {
+      "floor": 1.0,
+      "held": 15,
+      "judged": 15,
+      "missed": []
+    },
+    "failures": [
+      {
+        "category": "agent_config",
+        "chose": {
+          "manage_tasks": 3
+        },
+        "expected": "none",
+        "missed": 3,
+        "of": 3,
+        "query": "what agents do i have scheduled?"
+      },
+      {
+        "category": "live_data",
+        "chose": {
+          "none": 3
+        },
+        "expected": "search_web",
+        "missed": 3,
+        "of": 3,
+        "query": "how long will it take me to drive to Dulles airport at 5pm?"
+      },
+      {
+        "category": "picture_of_a_technical_subject",
+        "chose": {
+          "create_diagram": 1,
+          "none": 2
+        },
+        "expected": "generate_image",
+        "missed": 3,
+        "of": 3,
+        "query": "show me a picture of how our services connect"
+      },
+      {
+        "category": "regenerate",
+        "chose": {
+          "search_history": 3
+        },
+        "expected": "generate_image",
+        "missed": 3,
+        "of": 3,
+        "query": "a general one"
+      },
+      {
+        "category": "regenerate",
+        "chose": {
+          "show_image": 3
+        },
+        "expected": "generate_image",
+        "missed": 3,
+        "of": 3,
+        "query": "can you regenerate it?"
+      },
+      {
+        "category": "run_answer",
+        "chose": {
+          "none": 3
+        },
+        "expected": "manage_runs",
+        "missed": 3,
+        "of": 3,
+        "query": "no, don't send that"
+      },
+      {
+        "category": "shared_document",
+        "chose": {
+          "none": 3
+        },
+        "expected": "search_history",
+        "missed": 3,
+        "of": 3,
+        "query": "which day has the Pompeii excursion?"
+      },
+      {
+        "category": "firing",
+        "chose": {
+          "manage_runs": 1,
+          "none": 2
+        },
+        "expected": "none",
+        "missed": 1,
+        "of": 3,
+        "query": "Remind me to stretch"
+      }
+    ],
+    "floors_breached": []
+  },
+  "floor": 0.7,
+  "name": "tool-selection",
+  "notes": "124 labelled cases, 8 failing",
+  "reps": 3,
+  "right": 350,
+  "scores": [
+    {
+      "name": "agent_config",
+      "right": 24,
+      "total": 27
+    },
+    {
+      "name": "check_ins",
+      "right": 21,
+      "total": 21
+    },
+    {
+      "name": "creative_writing",
+      "right": 6,
+      "total": 6
+    },
+    {
+      "name": "credits",
+      "right": 9,
+      "total": 9
+    },
+    {
+      "name": "deck",
+      "right": 6,
+      "total": 6
+    },
+    {
+      "name": "diagram",
+      "right": 12,
+      "total": 12
+    },
+    {
+      "name": "document_file",
+      "right": 21,
+      "total": 21
+    },
+    {
+      "name": "edit",
+      "right": 12,
+      "total": 12
+    },
+    {
+      "name": "edit_not_an_image",
+      "right": 6,
+      "total": 6
+    },
+    {
+      "name": "firing",
+      "right": 11,
+      "total": 12
+    },
+    {
+      "name": "followup_subject",
+      "right": 9,
+      "total": 9
+    },
+    {
+      "name": "history",
+      "right": 12,
+      "total": 12
+    },
+    {
+      "name": "listed_event_links",
+      "right": 9,
+      "total": 9
+    },
+    {
+      "name": "live_data",
+      "right": 30,
+      "total": 33
+    },
+    {
+      "name": "news",
+      "right": 3,
+      "total": 3
+    },
+    {
+      "name": "opinion_about_image",
+      "right": 9,
+      "total": 9
+    },
+    {
+      "name": "personal_memory",
+      "right": 12,
+      "total": 12
+    },
+    {
+      "name": "picture",
+      "right": 9,
+      "total": 9
+    },
+    {
+      "name": "picture_of_a_technical_subject",
+      "right": 6,
+      "total": 9
+    },
+    {
+      "name": "regenerate",
+      "right": 0,
+      "total": 6
+    },
+    {
+      "name": "role_holder",
+      "right": 3,
+      "total": 3
+    },
+    {
+      "name": "run_answer",
+      "right": 3,
+      "total": 6
+    },
+    {
+      "name": "run_status",
+      "right": 3,
+      "total": 3
+    },
+    {
+      "name": "schedule_new",
+      "right": 9,
+      "total": 9
+    },
+    {
+      "name": "shared_document",
+      "right": 3,
+      "total": 6
+    },
+    {
+      "name": "show",
+      "right": 15,
+      "total": 15
+    },
+    {
+      "name": "skill_change",
+      "right": 3,
+      "total": 3
+    },
+    {
+      "name": "skill_list",
+      "right": 3,
+      "total": 3
+    },
+    {
+      "name": "skill_save",
+      "right": 3,
+      "total": 3
+    },
+    {
+      "name": "stable_knowledge",
+      "right": 6,
+      "total": 6
+    },
+    {
+      "name": "task_change",
+      "right": 15,
+      "total": 15
+    },
+    {
+      "name": "task_create",
+      "right": 3,
+      "total": 3
+    },
+    {
+      "name": "task_list",
+      "right": 6,
+      "total": 6
+    },
+    {
+      "name": "task_reschedule",
+      "right": 18,
+      "total": 18
+    },
+    {
+      "name": "task_undo",
+      "right": 18,
+      "total": 18
+    },
+    {
+      "name": "writing_followup",
+      "right": 12,
+      "total": 12
+    }
+  ],
+  "total": 372
+}

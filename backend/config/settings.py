@@ -311,9 +311,14 @@ class Settings(BaseSettings):
     # reach - the LAN address, not a compose name). Empty leaves pictures as
     # placeholders. Only pictures above the area share are described, so a
     # logo or a thumbnail does not become a paragraph of noise; measured
-    # 2026-09-02: one picture, 17 s, on spark2's Qwen3-VL-8B.
+    # 2026-09-02: one picture, 17 s, on the then-vision model (Qwen3-VL-8B on
+    # spark2). The current runtime is the same DeepSeek-V4.1 server the vision
+    # role uses.
     DOCLING_PICTURE_API_URL: str = ""
-    DOCLING_PICTURE_MODEL: str = "qwen3-vl-8b"
+    # The model that endpoint serves. Kept in step with VISION_MODEL: the
+    # retired local VLM was still the default here after images moved to the
+    # primary model, so setting only the URL asked for a model nothing served.
+    DOCLING_PICTURE_MODEL: str = "deepseek-v4.1-flash-1017"
     DOCLING_PICTURE_AREA_THRESHOLD: float = Field(default=0.05, ge=0, le=1)
     DOCLING_PICTURE_TIMEOUT_SECONDS: int = Field(default=90, ge=10, le=600)
     DOCUMENT_UPLOAD_MAX_BYTES: int = Field(default=25 * 1024 * 1024, ge=1024)
@@ -832,7 +837,11 @@ class Settings(BaseSettings):
     )
     IMAGE_MAX_PIXELS: int = Field(default=20_000_000, ge=4096, le=100_000_000)
     VISION_LLM_BASE_URL: str = ""
-    VISION_MODEL: str = "qwen/qwen3.5-4b"
+    # The primary model sees pixels itself; there is no separate VLM role any
+    # more. Kept in step with docker-compose.yml and .env.example: when this
+    # default still named a retired local VLM, a deployment that did not set
+    # the variable sent images to a model that was no longer served.
+    VISION_MODEL: str = "deepseek-v4.1-flash-1017"
     VISION_LLM_REASONING_EFFORT: Literal[
         "none", "minimal", "low", "medium", "high", "xhigh"
     ] = "none"

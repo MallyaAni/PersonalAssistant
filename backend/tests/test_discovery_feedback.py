@@ -87,7 +87,7 @@ class _PartialWriter:
     def __init__(self, indices: tuple[int, ...]) -> None:
         self.indices = indices
 
-    async def write(self, finds, first_digest=False, reactions=()):
+    async def write(self, finds, first_digest=False, reactions=(), person_context=""):
         from backend.agents.scout.digesting import WrittenDigest, WrittenLine
 
         return WrittenDigest(

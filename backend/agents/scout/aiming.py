@@ -145,10 +145,22 @@ class AimPlanner:
                 aimed.append(InterestAim(label=label, subject=label, profile=label))
                 continue
             subject, profile = proposal
+            # With no approved facts there is nothing to personalise the
+            # subject with, and the prompt's contract is the interest's own
+            # words. Enforced here rather than trusted to the model: an
+            # unattended sweep that invents a preference from nothing is the
+            # one failure this stage must not make, and the model was measured
+            # elaborating an empty-context label on some runs and not others.
+            # The profile still comes from the model, because describing the
+            # interest is what gives ranking something to embed.
             aimed.append(
                 InterestAim(
                     label=label,
-                    subject=self._safe_subject(subject, place) or label,
+                    subject=(
+                        label
+                        if context.is_empty
+                        else self._safe_subject(subject, place) or label
+                    ),
                     profile=_safe_profile(profile) or label,
                 )
             )
@@ -166,9 +178,10 @@ class AimPlanner:
             f"Facts this person has approved about themselves:\n{context.render()}"
             if not context.is_empty
             else (
-                "This person has approved no facts about themselves yet, so "
-                "describe each interest on its own terms and infer nothing "
-                "about them."
+                "This person has approved no facts about themselves yet. "
+                "Return each interest's own words unchanged as the subject, "
+                "and write a profile that describes it; infer nothing about "
+                "them."
             )
         )
         prompt = f"{facts}\n\nTheir interests:\n" + "\n".join(

@@ -103,4 +103,19 @@ def test_picture_options_are_off_without_a_describer(monkeypatch):
     monkeypatch.setattr(settings, "DOCLING_PICTURE_API_URL", "http://172.16.8.5:8001/v1/chat/completions")
     options = _picture_options()
     assert options["do_picture_description"] == "true"
-    assert "qwen3-vl-8b" in options["picture_description_api"] and options["picture_description_area_threshold"] == "0.05"
+    # The configured model, not a name hardcoded in the test: when the local
+    # VLM was retired this assertion kept passing while production asked for a
+    # model nothing served.
+    assert settings.DOCLING_PICTURE_MODEL in options["picture_description_api"]
+    assert options["picture_description_area_threshold"] == "0.05"
+
+
+# The instruction sent to the picture describer is a prompt file, not a string
+# in Python, so the prompt checks cover it and editing it needs no redeploy.
+def test_the_picture_prompt_comes_from_the_prompt_folder():
+    from backend.core.prompts import load
+    from backend.services.document_parser import PICTURE_PROMPT
+
+    expected = load("document/picture")
+    assert PICTURE_PROMPT == expected
+    assert "Describe what this picture shows" in PICTURE_PROMPT

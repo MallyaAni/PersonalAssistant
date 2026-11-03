@@ -12,7 +12,7 @@ attention.
 worse to read and impossible to subvert, and a digest that arrives beats one
 that does not.
 
-What stays in code either way is what a 4B model must not be trusted with. The
+What stays in code either way is what the model must not be trusted with. The
 clock is the sharp one: `_format_when` distinguishes a date the source stated
 with no time from a real start, after a concert listed for Oct 3 was announced
 as "Fri Oct 2, 8:00pm" — a date shifted into a zone it was never in. The written
@@ -21,11 +21,12 @@ typed record on both paths and are never asked of the model.
 """
 
 from dataclasses import dataclass
-from datetime import UTC, datetime, timedelta
+from datetime import UTC, datetime
 from zoneinfo import ZoneInfo
 
 from backend.agents.scout.digesting import DigestWriter, Find
 from backend.core.links import calendar_link
+from backend.discovery.events import event_has_passed, is_date_only
 from backend.discovery.relevance import RankedCandidate
 
 # How many finds one digest sends.
@@ -87,14 +88,27 @@ async def write_bubbles(
     now: datetime | None = None,
     first_digest: bool = False,
     reactions: tuple[object, ...] = (),
+    # What the reader told the assistant about themselves. Supplied only when
+    # the message is theirs alone; delivery is where that is decided.
+    person_context: str = "",
     calendar_base_url: str | None = None,
+    *,
+    notable: tuple[RankedCandidate, ...] = (),
 ) -> tuple[Bubble, ...]:
     zone = _zone(timezone)
     moment = now or datetime.now(UTC)
     live = tuple(item for item in selected if not _has_passed(item, moment))
-    if not live:
+    live_notable = tuple(item for item in notable if not _has_passed(item, moment))
+    if not live and not live_notable:
         return ()
+    # One digest sends `limit` finds in total. The matched side goes first
+    # because it is what the person asked to hear about; an unusual find only
+    # gets the room the matched side left. Without this cap the notable section
+    # would push the digest past the bound the delivery path enforces, and the
+    # overflow would be silently dropped after it had already been recorded as
+    # announced.
     kept = list(live)[:limit]
+    kept_notable = list(live_notable)[: max(0, limit - len(kept))]
     finds = tuple(
         Find(
             index=position,
@@ -107,8 +121,13 @@ async def write_bubbles(
     )
     written = (
         None
-        if writer is None
-        else await writer.write(finds, first_digest=first_digest, reactions=reactions)
+        if writer is None or not kept
+        else await writer.write(
+            finds,
+            first_digest=first_digest,
+            reactions=reactions,
+            person_context=person_context,
+        )
     )
     if written is None:
         # No model. Each find still gets its own bubble, because the feedback
@@ -121,6 +140,7 @@ async def write_bubbles(
             )
             for item in kept
         ]
+        bubbles.extend(_notable_bubbles(kept_notable, zone, calendar_base_url))
         return tuple(bubbles)
 
     # Written lines by find, so a find the model skipped can be noticed rather
@@ -148,7 +168,31 @@ async def write_bubbles(
                 label=item.event.title,
             )
         )
+    bubbles.extend(_notable_bubbles(kept_notable, zone, calendar_base_url))
     return tuple(bubbles)
+
+
+# The unusual few, each as its own bubble with a label that says why it is here.
+#
+# They are deliberately not handed to the digest writer with the matched finds:
+# its greeting is written about what the person asked for, and an interest-free
+# find dropped into that batch reads as a mismatch. A fixed label is also the
+# honest thing — the reader is told this is not a match rather than left to
+# infer it from the prose.
+def _notable_bubbles(
+    notable: list[RankedCandidate],
+    zone: ZoneInfo,
+    calendar_base_url: str | None,
+) -> list[Bubble]:
+    return [
+        Bubble(
+            text="Also worth knowing:\n"
+            + _assembled_bubble(item, zone, calendar_base_url=calendar_base_url),
+            item_digest=item.candidate.digest,
+            label=item.event.title,
+        )
+        for item in notable
+    ]
 
 
 # One find as its own message when there is no model to word it.
@@ -197,72 +241,6 @@ def _calendar_lines(
     return lines
 
 
-async def write_message(
-    selected: tuple[RankedCandidate, ...],
-    writer: DigestWriter | None = None,
-    timezone: str = "America/New_York",
-    limit: int = MAX_EVENTS_IN_MESSAGE,
-    now: datetime | None = None,
-    calendar_base_url: str | None = None,
-) -> str | None:
-    """Return the digest text, written by the model where one is available."""
-    zone = _zone(timezone)
-    moment = now or datetime.now(UTC)
-    live = tuple(item for item in selected if not _has_passed(item, moment))
-    if not live:
-        return None
-    if writer is None:
-        return render_message(
-            selected,
-            calendar_base_url=calendar_base_url,
-            timezone=timezone,
-            limit=limit,
-            now=now,
-        )
-
-    # The facts, rendered here because the clock is not the model's to compute.
-    kept = list(live)[:limit]
-    finds = tuple(
-        Find(
-            index=position,
-            name=" ".join(item.event.title.split()),
-            description=item.event.summary,
-            when=_format_when(item.event.starts_at, zone),
-            place=item.event.place or None,
-        )
-        for position, item in enumerate(kept)
-    )
-    written = await writer.write(finds)
-    if written is None:
-        # No model answer. The assembled shape is worse to read and always
-        # arrives, which is the right way round for a weekly message.
-        return render_message(
-            selected,
-            calendar_base_url=calendar_base_url,
-            timezone=timezone,
-            limit=limit,
-            now=now,
-        )
-
-    lines = [written.greeting, ""]
-    for line in written.lines:
-        item = kept[line.index]
-        lines.append(f"• {line.text}")
-        # The source's own link, from the typed record, never from the model.
-        # Not every find has one — a trail or a park is a place rather than a
-        # page — and a line saying nothing is worse than no line.
-        clean = _clean_url(item.event.url)
-        if clean:
-            lines.append(f"  {clean}")
-        for calendar_line in _calendar_lines(item, calendar_base_url):
-            lines.append(f"  {calendar_line}")
-        lines.append("")
-    remaining = len(live) - len(written.lines)
-    if remaining > 0:
-        lines.append(f"and {remaining} more")
-    return "\n".join(lines).strip()
-
-
 def render_message(
     selected: tuple[RankedCandidate, ...],
     calendar_base_url: str | None = None,
@@ -285,6 +263,12 @@ def render_message(
         # how a proactive assistant trains people to ignore it.
         return None
 
+    # The same total bound the bubbles enforce. A caller rendering a stored
+    # digest can hold more than a message may carry, and a preview that shows
+    # more than the send would is a preview of something else.
+    selected = selected[:limit]
+    notable = notable[: max(0, limit - len(selected))]
+
     dated = [item for item in selected if item.event.starts_at is not None]
     undated = [item for item in selected if item.event.starts_at is None]
 
@@ -293,6 +277,11 @@ def render_message(
     if lines and mentions:
         lines.append("")
     lines.extend(mentions)
+    notable_lines = _render_notable(notable, zone, calendar_base_url)
+    if notable_lines:
+        if lines:
+            lines.append("")
+        lines.extend(notable_lines)
     if not lines:
         return None
 
@@ -321,17 +310,11 @@ def _greeting(moment: datetime, zone: ZoneInfo) -> str:
 
 # Whether this find is already in the past. An undated find cannot have passed:
 # nobody said when it happens, so it is a standing thing rather than a missed
-# one.
+# one. `ends_at` is what keeps a multi-day happening in the digest after its
+# first day; the rule itself lives beside the lead-time check so the ranker and
+# the renderer cannot disagree about what is over.
 def _has_passed(item: RankedCandidate, moment: datetime) -> bool:
-    starts_at = item.event.starts_at
-    if starts_at is None:
-        return False
-    if _is_date_only(starts_at):
-        # An all-day happening has passed when its day has, not the moment
-        # the day began: a show happening tonight was dropped from a real
-        # digest at 4pm because midnight had.
-        return moment >= starts_at + timedelta(days=1)
-    return starts_at < moment
+    return event_has_passed(item.event.starts_at, item.event.ends_at, moment)
 
 
 def _render_dated(
@@ -372,6 +355,37 @@ def _render_dated(
     return lines
 
 
+# The unusual few, under their own heading so they can never be mistaken for
+# something that matched an interest. They are rendered even when the matched
+# side is empty: a quiet week is exactly when a genuine surprise earns its
+# place, and the label is what keeps it from reading as a weak match.
+def _render_notable(
+    notable: list[RankedCandidate],
+    zone: ZoneInfo,
+    calendar_base_url: str | None = None,
+) -> list[str]:
+    if not notable:
+        return []
+    lines = ["Also worth knowing:"]
+    for item in notable:
+        event = item.event
+        line = f"• {_bound(event.title, MAX_TITLE_CHARS)}"
+        when = _format_when(event.starts_at, zone)
+        if when:
+            line += f" — {when}"
+        if event.place:
+            line += f" ({_bound(event.place, MAX_PLACE_CHARS)})"
+        lines.append(line)
+        if event.summary:
+            lines.append(f"  {_bound(event.summary, MAX_SUMMARY_CHARS)}")
+        clean = _clean_url(event.url)
+        if clean:
+            lines.append(f"  {clean}")
+        for calendar_line in _calendar_lines(item, calendar_base_url):
+            lines.append(f"  {calendar_line}")
+    return lines
+
+
 # Found without a published date. These carry a link rather than a calendar
 # entry: nobody stated when they happen, and inventing a time would put a
 # confidently wrong appointment in someone's calendar.
@@ -401,31 +415,20 @@ def _render_undated(undated: list[RankedCandidate]) -> list[str]:
 def _format_when(starts_at: datetime | None, zone: ZoneInfo) -> str | None:
     if starts_at is None:
         return None
-    if _is_date_only(starts_at):
+    if is_date_only(starts_at):
         # A date the source stated with no time, which is most of them. Shifting
         # it into the reader's zone moves it to the previous evening and prints
         # a clock nobody published: a concert listed for Oct 3 was announced as
         # "Fri Oct 2, 8:00pm", one line below a title that said Oct 03, 9:30 PM.
-        # The date is what was known, so the date is all that is said.
-        stated = starts_at.astimezone(UTC)
-        return f"{stated.strftime('%a %b')} {stated.day}"
+        # The date is what was known, so the date is all that is said — read
+        # from the wall clock the source stated. Converting to UTC first slides
+        # a date in any zone east of it onto the previous day.
+        return f"{starts_at.strftime('%a %b')} {starts_at.day}"
     local = starts_at.astimezone(zone)
     hour = local.hour % 12 or 12
     meridiem = "am" if local.hour < 12 else "pm"
     clock = f"{hour}:{local.minute:02d}{meridiem}"
     return f"{local.strftime('%a %b')} {local.day}, {clock}"
-
-
-# Whether a start carries only a date.
-#
-# Midnight UTC exactly is what a date-only value becomes once parsed — schema.org
-# `"startDate": "2026-10-03"` and an ICS `VALUE=DATE` both land here. A real
-# happening beginning at 00:00:00 UTC to the second is rare enough that reading
-# one as date-only costs a time nobody would have trusted anyway, while the
-# reverse invents one for every find that never had a time at all.
-def _is_date_only(starts_at: datetime) -> bool:
-    stated = starts_at.astimezone(UTC)
-    return (stated.hour, stated.minute, stated.second) == (0, 0, 0)
 
 
 def _bound(value: str, limit: int) -> str:

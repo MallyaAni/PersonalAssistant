@@ -599,7 +599,8 @@ At the time of this change, `VISION_MODEL` stayed on `qwen/qwen3.5-4b`: it
 was the only vision-language model available here, and replacing it was a
 separate decision with its own memory budget (~27 GB free per Spark after the
 TP=2 weights). That decision was taken later in this same document - vision
-now runs on Qwen3-VL-8B on spark2 at `:8001`.
+moved to Qwen3-VL-8B on spark2 at `:8001`, and since the 2026-10-27 cutover to
+DeepSeek-V4.1-Flash-1017 it is the same server under the alias `qwen3-vl-8b`.
 
 Verified end to end after the change: a real chat turn routed on the new
 model chose `Scheduled tasks | weekdays at 18:00` for "remind me every
@@ -810,13 +811,17 @@ let the weaker model answer whenever the stronger one's JSON failed to
 parse) and `FallbackInferenceProvider` (a standby that answered *worse*
 instead of failing, with nothing in the reply saying so).
 
-`VISION_MODEL` remains on Qwen 3.5 4B: it is the only VLM available here.
+`VISION_MODEL` remained on Qwen 3.5 4B at the time: it was the only VLM
+available here. It later moved to Qwen3-VL-8B, and since 2026-10-27 it is
+DeepSeek-V4.1-Flash-1017, which reads images itself.
 
 ## 10. Open
 
-- ~~**Vision is the last 4B holdout.**~~ Done: Qwen3-VL-8B AWQ serves vision
+- ~~**Vision is the last 4B holdout.**~~ Done: Qwen3-VL-8B AWQ served vision
   on spark2. AWQ rather than NVFP4 - CUTLASS FP4 kernels target sm_120 and
-  silently emit wrong output on the Spark's sm_121 (vLLM #50925).
+  silently emit wrong output on the Spark's sm_121 (vLLM #50925). Superseded
+  2026-10-27: DeepSeek-V4.1-Flash-1017 reads images, so the vision role is the
+  same server and the separate VLM is stopped.
 - **Memory is now the binding constraint, and it is measured.** spark2 is
   full (~1.4 GB free; the VLM took ~15.7 GB, not the ~10 budgeted, once
   runtime overhead is counted). spark1 holds the model plus the whole
@@ -840,6 +845,12 @@ instead of failing, with nothing in the reply saying so).
   `--a-answers`.
 
 ## The vision model: Qwen3-VL-8B on the Sparks (2026-08-23)
+
+> **Superseded 2026-10-27.** DeepSeek-V4.1-Flash-1017 reads images, so the
+> vision role is that server under the alias `qwen3-vl-8b`; the `anios-vlm`
+> unit and its memory reservation are gone, and it returns only on a cutover
+> rollback. The decision below is kept as the record of how the separate
+> vision model was chosen and sized.
 
 Vision was the last role still on Qwen 3.5 4B, and the only one that could
 not simply follow the reply model - it needs a model that actually sees.
@@ -897,8 +908,11 @@ first request 9.5 s cold, then **0.5-1.1 s warm**. On a test card it read
 every line of text verbatim - including a serial number - and correctly
 described both shapes and their positions.
 
-`VISION_MODEL` and `VISION_LLM_BASE_URL` now point at spark2:8001, and a
-systemd unit starts it at boot. Retiring `vllm-main` also meant removing
+`VISION_MODEL` and `VISION_LLM_BASE_URL` pointed at spark2:8001, and a
+systemd unit started it at boot. That was the state on 2026-08-23; since the
+V4.1 cutover, `VISION_MODEL` is `deepseek-v4.1-flash-1017` on spark1 `:8000`,
+reached through the spark2 `:8001` forwarder, and the `anios-vlm` unit is
+stopped. Retiring `vllm-main` also meant removing
 four `depends_on` clauses that would otherwise have blocked the whole stack
 from starting, and repointing the generic `LLM_BASE_URL` fallback, which
 still aimed at the stopped service.

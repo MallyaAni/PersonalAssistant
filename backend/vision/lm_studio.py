@@ -16,15 +16,18 @@ from backend.artifacts.types import (
 from backend.core.interfaces import VisionProvider
 
 
-# A full-size phone photo is more than the model can hold: a 4032x3024 JPEG
-# became about 12,000 image tokens on Qwen3-VL (one token per 32x32 pixels)
-# and, with the inspection prompt, 16,809 against a 16,384 context - a 400
-# from the server and "I hit a problem" to the person (Caroline, 2026-09-02).
-# Nothing about describing a picture needs that many pixels, so anything
-# over the cap is scaled down here, once, before it is encoded; orientation
-# is applied first because re-encoding drops the EXIF that carried it.
-# Bytes the image library cannot read (HEIC without a decoder, a broken
-# file) are sent as they are and the server says what it thinks.
+# A full-size phone photo is more pixels than describing it needs, and the
+# bound predates the current runtime: a 4032x3024 JPEG became about 12,000
+# image tokens on the retired Qwen3-VL (one token per 32x32 pixels) and, with
+# the inspection prompt, 16,809 against a 16,384 context - a 400 from the
+# server and "I hit a problem" to the person (Caroline, 2026-09-02). The
+# DeepSeek-V4.1 runtime that replaced it has a far larger context, but the cap
+# still keeps upload cost and latency bounded and every role that reads pixels
+# shares this one encoder. Anything over the cap is scaled down here, once,
+# before it is encoded; orientation is applied first because re-encoding drops
+# the EXIF that carried it. Bytes the image library cannot read (HEIC without a
+# decoder, a broken file) are sent as they are and the server says what it
+# thinks.
 MAX_IMAGE_PIXELS = 2_000_000
 MAX_IMAGE_SIDE = 2048
 _WEB_FORMATS = frozenset({"JPEG", "PNG", "WEBP", "GIF"})

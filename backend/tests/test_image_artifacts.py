@@ -615,6 +615,44 @@ def test_fit_image_for_vision_downscales_an_oversized_pixel_image() -> None:
         assert image.width * image.height <= 100_000
 
 
+# Re-encoding to JPEG drops the EXIF tag that carried the camera's rotation, so
+# the transpose has to happen first or every portrait phone photo reaches the
+# model sideways.
+def test_fit_image_for_vision_applies_exif_orientation_before_reencoding() -> None:
+    rng = random.Random(3)
+    image = Image.new("RGB", (200, 100))
+    image.putdata(
+        [
+            (rng.randrange(256), rng.randrange(256), rng.randrange(256))
+            for _ in range(200 * 100)
+        ]
+    )
+    exif = image.getexif()
+    exif[0x0112] = 6
+    buffer = io.BytesIO()
+    image.save(buffer, format="PNG", exif=exif)
+    assert len(buffer.getvalue()) > 50_000, "fixture should exceed the budget"
+
+    fitted, mime = fit_image_for_vision(
+        buffer.getvalue(), "image/png", max_bytes=50_000, max_pixels=1_000_000
+    )
+
+    assert mime == "image/jpeg"
+    with Image.open(io.BytesIO(fitted)) as out:
+        assert (out.width, out.height) == (100, 200)
+        # The pixels are upright now, so no rotation tag is left to apply twice.
+        assert out.getexif().get(0x0112, 1) == 1
+
+
+# Fitting decodes the bytes, so content that is not an image must fail as a
+# validation error rather than escaping as an unhandled server fault.
+def test_fit_image_for_vision_refuses_bytes_it_cannot_decode() -> None:
+    with pytest.raises(ValueError, match="could not be fitted"):
+        fit_image_for_vision(
+            b"not an image", "image/jpeg", max_bytes=1024 * 1024, max_pixels=1_000
+        )
+
+
 # The fitted output must itself pass the same validation budgets the endpoint
 # applies next, so the whole pipeline accepts what fitting produces.
 def test_fit_image_for_vision_fitted_output_passes_validation() -> None:

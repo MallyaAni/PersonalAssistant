@@ -47,6 +47,10 @@ MANAGE_CHECK_INS = "manage_check_ins"
 # chooses between two named things rather than reading a sweep change as a
 # task reschedule (the measured failure in backend/tools/manage_tasks.py).
 SCOUT_SCHEDULE = "scout_schedule"
+# What Scout already sent, its own tool since 2026-11-01. Scout is push-only,
+# so before this the question was answered from conversation history - which
+# never contains a digest - or from guesswork.
+SCOUT_DIGEST = "scout_digest"
 SAVE_SKILL = "save_skill"
 MANAGE_SKILLS = "manage_skills"
 MANAGE_RUNS = "manage_runs"
@@ -73,6 +77,7 @@ TOOL_NAMES: tuple[str, ...] = (
     MANAGE_TASKS,
     MANAGE_CHECK_INS,
     SCOUT_SCHEDULE,
+    SCOUT_DIGEST,
     SAVE_SKILL,
     MANAGE_SKILLS,
     MANAGE_RUNS,
@@ -265,6 +270,16 @@ _RETRY_AFTER_REFUSAL_HISTORY = (
 # The operator's exchange of 2026-08-26: the assistant had just mentioned
 # Scout's own daily check; "adjust this to daily at 3pm" means that check -
 # Scout's own sweep - not a scheduled task.
+# A read-back the assistant just gave, so "which ones did I like?" has a list
+# to point at. Scout's own digest is never in conversation history, which is
+# exactly why the read-back tool exists.
+_DIGEST_HISTORY = (
+    (
+        "what did scout send me?",
+        "From Scout's last digest: \"A jazz trio plays\" in Arlington on Nov 1, "
+        "and \"A winery evening\" on Oct 30. Neither has a reaction yet.",
+    ),
+)
 _SCOUT_CHECK_HISTORY = (
     ("when did i say 7 am for scout?", "You mentioned the daily 7 AM Scout check when we set up your events sweep."),
 )
@@ -531,6 +546,27 @@ SELECTION_CASES: tuple[SelectionCase, ...] = (
     ),
     # Asking what is configured is answered, not changed.
     SelectionCase("what agents do i have scheduled?", NO_TOOL, "agent_config"),
+    # --- what Scout already sent: scout_digest ------------------------------
+    # Scout pushes its digest on its own schedule and the chat never sees it,
+    # so these were answered from conversation history or invented. The
+    # near-miss against search_history is the pair worth pinning: "did you
+    # ever send me" is the digest record, "did I ever tell you" is recall.
+    SelectionCase("what did scout send me?", SCOUT_DIGEST, "scout_digest"),
+    SelectionCase(
+        "what was in yesterday's digest?",
+        SCOUT_DIGEST,
+        "scout_digest",
+        local_now="2026-11-01 10:00 America/New_York",
+    ),
+    SelectionCase(
+        "did you ever send me that pottery thing?", SCOUT_DIGEST, "scout_digest"
+    ),
+    SelectionCase(
+        "which ones did i like?",
+        SCOUT_DIGEST,
+        "scout_digest",
+        history=_DIGEST_HISTORY,
+    ),
     # --- links for events from a just-given listing: send_event_links --------
     # The listing ends by offering links rather than printing them, so a
     # follow-up naming events from it ("the salsa night", "the second one",
@@ -929,6 +965,9 @@ PER_TOOL_ACCURACY_FLOORS: dict[str, float] = {
     # 3 reps); held at the task tools' level rather than at 1.0 so a single
     # unstable rep cannot fail an honest run.
     SCOUT_SCHEDULE: 0.80,
+    # Added with the tool on 2026-11-01; held at the siblings' level until the
+    # first measurement lands, so a collapse is visible rather than assumed.
+    SCOUT_DIGEST: 0.66,
     SAVE_SKILL: 0.66,
     MANAGE_SKILLS: 0.66,
     # Measured 9/9 on 2026-09-05 (three phrasings x 3, evaluate_tool_selection

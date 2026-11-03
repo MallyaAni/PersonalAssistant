@@ -17,11 +17,13 @@ by the caller and costs one bubble's opinion.
 """
 
 import uuid
+from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
 
-from sqlalchemy import select
+from sqlalchemy import or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.discovery.subscribers import owner_subscriber_id
 from backend.models.discovery_feedback import DiscoverySentFind
 
 # The two tapbacks that mean anything here. Messages has six; loved, laughed,
@@ -35,6 +37,25 @@ DISLIKED = "disliked"
 # and a week is long enough that a phone left face-down over a weekend still
 # reports. Beyond it the row stays, unreacted, which is its own datum.
 FEEDBACK_HORIZON_DAYS = 7
+
+# How many stored bubbles the read-back looks through before collapsing the
+# per-subscriber copies. One find reaches every subscriber as its own row, so
+# the raw count is several times the number of finds; this is wide enough to
+# fill a chat answer and small enough that one query stays cheap.
+MAX_SENT_ROWS_READ = 300
+
+
+@dataclass(frozen=True, slots=True)
+class SentFind:
+    """One find as it went out, with the account holder's opinion if any."""
+
+    title: str
+    locality: str | None
+    sent_at: datetime
+    # "liked", "disliked", or None when no tapback was read. Only the account
+    # holder's copy contributes, so a guest's opinion is never reported as
+    # theirs.
+    reaction: str | None
 
 
 class SentFindRepository:
@@ -127,6 +148,80 @@ class SentFindRepository:
             .limit(limit)
         )
         return tuple(rows.scalars().all())
+
+    # What Scout sent this person, newest send first, for the chat read-back.
+    #
+    # A digest goes to every subscriber, and each recipient gets its own row, so
+    # the same find appears once per phone. This collapses those copies back to
+    # one line per find per send: the account holder asks what *they* were sent,
+    # not how many copies left the machine. Only the owner's copy (or a row from
+    # before per-subscriber recording) is kept, so a guest's thumbs-down is not
+    # reported as theirs.
+    #
+    # Bounds are timezone-aware datetimes already resolved by the caller; a
+    # malformed date never reaches here, it degrades to an unbounded read where
+    # the model's words are parsed.
+    async def sent_for(
+        self,
+        user_id: str,
+        since: datetime | None = None,
+        until: datetime | None = None,
+        limit: int = 40,
+    ) -> tuple[SentFind, ...]:
+        stmt = select(DiscoverySentFind).where(
+            DiscoverySentFind.user_id == user_id,
+            DiscoverySentFind.label.is_not(None),
+        )
+        if since is not None:
+            stmt = stmt.where(DiscoverySentFind.sent_at >= since)
+        if until is not None:
+            stmt = stmt.where(DiscoverySentFind.sent_at < until)
+        owner_id = await owner_subscriber_id(self.session, user_id)
+        if owner_id is not None:
+            stmt = stmt.where(
+                or_(
+                    DiscoverySentFind.subscriber_id.is_(None),
+                    DiscoverySentFind.subscriber_id == owner_id,
+                )
+            )
+        rows = (
+            (
+                await self.session.execute(
+                    stmt.order_by(DiscoverySentFind.sent_at.desc()).limit(
+                        MAX_SENT_ROWS_READ
+                    )
+                )
+            )
+            .scalars()
+            .all()
+        )
+
+        # One send is identified by its run, the same identity the repeat-fill
+        # cap counts. A rehearsal has no digest, so its title stands in; the
+        # rows of one send carry the same title even though each is sealed with
+        # its own nonce, because the plaintext is what comes back here.
+        sends: dict[tuple[str, str], DiscoverySentFind] = {}
+        for row in rows:
+            key = (
+                str(row.run_id) if row.run_id is not None else "",
+                str(row.item_digest) if row.item_digest else str(row.label or ""),
+            )
+            kept = sends.get(key)
+            # Newest first, so the first row of a key is the newest copy of the
+            # send; an owner's copy still wins over a legacy one for the same
+            # send because only it can carry the owner's reaction.
+            if kept is None or (kept.subscriber_id is None and row.subscriber_id):
+                sends[key] = row
+        return tuple(
+            SentFind(
+                title=str(row.label or ""),
+                locality=row.locality,
+                sent_at=row.sent_at,
+                reaction=row.reaction,
+            )
+            for row in list(sends.values())[:limit]
+            if row.label
+        )
 
 
 # How much of a bubble is enough to recognise it again.

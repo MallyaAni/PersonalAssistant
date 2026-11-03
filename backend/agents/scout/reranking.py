@@ -51,7 +51,7 @@ whose facts said they are a man, dislike stadium shows, and do not drink:
 So the conservative wording stays, and audience restriction is not solved here.
 The fix is a deterministic restricted-audience field read out of the page in
 `summarize.py`, said in the digest so the user can judge, and filtered only by
-code against an explicit fact. A 4B model is not the right thing to trust with
+code against an explicit fact. A model is not the right thing to trust with
 who may attend.
 
 Candidate text is untrusted third-party prose, quoted as data and never followed

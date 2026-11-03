@@ -33,7 +33,7 @@ flowchart TB
     ArtifactGate -->|no artifact needed| Context[Curated context]
     Visual --> VisualPolicy[DeepSeek V4 Flash<br/>visual-memory selection]
     VisualPolicy --> Context
-    Selector -->|search_web, search_history, get_weather,<br/>search_credits, a toolbox tool, schedule_task,<br/>manage_tasks, manage_check_ins, scout_schedule,<br/>save_skill, manage_skills, manage_runs| Steps
+    Selector -->|search_web, search_history, get_weather,<br/>search_credits, a toolbox tool, schedule_task,<br/>manage_tasks, manage_check_ins, scout_schedule,<br/>scout_digest, save_skill, manage_skills, manage_runs| Steps
     Steps[Turn step loop · run_steps<br/>TURN_MAX_STEPS, TURN_STEP_BUDGET_SECONDS read<br/>before every decision and action,<br/>TURN_MAX_CREATES new things] --> Apply[Carry out one step · outcome recorded<br/>found, done, scheduled · failed, not_found,<br/>refused, blocked · unknown when cut at the deadline]
     Apply -->|what was done and how it went;<br/>offered only tools whose effect contract<br/>allows a later step: a read or a write to<br/>this system's records, not expensive,<br/>no approval| Selector
     Apply -->|no next tool · needs input · router failed<br/>· a repeat by key · the creation allowance<br/>· the step ceiling · the clock| Memory
@@ -45,10 +45,12 @@ flowchart TB
     Persona[Interests as a person<br/>seven dance rows are one fact<br/>cached on the interest set] -.-> Memory
     Personalize -->|terms held into the query in code,<br/>disposition kept for the ranking| Search[Privacy-screened internet search<br/>credit-accurate budget · a failed search<br/>becomes turn state the reply admits]
     Apply -->|search_history query| History[Transcript-store semantic search<br/>top 40 by vector, both voices, HNSW<br/>ONNX cross-encoder cuts to 12, fail-soft]
+    Apply -->|scout_digest window| Sent[What Scout already sent<br/>owner's copies only · newest first]
     Apply -->|toolbox tool| MCP[Guarded MCP invocation<br/>per-tool approval and replay policy<br/>whole-schema validation · nested screening]
     MCP --> Context
     Search --> Context
     History --> Context
+    Sent --> Context
 
     Context --> Inference
     Inference -->|main role| Main[DeepSeek-V4-Flash<br/>streaming call via DGX Spark]

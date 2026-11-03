@@ -123,6 +123,12 @@ class DiscoverySeenItem(Base):
     starts_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
+    # When the happening is over, if anything stated it. A multi-day event is
+    # still current between the two, and that interval is what keeps it in the
+    # calendar and in the repeat fill after its first day.
+    ends_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     # Same 768-dimensional space as memory and visual artifacts, so a
     # near-duplicate check needs no second embedding model.
     embedding: Mapped[list[float] | None] = mapped_column(Vector(768), nullable=True)

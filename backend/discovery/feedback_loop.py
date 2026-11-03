@@ -25,9 +25,10 @@ import json
 from dataclasses import dataclass
 from datetime import datetime
 
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.discovery.subscribers import owner_subscriber_id
 from backend.models.discovery_feedback import DiscoverySentFind
 from backend.models.discovery_run import DiscoveryRun
 
@@ -68,8 +69,18 @@ REPEAT_RECENCY_DAYS = 14
 # Fails soft like everything else here: an unreadable table means the fill
 # behaves exactly as it did before the cap existed.
 async def send_counts(session: AsyncSession, user_id: str) -> dict[str, int]:
+    # One digest can reach several subscribers, and each gets its own row. The
+    # cap is about how many times this account has been offered a find, not how
+    # many phones received it: counting rows made one send to two subscribers
+    # look like two sends, so a find hit `MAX_REPEAT_SENDS` in half the intended
+    # number of digests. A run id identifies one send; rows with no run (a
+    # manual send, or an older row) count individually by their own id.
+    send_identity = func.coalesce(DiscoverySentFind.run_id, DiscoverySentFind.id)
     rows = await session.execute(
-        select(DiscoverySentFind.item_digest, func.count())
+        select(
+            DiscoverySentFind.item_digest,
+            func.count(func.distinct(send_identity)),
+        )
         .where(
             DiscoverySentFind.user_id == user_id,
             DiscoverySentFind.item_digest.is_not(None),
@@ -110,6 +121,10 @@ class ReactedFind:
     # The interest that surfaced the find, or None when the find matched
     # nothing (a notable, or a near-tie the ranker declined to name).
     interest: str | None
+    # The find's novelty identity, so a disliked find can be kept out of the
+    # repeat fill by the same key novelty and familiarity use. None for a
+    # rehearsal, which has no stored identity to carry.
+    digest: str | None = None
 
 
 # Every reacted find for this user, newest first, with the interest that
@@ -119,16 +134,29 @@ class ReactedFind:
 async def reacted_finds(
     session: AsyncSession, user_id: str, limit: int = MAX_REACTIONS_READ
 ) -> tuple[ReactedFind, ...]:
+    stmt = select(DiscoverySentFind).where(
+        DiscoverySentFind.user_id == user_id,
+        DiscoverySentFind.reaction.is_not(None),
+    )
+    # A digest goes to every subscriber, and a subscriber is not necessarily
+    # the account holder. A guest's thumbs-down must not shade the owner's
+    # interests or become a fact the model weighs about the owner.
+    #
+    # The owner is the recorded one, resolved beside the repository that
+    # records it. Rows with no subscriber id predate per-subscriber recording
+    # and are included for the same reason.
+    owner_id = await owner_subscriber_id(session, user_id)
+    if owner_id is not None:
+        stmt = stmt.where(
+            or_(
+                DiscoverySentFind.subscriber_id.is_(None),
+                DiscoverySentFind.subscriber_id == owner_id,
+            )
+        )
     rows = (
         (
             await session.execute(
-                select(DiscoverySentFind)
-                .where(
-                    DiscoverySentFind.user_id == user_id,
-                    DiscoverySentFind.reaction.is_not(None),
-                )
-                .order_by(DiscoverySentFind.reacted_at.desc())
-                .limit(limit)
+                stmt.order_by(DiscoverySentFind.reacted_at.desc()).limit(limit)
             )
         )
         .scalars()
@@ -163,6 +191,7 @@ async def reacted_finds(
             title=str(row.label or ""),
             reaction=str(row.reaction),
             interest=matched.get(str(row.run_id), {}).get(str(row.label or "")),
+            digest=str(row.item_digest) if row.item_digest else None,
         )
         for row in rows
     )

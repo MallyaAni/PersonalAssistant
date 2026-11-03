@@ -6,6 +6,7 @@ failure mode that matters for something that messages you unprompted.
 """
 
 from datetime import UTC, date, datetime, timedelta
+from zoneinfo import ZoneInfo
 
 from backend.discovery.digest import _clean_url, render_message
 from backend.discovery.events import DiscoveredEvent, clean_title
@@ -259,6 +260,22 @@ def test_a_date_with_no_time_is_never_given_one():
     assert "Oct 2" not in message
     assert "8:00pm" not in message
     assert "12:00am" not in message
+
+
+# A bare date stated east of UTC is still that date. Auckland midnight is the
+# previous day in UTC, so converting before reading the date slides it back.
+def test_a_date_only_start_east_of_utc_keeps_its_own_date():
+    start = datetime(2026, 10, 3, tzinfo=ZoneInfo("Pacific/Auckland"))
+
+    message = render_message(
+        (_dated("COLLECTIVE concert", start),),
+        timezone="America/New_York",
+        now=_NOW,
+    )
+
+    assert message is not None
+    assert "Sat Oct 3" in message
+    assert "Fri Oct 2" not in message
 
 
 def test_a_real_start_time_is_still_shown_in_the_readers_zone():

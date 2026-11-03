@@ -18,13 +18,11 @@ its outcome must be a success - matched in order `required_times` over, with
 unreachable sets `honest_failure`, so "done" means the failure was seen and
 nothing was fabricated as a success.
 
-`only` is the tool set the loop is offered. It defaults to the automation
-set because that is what the live loop runs over. The `search-then-remind`
-case offers every tool (`only=None`) and is therefore a *component*
-measurement of router sequencing - the production path narrows later steps
-to automation bookkeeping, which `test_a_later_step_cannot_reach_outside_
-the_bookkeeping_tools` pins separately. Say "component evaluation" when
-quoting it.
+`only` is the tool set the loop is offered. `None` offers what production
+offers - every tool on the first decision, and on each later one the tools
+whose contracts allow a later step - which is what every case here uses. A
+set names the tools for a component measurement of one agent's loop. Say
+"component evaluation" when quoting a rate: `apply` is scripted.
 """
 from __future__ import annotations
 
@@ -70,7 +68,10 @@ class TrajectoryCase:
     # How many successful creating effects this turn may legitimately write.
     allowed_creates: int = 1
     max_steps: int = 3
-    local_now: str = "Tuesday 2026-09-03 14:00"
+    # 2026-09-03 is a Thursday. The label said Tuesday for a while, and a clock
+    # that disagrees with itself is the kind of context defect these cases are
+    # meant to measure around rather than add to.
+    local_now: str = "Thursday 2026-09-03 14:00"
     user: str = "trajectory_eval"
     creates: Callable[[Any], bool] | None = None
 
@@ -110,15 +111,24 @@ TRAJECTORY_CASES: tuple[TrajectoryCase, ...] = (
             RequiredEffect(tools="schedule_task", carries=("mum", "18")),
         ),
         alternatives=(
-            (RequiredEffect(tools="manage_tasks", operation="reschedule", carries=("18",)),),
+            (
+                RequiredEffect(
+                    tools="manage_tasks",
+                    operation="reschedule",
+                    carries=("18",),
+                ),
+            ),
         ),
         forbidden=("edit_image", "generate_image"),
         max_steps=3,
     ),
-    # A turn that needs search then schedule. Offered every tool, because the
-    # live loop narrows later steps to automation bookkeeping; whether the
-    # router can still sequence across the two is a component measurement of
-    # the gap (production restriction pinned in test_turn_steps_behaviour).
+    # A turn that needs search then schedule, over the production tool sets:
+    # every tool on the first decision, then the ones whose contracts allow a
+    # later step. The reader's place is part of the context the live loop
+    # supplies (`_local_now`), and it is what makes "near me" answerable:
+    # without it the router is told never to guess a location, so it declines
+    # and the reminder half never runs. A bare clock here measured that
+    # refusal rather than the sequencing.
     TrajectoryCase(
         name="search-then-remind",
         ask="what's on this weekend near me, and remind me about the pottery "
@@ -132,6 +142,11 @@ TRAJECTORY_CASES: tuple[TrajectoryCase, ...] = (
         world=({"kind": "done"}, {"kind": "scheduled"}),
         forbidden=("edit_image", "generate_image"),
         max_steps=3,
+        local_now=(
+            "Thursday 2026-09-03 14:00 - they are in Arlington, Virginia "
+            "(America/New_York); this weekend is Sat 2026-09-05 to Sun "
+            "2026-09-06"
+        ),
     ),
     # The first step fails (nothing to act on). Done means the loop saw the
     # failure and did not report the cancel that never happened as done.

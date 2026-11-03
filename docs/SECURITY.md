@@ -144,6 +144,17 @@ This document separates current security facts from future requirements. A contr
   blocked. Result text is bounded and quoted as untrusted data. Broad PII
   classification and approval for sensitive-but-useful queries remain
   incomplete.
+- **Discovery feeds are untrusted outbound input.** A user-supplied feed URL is
+  a request-forgery primitive unless its destination is checked, so
+  `backend/discovery/fetching.py` refuses non-web schemes, resolves every host
+  (including each redirect hop), and refuses loopback, private, link-local, and
+  cloud-metadata addresses before contacting them. Bodies are abandoned
+  mid-stream past 5 MB, feed text is bounded and stripped of control
+  characters, and non-web links are dropped before they can reach a
+  notification. A selected find's poster is fetched under the same guard and
+  request budget with an 8 MB ceiling, and its bytes are checked against their
+  magic number before any model sees them, so an HTML error page served as an
+  image never reaches the vision endpoint.
 - Google's unpaid Gemini service may use submitted prompts and responses to
   improve its products and may subject them to human review. Do not route
   sensitive, confidential, personal, or private-memory content to that worker.
@@ -169,7 +180,7 @@ This document separates current security facts from future requirements. A contr
   cards, or tool-status events.
 - The maintainer architecture-candidate command sends the selected canonical diagram, maintainer request, and explicitly selected repository text to the configured local inference endpoint. It accepts only loopback endpoints; bounds file roots, types, counts, and sizes; rejects traversal and common secret filenames; labels repository text as untrusted evidence; and cannot overwrite canonical diagrams. These controls do not detect every secret inside an otherwise allowed source file, so maintainers must inspect selected context and provider logging before use.
 - Raster uploads accept only actual single-frame PNG, JPEG, or WebP content within configured byte and pixel limits; declared MIME must match decoded content. Validated bytes are stored under opaque hashed user namespaces with atomic writes, SHA-256/size integrity metadata, signed-user ownership when auth is enabled, private/no-store content responses, and file-plus-row deletion. The browser fetches private bytes through the authenticated API and uses a temporary object URL that is revoked on unmount. Automated retention, encrypted storage, malware scanning, and redacted media audit events are not implemented; backups are tested and scheduled (`docs/RESTORE.md`).
-- Validated image bytes and a bounded user prompt are sent over the house LAN to Qwen3-VL on spark2 (`:8001`) for vision analysis. They are not sent to ComfyUI or an internet provider, but vLLM process logging, host access, and retention still require review before sensitive images are used.
+- Validated image bytes and a bounded user prompt are sent over the house LAN to DeepSeek-V4.1-Flash-1017 on spark1 (`:8000`), reached through the spark2 `:8001` forwarder, for vision analysis. They are not sent to ComfyUI or an internet provider, but vLLM process logging, host access, and retention still require review before sensitive images are used.
 - A successful initial image analysis creates an owner-scoped derived semantic
   description containing only the artifact handle, bounded analysis text, and
   model provenance. Recall joins that entry back to a ready artifact owned by

@@ -33,9 +33,8 @@ one miss below what was measured; unauthorized actions and duplicates are
 enforced acceptance criteria, not numbers to eyeball.
 
 Use it after any change to the loop, the router, or the repeat guard. The
-`two-reminders` case is expected to measure incomplete today - the live
-guard allows one creation per turn - and its rate moving is the proof Phase 2
-and Phase 3 of the execution-boundary repair are working.
+`two-reminders` case measured 0/3 before the execution-boundary repair and
+3/3 after it; its rate is the proof that the repair held.
 """
 
 import argparse
@@ -70,34 +69,41 @@ from backend.services.trajectory_harness import (
 # allowance, and the step line carrying the instruction): mixed_tools 3/6
 # (cancel-and-reschedule 3/3 by the accepted reschedule path;
 # search-then-remind 0/3, the router choosing past-conversation search for
-# "what's on this weekend near me"), multiple_writes 3/3. Floors one miss
-# below those:
+# "what's on this weekend near me"), multiple_writes 3/3.
+# 2026-11-02: search-then-remind was given the reader's place in `local_now`,
+# which production's `_local_now` always supplies. Without it the router is
+# told never to guess a location and declines, so the case measured that
+# refusal rather than sequencing; with it the case completes 3/3 and
+# mixed_tools is 6/6. Floors one miss below the latest measurement:
 #   single_step     3/3  -> 0.66
 #   reference       3/3  -> 0.66
 #   partial_failure 3/3  -> 0.66
-#   mixed_tools     3/6  -> 0.33
+#   mixed_tools     5/6  -> 0.83
 #   multiple_writes 3/3  -> 0.66
 # Written as 0.66, not 0.67: 2/3 is 0.667, so a floor of 0.67 tolerated no
 # miss at all and refused a run on one flake (opencode's run at 2fc6610 on
-# 2026-09-05: reference 2/3 read as a breach). One miss below three is 0.66.
+# 2026-09-05: reference 2/3 read as a breach). One miss below three is 0.66;
+# for the same reason five of six is written 0.83, not 0.84.
 CATEGORY_COMPLETION_FLOORS: dict[str, float] = {
     "single_step": 0.66,
     "reference": 0.66,
     "partial_failure": 0.66,
-    "mixed_tools": 0.33,
+    "mixed_tools": 0.83,
     "multiple_writes": 0.66,
 }
 
 # Argument-carrying floor per category, one miss below what was measured.
 # 2026-09-05 after Phase 2: single_step 3/3, reference 3/3, multiple_writes
 # 3/3; mixed_tools measured 0/6 before the carried gate learned about a
-# case's alternative paths and is re-measured from zero. Carrying is a
-# separate gate from completion so "right tools, wrong words" cannot hide
-# behind a tool-count win.
+# case's alternative paths and is re-measured from zero.
+# 2026-11-02: mixed_tools carried 6/6 with the corrected case context, so its
+# floor is 0.83 (five of six), not zero. Carrying is a separate gate from
+# completion so "right tools, wrong words" cannot hide behind a tool-count
+# win.
 CATEGORY_CARRIED_FLOORS: dict[str, float] = {
     "single_step": 0.66,
     "reference": 0.66,
-    "mixed_tools": 0.0,
+    "mixed_tools": 0.83,
     "multiple_writes": 0.66,
 }
 
@@ -129,7 +135,8 @@ async def collect(
 # it without shipping the case texts inside every JSON.
 def _case_fingerprint() -> str:
     material = "\x1f".join(
-        f"{case.name}:{case.category}:{case.ask}" for case in TRAJECTORY_CASES
+        f"{case.name}:{case.category}:{case.ask}:{case.local_now}"
+        for case in TRAJECTORY_CASES
     )
     return hashlib.sha256(material.encode("utf-8", "replace")).hexdigest()[:16]
 

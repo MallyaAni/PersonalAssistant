@@ -12,7 +12,7 @@ to remember to do it.
 import re
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 
 # Bound what one source may contribute. A feed is someone else's data and can
 # change size without notice, so a run's cost cannot depend on their restraint.
@@ -53,6 +53,10 @@ class DiscoveredEvent:
     place: str | None
     url: str | None
     summary: str | None
+    # A picture the listing published with the event - a poster carrying the
+    # date, venue and performers the text often omits. Read once for a selected
+    # find so the model can see it; None whenever the source stated none.
+    media_url: str | None = None
 
     # A calendar entry needs a start; a listing without one can still be shown
     # but cannot become a VEVENT, so the distinction is explicit rather than
@@ -106,6 +110,43 @@ def clean_title(value: str | None, limit: int = MAX_TITLE_CHARS) -> str | None:
         if len(candidate) >= MIN_SENTENCE_TITLE_CHARS:
             return candidate
     return cleaned
+
+
+# Whether a start carries only a date. Midnight in the zone the source stated is
+# the pipeline's one convention for "the source stated a day and no time" —
+# search extraction and described dates produce midnight UTC, and an ICS date
+# value produces midnight in the calendar's own zone. Every comparison against
+# such a start has to treat it as the whole day, not the instant the day began:
+# treating it as an instant is how an event happening tonight was dropped from
+# a real digest as "already passed" at 4pm.
+#
+# The check reads the datetime's own wall clock rather than converting to UTC
+# first. A calendar date in New York is midnight at -04:00, which is 04:00 UTC,
+# and converting before checking is exactly what made those all-day entries
+# look like timed ones.
+def is_date_only(starts_at: datetime) -> bool:
+    return (starts_at.hour, starts_at.minute, starts_at.second) == (0, 0, 0)
+
+
+# Whether an event is already over.
+#
+# `ends_at` is what makes a multi-day happening survive its second day: a
+# festival that started on Friday is not over on Saturday just because its
+# `starts_at` is behind us. The end is treated as an exclusive instant — the
+# ICS convention — so an all-day event whose end is midnight on the 5th ran
+# through the 4th. A date-only start with no stated end keeps its whole day.
+def event_has_passed(
+    starts_at: datetime | None,
+    ends_at: datetime | None,
+    moment: datetime,
+) -> bool:
+    if starts_at is None:
+        return False
+    if ends_at is not None and ends_at > starts_at:
+        return moment >= ends_at
+    if is_date_only(starts_at):
+        return moment >= starts_at + timedelta(days=1)
+    return moment >= starts_at
 
 
 # Accept only web URLs. A feed may carry javascript:, data:, or file: targets,

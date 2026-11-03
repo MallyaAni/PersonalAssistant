@@ -1,0 +1,110 @@
+{
+  "at": "2026-11-01T22:51:34+00:00",
+  "commit": "",
+  "extra": {
+    "arguments": {
+      "floor": 1.0,
+      "held": 0,
+      "judged": 0,
+      "missed": []
+    },
+    "failures": [
+      {
+        "category": "agent_config",
+        "chose": {
+          "manage_tasks": 1,
+          "none": 2
+        },
+        "expected": "none",
+        "missed": 1,
+        "of": 3,
+        "query": "what agents do i have scheduled?"
+      },
+      {
+        "category": "personal_memory",
+        "chose": {
+          "none": 2,
+          "search_history": 1
+        },
+        "expected": "none",
+        "missed": 1,
+        "of": 3,
+        "query": "remind me what my interests are"
+      }
+    ],
+    "floors_breached": []
+  },
+  "floor": 0.7,
+  "name": "tool-selection",
+  "notes": "124 labelled cases, 2 failing",
+  "reps": 3,
+  "right": 73,
+  "scores": [
+    {
+      "name": "agent_config",
+      "right": 2,
+      "total": 3
+    },
+    {
+      "name": "check_ins",
+      "right": 6,
+      "total": 6
+    },
+    {
+      "name": "creative_writing",
+      "right": 6,
+      "total": 6
+    },
+    {
+      "name": "credits",
+      "right": 3,
+      "total": 3
+    },
+    {
+      "name": "document_file",
+      "right": 3,
+      "total": 3
+    },
+    {
+      "name": "edit_not_an_image",
+      "right": 6,
+      "total": 6
+    },
+    {
+      "name": "firing",
+      "right": 9,
+      "total": 9
+    },
+    {
+      "name": "history",
+      "right": 3,
+      "total": 3
+    },
+    {
+      "name": "personal_memory",
+      "right": 11,
+      "total": 12
+    },
+    {
+      "name": "shared_document",
+      "right": 3,
+      "total": 3
+    },
+    {
+      "name": "show",
+      "right": 3,
+      "total": 3
+    },
+    {
+      "name": "stable_knowledge",
+      "right": 6,
+      "total": 6
+    },
+    {
+      "name": "writing_followup",
+      "right": 12,
+      "total": 12
+    }
+  ],
+  "total": 75
+}

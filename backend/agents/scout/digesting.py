@@ -22,7 +22,7 @@ So the prose is the model's now, and the boundary moved rather than went away:
   date-only handling was hard-won: an event listed for Oct 3 was once announced
   as "Fri Oct 2, 8:00pm" because a date with no time had been shifted into a
   zone. The model is told to reproduce that text exactly, and a functional test
-  asserts it did. A 4B model recomputing a weekday is a wrong appointment, and a
+  asserts it did. A model recomputing a weekday is a wrong appointment, and a
   wrong appointment is worse than no message;
 - **it cannot invent a find.** Lines are returned against the indices it was
   given, and an index that was not offered is dropped.
@@ -36,12 +36,15 @@ ends: warmth that survives, and hype that does not.
 
 import asyncio
 import json
+import logging
 import re
 from dataclasses import dataclass
 from typing import Any
 
 from backend.core.interfaces import TextWriter
 from backend.core.prompts import render
+
+logger = logging.getLogger(__name__)
 
 # One opening line. Long enough to say something about this batch, short enough
 # that the first find is visible without scrolling on a phone.
@@ -55,6 +58,12 @@ MAX_LINE_CHARS = 200
 # exceeding it: a line written for a find that will not be sent is a wasted
 # generation, and one written for a find that does not exist is worse.
 MAX_LINES = 5
+
+# What the person told the assistant about themselves, bounded. The reader
+# already caps statements and their length; this is the second fence, because
+# this string is appended to a prompt whose size is otherwise fixed by the
+# finds and a long memory must not grow it without limit.
+MAX_PERSON_CHARS = 2400
 
 _URL_IN_TEXT = re.compile(r"https?://\S+|\bwww\.\S+", re.IGNORECASE)
 
@@ -160,15 +169,23 @@ class DigestWriter:
     # relationship carries a light invitation to react, and a pick that
     # continues an earlier thumbs-up gets to say so - adaptation the reader
     # can see is the only education that does not read as a manual.
+    #
+    # `person_context` is the approved, screened memory about the reader. It is
+    # supplied only when the message is theirs alone - delivery withholds it
+    # when a guest is on the list - and it is context for the writing rather
+    # than a second set of facts about the finds.
     async def write(
         self,
         finds: tuple[Find, ...],
         first_digest: bool = False,
         reactions: tuple[object, ...] = (),
+        person_context: str = "",
     ) -> WrittenDigest | None:
         if self.writer is None or not finds:
             return None
         content = _render_finds(finds)
+        if person_context:
+            content += "\n\n" + _render_person(person_context[:MAX_PERSON_CHARS])
         if reactions:
             content += "\n\n" + _render_reactions(reactions)
         if first_digest:
@@ -204,11 +221,36 @@ class DigestWriter:
                 # an entry rather than colour one.
                 if int(item["index"]) in offered
             )
-        except Exception:
+        except Exception as exc:
+            # The fallback is deliberate, but a silent one made an unreachable
+            # runtime or a schema change look like a normal assembled digest:
+            # every message still arrived, only worse, and nothing said why.
+            logger.warning(
+                "scout_digest_write_failed finds=%d error=%s",
+                len(finds),
+                exc,
+                exc_info=True,
+            )
             return None
         if not greeting or not lines:
             return None
         return WrittenDigest(greeting=greeting, lines=lines)
+
+
+# What the person told the assistant about themselves, kept as its own block
+# rather than folded into the finds. The finds are facts about the world and
+# this is context about the reader; a model that cannot tell them apart will
+# put a personal fact into a line as though the page had said it, and the
+# instruction that follows is what keeps the message from reading like a
+# record being recited back.
+def _render_person(person_context: str) -> str:
+    return (
+        "What they have told the assistant about themselves:\n"
+        + person_context
+        + "\n\nUse this only to decide what to lead with and why a find suits "
+        "them. Do not recite these facts back, do not mention that you keep "
+        "notes about them, and do not let them add any detail about a find."
+    )
 
 
 # What they reacted to before, as facts plus one instruction scoped to the

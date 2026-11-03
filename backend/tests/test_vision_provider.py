@@ -1,5 +1,7 @@
 import functools
 import json
+import re
+from pathlib import Path
 
 import httpx
 import pytest
@@ -9,6 +11,42 @@ from backend.vision.lm_studio import (
     OpenAICompatibleVisionProvider,
     create_vision_provider,
 )
+
+_ROOT = Path(__file__).resolve().parents[2]
+
+
+# The vision role must reach the provider through settings, so promoting the
+# model is a settings change rather than a code change.
+def test_the_configured_vision_model_reaches_the_provider():
+    from backend.config.settings import settings
+    from backend.core.dependencies import get_vision_provider
+
+    provider = get_vision_provider()
+
+    assert provider.model == settings.VISION_MODEL
+
+
+# And the application default must agree with the one compose declares. When
+# they drifted, a deployment that never set the variable sent images to a
+# retired local VLM that nothing served.
+def test_the_vision_model_default_matches_compose():
+    from backend.config.settings import Settings
+
+    compose = (_ROOT / "docker-compose.yml").read_text(encoding="utf-8")
+    declared = set(
+        re.findall(r"VISION_MODEL=\$\{VISION_MODEL:-([^}]+)\}", compose)
+    )
+
+    assert declared, "compose no longer declares a VISION_MODEL default"
+    # The declared default, not `settings.VISION_MODEL`. That attribute is the
+    # value the environment resolved, and a deployment that sets the variable
+    # in its own .env is configuring the role - which is the whole point of it.
+    # Comparing the resolved value failed this test on a correct override (this
+    # deployment runs `qwen3-vl-8b`, an alias the second Spark still serves for
+    # the same DeepSeek model) and would have failed the gate for every
+    # deployment that ever changed the vision model.
+    default = Settings.model_fields["VISION_MODEL"].default
+    assert declared == {default}
 
 
 # Verify the configured adapter constructs the neutral vision implementation.

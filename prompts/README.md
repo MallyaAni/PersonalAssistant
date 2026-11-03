@@ -78,7 +78,7 @@ python -m pytest backend/tests/functional -q     # real model, real MCP, real Co
 | `refinement/keep_scene.md` | What an image edit must preserve |
 | `search/another_angle.md` | The unconditional follow-up search |
 | `search/refine.md` | Whether to keep searching, and for what |
-| `routing/select_action.md` | **What every turn does**: search, picture, edit, diagram, deck, an MCP tool, or nothing. Runs on the 4B routing model |
+| `routing/select_action.md` | **What every turn does**: search, picture, edit, diagram, deck, an MCP tool, or nothing. Runs on the routing role (`ROUTING_LLM_MODEL`, currently DeepSeek-V4.1-Flash-1017 under the `deepseek-v4-flash` alias) |
 | `welcome/system.md` | The unprompted introduction a newly approved person receives. Written from the live capability list rather than stored, so it cannot promise a tool that stopped being offered |
 | `reply/system.md` | **Every chat reply.** The assistant's whole instruction: what it may guess, when to ask, its training boundary, what AniOS can do, and what it may claim to have saved |
 

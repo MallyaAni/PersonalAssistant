@@ -12,7 +12,8 @@ entities, and the payload is already byte-bounded before it arrives here, which
 together cover the two attacks that matter for untrusted XML.
 """
 
-from datetime import datetime
+from collections.abc import Iterator
+from datetime import UTC, datetime
 from email.utils import parsedate_to_datetime
 from xml.etree import ElementTree
 
@@ -30,6 +31,9 @@ from backend.discovery.events import (
 from backend.discovery.fetching import RequestBudget, fetch_feed
 
 _ATOM = "{http://www.w3.org/2005/Atom}"
+# Media RSS is how most event feeds publish the poster: media:content and
+# media:thumbnail are in this namespace, and often nested inside media:group.
+_MEDIA = "{http://search.yahoo.com/mrss/}"
 # Some publishers carry a real event date in a namespaced element. Where one is
 # present it is preferred over any publication timestamp.
 _EVENT_DATE_TAGS = (
@@ -101,7 +105,47 @@ def _build_event(entry: ElementTree.Element, source_id: str) -> DiscoveredEvent 
             _text(entry, "description", f"{_ATOM}summary", f"{_ATOM}content"),
             MAX_SUMMARY_CHARS,
         ),
+        media_url=_image_url(entry),
     )
+
+
+# The event's own picture, when the feed states one. Only image-typed
+# enclosures count: a podcast's audio enclosure is not a poster, and treating a
+# typeless enclosure as an image would put a sound file in front of the vision
+# model. media:thumbnail is an image by definition, so it needs no type.
+def _image_url(entry: ElementTree.Element) -> str | None:
+    for candidate in _image_candidates(entry):
+        cleaned = clean_url(candidate)
+        if cleaned is not None:
+            return cleaned
+    return None
+
+
+# Every URL in this item that claims to be a picture, in preference order.
+# Yields raw attributes; the caller cleans and validates them like any other
+# feed URL.
+def _image_candidates(entry: ElementTree.Element) -> Iterator[str | None]:
+    enclosure = entry.find("enclosure")
+    if enclosure is not None and _is_image_type(enclosure.get("type")):
+        yield enclosure.get("url")
+    for link in entry.findall(f"{_ATOM}link"):
+        if link.get("rel") == "enclosure" and _is_image_type(link.get("type")):
+            yield link.get("href")
+    # media:content is usually the full-size poster; the thumbnail is smaller
+    # and often a crop, so it is the last resort rather than the first.
+    for node in entry.iter():
+        if node.tag == f"{_MEDIA}content" and (
+            _is_image_type(node.get("type"))
+            or (node.get("medium") or "").lower() == "image"
+        ):
+            yield node.get("url")
+    for node in entry.iter():
+        if node.tag == f"{_MEDIA}thumbnail":
+            yield node.get("url")
+
+
+def _is_image_type(value: str | None) -> bool:
+    return (value or "").lower().startswith("image/")
 
 
 def _text(entry: ElementTree.Element, *tags: str) -> str | None:
@@ -142,11 +186,17 @@ def _event_start(entry: ElementTree.Element) -> datetime | None:
 def _parse_timestamp(raw: str) -> datetime | None:
     if not raw:
         return None
+    parsed: datetime | None = None
     try:
-        return datetime.fromisoformat(raw.replace("Z", "+00:00"))
+        parsed = datetime.fromisoformat(raw.replace("Z", "+00:00"))
     except ValueError:
-        pass
-    try:
-        return parsedate_to_datetime(raw)
-    except (TypeError, ValueError):
-        return None
+        try:
+            parsed = parsedate_to_datetime(raw)
+        except (TypeError, ValueError):
+            return None
+    # A timestamp with no offset is not a comparable instant. Every downstream
+    # comparison assumes an aware datetime; treating the naive value as UTC is
+    # the only reading that does not silently shift it by the machine's zone.
+    if parsed is not None and parsed.tzinfo is None:
+        return parsed.replace(tzinfo=UTC)
+    return parsed

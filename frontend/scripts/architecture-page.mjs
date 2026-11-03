@@ -84,6 +84,15 @@ function renderMarkdown(markdown) {
       code = [];
       continue;
     }
+    // The ML design document opens with a superseded-runtime note written as
+    // a blockquote. The page has no blockquote styling, so keep the words and
+    // drop the marker instead of escaping it into the paragraph.
+    if (line.startsWith("> ")) {
+      flushList();
+      flushTable();
+      paragraph.push(line.slice(2));
+      continue;
+    }
     const heading = /^(#{1,6})\s+(.*)$/.exec(line);
     if (heading) {
       flushAll();
@@ -390,14 +399,14 @@ const metrics = [
   },
   {
     label: "Generation",
-    value: "DeepSeek V4 Flash",
-    note: "official FP8 &middot; tensor-parallel across both Sparks &middot; 1M context",
+    value: "DeepSeek V4.1 Flash",
+    note: "EXL3 &middot; tensor-parallel across both Sparks &middot; 262k context",
     good: false,
   },
   {
     label: "Vision",
-    value: "Qwen3-VL-8B",
-    note: "AWQ on spark2 &middot; NVFP4 emits wrong output on sm_121",
+    value: "Same V4.1 server",
+    note: "reads images under the alias qwen3-vl-8b &middot; no separate vision model",
     good: false,
   },
   {
@@ -653,8 +662,8 @@ do &mdash; search the web, make or edit a picture, draw a diagram, build a deck,
 conversations, set something for later, use one of the person's own connected tools &mdash; and it
 picks one, as a real tool call rather than a keyword match. It is then shown what that step did and
 may take another, up to three, inside a 45-second budget. One model does nearly all of this
-thinking: DeepSeek-V4-Flash, split across two DGX Sparks, which answers, routes, plans decks and
-diagrams, and decides what is worth remembering. Qwen3-VL reads images; Nomic turns text into
+thinking: DeepSeek-V4.1-Flash-1017, split across two DGX Sparks, which answers, routes, plans decks
+and diagrams, decides what is worth remembering, and reads images. Nomic turns text into
 vectors. The application, never the model, decides who is allowed to do what, what gets stored, and
 what actually runs.</p>
 

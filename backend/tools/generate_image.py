@@ -41,7 +41,12 @@ TOOL = BuiltinTool(
         "caption, description, or any other text is never this tool, however "
         "visual its subject - 'write a haiku about rain' is answered in words "
         "and nothing is drawn. Call this tool only when the thing being asked "
-        "for is itself a picture."
+        "for is itself a picture. Asking to regenerate, redo, or make again a "
+        "picture from earlier is this tool, not show_image. A picture of a "
+        "technical subject - an architecture, pipeline, or system - is still a "
+        "picture when they ask for a picture; a diagram is only when they ask "
+        "for a diagram. A short answer to the assistant's own question about "
+        "what to put in a picture completes that request."
     ),
     schema=_SCHEMA,
     waiting=(

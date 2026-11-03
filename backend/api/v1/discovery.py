@@ -46,7 +46,7 @@ from backend.discovery.reachability import (
     is_reachable_from_other_devices,
 )
 from backend.discovery.relevance import RankedCandidate
-from backend.discovery.runner import events_from_digest
+from backend.discovery.runner import candidates_from_digest, events_from_digest
 from backend.discovery.schedule import Cadence
 from backend.discovery.types import (
     MAX_LABEL_CHARS,
@@ -729,21 +729,43 @@ async def preview_digest(
     runner: DependencyDiscoveryRunner,
     subscribers: DependencyDiscoverySubscribers,
     seen: DependencyDiscoverySeenItems,
+    runs: DependencyDiscoveryRuns,
 ) -> dict[str, object]:
     profile = await profile_service.get_profile(user_id)
     primary = profile.active_locality
     timezone = primary.timezone if primary else "America/New_York"
 
-    # Preview reads what has already been announced rather than sweeping again,
-    # so looking does not consume a metered query or mark anything as seen.
-    events = await seen.announced_events(user_id)
-    selected = tuple(
-        RankedCandidate(ScoredCandidate(event, None), 1.0, None) for event in events
-    )
+    # Preview reads what the last sweep decided rather than sweeping again, so
+    # looking does not consume a metered query or mark anything as seen.
+    #
+    # The saved digest is the only record that keeps the unusual finds separate
+    # from the matched ones. Rebuilding a preview from the seen store instead
+    # renders every find as a match, which is not the message delivery sends.
+    selected: tuple[RankedCandidate, ...] = ()
+    notable: tuple[RankedCandidate, ...] = ()
+    records = await runs.recent_runs(user_id, 1)
+    saved = records[0].get("digest_json") if records else None
+    if isinstance(saved, str) and saved:
+        try:
+            selected, notable = candidates_from_digest(saved)
+        except DiscoveryError:
+            selected, notable = (), ()
+    if not selected and not notable:
+        # No run has saved a digest yet — a manual sweep does not create one.
+        # The announced store cannot distinguish the two sections, but a
+        # preview of what was announced is better than no preview at all.
+        events = await seen.announced_events(user_id)
+        selected = tuple(
+            RankedCandidate(ScoredCandidate(event, None), 1.0, None)
+            for event in events
+        )
 
     base = calendar_base_url(settings.DISCOVERY_CALENDAR_BASE_URL)
     message = render_message(
-        selected, f"{base.rstrip('/')}/{user_id}/calendar", timezone=timezone
+        selected,
+        f"{base.rstrip('/')}/{user_id}/calendar",
+        timezone=timezone,
+        notable=notable,
     )
     recipients = await subscribers.list_subscribers(user_id, deliverable_only=True)
 
@@ -756,7 +778,7 @@ async def preview_digest(
         "recipients": describe_recipients(recipients),
         "egress_enabled": settings.DISCOVERY_EGRESS_ENABLED,
         "calendar_links_reachable": is_reachable_from_other_devices(base),
-        "event_count": len(events),
+        "event_count": len(selected) + len(notable),
     }
 
 

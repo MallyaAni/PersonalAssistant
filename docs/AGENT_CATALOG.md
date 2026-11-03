@@ -78,17 +78,24 @@ says so.
 | Subsystem view | [discovery-subsystem.svg](diagrams/discovery-subsystem.svg) |
 | Agent folder | `backend/agents/scout/` |
 | Domain package | `backend/discovery/` |
-| Prompts | `aiming.py` · `reranking.py` · `describing.py` · `digesting.py` · `place_suggest.py` · `timezones.py` |
+| Prompts | `aiming.py` · `reranking.py` · `describing.py` · `digesting.py` · `place_suggest.py` · `timezones.py` · `seeing.py` (the shared `document/picture` instruction) |
 | Card | `agents/scout/card.py` |
 | Functional tests | `test_prompt_behaviour.py` · `test_aiming_behaviour.py` · `test_description_quality.py` · `test_digest_writing.py` · `test_timezone_prompt_behaviour.py` |
 | Quality harness | `python -m backend.cli.evaluate_discovery_ranking` |
 
 **What the model decides:** the subject of each search, the vector a candidate is
-scored against, the order of an already-qualified shortlist, and how a find
-reads. **What is decided for it:** what qualifies. Novelty, familiarity,
-lead time, geography and the request budget are deterministic, because a sweep
-runs unattended and a sampled judgement would make the same feed produce
-different results on different days.
+scored against, the order of an already-qualified shortlist, what a listing's
+poster shows, and how a find reads. **What is decided for it:** what qualifies.
+Novelty, familiarity, lead time, geography and the request budget are
+deterministic, because a sweep runs unattended and a sampled judgement would
+make the same feed produce different results on different days.
+
+A feed is read as the instances it publishes, not as one row per entry: a
+recurring calendar entry expands into the upcoming occurrences the sweep can
+act on, and a poster is fetched for a selected find and captioned by the vision
+role before the describer sees the listing. The caption is the one place a
+model reads pixels on this path, and every failure around it is a missing
+caption rather than a lost find.
 
 **The message is written, not assembled.** `digesting.py` composes the greeting
 and one line per find; `discovery/digest.py` supplies the facts and attaches the
@@ -103,20 +110,31 @@ assembled shape still ships — worse to read, and it always arrives.
 carries a tapback — 👍 or 👎 on the bubble itself. That is the only thing Scout
 knows that means *more like that one*; dismissal means "I already knew this" and
 silence means nothing at all. Reactions are recorded in `discovery_sent_finds`
-against the same `item_digest` novelty and familiarity key on, and **nothing in
-ranking reads them yet**: a loop trained on a handful of tapbacks would learn
-noise. The cost is a burst of notifications instead of one.
+against the same `item_digest` novelty and familiarity key on, and **every later
+sweep reads them back**: each becomes a statement the aimer, reranker and
+describer weigh, and the net thumbs shade each interest's stored strength rather
+than overwriting it. A find given a thumbs-down is also excluded from the repeat
+fill by that same key, so the verdict outlives the two-week recency window
+instead of the same evening returning as though nobody had said anything. The
+digest itself shows the owner it remembered only when the owner is its only
+recipient: the text is written once and sent to every deliverable subscriber,
+and a line written for the owner reads to a guest as addressed to the wrong
+person, about a digest they never received. With guests on the list the digest
+is written plainly. A handful of tapbacks still cannot train a model; they are
+evidence, not a training set. The cost is a burst of notifications instead of
+one.
 
-**Measured weakness: aiming barely personalises.** Given an approved fact
-bearing on an interest, the fact reaches the profile 2 times in 5 and the search
-subject 0 times in 5. The previous prompt scored 1 and 1, and its single subject
-win was "Board Games" — the label most resembling the worked example it was
-taught with, "Run Clubs". Both prompts' examples were therefore doing more
-priming than teaching, and the test that used to pass was rewarding it. The
-examples are now interests nobody here holds, so a passing case is a general
-one. The gap is recorded as a non-strict `xfail` in `test_aiming_behaviour.py`
-rather than loosened, because the module's whole premise is that a sweep is
-aimed at someone.
+**Measured on V4.1 (2026-11-01).** Given an approved fact bearing on an interest,
+the fact reaches the aim's text — subject plus profile — 5 times in 5, in three
+consecutive runs. The previous prompt scored 2/5 on the profile and 0/5 on the
+subject; its single subject win was "Board Games", the label most resembling the
+worked example it was taught with, "Run Clubs". The examples are now interests
+nobody here holds, so a passing case is a general one. The non-strict `xfail`
+that recorded the old weakness has been removed, and
+`test_aiming_behaviour.py` asserts the fact reaches the text. The remaining
+instability is the empty context: the model sometimes elaborates a label
+instead of returning it unchanged, so `AimPlanner.plan` enforces the label when
+no approved facts exist and lets the model write only the profile.
 
 ## Deck — presentations
 
@@ -275,13 +293,14 @@ Listed so the distinction is a decision rather than an oversight.
 
 ## Every model call, and what it costs
 
-One text model serves all of it: DeepSeek-V4-Flash, served by vLLM
+One model serves all of it: DeepSeek-V4.1-Flash-1017, served by vLLM
 tensor-parallel across the two DGX Sparks. The role-specific settings —
 `MAIN_LLM_MODEL`, `ROUTING_LLM_MODEL`, `PRESENTATION_LLM_MODEL`,
 `DIAGRAM_LLM_MODEL`, `MEMORY_PROPOSAL_LLM_MODEL` — are pinned to it
 explicitly in compose so that changing one never silently moves another;
-Scout has no role setting and follows the main role. Vision is the one
-separate model (Qwen3-VL-8B on spark2), because DeepSeek cannot read pixels.
+Scout has no role setting and follows the main role. Vision is not a separate
+model: `VISION_MODEL` points at the same server under its compatibility alias
+`qwen3-vl-8b`, because V4.1 reads images.
 
 The constraint that decides this is memory: DeepSeek holds about 97 GiB on
 *each* Spark, so "a better model for this call" still means replacing the one

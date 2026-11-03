@@ -1174,6 +1174,18 @@ DependencyDiscoverySubscribers = Annotated[
 ]
 
 
+# Reads back what Scout already sent this person, for the chat tool that
+# answers "what did you send me?".
+def get_sent_find_repository(db: DbDependency) -> SentFindRepository:
+    return SentFindRepository(db)
+
+
+DependencyDiscoverySentFinds = Annotated[
+    SentFindRepository,
+    Depends(get_sent_find_repository),
+]
+
+
 def get_discovery_familiar_repository(db: DbDependency) -> FamiliarItemRepository:
     return FamiliarItemRepository(db)
 
@@ -1312,6 +1324,10 @@ async def get_discovery_runner(
         structured_writer=get_structured_llm_client(),
         search_budget=get_search_budget(),
         cross_encoder=get_cross_encoder(),
+        # The primary model sees the posters feeds publish, so a selected find
+        # whose listing carries one is described with it rather than from text
+        # alone.
+        vision=get_vision_provider(),
         is_operator=is_operator,
         search_limit=search_limit,
     )
@@ -1341,6 +1357,7 @@ def get_discovery_runner_for_session(
         structured_writer=get_structured_llm_client(),
         search_budget=get_search_budget(),
         cross_encoder=get_cross_encoder(),
+        vision=get_vision_provider(),
         is_operator=is_operator,
         search_limit=search_limit,
     )
@@ -1647,6 +1664,7 @@ def get_conversation_service(
     presentation_jobs: PresentationJobDependency,
     discovery_profile: DependencyDiscoveryProfileService,
     discovery_runs: DependencyDiscoveryRuns,
+    sent_finds: DependencyDiscoverySentFinds,
     scheduled_tasks: DependencyScheduledTasks,
     skills: DependencySkills,
     memory_proposals: MemoryProposalDependency,
@@ -1690,6 +1708,7 @@ def get_conversation_service(
         ),
         discovery_profile=discovery_profile,
         discovery_runs=discovery_runs,
+        sent_finds=sent_finds,
         scheduled_tasks=scheduled_tasks,
         skills=skills,
         memory_proposals=memory_proposals,

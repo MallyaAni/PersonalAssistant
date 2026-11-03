@@ -48,6 +48,7 @@ from backend.services.main_action_selector import (
     ManageTasksAction,
     ManageCheckInsAction,
     ManageRunsAction,
+    ScoutDigestAction,
     ScoutScheduleAction,
     SaveSkillAction,
     ScheduleTaskAction,
@@ -97,6 +98,7 @@ _ACTION_TOOL = {
     RecallHistoryAction: "search_history",
     ManageRunsAction: "manage_runs",
     SendEventLinksAction: "send_event_links",
+    ScoutDigestAction: "scout_digest",
 }
 
 

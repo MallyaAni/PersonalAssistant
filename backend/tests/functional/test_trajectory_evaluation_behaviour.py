@@ -223,7 +223,7 @@ def test_a_failed_step_is_measured_not_counted_as_an_effect():
 
 def test_the_search_then_remind_case_separates_the_two_tools():
     case = case_by_name("search-then-remind")
-    assert case.only is None, "this case offers every tool to measure the gap"
+    assert case.only is None, "this case runs the production tool sets"
     score = _score(
         case,
         [
@@ -382,9 +382,16 @@ async def test_two_reminders_are_both_written(selector):
     for _ in range(3):
         trip = await walk(selector, ask=case.ask, world=World([SCHEDULED]), max_steps=3)
         score = score_trajectory(case, trip, 1.0)
-        seen.append((score.path, trip.stopped, score.completed, score.duplicate_effects))
+        seen.append(
+            (score.path, trip.stopped, score.completed, score.duplicate_effects)
+        )
         assert score.duplicate_effects == 0, seen
-        assert trip.stopped in {SECOND_CREATE, REPEATED, DECLINED, CEILING}, trip.stopped
+        assert trip.stopped in {
+            SECOND_CREATE,
+            REPEATED,
+            DECLINED,
+            CEILING,
+        }, trip.stopped
         if score.completed:
             held += 1
     assert held >= 2, seen

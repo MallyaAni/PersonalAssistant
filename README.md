@@ -38,9 +38,10 @@ is planned rather than working is labelled as such; see
 
 ## How it is put together
 
-- **The models.** DeepSeek-V4-Flash spans both Sparks and does all the text
-  work: replying, choosing tools, writing decks. Qwen3-VL reads images on the
-  second Spark, and Nomic turns text into vectors for retrieval. Pictures are
+- **The models.** DeepSeek-V4.1-Flash-1017 spans both Sparks and does all the
+  model work: replying, choosing tools, writing decks, and reading images. It
+  serves the vision role too, so there is no separate vision model; Nomic
+  turns text into vectors for retrieval. Pictures are
   drawn by FLUX.2 Klein on a Windows desktop with a consumer GPU, the one part
   of the system that is not always on; when it is off, an image request says so
   rather than hanging. Each role is configured

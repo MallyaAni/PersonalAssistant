@@ -188,20 +188,11 @@ FACT_SCENARIOS = (
 )
 
 
-@pytest.mark.xfail(
-    reason=(
-        "Measured, not suspected. Across the five facts below the profile picks "
-        "up the fact 2/5 and the subject 0/5; the previous prompt scored 1/5 and "
-        "1/5, and its single subject win was 'Board Games' — the label most "
-        "resembling its own worked example 'Run Clubs'. So personalisation from "
-        "an approved fact is weak in both, and the test that used to pass was "
-        "rewarding the model for recognising the example it had been shown "
-        "rather than for reading the person. Recorded rather than loosened: the "
-        "module's premise is that a sweep is aimed at someone, and at 2/5 it "
-        "mostly is not."
-    ),
-    strict=False,
-)
+# This was a non-strict xfail while the prompt scored 2/5 on the profile and
+# 0/5 on the subject. On V4.1 the fact reaches the text 5/5 in three consecutive
+# runs, so it is a real assertion now rather than a recorded weakness. The old
+# measurement stays in docs/AGENT_CATALOG.md as the reason the examples were
+# changed.
 @pytest.mark.parametrize(
     ("label", "statement", "expected"),
     FACT_SCENARIOS,
