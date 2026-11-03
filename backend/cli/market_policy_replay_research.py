@@ -61,10 +61,13 @@ BOOK_FILE = "book.json"
 BOOK_SCHEMA = "policy-replay-book/1"
 # The arm that reproduces each installed policy's rule, and the policy it stands
 # for. The /1 entry is historical: its stored replay stays readable under the
-# B-hold arm. /2 is the installed A hold, replayed under the A-cut arm.
+# B-hold arm. /2 is the A hold, replayed under the A-cut arm. /3 is the same
+# hold with the P/E-history tilt removed, replayed under the live-ordering
+# no-P/E arm.
 INSTALLED_ARMS = {
     "grade-led-leader-weight/1": "leader_ewma_minB_floor50",
     "grade-led-leader-weight/2": "leader_ewma_minA_floor50",
+    "grade-led-leader-weight/3": "leader_ewma_minA_floor50_live",
 }
 # A target move the size column would print as 0.0% is no trade.
 DUST = 0.0005
@@ -280,6 +283,12 @@ def installed_book(report) -> policy_book.Book:
     from backend.agents.trading.desk import exit as exit_analyst
 
     panel = report.panel
+    # The installed rule's own strength: revision 8 turns the P/E tilt off.
+    tilt = (
+        leader.report_pe_tilts(report, strength=leader.PE_HISTORY_TILT)
+        if leader.PE_HISTORY_TILT > 0
+        else None
+    )
     return policy_book.simulate(
         panel.dates,
         panel.tickers,
@@ -290,7 +299,7 @@ def installed_book(report) -> policy_book.Book:
         np.asarray(report.graded.grades),
         np.asarray(exit_analyst.evidence(panel).signalled(), dtype=bool),
         policy_book.Rule(),
-        tilt=leader.report_pe_tilts(report),
+        tilt=tilt,
     )
 
 
@@ -581,7 +590,7 @@ def check_plan(root: Path, report, session: str) -> dict | None:
 def main(argv=None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     parser.add_argument("--root", required=True)
-    parser.add_argument("--policy", default="grade-led-leader-weight/2")
+    parser.add_argument("--policy", default="grade-led-leader-weight/3")
     parser.add_argument("--arm")
     parser.add_argument("--membership")
     args = parser.parse_args(argv)

@@ -4,9 +4,9 @@ The candidate keeps every rule of the installed grade-led policy except how an
 eligible name is sized: instead of the learned scenario optimiser, each name
 graded A or better (held while it keeps A) takes an equal slot tilted by its
 trailing-return rank among the sized names, the book is scaled down to a
-realised-volatility target, and each name is capped. Nothing after the
-decision session is read, no model is fitted, and the receipt says the
-optimiser did not run.
+realised-volatility target, and each name is capped. Revision 8 removes the
+P/E-history tilt. Nothing after the decision session is read, no model is
+fitted, and the receipt says the optimiser did not run.
 """
 
 import hashlib
@@ -19,7 +19,7 @@ from backend.agents.trading.desk import point_in_time
 from backend.market import adaptive_growth_policy as growth
 from backend.market import joint_funded_policy as funded
 
-POLICY = "grade-led-leader-weight/2"
+POLICY = "grade-led-leader-weight/3"
 PROTOCOL = "docs/research/grade-led-leader-weight-contract-2026-10-21.md"
 BASIS = "grade_led_leader_weight"
 WINDOW = 63
@@ -74,23 +74,28 @@ EXPOSURE_FLOOR = 0.5
 ENTRY_GRADE = 2
 HOLD_GRADE = 2
 MIN_TRADE = 0.01
-# The P/E-history tilt: each sized name's leader slot is multiplied by
-# 1 + PE_HISTORY_TILT * (1 - 2 h), where h is where its price/earnings sits in
-# its own trailing three years of readings (valuation.own_history_rank: 0 the
+# The P/E-history tilt: each sized name's leader slot was multiplied by
+# 1 + strength * (1 - 2 h), where h is where its price/earnings sits in its
+# own trailing three years of readings (valuation.own_history_rank: 0 the
 # cheapest it has been, 1 the richest); no positive earnings or fewer than 250
-# readings leaves the slot unchanged. On the account simulator with the
-# split-corrected grades it earned 37.6% a year at worst drawdown -27.7%
-# against 34.9% and -28.3% without it, ahead to 2022 (21.2% against 19.0%) and
-# after (78.1% against 74.2%), at 25 bp, in 8 of 11 years and about 3.5
-# standard deviations above shuffled and random placebos; in practice it
-# reads "earnings have grown faster than the price"
-# (docs/research/pe-history-tilt-2026-10-24.md). It sizes; it admits no name.
-PE_HISTORY_TILT = 0.5
+# readings left the slot unchanged. Revision 8 (2026-11-03) removes it from
+# the installed rule: the simplicity/ablation audit measured its marginal at
+# +0.053 bp/day, Newey-West t 0.39, month-block bootstrap -0.215..+0.323
+# bp/day, not significant; removing it was within every non-inferiority
+# tolerance and lowered turnover from 8.61x to 8.44x a year
+# (docs/research/simplicity-ablation-results-2026-11-03.md). `PE_HISTORY_TILT`
+# is the installed policy's strength (0.0, the identity), and size_report
+# skips the P/E read entirely. `PE_HISTORY_STRENGTH` keeps the researched
+# arithmetic so the scorecard arms, the replay and the account simulator still
+# reproduce the rule that was scored. The window and minimum stay for that
+# historical evidence. It sized; it admitted no name.
+PE_HISTORY_TILT = 0.0
+PE_HISTORY_STRENGTH = 0.5
 PE_HISTORY_WINDOW = 756
 PE_HISTORY_MIN = 250
 
 
-def pe_history_tilt(history_rank, strength=PE_HISTORY_TILT):
+def pe_history_tilt(history_rank, strength=PE_HISTORY_STRENGTH):
     h = np.asarray(history_rank, dtype=float)
     return np.where(np.isfinite(h), 1.0 + strength * (1.0 - 2.0 * h), 1.0)
 
@@ -104,9 +109,11 @@ def _report_pe(report):
     return None if pe is None or np.shape(pe) != shape else np.asarray(pe, float)
 
 
-# The tilt for every name on the report's last session: (N,) multipliers in
-# panel order, all 1.0 when the evidence is absent.
-def report_pe_tilt(report) -> np.ndarray:
+# The tilt for every name on the report's last session at the installed
+# strength: (N,) multipliers in panel order, all 1.0 when the evidence is
+# absent. Revision 8's installed strength is 0.0, so this is the identity and
+# size_report does not call it.
+def report_pe_tilt(report, strength=PE_HISTORY_TILT) -> np.ndarray:
     from backend.market import valuation
 
     pe = _report_pe(report)
@@ -115,12 +122,14 @@ def report_pe_tilt(report) -> np.ndarray:
     rank = valuation.own_history_rank(
         pe[-PE_HISTORY_WINDOW:], window=PE_HISTORY_WINDOW, min_known=PE_HISTORY_MIN
     )[-1]
-    return pe_history_tilt(rank)
+    return pe_history_tilt(rank, strength=strength)
 
 
 # The same tilt on every session of the report, for the account simulator:
-# row t reads only readings up to t, exactly as that night's plan would.
-def report_pe_tilts(report) -> np.ndarray | None:
+# row t reads only readings up to t, exactly as that night's plan would. The
+# default is the researched strength; the installed policy asks for its own
+# strength, which revision 8 sets to 0.0.
+def report_pe_tilts(report, strength=PE_HISTORY_STRENGTH) -> np.ndarray | None:
     from backend.market import valuation
 
     pe = _report_pe(report)
@@ -129,7 +138,7 @@ def report_pe_tilts(report) -> np.ndarray | None:
     rank = valuation.own_history_rank(
         pe, window=PE_HISTORY_WINDOW, min_known=PE_HISTORY_MIN
     )
-    return pe_history_tilt(rank)
+    return pe_history_tilt(rank, strength=strength)
 
 
 def forecast_volatility(basket: np.ndarray) -> float:
@@ -229,15 +238,23 @@ def size_report(report, names, blocked, current):
         [name not in blocked or current.get(name, 0) > 0 for name in names],
         dtype=bool,
     )
-    tilt = report_pe_tilt(report)
-    columns = [report.panel.index(name) for name in names]
-    extra = tilt[columns]
+    if PE_HISTORY_TILT > 0:
+        tilt = report_pe_tilt(report)
+        columns = [report.panel.index(name) for name in names]
+        extra = tilt[columns]
+    else:
+        # Revision 8: the tilt is off, so the P/E evidence is not read at all.
+        extra = None
     weights, certificate = leader_weights(closes, sized, extra=extra)
     certificate["pe_history_tilt"] = {
         "strength": PE_HISTORY_TILT,
         "window": PE_HISTORY_WINDOW,
-        "multipliers": dict(zip(names, extra.tolist(), strict=True)),
+        "active": PE_HISTORY_TILT > 0,
     }
+    if extra is not None:
+        certificate["pe_history_tilt"]["multipliers"] = dict(
+            zip(names, extra.tolist(), strict=True)
+        )
     sizes = {
         name: min(weight, current.get(name, 0.0)) if name in blocked else weight
         for name, weight in zip(names, weights.tolist(), strict=True)
@@ -261,6 +278,8 @@ class GradeLedLeaderFundedPolicy(funded.GradeLedFundedPolicy):
     # (ENTRY_GRADE, HOLD_GRADE, revision 7). The honest point-in-time
     # universe prefers this hold once valuation carries three votes; the
     # live book gives up 1.6 points of CAGR at the same Sharpe for it.
+    # Revision 8 removes the P/E-history sizing tilt; every other sizing
+    # parameter is unchanged.
     entry_grade = ENTRY_GRADE
     minimum_held_grade = HOLD_GRADE
     exit_letter = "A"

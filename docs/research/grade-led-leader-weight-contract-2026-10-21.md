@@ -6,13 +6,14 @@ drawdown on the point-in-time book, and the scorecard of 2026-10-21
 named it: equal weight across every eligible name, tilted by trailing-return
 rank, scaled to a volatility target, never levered. This is a behavioral
 contract for installing that sizing beside the existing grade rules, not a
-claim of higher returns. Seven revisions since the first install are recorded
+claim of higher returns. Eight revisions since the first install are recorded
 at the end: open fills for every leg, an EWMA volatility estimate, the entry
 boundary at B, an exposure floor, the entry at A held while B with a 1%
-minimum trade, the P/E-history sizing tilt, and the entry at A held while A
-(revision 7, the installed boundary since 2026-11-02).
+minimum trade, the P/E-history sizing tilt, the entry at A held while A
+(revision 7, 2026-11-02), and the removal of the P/E-history sizing tilt
+(revision 8, the installed boundary since 2026-11-03).
 
-Candidate policy `grade-led-leader-weight/2` (`backend/market/grade_led_leader_policy.py`)
+Candidate policy `grade-led-leader-weight/3` (`backend/market/grade_led_leader_policy.py`)
 keeps every rule of the installed `grade-led-learned-sizing/1` except where
 this document says otherwise: a grade at or above the policy's entry grade
 permits entry; a held stock below it exits; a missing grade protects the
@@ -31,7 +32,7 @@ session from the completed report and nothing after it:
    buy-blocked, plus every held name graded at or above the hold grade (a
    held blocked name is kept but may not grow). The entry grade is A and the
    hold grade A (`ENTRY_GRADE = 2`, `HOLD_GRADE = 2` on the policy class;
-   revision 7 below); revisions 3-6 held at B.
+   revision 7 below; revision 8 keeps the A hold); revisions 3-6 held at B.
 2. Each eligible name starts with an equal slot. The slots are tilted by the
    name's trailing 63-session return rank among the eligible names, linearly
    from 0.5x for the weakest to 1.5x for the strongest (strength 0.5), and
@@ -170,3 +171,22 @@ account's forward record is the only out-of-sample evidence that counts.
    of revision 6 is unchanged; the joint configuration's exact scorecard is
    the A-cut study plus the tilt's separate evidence, and the forward record
    is the out-of-sample test.
+8. P/E-history tilt removed (2026-11-03, the installed boundary). The leader
+   slots are no longer multiplied by the P/E-history tilt
+   (`PE_HISTORY_TILT = 0.0`; `size_report` does not read the value analyst's
+   price/earnings evidence). Every other parameter is unchanged: entry at A,
+   hold while A, 1% minimum trade, 63-session leader tilt 0.5, EWMA-20
+   volatility target 0.25 with exposure floor 0.5, 25% per-name cap. Basis:
+   the simplicity/ablation audit on the honest S&P 500 point-in-time universe,
+   2026-10-30 vintage, 25 bp, 20 offsets, 2,964 paired sessions, medians
+   (`docs/research/simplicity-ablation-results-2026-11-03.md`). The tilt's
+   decision marginal is +0.053 bp/day, Newey-West t 0.39, month-block
+   bootstrap -0.215..+0.323 bp/day, not significant. Removing it is within
+   every pre-registered non-inferiority tolerance: median CAGR 13.28% against
+   13.65% (0.375 points lower, tolerance 0.50), median Sharpe 0.816 against
+   0.837 (0.021 lower, tolerance 0.03), median drawdown -34.39% against
+   -34.56% (0.167 points shallower), paired HAC t -0.39, bootstrap lower
+   -0.323 bp/day. Turnover falls from 8.61x to 8.44x a year. The candidate
+   still fails the objective (Sharpe 1.0, CAGR above SPY, worst drawdown
+   -35%); the 252-session forward record restarts under
+   `grade-led-leader-weight/3` and remains the out-of-sample arbiter.

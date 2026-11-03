@@ -1,5 +1,15 @@
 # Price-aware valuation on the account simulator: the P/E-history tilt (2026-10-24)
 
+**Status: historical; superseded 2026-11-03.** The P/E-history tilt was removed
+from the installed rule by revision 8 of
+`docs/research/grade-led-leader-weight-contract-2026-10-21.md` after the
+simplicity/ablation audit found its decision marginal not significant
+(+0.053 bp/day, Newey-West t 0.39) and removal within every pre-registered
+non-inferiority tolerance
+(`docs/research/simplicity-ablation-results-2026-11-03.md`). The evidence below
+stands as the record of what the tilt measured; it is not part of
+`grade-led-leader-weight/3`.
+
 The owner asked for a valuation model that makes a stock more attractive to buy
 at a certain price, and noted the grades may give too few signals. Ideas were
 tested on the account-faithful simulator (`backend/market/policy_book.py`) with

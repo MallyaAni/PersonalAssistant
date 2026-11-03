@@ -8,8 +8,9 @@ through `event_execution`); the backtest, the chart replay and the desk's
 books. This module checks them on the real account every night: it hands the
 simulator's own planner (`policy_book.plan_target`, `plan_orders`, `funded`,
 `cycle_cut`, `cycle_restore`, the functions `simulate` plans with) the inputs
-the live plan had - tonight's grades, trailing closes, band block and P/E
-tilt from the desk report, and the account's shares, prices, equity, cash and
+the live plan had - tonight's grades, trailing closes, band block and, while
+the installed policy's P/E strength is positive, the tilt from the desk
+report, and the account's shares, prices, equity, cash and
 FOMC snapshot from the record - and compares the two plans name by name.
 
 **Where it runs.** In the 20:40 replay job
@@ -329,7 +330,13 @@ def _ordinary_rows(paper, report, held, signed, rule):
     shares = np.array([held.get(n, 0.0) for n in tickers])
     price = np.array([prices.get(n, math.nan) for n in tickers])
     adj = np.asarray(panel.adj_close, dtype=float)
-    tilts = leader.report_pe_tilts(report)
+    # Revision 8 turns the installed P/E tilt off; a later revision that turns
+    # it back on must be compared at its own strength, not the research one.
+    tilts = (
+        leader.report_pe_tilts(report, strength=leader.PE_HISTORY_TILT)
+        if leader.PE_HISTORY_TILT > 0
+        else None
+    )
     hold = rule.entry_grade if rule.hold_grade is None else rule.hold_grade
     target, protected = policy_book.plan_target(
         rule,

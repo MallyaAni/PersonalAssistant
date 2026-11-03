@@ -1,0 +1,38 @@
+{
+  "authorization": "Owner decision 2026-11-02 (conditional authorization): \"Reset and install the simpler rule now\" — if the simplicity/ablation audit shows a simpler rule is at least as good, install it through the release ceremony and restart the forward record.",
+  "comparative_performance": "Sizing change only: the P/E-history tilt is removed and every other parameter is unchanged. On the honest S&P 500 point-in-time universe, 2026-10-30 vintage, 25 bp, 20 offsets, 2,964 paired sessions, medians, the installed joint earned 13.65% a year at worst drawdown -39.24% (median -34.56%) and Sharpe 0.837 with 8.61x annual turnover; the candidate earned 13.28% at -39.42% (median -34.39%) and Sharpe 0.816 with 8.44x. The tilt's decision marginal is +0.053 bp/day, Newey-West t 0.39, month-block bootstrap -0.215..+0.323 bp/day, PSR 0.646: not significant. Removal is within every pre-registered non-inferiority tolerance: median CAGR 0.375 points lower (tolerance 0.50), median Sharpe 0.021 lower (tolerance 0.03), median drawdown 0.167 points shallower, paired HAC t -0.39 (tolerance above -2.0), bootstrap lower -0.323 bp/day (tolerance above -1.0). The other four components are kept by the same rule: the volatility target because removing it deepens median drawdown by 2.75 points against a 1.00-point tolerance; the exposure floor because removing it puts CAGR 0.415 points below the tolerance floor; the leader tilt because removing it puts CAGR 0.080 points below the tolerance floor; the 25% cap because it is a risk limit and is inert on this universe. The candidate still fails the program objective: median Sharpe 0.816 against 1.0, median CAGR 13.28% against SPY's 13.67%, worst drawdown -39.42% against the -35% bound, and 0/20 offsets above QQQ. The ablation is in-sample research on a fixed vintage, not forward proof. The 252-session forward record restarts under grade-led-leader-weight/3.",
+  "contract": "grade-led-leader-weight/3 (revision 8: entry at A, hold while A, exit below A, 1% minimum trade, 63-session leader tilt 0.5, EWMA-20 volatility target 0.25 with exposure floor 0.5, 25% per-name cap, P/E-history sizing tilt removed); valuation analyst at three votes; FOMC pre-meeting cut retired 2026-10-28 (fomc-hold-through-meeting/1), full exposure through meetings; an unknown FOMC calendar no longer blocks ordinary planning while retired; a cycle already open still restores at the decision-day close",
+  "execution": "every leg a market-on-open order at the nightly (revision 1); EWMA-20 volatility estimate (revision 2); entry at A or better, held while A, exit below A (revision 7); resizes under 1% of equity not traded, exits always (revision 5); P/E-history tilt removed (revision 8); no FOMC reduction is planned after 2026-10-28; the open 2026-10-28 cycle restores on the decision session's 3:45 PM candle (decision_close), and a cycle finished on the decision night hands the account back to the ordinary plan the same night; the market-open submission guard reads the reviewed regular XNYS session, not the broker's extended-hours flag",
+  "fresh_ordinary_paper_acceptance": "UNVERIFIED; required after installation",
+  "model_publications_unchanged": true,
+  "no_new_fits": true,
+  "original_evidence_sha256": "0bb4a0fca77ec50fe482b5e538f1ecd6cb51eb580858ae427e3b19247066bd20",
+  "parameters": {
+    "analyst_weights": {
+      "fundamental": 1,
+      "rotation": 0.5,
+      "sentiment": 1,
+      "technical": 1,
+      "value": 3
+    },
+    "annualisation": 252,
+    "entry_grade": "A",
+    "exposure_floor": 0.5,
+    "hold_grade": "A",
+    "min_trade": 0.01,
+    "pe_history_tilt": {
+      "active": false,
+      "min_readings": 250,
+      "strength": 0.0,
+      "window_sessions": 756
+    },
+    "per_name_cap": 0.25,
+    "tilt_strength": 0.5,
+    "volatility_estimator": "ewma_span_20",
+    "volatility_target": 0.25,
+    "window_sessions": 63
+  },
+  "source_revision": "<the commit on main carrying the change>",
+  "source_sha256": "<computed at installation>",
+  "targeted_tests": "<written at installation>"
+}

@@ -172,6 +172,24 @@ def test_size_report_reads_nothing_outside_the_trailing_window(reader):
         leader.size_report(short, names, set(), {})
 
 
+# Revision 8's installed sizing does not read the P/E evidence at all, and its
+# certificate says the tilt is off.
+def test_size_report_skips_the_pe_read_when_the_tilt_is_off(reader, monkeypatch):
+    shown = leader_report(reader, (3, 3, 3, 0, 0))
+
+    def forbidden(*args, **kwargs):
+        pytest.fail("Installed sizing read the P/E evidence")
+
+    monkeypatch.setattr(leader, "report_pe_tilt", forbidden)
+    sizes, certificate = leader.size_report(shown, ("AAA", "BBB", "CCC"), set(), {})
+    assert sizes
+    assert certificate["pe_history_tilt"] == {
+        "strength": 0.0,
+        "window": leader.PE_HISTORY_WINDOW,
+        "active": False,
+    }
+
+
 # A grade exit is sold, an ungraded holding is kept whole, and the rest is leader-sized.
 def test_funded_decision_with_held_exit_and_protected_names(reader, monkeypatch):
     policy = chosen(reader, monkeypatch)
@@ -328,10 +346,12 @@ def test_configuration_selects_leader_holding_policy(example, tmp_path, monkeypa
     assert "optimizer" not in published["calculation_receipt"]
 
 
-# The P/E-history tilt: cheapest in its own history gets 1.5x its slot, richest
-# 0.5x, unknown 1x; it reads the value analyst's price/earnings evidence and
-# only that name's own past.
-def test_pe_history_tilt_reads_the_names_own_past():
+# The P/E-history tilt arithmetic: cheapest in its own history gets 1.5x its
+# slot, richest 0.5x, unknown 1x; it reads the value analyst's price/earnings
+# evidence and only that name's own past. Revision 8 installs strength 0.0, so
+# the installed report tilt is the identity even when the evidence is present;
+# the research strength still computes the tilt the historical arms scored.
+def test_pe_history_tilt_arithmetic_and_installed_identity():
     from types import SimpleNamespace
 
     from backend.agents.trading.desk.opinions import Opinion
@@ -344,13 +364,18 @@ def test_pe_history_tilt_reads_the_names_own_past():
     report = SimpleNamespace(
         panel=panel, opinions={"value": Opinion("value", np.zeros((T, n)), {"price_earnings": pe})}
     )
-    tilt = leader.report_pe_tilt(report)
-    assert tilt[0] == pytest.approx(1.0 + leader.PE_HISTORY_TILT * (1 - 2 * (0.5 / T)))
-    assert tilt[1] == pytest.approx(1.0 - leader.PE_HISTORY_TILT * (1 - 1 / T))
+    assert leader.PE_HISTORY_TILT == 0.0
+    assert (leader.report_pe_tilt(report) == 1.0).all()
+    tilt = leader.report_pe_tilt(report, strength=leader.PE_HISTORY_STRENGTH)
+    expected_cheap = 1.0 + leader.PE_HISTORY_STRENGTH * (1 - 2 * (0.5 / T))
+    assert tilt[0] == pytest.approx(expected_cheap)
+    assert tilt[1] == pytest.approx(1.0 - leader.PE_HISTORY_STRENGTH * (1 - 1 / T))
     assert tilt[2] == 1.0
     rows = leader.report_pe_tilts(report)
     assert np.array_equal(rows[-1], tilt)
     assert (rows[: leader.PE_HISTORY_MIN - 1] == 1.0).all()
+    installed = leader.report_pe_tilts(report, strength=leader.PE_HISTORY_TILT)
+    assert (installed == 1.0).all()
     bare = SimpleNamespace(panel=panel)
     assert (leader.report_pe_tilt(bare) == 1.0).all()
 
