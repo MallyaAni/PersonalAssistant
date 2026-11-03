@@ -213,6 +213,51 @@ support.
 - It does not treat a non-inferior backtest as forward evidence. The
   252-session forward record remains the out-of-sample arbiter.
 
+## Amendment 1 — run on the 2026-10-30 store vintage (2026-11-03)
+
+Written after the first run's base check and before any arm was read or
+interpreted.
+
+**What happened.** The first run used the live store,
+`/home/animallya96/deploy/anios/data/market`, whose last complete session was
+2026-11-02. The pre-registered base check failed: expected
+`0.13650402269141293`, actual `0.13419998757629137`, as-of 2026-11-02,
+2,965 sessions. Per the pre-registration, the run stopped there; no arm other
+than the base was built or read.
+
+**Investigation.** The prior joint payload is as of 2026-10-30 with 2,964
+sessions. The commits since the prior joint run are docs-only (`9d401771`,
+`f80f8f80`); no trading-path code changed. The 2026-11-02 vintage adds one
+session and revises historical adjusted closes slightly: the 2016-2023 rows
+moved by less than 0.001 CAGR, while the all-window median moved by 0.230
+CAGR points. To separate a code drift from a store advance, the base arm was
+rerun on a read-only view of the same store containing only partitions dated
+on or before 2026-10-30
+(`~/dsv41/universe/store_2026-10-30`), with the benchmark release root
+pointed at that view.
+
+**Result.** The base arm reproduces the pre-registered value exactly on the
+2026-10-30 view: as-of 2026-10-30, 2,964 sessions, all-window 25 bp median
+CAGR `0.13650402269141293`. The code is reproducible; the live-store failure
+was the one-session advance plus the historical adjusted-close revision, not a
+code or data defect.
+
+**Decision.** The ablation runs on the 2026-10-30 vintage view. That view is
+the store content at the as-of date the pre-registration was written against
+and the same content the prior joint result used. All arms, costs, offsets,
+seed, membership, marginals, tolerances and the decision rule are unchanged.
+The base check is satisfied on this view.
+
+**Recorded, not used for decisions.** The live-store 2026-11-02 base arm
+(13.420% CAGR, 0.835 Sharpe, -34.799% median drawdown, -39.355% worst
+drawdown, 2,965 sessions) is preserved as a data-advance check under
+`simplicity_ablation_*_current_store_2026-11-02.json`. It is not an arm of the
+study and no decision reads it. The vintage payloads keep the pre-registered
+names `simplicity_ablation_<arm>.json` and `simplicity_ablation_summary.json`.
+
 ## Change log
 
 - **2026-11-03:** created and committed before the first run.
+- **2026-11-03:** amendment 1 — the live store advanced past the
+  pre-registered as-of and revised historical adjusted closes; the base check
+  reproduces exactly on the 2026-10-30 vintage view, so the study runs there.
