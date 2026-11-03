@@ -187,7 +187,7 @@ says what changed and why.
 
 | question | status | next step |
 |---|---|---|
-| Does each installed component earn its complexity? | **not measured on current code**; P/E and floor have clean marginal tests, A/B hold failed significance, leader tilt has only a diagnostic, vol target and cap were never removed from the exact joint on the broad honest universe | simplicity/ablation audit, milestone 1 |
+| Does each installed component earn its complexity? | **measured 2026-11-03**; only the P/E tilt is removable (marginal +0.053 bp/day, Newey-West t 0.39, not significant; removal within tolerance and lower turnover). The volatility target, floor and leader tilt are kept because removal breaches a pre-registered tolerance; the cap is a risk limit and is inert on this universe. Candidate: the live ordering without P/E (`leader_ewma_minA_floor50_live`). | install `/3` through the release ceremony, then milestone 2 |
 | Why is turnover 8.61x/year on the scorecard and about 30x/year on the live paper, against a 2x target? | not diagnosed | pre-registered turnover study, milestone 2 |
 | Should the live book stay AI/software-concentrated or widen? | owner decision; the live book is 80/94 IT and all 8 A/A+ names are IT | universe/mandate memo, milestone 3 |
 | Which branches, worktrees and research modules are dead? | audit complete; review pending | code/branch hygiene, milestone 4 |
@@ -285,6 +285,19 @@ If no simpler arm qualifies, keep `/2` and close the ablation.
 Gate: the pre-registered non-inferiority rule. Owner: program for the study;
 owner for the install (conditional authorization recorded 2026-11-02).
 
+**Status 2026-11-03: complete.** The P/E tilt is removed. The candidate is
+`leader_ewma_minA_floor50_live` (live ordering, no P/E): 13.28% CAGR, -34.39%
+median drawdown, -39.42% worst drawdown, 0.816 Sharpe and 8.44x turnover,
+against the installed joint's 13.65%, -34.56%, -39.24%, 0.837 and 8.61x. It is
+within every pre-registered tolerance and does not increase turnover. The
+volatility target is kept because removing it deepens median drawdown beyond
+tolerance; the floor and leader tilt are kept because removing them breaches
+the CAGR tolerance; the cap is a risk limit and is inert on the honest
+universe. The candidate still fails the objective (Sharpe, CAGR versus SPY,
+and the worst-offset drawdown), so the next focus after the install decision
+is the universe/mandate. Result:
+`docs/research/simplicity-ablation-results-2026-11-03.md`.
+
 ### Milestone 2: turnover diagnosis
 
 Pre-register a study of the 8.61x/year scorecard and about 30.2x/year live
@@ -349,3 +362,7 @@ Gate: the pre-registered review. Owner: owner and program.
   `trading-program-2026-10-28.md`. Records `/2` as live, the current-code
   baseline, the retired 17.088%, the decision ledger, the rules of engagement,
   the stop-doing list and the five milestones.
+- **2026-11-03:** milestone 1 complete. The ablation removes only the P/E
+  tilt; the candidate is `leader_ewma_minA_floor50_live`. The direction doc's
+  ledger and milestone status are updated; the install decision follows the
+  release ceremony.
