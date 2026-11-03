@@ -66,16 +66,17 @@ Construction notes:
   at once would not isolate the effect.
 - **L0** is H0's allocator on the broad report restricted to the live book's
   dated membership history (`backend/market/data/membership_history.csv`).
-  The live book history has 109 records; the current mask at 2026-10-30 is
-  the 94-name eligible book. The 27 book names outside the S&P 500 (ALAB,
+  The live book history has 110 intervals across 109 tickers; the current
+  mask at 2026-10-30 is the 94-name eligible book. The 27 book names outside the S&P 500 (ALAB,
   CRWV, TSM, TLN and others) are in the broad panel through the overlay and
   in the book history; they are eligible in L0 and LU.
 - **LU** is H0's allocator on the broad report restricted to the book history
   plus the S&P 500 Utilities-sector members not already in the book history.
   The current Utilities sector has 31 members; CEG and VST are in the book
-  history, so the widening set is 29 names. The custom history is the book
-  history rows plus the S&P 500 history rows for those 29 names; no ticker
-  has overlapping intervals. The widening set is the current Utilities
+  history, so the widening set is 29 names (30 intervals, because one name
+  has two dated intervals). The custom history is the book history rows plus
+  the S&P 500 history rows for those 29 names; no ticker has overlapping
+  intervals. The widening set is the current Utilities
   sector, not the prior memo's nineteen regulated utilities, whose exact set
   is not enumerated in `book_sides`; the results note that difference.
 
