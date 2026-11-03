@@ -1,6 +1,6 @@
 # Next session
 
-## CURRENT 2026-11-03 — /3 installed and deployed; turnover diagnosis FAIL; milestone 3 next
+## CURRENT 2026-11-03 — /3 installed and deployed; turnover diagnosis FAIL; universe/mandate memo written
 
 **Direction.** [trading/PROGRAM-DIRECTION.md](trading/PROGRAM-DIRECTION.md) is
 the binding direction document. This section records the milestone 1 install
@@ -50,11 +50,22 @@ and the milestone 2 turnover result; the 2026-11-02 section below is history.
   the initial equal-weight build (19.9%), early analyst-stance actions (16.9%)
   and sizing adjustments (15.1%); FOMC actions are 7.7%. No fix is prepared.
   Result: `docs/research/turnover-diagnosis-results-2026-11-03.md`.
-- **Next.** Milestone 3, the universe/mandate memo: the live book is 94 names,
-  80 IT, all 8 A/A+ names IT. It is an owner decision with no live change
-  without a release. The 252-session forward record restarts under `/3`; the
-  paper account's 37 sessions were built under `/1` and are account history,
-  not the `/3` record.
+- **Milestone 3 — universe/mandate memo written; owner decision pending.** The
+  memo records the live book (94 names, 80 IT, all 8 A/A+ IT; 12 selected
+  names at 50% gross, 93.5% IT by weight; 11 broker positions, 10 IT) against
+  the honest universe (497 eligible members across eleven sectors; 84 A/A+
+  names, IT 31.0% and ten other sectors 69.0%). The prior utilities widening
+  improves return and Sharpe (38.45% CAGR, 1.247 Sharpe against 34.12%, 1.178)
+  but is -42.05% worst drawdown, beyond the -35% mandate. Options: keep the
+  AI/software mandate, widen with a sector cap, or widen with a risk overlay.
+  The program recommends keeping `/3` live, continuing the forward record, and
+  pre-registering a widening study before any install. Result:
+  `docs/research/universe-mandate-memo-2026-11-03.md`. No live change.
+- **Next.** The owner decides the mandate. If the owner authorizes widening,
+  the next atomic task is the pre-registration for the universe-widening
+  study; otherwise milestone 4 (code and branch hygiene). The 252-session
+  forward record restarts under `/3`; the paper account's 37 sessions were
+  built under `/1` and are account history, not the `/3` record.
 
 ## CURRENT 2026-11-02 — A hold installed and deployed; forward record restarts under /2
 

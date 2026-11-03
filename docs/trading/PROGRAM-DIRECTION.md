@@ -206,7 +206,7 @@ says what changed and why.
 |---|---|---|
 | Does each installed component earn its complexity? | **measured and installed 2026-11-03**; only the P/E tilt was removable (marginal +0.053 bp/day, Newey-West t 0.39, not significant; removal within tolerance and lower turnover). The volatility target, floor and leader tilt are kept because removal breaches a pre-registered tolerance; the cap is a risk limit and is inert on this universe. Installed as `/3`: the live ordering without P/E (`leader_ewma_minA_floor50_live`). | closed; milestone 2 |
 | Why is turnover 8.44x/year on the scorecard and about 30x/year on the live paper, against a 2x target? | **measured 2026-11-03; FAIL, no fix**: cadence is not dominant (daily 1.82x the 20-session arm, 51% of the live 30.2x); the 20-session fix fails the turnover-halving and drawdown gate; the live ledger's largest group is grade-driven exits and redeploys (27.7%). | closed; next diagnosis is a separate pre-registration |
-| Should the live book stay AI/software-concentrated or widen? | owner decision; the live book is 80/94 IT and all 8 A/A+ names are IT | universe/mandate memo, milestone 3 |
+| Should the live book stay AI/software-concentrated or widen? | **memo written 2026-11-03; owner decision required**: the honest A/A+ book is diversified (IT 31.0% of 84 names, ten other sectors 69.0%); the live book is 85.1% IT eligible and 93.5% IT selected; the prior utilities widening improves return and Sharpe but is -42.05% worst drawdown, beyond the -35% mandate | owner decision; then a pre-registered widening study if authorized |
 | Which branches, worktrees and research modules are dead? | audit complete; review pending | code/branch hygiene, milestone 4 |
 | Does the live rule work out of sample? | `/3` forward record restarted 2026-11-03; the `/2` record had zero verified sessions; acceptance pending | 252-session review, milestone 5 |
 
@@ -357,11 +357,21 @@ Owner decision. The live book is 94 names, 80 IT, all 8 A/A+ names IT; there
 are no Financials, Health Care, Energy, Materials, Real Estate or Consumer
 Staples names. The honest universe is diversified. The prior utilities
 measurement (38.45% CAGR, 1.247 Sharpe, -42.05% worst drawdown against 34.12%,
-1.178, -42.19% over twenty start phases) is better on return and Sharpe but
-deeper than the -35% limit; it is evidence about return, not a passing
-configuration. Options: keep the AI/software mandate, widen with a sector cap,
+1.178, -42.19% over twenty start phases) is better on return and Sharpe, but
+both drawdowns are beyond the -35% limit; it is evidence about return, not a
+passing configuration. Options: keep the AI/software mandate, widen with a sector cap,
 or widen with a risk overlay. The owner decides; no live change without a
 release.
+
+Memo written 2026-11-03: `docs/research/universe-mandate-memo-2026-11-03.md`.
+It records the live book (94 names, 80 IT, all 8 A/A+ IT; 12 selected names
+at 50% gross, 93.5% IT by weight), the honest universe (497 eligible members
+across eleven sectors; 84 A/A+ names, IT 31.0% and ten other sectors 69.0%),
+the prior utilities widening (38.45% CAGR / 1.247 Sharpe / -42.05% worst
+drawdown against 34.12% / 1.178 / -42.19%; beyond the -35% mandate) and the
+three options. The program recommends keeping `/3` live, continuing the
+forward record, and pre-registering a universe-widening study before any
+install. The owner decision is pending, so the gate is not yet met.
 
 Gate: owner decision recorded with the evidence. Owner: owner.
 
@@ -421,5 +431,10 @@ Gate: the pre-registered review. Owner: owner and program.
   30.2x) and the 20-session fix fails the turnover-halving and drawdown gate.
   The live ledger's largest group is grade-driven exits and redeploys (27.7%).
   No fix is prepared. Result:
-  `docs/research/turnover-diagnosis-results-2026-11-03.md`. Milestone 3 is
-  next.
+  `docs/research/turnover-diagnosis-results-2026-11-03.md`.
+- **2026-11-03:** milestone 3 memo written. The live book is 94 names, 80 IT,
+  all 8 A/A+ IT; the honest universe's 84 A/A+ names are 31.0% IT across
+  eleven sectors; the prior utilities widening improves return and Sharpe but
+  is -42.05% worst drawdown, beyond the -35% mandate. Three options, program
+  recommendation to pre-register a widening study; owner decision pending.
+  Result: `docs/research/universe-mandate-memo-2026-11-03.md`.
