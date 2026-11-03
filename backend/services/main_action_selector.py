@@ -46,6 +46,7 @@ from backend.services.followup import (
     is_bare_acceptance,
     resolve_followup,
 )
+from backend.services.scout_route import judge_scout_record
 from backend.tools.registry import (
     core_tool_names,
     picture_tool_names,
@@ -798,6 +799,30 @@ class MainActionSelector:
                 return Unavailable("the routing model did not answer the loaded tools")
             offered = {tool["function"]["name"] for tool in tools}
         decision = self._parse(message, query, aliases, offered, offered_skills)
+        # A Scout tool is a strong match for any message that names the
+        # assistant, and "Scout, what do we both like?" is a question about
+        # people, not about Scout's own record. The tool descriptions and the
+        # router prompt already say so, but they are prompts and the route is
+        # a near-tie: on the live sweep of 2026-11-03 the same message chose
+        # the digest 2 times in 10 against the running selector, and with the
+        # digest withheld it chose the schedule instead. So the check is a
+        # judgement with a schema, the same pattern as readiness and the
+        # follow-up resolver - asked only after a Scout tool has been chosen,
+        # so an ordinary turn pays nothing for it. A question that is really
+        # about the sent record ("what do I like that you sent me?") keeps the
+        # tool; the judgement reads the message and the conversation it sits
+        # in, and fails open to the router's choice.
+        if isinstance(decision, Act) and isinstance(
+            decision.action, (ScoutDigestAction, ScoutScheduleAction)
+        ):
+            if not await judge_scout_record(self.llm, query, history_text):
+                logger.info(
+                    "A Scout tool was chosen for a question about people; "
+                    "taking no tool"
+                )
+                return Done(
+                    "a question about what people like, not Scout's own record"
+                )
         # Someone changing the wording of a draft is not asking what is
         # running in the background. Measured on the real router 2026-09-06:
         # "More casual" after a drafted email was answered with a report on

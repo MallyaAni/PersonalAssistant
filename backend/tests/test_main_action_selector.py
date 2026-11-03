@@ -10,6 +10,8 @@ from backend.services.main_action_selector import (
     EditImageAction,
     GenerateImageAction,
     MainActionSelector,
+    ScoutDigestAction,
+    ScoutScheduleAction,
     SearchAction,
     ToolboxAction,
 )
@@ -62,6 +64,32 @@ class FixedToolLLM(LLMClient):
         self.tools = tools
         self.messages = messages
         return self.message
+
+
+class ScoutJudgeLLM(FixedToolLLM):
+    """Return a controlled router decision and a controlled Scout judgement."""
+
+    def __init__(self, message: dict, about_scout_record: bool) -> None:
+        super().__init__(message)
+        self.about_scout_record = about_scout_record
+        self.judgements: list[list[dict]] = []
+
+    def chat(
+        self,
+        messages,
+        max_tokens=1024,
+        response_schema=None,
+        temperature=None,
+    ):
+        self.judgements.append(messages)
+        return {
+            "content": json.dumps(
+                {
+                    "about_scout_record": self.about_scout_record,
+                    "reason": "test judgement",
+                }
+            )
+        }
 
 
 class FailingLLM(LLMClient):
@@ -695,3 +723,106 @@ async def test_a_run_question_outside_a_draft_is_left_alone(monkeypatch):
     action = await selector.select("ani.mallya", "what's running?", _DRAFTED, None)
 
     assert action == ManageRunsAction(mode="status", which=""), action
+
+
+# A preference question never reads the push digest back.
+#
+# The router is a model and the digest's description is a prompt: on the live
+# sweep of 2026-11-03 "Scout, what do we both like?" chose the digest 2 times
+# in 10 against the running selector even after the description was changed to
+# say preferences belong to search_history. Pinned here as well as in
+# backend/tests/functional/, because the functional one measures the model
+# judgement and this one is fixed: the refusal path either runs or it does
+# not.
+def _judged_selector(
+    tool: str, arguments: dict, about_scout_record: bool
+) -> tuple[MainActionSelector, ScoutJudgeLLM]:
+    message = _tool_call(tool, arguments)
+    return _selector(
+        message, llm=ScoutJudgeLLM(message, about_scout_record=about_scout_record)
+    )
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "said",
+    [
+        "Scout, what do we both like?",
+        "what do we have in common?",
+        "what does Jen like?",
+        "what do I like?",
+        "what are we both into?",
+        "what do we share?",
+    ],
+)
+async def test_a_preference_question_does_not_read_the_digest_back(said: str):
+    selector, _llm = _judged_selector("scout_digest", {}, about_scout_record=False)
+
+    action = await selector.select("ani.mallya", said, [], None)
+
+    assert action is None, action
+
+
+# The other Scout tool is the one the router reached for once the digest was
+# out of the way: the same name in the question, the same misroute.
+@pytest.mark.asyncio
+async def test_a_preference_question_does_not_read_the_schedule_back():
+    selector, _llm = _judged_selector(
+        "scout_schedule", {"operation": "show"}, about_scout_record=False
+    )
+
+    action = await selector.select(
+        "ani.mallya", "Scout, what do we both like?", [], None
+    )
+
+    assert action is None, action
+
+
+@pytest.mark.asyncio
+async def test_a_question_about_what_was_sent_still_reads_the_digest_back():
+    selector, _llm = _judged_selector("scout_digest", {}, about_scout_record=True)
+
+    action = await selector.select("ani.mallya", "what did scout send me?", [], None)
+
+    assert action == ScoutDigestAction(since=None, until=None), action
+
+
+# The judgement must not swallow a question that names the digest's own
+# record: this one is about what was sent, with a preference word in it.
+@pytest.mark.asyncio
+async def test_a_preference_question_naming_the_digest_still_reads_it_back():
+    selector, _llm = _judged_selector("scout_digest", {}, about_scout_record=True)
+
+    action = await selector.select(
+        "ani.mallya", "what do I like that you sent me?", [], None
+    )
+
+    assert action == ScoutDigestAction(since=None, until=None), action
+
+
+@pytest.mark.asyncio
+async def test_a_schedule_question_still_reads_the_schedule_back():
+    selector, _llm = _judged_selector(
+        "scout_schedule", {"operation": "show"}, about_scout_record=True
+    )
+
+    action = await selector.select("ani.mallya", "when does Scout run?", [], None)
+
+    assert isinstance(action, ScoutScheduleAction), action
+    assert action.operation == "show"
+
+
+# An ordinary tool is not a Scout route, so the judgement is not asked and an
+# ordinary turn pays nothing for the guard.
+@pytest.mark.asyncio
+async def test_the_scout_judgement_is_not_asked_for_an_ordinary_tool():
+    selector, llm = _judged_selector(
+        "search_web", {"query": "thai restaurants"}, about_scout_record=False
+    )
+
+    action = await selector.select(
+        "ani.mallya", "find a thai place for friday", [], None
+    )
+
+    assert isinstance(action, SearchAction), action
+    assert llm.judgements == []

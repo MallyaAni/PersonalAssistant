@@ -102,6 +102,44 @@ async def test_room_chatter_does_not_turn_a_shared_interest_into_a_digest(select
     assert action is None or isinstance(action, RecallHistoryAction), action
 
 
+async def test_the_live_group_clock_does_not_turn_a_shared_interest_into_a_digest(
+    selector,
+):
+    # A group has no timezone, so the router sees the UTC unknown-zone clock.
+    # That is the prompt the live sweep sampled when it reported route=What
+    # Scout sent on 2026-11-03, and the same question with that clock in view
+    # must still be memory, not a digest read-back. Fresh user ids keep the
+    # decision cache from answering all three samples with the first one.
+    clock = (
+        "Tuesday 2026-11-03 19:31 UTC (their time zone is not known); "
+        "this weekend is Sat 2026-11-07 to Sun 2026-11-08"
+    )
+    for sample in range(3):
+        action = await selector.select(
+            f"functional_test_user_{sample}",
+            "Scout, what do we both like?",
+            [],
+            None,
+            local_now=clock,
+            zone="",
+            skills=[],
+        )
+        assert not isinstance(action, ScoutDigestAction), action
+        assert action is None or isinstance(action, RecallHistoryAction), action
+
+
+async def test_the_scout_record_judgement_reads_the_message(llm):
+    # The guard is a judgement with a schema, not a pattern: it has to tell a
+    # question about people from a question about what Scout sent or when it
+    # runs, in the words the router is likely to see.
+    from backend.services.scout_route import judge_scout_record
+
+    assert await judge_scout_record(llm, "Scout, what do we both like?") is False
+    assert await judge_scout_record(llm, "what do we have in common?") is False
+    assert await judge_scout_record(llm, "what did scout send me?") is True
+    assert await judge_scout_record(llm, "when does scout run?") is True
+
+
 def test_the_reply_is_told_the_read_back_is_history_not_a_new_shortlist():
     context = _build_turn_context(
         {
