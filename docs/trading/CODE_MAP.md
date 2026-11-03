@@ -70,12 +70,12 @@ Words used below:
    core analyst caps the grade at B. (This file is in the desk folder, not in backend/market.)
 
 9. **Target weights and orders (the live rule).** The installed rule is
-   **grade-led-leader-weight/2** (`backend/market/grade_led_leader_policy.py`; the contract is
-   `docs/research/grade-led-leader-weight-contract-2026-10-21.md`, revision 7). In plain words:
+   **grade-led-leader-weight/3** (`backend/market/grade_led_leader_policy.py`; the contract is
+   `docs/research/grade-led-leader-weight-contract-2026-10-21.md`, revision 8). In plain words:
    - It buys a name graded A or A+. It keeps a held name while it keeps A and sells it below A.
    - Each eligible name gets an equal slot. The slot is tilted from 0.5x to 1.5x by the name's
-     last-63-day return rank. It is also tilted by where its P/E sits in its own last 3 years
-     (cheaper than usual means a bigger slot).
+     last-63-day return rank. The P/E own-history tilt is off in revision 8; the research
+     scorecard arms still measure it at strength 0.5.
    - The whole book is shrunk if its forecast volatility is above 25% a year. It never goes
      below half of full size, and it never borrows. What is left over stays in cash.
    - No name gets more than 25%. A change smaller than 1% of the account is not traded.

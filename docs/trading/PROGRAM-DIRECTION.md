@@ -1,8 +1,9 @@
 # Trading program direction
 
 Status: **binding direction document**. Written 2026-11-03. Last verified
-2026-11-03 against main `f2fc27e8` and the live installed state in
-`data/market/desk/learned-holding/`. It supersedes the direction and live-state
+2026-11-03 against main `2c2e4040` and the live installed state in
+`data/market/desk/learned-holding/` (deployed commit `f7d93c6a`; the trading
+path is identical between the two commits). It supersedes the direction and live-state
 claims of `docs/research/trading-program-2026-10-28.md`; that note remains the
 historical program record. Process rules remain `docs/trading/RULES.md`; the
 code map remains `docs/trading/CODE_MAP.md`; the current handoff remains
@@ -39,19 +40,29 @@ the objective, let alone the top-tier bar.
 
 **Drawdown reading.** The research gate reads the median across offsets, as
 pre-registered. The live risk mandate reads the worst offset, because the
-objective says "worst drawdown no deeper than about 35%." The installed joint
-passes the median reading narrowly (-34.56%) and fails the live mandate
-(-39.24%). That failure is recorded, not remedied by a live change now: the
+objective says "worst drawdown no deeper than about 35%." The installed `/3`
+passes the median reading narrowly (-34.39%) and fails the live mandate
+(-39.42%). That failure is recorded, not remedied by a live change now: the
 owner installed the rule and the 252-session forward record is the arbiter.
 
 **Turnover.** About 2x a year is a program constraint, not a slogan. The
-scorecard base is 8.61x/year and the live paper's first 37 sessions annualize
-to about 30.2x/year gross (15.1x one-way). Neither meets it. Turnover is
-milestone 2 below and needs its own pre-registration.
+installed `/3` scorecard base is 8.44x/year (the previous joint 8.61x) and the
+live paper's first 37 sessions, run under `/1`, annualize to about 30.2x/year
+gross (15.1x one-way); a fresh ledger measurement over the same window is
+32.6x. Neither meets it. Milestone 2 measured the gap and found cadence is
+not the dominant source: daily scorecard sizing is 15.35x/year, 1.82 times
+the 20-session arm and 51% of the live 30.2x, and the 20-session fix fails
+the pre-registered turnover-halving and drawdown gate. The live ledger's
+largest grouped reason is grade-driven exits and redeploys (27.7% of the
+first 37 sessions' filled notional), then the initial equal-weight build
+(19.9%), early analyst-stance actions (16.9%) and sizing adjustments (15.1%);
+FOMC actions are 7.7%. No fix is prepared; the next diagnosis or fix is a
+separate pre-registration. Result:
+`docs/research/turnover-diagnosis-results-2026-11-03.md`.
 
 ## 2. The live rule
 
-`grade-led-leader-weight/2`, installed 2026-11-02. Entry at A or better, hold
+`grade-led-leader-weight/3`, installed 2026-11-03. Entry at A or better, hold
 while A, exit below A (`ENTRY_GRADE = 2`, `HOLD_GRADE = 2`, `exit_letter =
 "A"`).
 
@@ -64,28 +75,30 @@ while A, exit below A (`ENTRY_GRADE = 2`, `HOLD_GRADE = 2`, `exit_letter =
 | volatility target | 0.25 annualized |
 | exposure floor | 0.5 |
 | per-name cap | 0.25 |
-| P/E-history tilt | strength 0.5, window 756 sessions, minimum 250 readings |
+| P/E-history tilt | off in the installed rule (strength 0.0); the research scorecard arms still measure strength 0.5, window 756 sessions, minimum 250 readings |
 | minimum trade | 0.01 of equity; exits always trade |
 | execution | next open, whole shares, long-only, no leverage, remainder cash |
 | annualisation | 252 |
 | cost assumption | config 10 bp; scorecards at 10 and 25 bp |
 
-The installed release is `deb96b651f7c7b4440dc7e6f55067475d4323e3c8e46cf24f86bd07874c62961`;
-evidence `7a315eb2562886c186a2fcddedaae9dce67bbb9a649594d7d84bccb2e48c6a4a`;
-config `2889633c4eeb1e9a17f291bee00d0bfca28532fe585a1414475e8abe70197854`;
-deployed commit `15462e00`; admission ADMITTED on host and container;
-`.post-deploy-status` "2026-11-02T17:24:07Z 15462e00 ok (cheap)". The install
-followed the release ceremony.
+The installed release is `4966fd7ddfad0b9cba90866366d6ba60b9653b0067a4bf1144f92af5421caace`;
+evidence `17c291adfbe17499c2afd57b30cff4db99fc1bd6e1729addfa4273a4529631a6`;
+config `88c269c7163ef30050c91252e8136fb23ed0f0fa82072b4838ccd866d012c4d1`;
+installed 2026-11-03T19:38:59Z; deployed commit `f7d93c6a`; admission
+ADMITTED on host and container; `.post-deploy-status`
+"2026-11-03T20:58:00Z f7d93c6a ok (cheap)". The install and deploy followed
+the release ceremony.
 
-**Forward record status.** The verified store's last complete session is
-2026-10-30. The installed evidence records
-`fresh_ordinary_paper_acceptance: UNVERIFIED; required after installation`.
-The first ordinary nightly was scheduled for 2026-11-02 19:30 ET; the verified
-store has not recorded its acceptance. Until that acceptance is verified, the
-`/2` forward record has zero verified sessions; the paper account's 37
-sessions were built under `/1` and are account history, not the `/2` record.
-The 252-session review is the out-of-sample arbiter; the B hold is the
-fallback.
+**Forward record status.** The `/3` forward record restarts 2026-11-03. The
+verified store's last complete session is 2026-10-30, and the installed
+evidence records `fresh_ordinary_paper_acceptance: UNVERIFIED; required after
+installation`. Deploy completed and admission is ADMITTED on host and
+container; `.post-deploy-status` is ok. The first ordinary nightly under `/3`
+is 2026-11-03 19:30 ET; until it and the following paper session are
+verified, the `/3` record has zero verified sessions. The `/2` record also
+had zero verified sessions, and the paper account's 37 sessions were built
+under `/1` and are account history, not the `/3` record. The 252-session
+review is the out-of-sample arbiter; the B hold is the fallback.
 
 ## 3. The current-code honest baseline
 
@@ -93,19 +106,22 @@ All sessions, 25 bp, medians across 20 offsets, 2,964 paired sessions:
 
 | line | CAGR | median drawdown | worst drawdown | Sharpe | above EW PIT | above QQQ |
 |---|---:|---:|---:|---:|---:|---:|
-| installed joint (`/2` sizing + P/E) | **13.650%** | **-34.560%** | **-39.237%** | **0.837** | 20/20 | 0/20 |
-| live ordering, no P/E | 13.280% | -34.390% | -39.425% | 0.816 | 20/20 | 0/20 |
+| previous joint (`/2` sizing + P/E) | 13.650% | -34.560% | -39.237% | 0.837 | 20/20 | 0/20 |
+| **installed `/3` (live ordering, no P/E)** | **13.280%** | **-34.390%** | **-39.425%** | **0.816** | 20/20 | 0/20 |
 | scorecard floor arm | 13.280% | -34.420% | -39.425% | 0.815 | 20/20 | 0/20 |
 | current-code no-floor A cut | 12.954% | -33.818% | -39.425% | 0.806 | — | — |
 | SPY | 13.669% | -33.717% | -33.717% | 0.820 | — | — |
 | QQQ | 18.476% | -35.119% | -35.119% | 0.884 | — | — |
 
-The installed joint fails the objective on Sharpe and, by 1.8 bp/year, on
-CAGR against SPY. It passes the median drawdown reading narrowly and fails the
-worst-offset live mandate by 4.24 points. It beats equal-weight PIT in 20 of
-20 offsets but QQQ in 0 of 20. The 2016-2023 window carries the failure
-(11.73% CAGR, 0.721 Sharpe, 0/20 above QQQ); 2024-2026 is strong (23.22%,
-1.391, 18/20) but is not the objective.
+The installed `/3` fails the objective on Sharpe (0.816 against 1.0), on CAGR
+against SPY (13.280% against 13.669%), and on the worst-offset live mandate
+(-39.425% against -35%). It passes the median drawdown reading narrowly
+(-34.390%). It beats equal-weight PIT in 20 of 20 offsets but QQQ in 0 of 20.
+The 2016-2023 window carries the failure (11.70% CAGR, 0.714 Sharpe, 0/20
+above QQQ); 2024-2026 is strong (21.39%, 1.273, 18/20) but is not the
+objective. The previous `/2` joint was slightly stronger on CAGR and Sharpe
+(13.650%, 0.837) but was not statistically distinguishable from `/3` and is
+retired.
 
 **Retired metric.** The published 17.088% A-cut is a 2026-10-21-code
 measurement and is not reproducible on current code. The current no-floor arm
@@ -139,6 +155,7 @@ question is answered and is not retried without a new pre-registration.
 | 2026-10-24 | P/E-history tilt, strength 0.5 | installed (revision 6); current-code marginal +0.375 CAGR points, +0.021 Sharpe, paired t 0.39, not significant | `pe-history-tilt-2026-10-24.md`, `installed-joint-configuration-results-2026-11-02.md` |
 | 2026-10-28 | FOMC pre-meeting cut retired | installed; full exposure through meetings | `fomc-cut-retirement-2026-10-28.md` |
 | 2026-11-02 | `grade-led-leader-weight/2`: entry A, hold A | installed; on the study's 2026-10-21-code table the A hold's point estimate is better than B (+2.76 median CAGR points, +0.13 Sharpe, 3.6 points shallower worst drawdown, 20/20 offsets), but the daily mean is not significant (t 1.02) | `installed-rule-significance-results-2026-11-02.md` |
+| 2026-11-03 | `grade-led-leader-weight/3`: P/E-history tilt off | installed; the ablation's only removable component (marginal +0.053 bp/day, Newey-West t 0.39, not significant; removal within every tolerance and turnover 8.61x -> 8.44x) | `simplicity-ablation-results-2026-11-03.md` |
 
 ### Current-code verdicts
 
@@ -187,11 +204,11 @@ says what changed and why.
 
 | question | status | next step |
 |---|---|---|
-| Does each installed component earn its complexity? | **measured 2026-11-03**; only the P/E tilt is removable (marginal +0.053 bp/day, Newey-West t 0.39, not significant; removal within tolerance and lower turnover). The volatility target, floor and leader tilt are kept because removal breaches a pre-registered tolerance; the cap is a risk limit and is inert on this universe. Candidate: the live ordering without P/E (`leader_ewma_minA_floor50_live`). | install `/3` through the release ceremony, then milestone 2 |
-| Why is turnover 8.61x/year on the scorecard and about 30x/year on the live paper, against a 2x target? | not diagnosed | pre-registered turnover study, milestone 2 |
+| Does each installed component earn its complexity? | **measured and installed 2026-11-03**; only the P/E tilt was removable (marginal +0.053 bp/day, Newey-West t 0.39, not significant; removal within tolerance and lower turnover). The volatility target, floor and leader tilt are kept because removal breaches a pre-registered tolerance; the cap is a risk limit and is inert on this universe. Installed as `/3`: the live ordering without P/E (`leader_ewma_minA_floor50_live`). | closed; milestone 2 |
+| Why is turnover 8.44x/year on the scorecard and about 30x/year on the live paper, against a 2x target? | **measured 2026-11-03; FAIL, no fix**: cadence is not dominant (daily 1.82x the 20-session arm, 51% of the live 30.2x); the 20-session fix fails the turnover-halving and drawdown gate; the live ledger's largest group is grade-driven exits and redeploys (27.7%). | closed; next diagnosis is a separate pre-registration |
 | Should the live book stay AI/software-concentrated or widen? | owner decision; the live book is 80/94 IT and all 8 A/A+ names are IT | universe/mandate memo, milestone 3 |
 | Which branches, worktrees and research modules are dead? | audit complete; review pending | code/branch hygiene, milestone 4 |
-| Does the live rule work out of sample? | `/2` forward record has zero verified sessions; acceptance pending | 252-session review, milestone 5 |
+| Does the live rule work out of sample? | `/3` forward record restarted 2026-11-03; the `/2` record had zero verified sessions; acceptance pending | 252-session review, milestone 5 |
 
 ### What the evidence actually says
 
@@ -269,7 +286,7 @@ says what changed and why.
 
 ## 7. Next milestones
 
-### Milestone 1: simplicity/ablation audit (now)
+### Milestone 1: simplicity/ablation audit (complete 2026-11-03)
 
 Pre-register a six-arm chain on the honest universe at 25 bp, 20 offsets:
 grade-only; +volatility target; +25% cap; +exposure floor; +leader tilt; +P/E
@@ -288,7 +305,7 @@ owner for the install (conditional authorization recorded 2026-11-02).
 **Status 2026-11-03: complete.** The P/E tilt is removed. The candidate is
 `leader_ewma_minA_floor50_live` (live ordering, no P/E): 13.28% CAGR, -34.39%
 median drawdown, -39.42% worst drawdown, 0.816 Sharpe and 8.44x turnover,
-against the installed joint's 13.65%, -34.56%, -39.24%, 0.837 and 8.61x. It is
+against the previous joint's 13.65%, -34.56%, -39.24%, 0.837 and 8.61x. It is
 within every pre-registered tolerance and does not increase turnover. The
 volatility target is kept because removing it deepens median drawdown beyond
 tolerance; the floor and leader tilt are kept because removing them breaches
@@ -296,18 +313,43 @@ the CAGR tolerance; the cap is a risk limit and is inert on the honest
 universe. The candidate still fails the objective (Sharpe, CAGR versus SPY,
 and the worst-offset drawdown), so the next focus after the install decision
 is the universe/mandate. Result:
-`docs/research/simplicity-ablation-results-2026-11-03.md`.
+`docs/research/simplicity-ablation-results-2026-11-03.md`. Installed as `/3`
+through the release ceremony on 2026-11-03 (release
+`4966fd7ddfad0b9cba90866366d6ba60b9653b0067a4bf1144f92af5421caace`, evidence
+`17c291adfbe17499c2afd57b30cff4db99fc1bd6e1729addfa4273a4529631a6`); the
+forward record restarts under `/3`. Deploy and fresh-session acceptance are
+recorded in `docs/NEXT_SESSION.md`.
 
-### Milestone 2: turnover diagnosis
+### Milestone 2: turnover diagnosis (complete 2026-11-03)
 
-Pre-register a study of the 8.61x/year scorecard and about 30.2x/year live
-paper turnover. Decompose by rebalance cadence, leader-tilt rank changes,
-volatility-target changes, P/E changes, floor/cap and minimum trade. Identify
-the dominant source and propose a fix that reduces turnover without a material
-performance loss. No live change without a separate release.
+Pre-register a study of the installed `/3`'s 8.44x/year scorecard turnover
+(the previous joint was 8.61x) and about 30.2x/year live paper turnover, which
+was measured under `/1`. Decompose by rebalance cadence, leader-tilt rank
+changes, volatility-target changes, floor/cap and minimum trade. The P/E term
+is now off in the installed rule but remains measurable in the research arms.
+Identify the dominant source and propose a fix that reduces turnover without a
+material performance loss. No live change without a separate release.
 
 Gate: dominant source identified; candidate fix measured at 10 and 25 bp with
 turnover and performance. Owner: program.
+
+**Status 2026-11-03: complete; FAIL, no fix prepared.** The fixed cadence arms
+were run on the 2026-10-30 vintage at 10 and 25 bp over 20 offsets; the
+`cadence_20` reproducibility check passes exactly. Cadence is not dominant:
+daily scorecard sizing is 15.35x/year, 1.82 times the 20-session arm (the
+rule needs more than 2.0x) and 51% of the live 30.2x (the rule needs at least
+80%). The 20-session fix fails the gate: turnover is 8.44x against the
+required 7.67x, and median drawdown is 7.69 points deeper than the live-like
+arm (-34.39% against -26.70%). The paired mean daily difference is +0.2327
+bp/day, Newey-West t 0.4235, bootstrap -0.9973 to +1.1780, so the fix is not
+significantly better either. The live ledger decomposes the first 37
+sessions' 470,080.06 of filled notional (32.6x/year) into grade-driven exits
+and redeploys (27.7%), the initial equal-weight build (19.9%), early
+analyst-stance actions (16.9%), sizing adjustments (15.1%), FOMC actions
+(7.7%), cash redeployment (6.7%) and unmatched/other (6.0%). The largest
+single source is the rule's own grade-driven rebalancing, not the cadence.
+Result: `docs/research/turnover-diagnosis-results-2026-11-03.md`. No live
+change; the next diagnosis or fix is a separate pre-registration.
 
 ### Milestone 3: universe/mandate memo
 
@@ -366,3 +408,18 @@ Gate: the pre-registered review. Owner: owner and program.
   tilt; the candidate is `leader_ewma_minA_floor50_live`. The direction doc's
   ledger and milestone status are updated; the install decision follows the
   release ceremony.
+- **2026-11-03:** `/3` installed through the release ceremony under the
+  owner's 2026-11-02 conditional authorization. `approved_at`
+  2026-11-03T19:38:59Z; archive
+  `20261103T193859-leader-3f96e35bf04744e4b5cc55d13ab5c136`; evidence
+  `17c291ad...`, release `4966fd7d...`, config `88c269c7...`; admission
+  ADMITTED. The forward record restarts under `/3`. Deploy completed at
+  `f7d93c6a`; `.post-deploy-status` ok; the fresh ordinary nightly and the
+  following paper session remain to be verified.
+- **2026-11-03:** milestone 2 complete. The turnover diagnosis is a FAIL:
+  cadence is not dominant (daily 1.82x the 20-session arm, 51% of the live
+  30.2x) and the 20-session fix fails the turnover-halving and drawdown gate.
+  The live ledger's largest group is grade-driven exits and redeploys (27.7%).
+  No fix is prepared. Result:
+  `docs/research/turnover-diagnosis-results-2026-11-03.md`. Milestone 3 is
+  next.

@@ -68,10 +68,13 @@ Targeted gate result: 130 passed, 2 expected xfails in 16.98s. Full unit gate
 result: 11,928 passed, 94 skipped, 10 xfailed, 508 warnings and 48 subtests
 passed in 1,166.79s (19:26) on fresh database `anios_gate_leader3`; exit 0.
 Both ran before installation and the full result is recorded in the installed
-evidence.
-Installation is through the release ceremony under the paper lock, then the
-deploy, then a fresh ordinary nightly and the following real session on the
-paper account. The candidate does not install itself.
+evidence. Installed 2026-11-03: `approved_at` 2026-11-03T19:38:59Z, archive
+`20261103T193859-leader-3f96e35bf04744e4b5cc55d13ab5c136`, evidence
+`17c291ad...`, release `4966fd7d...`, config `88c269c7...`, admission
+ADMITTED. Installation was through the release ceremony under the paper lock;
+the deploy, a fresh ordinary nightly and the following real session on the
+paper account are recorded in `docs/NEXT_SESSION.md`. The candidate does not
+install itself.
 
 Owner authorization: the conditional authorization recorded 2026-11-02 —
 install the simpler rule through the release ceremony, restarting the forward

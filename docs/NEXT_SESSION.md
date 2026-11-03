@@ -1,5 +1,61 @@
 # Next session
 
+## CURRENT 2026-11-03 — /3 installed and deployed; turnover diagnosis FAIL; milestone 3 next
+
+**Direction.** [trading/PROGRAM-DIRECTION.md](trading/PROGRAM-DIRECTION.md) is
+the binding direction document. This section records the milestone 1 install
+and the milestone 2 turnover result; the 2026-11-02 section below is history.
+
+- **Installed rule.** `grade-led-leader-weight/3` admits at A or better and
+  holds while it keeps A; exit below A. `ENTRY_GRADE = 2`, `HOLD_GRADE = 2`,
+  `exit_letter = "A"`, `MIN_TRADE = 0.01`. Every other parameter is unchanged
+  from `/2`: 63-session leader tilt 0.5, EWMA-20 volatility target 0.25 with
+  exposure floor 0.5, 25% per-name cap, valuation analyst at three votes,
+  next-open execution. The P/E-history tilt is off (`PE_HISTORY_TILT = 0.0`);
+  the research scorecard arms still measure it at strength 0.5.
+- **Why.** The simplicity/ablation audit removed only the P/E tilt. Its
+  marginal was +0.053 bp/day, Newey-West t 0.39, bootstrap -0.215..+0.323,
+  not significant; removal is within every pre-registered tolerance. The
+  installed `/3` scores 13.28% CAGR, -34.39% median drawdown, -39.42% worst
+  drawdown, 0.816 Sharpe and 8.44x/year turnover at 25 bp, against `/2`'s
+  13.65%, -34.56%, -39.24%, 0.837 and 8.61x. The volatility target, floor and
+  leader tilt are kept because removing them breaches a pre-registered
+  tolerance; the cap is a risk limit. `/3` still fails the objective (Sharpe,
+  CAGR against SPY, and the worst-offset drawdown), so the next focus is the
+  universe/mandate after milestone 2. Result:
+  `docs/research/simplicity-ablation-results-2026-11-03.md`.
+- **Acceptance and install.** Candidate
+  `docs/research/trading-approval-candidates-2026-11-03/no-pe-history-tilt/`.
+  Targeted gate: 130 passed, 2 expected xfails in 16.98s. Full unit gate:
+  11,928 passed, 94 skipped, 10 xfailed, 508 warnings, 48 subtests passed in
+  1,166.79s (19:26) on fresh `anios_gate_leader3`; exit 0. Release ceremony
+  under the paper lock on the owner's 2026-11-02 conditional authorization,
+  `approved_at` 2026-11-03T19:38:59Z, archive
+  `20261103T193859-leader-3f96e35bf04744e4b5cc55d13ab5c136`; evidence
+  `17c291ad...`, release `4966fd7d...`, config `88c269c7...`; policy `/3`;
+  admission `ADMITTED`.
+- **Deploy.** Completed at deployed commit `f7d93c6a` (the turnover
+  pre-registration commit; the trading path is identical to main `2c2e4040`).
+  Admission `ADMITTED` on host and container; `.post-deploy-status`
+  `2026-11-03T20:58:00Z f7d93c6a ok (cheap)`. The first ordinary nightly under
+  `/3` is 2026-11-03 19:30 ET, and the following paper session remains to be
+  verified.
+- **Milestone 2 — turnover diagnosis: FAIL, no fix.** The pre-registered
+  cadence study is complete. Cadence is not dominant: daily scorecard sizing
+  is 15.35x/year, 1.82 times the 20-session arm (needs >2.0x) and 51% of the
+  live 30.2x (needs >=80%). The 20-session fix fails the gate: turnover 8.44x
+  against the required 7.67x, and median drawdown 7.69 points deeper
+  (-34.39% against -26.70%). The live ledger's largest group is grade-driven
+  exits and redeploys (27.7% of the first 37 sessions' filled notional), then
+  the initial equal-weight build (19.9%), early analyst-stance actions (16.9%)
+  and sizing adjustments (15.1%); FOMC actions are 7.7%. No fix is prepared.
+  Result: `docs/research/turnover-diagnosis-results-2026-11-03.md`.
+- **Next.** Milestone 3, the universe/mandate memo: the live book is 94 names,
+  80 IT, all 8 A/A+ names IT. It is an owner decision with no live change
+  without a release. The 252-session forward record restarts under `/3`; the
+  paper account's 37 sessions were built under `/1` and are account history,
+  not the `/3` record.
+
 ## CURRENT 2026-11-02 — A hold installed and deployed; forward record restarts under /2
 
 **Direction (2026-11-03).** [trading/PROGRAM-DIRECTION.md](trading/PROGRAM-DIRECTION.md)
