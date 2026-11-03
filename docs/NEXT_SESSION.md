@@ -50,22 +50,29 @@ and the milestone 2 turnover result; the 2026-11-02 section below is history.
   the initial equal-weight build (19.9%), early analyst-stance actions (16.9%)
   and sizing adjustments (15.1%); FOMC actions are 7.7%. No fix is prepared.
   Result: `docs/research/turnover-diagnosis-results-2026-11-03.md`.
-- **Milestone 3 — universe/mandate memo written; owner decision pending.** The
-  memo records the live book (94 names, 80 IT, all 8 A/A+ IT; 12 selected
-  names at 50% gross, 93.5% IT by weight; 11 broker positions, 10 IT) against
-  the honest universe (497 eligible members across eleven sectors; 84 A/A+
-  names, IT 31.0% and ten other sectors 69.0%). The prior utilities widening
-  improves return and Sharpe (38.45% CAGR, 1.247 Sharpe against 34.12%, 1.178)
-  but is -42.05% worst drawdown, beyond the -35% mandate. Options: keep the
-  AI/software mandate, widen with a sector cap, or widen with a risk overlay.
-  The program recommends keeping `/3` live, continuing the forward record, and
-  pre-registering a widening study before any install. Result:
-  `docs/research/universe-mandate-memo-2026-11-03.md`. No live change.
-- **Next.** The owner decides the mandate. If the owner authorizes widening,
-  the next atomic task is the pre-registration for the universe-widening
-  study; otherwise milestone 4 (code and branch hygiene). The 252-session
-  forward record restarts under `/3`; the paper account's 37 sessions were
-  built under `/1` and are account history, not the `/3` record.
+- **Milestone 3 — universe/mandate memo and decision.** The memo records the
+  live book (94 names, 80 IT, all 8 A/A+ IT; 12 selected names at 50% gross,
+  93.5% IT by weight; 11 broker positions, 10 IT) against the honest universe
+  (497 eligible members across eleven sectors; 84 A/A+ names, IT 31.0% and ten
+  other sectors 69.0%). The prior utilities widening improves return and
+  Sharpe (38.45% CAGR, 1.247 Sharpe against 34.12%, 1.178) but is -42.05%
+  worst drawdown, beyond the -35% mandate. Options: keep the AI/software
+  mandate, widen with a sector cap, or widen with a risk overlay. Result:
+  `docs/research/universe-mandate-memo-2026-11-03.md`.
+- **Decision (2026-11-03, under the owner's delegation of next steps):** keep
+  the AI/software mandate live for the `/3` forward record and authorize the
+  pre-registered universe-widening study; no install unless the study passes
+  the objective and the -35% worst-offset mandate and the owner authorizes the
+  release. Pre-registration:
+  `docs/research/universe-widening-preregistration-2026-11-03.md`. The study
+  measures H0 (installed `/3` on the honest universe), H50/H35 (IT sector caps
+  50%/35%), HR (volatility target 0.20), L0 (installed `/3` on the live book)
+  and LU (the live book widened with the Utilities sector). H0's anchor is
+  13.275424766467725% median CAGR at 25 bp. No live change.
+- **Next.** Run the universe-widening study and write its results doc. If it
+  fails, milestone 4 (code and branch hygiene). The 252-session forward record
+  restarts under `/3`; the paper account's 37 sessions were built under `/1`
+  and are account history, not the `/3` record.
 
 ## CURRENT 2026-11-02 — A hold installed and deployed; forward record restarts under /2
 

@@ -173,9 +173,11 @@ Widen the eligible book to the honest S&P 500 point-in-time universe (or add
 the six missing sectors) and cap Information Technology at 50% or 35% of the
 book. This is a universe plus rule change: it needs a pre-registered study on
 the honest universe and a release. The scorecard already has sector-cap arms
-(`ew_graded_leader_25_sector50`, `ew_graded_leader_25_sector35`), but on the
-honest universe the cap never binds because the A/A+ book is diversified; the
-cap is a live-mandate control, not an honest-universe improvement. Trade-off:
+(`ew_graded_leader_25_sector50`, `ew_graded_leader_25_sector35`). The
+direction doc records that the static sector cap never binds on the honest
+universe, but this memo's A/A+ counts are equal-weight and do not prove the
+rule's actual portfolio weights, so the study must measure them. The cap is
+primarily a live-mandate control. Trade-off:
 it forces diversification and may lower CAGR; the cap's effect on the widened
 live book is untested; the -35% drawdown mandate still needs checking. The
 utilities measurement suggests widening improves return and Sharpe but does
@@ -206,11 +208,14 @@ The program recommends:
 
 1. Keep `/3` live and let the 252-session forward record run. No interim live
    change.
-2. Pre-register a universe-widening study on the honest universe that
-   (a) widens the eligible book to the honest S&P 500 point-in-time universe,
-   (b) tests a sector cap at 50% and 35%, and (c) tests the existing
-   volatility target and floor on the widened book, with the -35% worst
-   drawdown gate and the full objective.
+2. Pre-register a universe-widening study that measures both the honest
+   universe (the test) and the live mandate (the book): (a) the installed
+   `/3` on the honest S&P 500 point-in-time universe, (b) a sector cap at 50%
+   and 35% on that universe, (c) a strengthened volatility target/floor
+   variant on that universe, (d) the installed `/3` on the 94-name live book,
+   and (e) the installed `/3` on the live book widened with the Utilities
+   sector, all with the -35% worst-drawdown gate, the full objective and
+   turnover reported.
 3. Install only if that study passes, through the release ceremony. If it
    does not pass, keep the mandate and record why.
 
@@ -235,7 +240,9 @@ memo itself makes no live change.
 - The honest A/A+ sector weights are equal-weight counts of the graded names;
   the rule's volatility target, exposure floor and leader tilt change the
   actual weights. The comparison is about the selection's breadth, not the
-  rule's final sizing.
+  rule's final sizing. The study must measure the rule's actual portfolio
+  sector weights, because a leader tilt toward high-return names can
+  concentrate the portfolio more than the A/A+ counts suggest.
 
 ## Data and reproducibility
 
