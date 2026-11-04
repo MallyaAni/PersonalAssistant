@@ -55,7 +55,11 @@ def _read(path, maximum):
 def load(root, snapshot, now):
     publication.validate(snapshot, now, expected_sources=publication._sources())
     identity = snapshot['identity']
-    descriptor = identity['close_context']
+    descriptor = identity.get('close_context')
+    if descriptor is None:
+        # The report-bound leader rule publishes no learned close context, so
+        # the learned intraday entry display has nothing to authenticate.
+        raise ValueError("Published report rule has no learned entry context")
     name = descriptor['directory']
     if (not isinstance(name, str) or len(name) != 32
             or any(letter not in '0123456789abcdef' for letter in name)

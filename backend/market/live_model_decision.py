@@ -403,6 +403,10 @@ def _authenticate(root, record, now):
         != config["timing_config_sha256"]
     ):
         raise ValueError("Exact installed model and timing admission required")
+    if "close_directory" not in admission:
+        # The report-bound leader rule records no learned close; its saved
+        # plan is authenticated by the publication and the funded receipt.
+        raise ValueError("Installed report rule has no saved learned close")
     identifier = Path(admission["close_directory"]).name
     if len(identifier) != 32 or any(c not in "0123456789abcdef" for c in identifier):
         raise ValueError("Original private close identifier required")

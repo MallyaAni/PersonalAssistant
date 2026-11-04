@@ -1,5 +1,7 @@
-Status: live incident, unresolved as of 2026-11-04. No live change was made
-while diagnosing it. The `/3` forward record has zero completed sessions.
+Status: resolved 2026-11-04 by the report-bound leader live path release
+(`a3299064`). No live change was made while diagnosing it. The `/3` forward
+record starts with the first ordinary nightly after the repair deploy; it had
+zero completed sessions before the repair.
 
 # Forward-record blocker: the learned monthly generation expired on 2026-11-01
 
@@ -211,3 +213,62 @@ in the live path.
   snapshot).
 - `data/market/desk/asof=2026-10-30/desk.json` (last written book).
 - Installed artifact hashes and fit dates as listed above.
+
+## Resolution
+
+Option 1 was implemented and installed through the release ceremony on
+2026-11-04.
+
+- Code: commit `a3299064ca68d75180532b3c319e3bce4d10dfa9`, "Bind the leader
+  live path to the authenticated nightly report". The leader path now builds
+  `backend/market/report_holding.py:ReportHoldingReader` from the
+  authenticated nightly report and the installed risk bank; it never loads the
+  monthly holding model, execution publication or residual month. `/1`,
+  retained and timed policies keep the monthly path unchanged.
+- The approved contract is unchanged: `grade-led-leader-weight/3`, same
+  parameters, same next-open execution. The policy version stays `/3`.
+- Install: `approved_at` 2026-11-04T18:05:42Z; archive
+  `20261104T180542-leader-bfe1fa76433c4545a94bd896d774bf20`; evidence
+  `eff9ece2f2e3c516c553321e83454c43d5c99726b1226c14d18151ab379a878b`;
+  release `c3e44211031f2f4246c09eb8bbf3b5e7c5d7d2f23fe0f1fa4aa95b381618b360`;
+  config `9bb15bb968a2c02856a8fad4e775a2218453fc3323d5d44e729e06d5fd4a06e2`;
+  admission ADMITTED.
+- Verification before install: full unit gate 11,730 passed, 94 skipped, 10
+  xfailed, 48 subtests in 907.33s; targeted trading gate 180 passed, 1
+  xfailed.
+- Deploy: `scripts/deploy.sh` fast-forwarded the deploy checkout the cron
+  jobs import (`~/deploy/anios`) to `058b7aed`; admission `ADMITTED` on host
+  and container; `.post-deploy-status`
+  `2026-11-04T18:32:28Z 058b7aed ok (cheap)`. The trading path is identical
+  to the reviewed `a3299064`; the later commits are docs only.
+- Candidate record:
+  `docs/research/trading-approval-candidates-2026-11-04/report-bound-leader-live-path/`.
+- Known degradations: the learned intraday entry display, the saved
+  model-decision view and the account-independent model allocation reader
+  refuse a report-based record and report unavailable; the nightly trading
+  path is unaffected.
+- Pre-nightly readiness check (2026-11-04, read-only): the live desk report
+  panel is the 94-name book plus SPY (95 tickers); every one is in the
+  installed risk bank's 96 symbols (the extra is QQQ). The bank's 2,953 dates
+  (2015-01-02 .. 2026-09-30) are an exact prefix of the panel's 2,977 dates
+  (2015-01-02 .. 2026-11-03). `ReportHoldingReader`'s symbol and
+  calendar-prefix admissions therefore pass on the live report shape. No live
+  artifact was changed.
+- Sizing null test (2026-11-04, read-only, research script
+  `~/dsv41/universe/live_path_replay.py`): the live sizing function
+  `leader.size_report` and the research `/3` arm
+  `market_pit_scorecard._leader_live` produced **identical** weight vectors on
+  the authentic nightly desk report for the live book over the last 40
+  completed sessions (2026-09-09 .. 2026-11-03), max absolute difference 0.0
+  and 0 mismatched names in every session. The untruncated live call also
+  equals the causal view at the last session (0.0). Panel 2,977 sessions, 95
+  tickers (94 book names + SPY); 5-10 A/A+ names per session; live gross
+  0.5000-0.7235, with the 0.5 exposure floor binding on the last session
+  (8 names, gross 0.5). Code revision `7562b8f2`. This isolates the sizing
+  arithmetic the `/3` install changed (P/E off); the buy-permission block and
+  account state are not part of this comparison. Summary:
+  `~/dsv41/universe/live_path_replay_summary.json`.
+- Remaining acceptance: the first ordinary nightly after deploy (2026-11-04
+  19:30 ET) must complete and write a fresh plan, and the following paper
+  session must fill. `evidence.json` keeps
+  `fresh_ordinary_paper_acceptance: UNVERIFIED` until then.

@@ -62,6 +62,13 @@ def install_leader(root, fixture, monkeypatch):
     release_path.write_bytes(raw)
     config["release_receipt_sha256"] = sha256(raw).hexdigest()
     config_path.write_text(json.dumps(config))
+    # The synthetic timing file is not a real installed execution configuration;
+    # the leader path binds its exact bytes through this seam and never loads
+    # the monthly publication or residual month.
+    timing_bytes = (root / runtime.learned_live_timing.CONFIG).read_bytes()
+    monkeypatch.setattr(
+        runtime, "_timing_config", lambda root_, config_: timing_bytes
+    )
     return runtime.prepare(root, shown, clock=lambda: now), shown, now
 
 
@@ -344,6 +351,56 @@ def test_configuration_selects_leader_holding_policy(example, tmp_path, monkeypa
     assert published["policy"] == leader.POLICY
     assert published["calculation_receipt"]["leader_sizing"]["basis"] == leader.BASIS
     assert "optimizer" not in published["calculation_receipt"]
+
+
+# The leader rule's live path binds the report and the installed risk bank and
+# never loads the monthly holding model, execution publication or residual month.
+def test_leader_nightly_never_reads_the_monthly_generation(
+    example, tmp_path, monkeypatch
+):
+    from backend.market import learned_live_holding as runtime
+    from backend.tests.test_grade_led_policy import install_grade_led
+
+    _, shown, now = install_grade_led(tmp_path, example, monkeypatch)
+    config_path = tmp_path / runtime.CONFIG
+    config = json.loads(config_path.read_bytes())
+    release_path = config_path.with_name("release.json")
+    release = json.loads(release_path.read_bytes())
+    config["policy"] = release["policy"] = leader.POLICY
+    raw = json.dumps(release).encode()
+    release_path.write_bytes(raw)
+    config["release_receipt_sha256"] = sha256(raw).hexdigest()
+    config_path.write_text(json.dumps(config))
+    timing_bytes = (tmp_path / runtime.learned_live_timing.CONFIG).read_bytes()
+    monkeypatch.setattr(
+        runtime, "_timing_config", lambda root_, config_: timing_bytes
+    )
+
+    # Every monthly artifact loader is forbidden: the October generation is
+    # expired and must not be consulted by the leader policy.
+    def forbidden(*args, **kwargs):
+        pytest.fail("Leader nightly read the monthly generation")
+
+    monkeypatch.setattr(runtime, "_timing", forbidden)
+    monkeypatch.setattr(runtime, "_model_report", forbidden)
+    monkeypatch.setattr(runtime.forward, "observe_close", forbidden)
+    monkeypatch.setattr(runtime.forward, "write_close", forbidden)
+    monkeypatch.setattr(runtime.forward, "load_close", forbidden)
+
+    selected = runtime.prepare(tmp_path, shown, clock=lambda: now)
+    assert type(selected) is runtime.GradeLedLeaderHoldingPolicy
+    assert selected.version == leader.POLICY
+    assert selected.reader.current is None
+    assert selected.reader.receipt["status"] == "report_bound"
+    assert selected.admission["report"]["session"] == str(shown.panel.dates[-1])
+    assert "close_directory" not in selected.admission
+    published = strategy_publication.read(tmp_path, now)
+    assert published["policy"] == leader.POLICY
+    assert "close_context" not in published["identity"]
+    assert published["identity"]["report_context"]["basis"] == (
+        "authenticated_current_nightly_report"
+    )
+    assert all(not row["evidence"]["features"] for row in published["rows"].values())
 
 
 # The P/E-history tilt arithmetic: cheapest in its own history gets 1.5x its

@@ -1,24 +1,45 @@
 # Next session
 
-## CURRENT 2026-11-04 — milestone 4 done; the /3 forward record is blocked
+## CURRENT 2026-11-04 — the /3 forward record is unblocked and starts tonight
 
-**Blocker.** The `/3` forward record has zero completed sessions. The
-2026-11-02 (`/2`) and 2026-11-03 (`/3`) nightlies both refused with
-`ValueError: Current causal timing publication required`; the holding model
-would fail next with `ValueError: Current causal model publication required`.
-The whole learned monthly generation is October-only (`fit_date` 2026-10-01
-for the holding model, timing publication and residual month), and every
-admission check requires the observed or decision session to be in the fit
-month. No monthly producer or original input snapshot exists on this host.
-Diagnosis, evidence and options:
+**Repair installed and deployed.** The expired October monthly generation no
+longer blocks the leader rule. The live path now binds the authenticated
+nightly report and the installed risk bank, per the approved `/3` contract,
+which never consults the learned distribution or fifteen-minute timing.
+Commit `a3299064`; release `c3e44211...`, evidence `eff9ece2...`, config
+`9bb15bb9...`; `approved_at` 2026-11-04T18:05:42Z; archive
+`20261104T180542-leader-bfe1fa76...`; admission `ADMITTED` on host and
+container; deploy `058b7aed` (docs-only difference from the reviewed
+`a3299064`); `.post-deploy-status` "2026-11-04T18:32:28Z 058b7aed ok
+(cheap)". Economics unchanged from `/3`.
+Full unit gate: 11,730 passed, 94 skipped, 10 xfailed, 48 subtests in 907.33s;
+targeted trading gate: 180 passed, 1 xfailed. Resolution:
 [research/forward-record-blocker-2026-11-04.md](research/forward-record-blocker-2026-11-04.md).
 
-**Recommendation.** Simplify the live path to match the approved `/3`
-contract: the contract already says the policy does not read the learned
-scenario distribution or the fifteen-minute timing, so stop requiring those
-monthly artifacts for grade-led policies, keep the risk bank and report
-validation, and install through a new release. No live change has been made;
-the install needs the owner's explicit authorization.
+**Next atomic task — verify the first ordinary nightly and the following
+paper session.** The nightly runs from `~/deploy/anios` at 19:30 ET
+(2026-11-04). It must write a fresh `desk/strategy-recommendations/latest.json`
+with today's session and complete the funded plan without the monthly
+artifacts; the following paper session must fill. `evidence.json` keeps
+`fresh_ordinary_paper_acceptance: UNVERIFIED` until then. The `/3` forward
+record starts with that session. Pre-nightly readiness check (read-only)
+passed on the live data: the desk report panel is the 94-name book plus SPY,
+all inside the risk bank's 96 symbols, and the bank's calendar is an exact
+prefix of the panel's. The sizing null test (read-only) also passed: over the
+last 40 completed sessions (2026-09-09 .. 2026-11-03), the live
+`leader.size_report` and the research `/3` arm produced identical weight
+vectors on the authentic nightly report, max difference 0.0 and 0 mismatched
+names in every session. Summary:
+`~/dsv41/universe/live_path_replay_summary.json`.
+
+**Then milestone 5.** The review pre-registration is written and committed:
+[research/forward-record-review-preregistration-2026-11-04.md](research/forward-record-review-preregistration-2026-11-04.md).
+It fixes 252 completed return sessions after the baseline session, the metric
+definitions (matching the scorecard), and mechanical verdicts for the risk
+mandate, CAGR against SPY, top-tier eligibility, operations, turnover and
+contract conformance. After acceptance the record runs; the review executes
+at the 252nd return session. The B hold remains the fallback; no interim live
+change except a correctness fix.
 
 **Milestone 4 — code and branch hygiene: done 2026-11-04.** The audit and
 deletion record is `docs/trading/CODE_HYGIENE.md`: 151 dead historical and
