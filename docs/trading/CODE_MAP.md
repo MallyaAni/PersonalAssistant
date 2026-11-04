@@ -1,11 +1,13 @@
 # Code map: the trading system in plain words
 
 Written 2026-10-27 from main at 2cad22de; updated 2026-10-28 for the map fixes (the Historical
-simulation box reads the installed rule's replay, the nightly plan check, dead code removed).
+simulation box reads the installed rule's replay, the nightly plan check, dead code removed);
+updated 2026-11-04 for the code-hygiene pass (dead historical and intraday modules removed).
 Every claim was checked against the code and against
 spark1 (crontab, scripts, data folders). All times are New York time; spark1's clock is set to it.
 The rules for changing anything are in [RULES.md](RULES.md); the direction and what is closed
-are in [PROGRAM-DIRECTION.md](PROGRAM-DIRECTION.md).
+are in [PROGRAM-DIRECTION.md](PROGRAM-DIRECTION.md); the dead-code, branch and worktree audit is
+in [CODE_HYGIENE.md](CODE_HYGIENE.md).
 
 Words used below:
 - **Book**: the 94 stocks the desk grades and may buy (AI and software names, two "sides").
@@ -169,7 +171,7 @@ always mean the file affects trades, so the table says what each part actually d
 | 15-minute SIP bars | `backend/cli/market_intraday_sip.py`, `backend/market/intraday_sip.py` | yes, data only | Bars for the 15-minute chart |
 | Laggard shadow | `backend/cli/market_laggard_shadow.py`, `backend/market/laggard_shadow.py`, `backend/market/stage3_*.py` | research only | Nightly forecast test. Runs from a separate copy pinned at 901c6824 (`~/shadow/anios`) |
 | Event watch | `backend/market/event_watch.py`, `backend/cli/market_event_watch.py`, `backend/market/event_watch_report.py`, `backend/api/v1/event_watch.py`, `frontend/src/components/DeskPanel/EventWatch.tsx` | descriptive only | Mechanical earnings-shock, price-shock and election detection. The nightly shell wrapper runs the scan after `market_daily`; the Desk reads the newest scan at `/desk/event-watch`. Writes only under `data/market/research/`; no grade, target, order or prompt reads it |
-| Research studies | About 120 other `backend/cli/market_*.py` and 135 `backend/market/` files (families: historical_*, live_model_history_*, stage3/4/5, nested_*, open_source_*, nonlinear_*, retention_*, intraday_*) | research only | Run by hand; no cron job and no live import |
+| Research studies | About 120 other `backend/cli/market_*.py` and about 255 `backend/market/` files (families: historical_cohort, live_model_history_*, stage3/4/5, nested_*, open_source_*, nonlinear_*, retention_*, intraday_sip, intraday_evaluation, intraday_research) | research only | Run by hand; no cron job and no live import |
 | Research scratch (not in git) | `~/dsv41/` on spark1: forward/, llm_shadow/, estimates/, pit2/, universe/, cand-release/ | research only | Forward and AI-model shadows, estimate snapshots, S&P 500 point-in-time tests, release installer |
 
 **Retired rules (code still present):** grade-led-learned-sizing/1 (replaced 2026-10-21).
@@ -188,6 +190,14 @@ CLI or `~/dsv41` file; they and their tests are gone. `joint_funded_accounts.py`
 `candidate_grid` is imported by the tests of the live `joint_funded_policy.py`
 (`test_joint_funded_policy.py`, `test_learned_holding_transition.py`, `test_verify_joint_funded.py`,
 `test_conditional_holding_calibration.py`, `test_market_conditioned_receipts.py`).
+
+**Dead modules removed (2026-11-04).** The 39 `historical_*` serving-binding
+audit modules, the 6 `intraday_{cache,comparison,entry,inputs,preflight,replay}`
+modules, their 79 tests and 27 one-off `scripts/run_*.py` runners were removed.
+They were reachable from no cron job, Desk API router or CLI. `historical_cohort.py`,
+`joint_funded_accounts.py`, `intraday_sip.py`, `intraday_evaluation.py` and
+`intraday_research.py` stay. The full audit and the branch/worktree record are in
+[CODE_HYGIENE.md](CODE_HYGIENE.md).
 
 **Unused screen calls removed (2026-10-28).** `getDeskEntries`, `getDeskStrategySimulation`,
 `getDeskLiveModelHistory`, `getDeskFundingPreview`, `acknowledgeDeskHistory`,

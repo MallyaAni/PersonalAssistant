@@ -208,7 +208,7 @@ says what changed and why.
 | Does each installed component earn its complexity? | **measured and installed 2026-11-03**; only the P/E tilt was removable (marginal +0.053 bp/day, Newey-West t 0.39, not significant; removal within tolerance and lower turnover). The volatility target, floor and leader tilt are kept because removal breaches a pre-registered tolerance; the cap is a risk limit and is inert on this universe. Installed as `/3`: the live ordering without P/E (`leader_ewma_minA_floor50_live`). | closed; milestone 2 |
 | Why is turnover 8.44x/year on the scorecard and about 30x/year on the live paper, against a 2x target? | **measured 2026-11-03; FAIL, no fix**: cadence is not dominant (daily 1.82x the 20-session arm, 51% of the live 30.2x); the 20-session fix fails the turnover-halving and drawdown gate; the live ledger's largest group is grade-driven exits and redeploys (27.7%). | closed; next diagnosis is a separate pre-registration |
 | Should the live book stay AI/software-concentrated or widen? | **study FAIL 2026-11-03; keep the AI/software mandate**: the honest `/3` fails Sharpe, CAGR and the worst offset (13.28% / 0.816 / -39.42%); the 50% IT cap is inert; the 35% cap is marginal and insignificant; the 0.20 volatility target costs return and still fails the worst offset; the live book's `/3` fails Sharpe and the worst offset (19.86% / 0.935 / -37.69%); the Utilities widening improves drawdown but remains at -35.43% and raises turnover to 10.06x. | closed; milestone 4 |
-| Which branches, worktrees and research modules are dead? | audit complete; review pending | code/branch hygiene, milestone 4 |
+| Which branches, worktrees and research modules are dead? | **done 2026-11-04**: 151 dead files removed; 28 local branches deleted, 50 unique remote tips tagged, 41 dirty worktrees left for review | closed; `CODE_HYGIENE.md` |
 | Does the live rule work out of sample? | `/3` forward record restarted 2026-11-03; the `/2` record had zero verified sessions; acceptance pending | 252-session review, milestone 5 |
 
 ### What the evidence actually says
@@ -404,17 +404,26 @@ canonical measurements. Result:
 Gate: met by the FAIL result and the recorded decision to keep `/3` and the
 mandate. Owner: program for the study; owner for any install.
 
-### Milestone 4: code and branch hygiene
+### Milestone 4: code and branch hygiene — done 2026-11-04
 
-Produce `docs/trading/CODE_HYGIENE.md` (or a section here) with the live path,
-the research path, dead/experimental code, branches and worktrees, stale docs
-and a safe archive/delete list. Archive stale branches with tags and delete
-only after the owner reviews the list. No `git reset --hard`, no
-`git clean -fd`, no force push. Run the full gate after deletions and confirm
-admission is unchanged.
+`docs/trading/CODE_HYGIENE.md` is the record: the import-graph audit, the
+live and research paths, the dead-code list, the branch and worktree
+inventory, the stale-doc status and the deletion list. The owner delegated
+the deletion decision on 2026-11-04.
 
-Gate: every branch merged or archived; dead-code list reviewed; full gate
-passes. Owner: program; owner for deletion approval.
+The audit removed 151 dead files (45 modules, 79 tests and setup helpers, 27
+one-off runners; 55,352 lines) preserved by `archive/2026-11-04/pre-hygiene`;
+deleted 28 local branches (15 merged, 13 unique and tagged); tagged 50 unique
+remote tips locally and left the remote refs on `origin` for owner review;
+and removed 10 clean stale worktrees. 41 dirty worktrees and one root-owned
+directory remain for owner or Codex review. The post-deletion unit gate
+passed (11,729 passed, 94 skipped, 10 xfailed, 48 subtests in 1,110.21s; the
+218 fewer tests are exactly the removed suites); admission is `ADMITTED` and
+the 44-source release identity is unchanged. No live rule, order, grade, prompt or risk dial changed.
+
+Gate: every local branch is merged or tagged; every unique remote tip is
+tagged; the dead-code list is reviewed; the full gate passes; admission is
+unchanged. Owner: program; owner delegated deletion approval.
 
 ### Milestone 5: 252-session forward record review
 
@@ -481,3 +490,8 @@ Gate: the pre-registered review. Owner: owner and program.
   -39.04%; L0 19.86% / 0.935 / -37.69%; LU 18.42% / 0.897 / -35.43%, turnover
   10.06x. No arm passes; keep `/3` and the AI/software mandate. Result:
   `docs/research/universe-widening-results-2026-11-03.md`.
+- **2026-11-04:** milestone 4 complete. The audit removed 151 dead historical
+  and intraday files (55,352 lines), deleted 28 local branches with tags for
+  every unique tip, tagged 50 unique remote tips and left the remote refs for
+  owner review, and removed 10 clean stale worktrees. Admission is `ADMITTED`
+  unchanged. Record: `docs/trading/CODE_HYGIENE.md`. No live change.

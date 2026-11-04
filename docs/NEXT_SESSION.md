@@ -77,9 +77,21 @@ and the milestone 2 turnover result; the 2026-11-02 section below is history.
   measurement is not reproduced on current code; L0/LU are the canonical
   current-code measurements. Result:
   `docs/research/universe-widening-results-2026-11-03.md`. No live change.
-- **Next.** Milestone 4 (code and branch hygiene): produce the dead-code and
-  branch audit, archive stale branches with tags, delete only after owner
-  review, run the full gate and confirm admission unchanged. The 252-session
+- **Milestone 4 — code and branch hygiene: done 2026-11-04.** The audit and
+  deletion record is `docs/trading/CODE_HYGIENE.md`. 151 dead historical and
+  intraday files were removed (45 modules, 79 tests and setup helpers, 27
+  one-off runners; 55,352 lines), preserved by
+  `archive/2026-11-04/pre-hygiene`. 28 local branches were deleted (15 merged,
+  13 unique and tagged); 50 unique remote tips are tagged locally and left on
+  `origin` for owner review; 10 clean stale worktrees were removed. 41 dirty
+  worktrees and one root-owned directory remain. The post-deletion unit gate
+  passed (11,729 passed, 94 skipped, 10 xfailed, 48 subtests; the 218 fewer
+  tests are exactly the removed suites) and admission is `ADMITTED`
+  unchanged. No live rule, order, grade,
+  prompt or risk dial changed.
+- **Next.** Milestone 5: pre-register the 252-session forward record review
+  criteria before the record ends (forward Sharpe, drawdown, CAGR against SPY
+  and QQQ, turnover, and whether `/3` behaves as designed). The 252-session
   forward record continues under `/3`; the paper account's 37 sessions were
   built under `/1` and are account history, not the `/3` record.
 

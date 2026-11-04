@@ -1,3 +1,8 @@
+Status: historical record. The candidate code described here was archived on
+2026-11-04 and removed from `main` in the code-hygiene pass
+(`docs/trading/CODE_HYGIENE.md`). The measurements and the UNVERIFIED
+boundaries below are unchanged; this is not a live claim.
+
 # Historical source and serving binding acceptance
 
 This candidate repairs publication authentication, not the numerical strategy.
