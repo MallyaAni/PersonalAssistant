@@ -81,34 +81,32 @@ while A, exit below A (`ENTRY_GRADE = 2`, `HOLD_GRADE = 2`, `exit_letter =
 | annualisation | 252 |
 | cost assumption | config 10 bp; scorecards at 10 and 25 bp |
 
-The installed release is `4966fd7ddfad0b9cba90866366d6ba60b9653b0067a4bf1144f92af5421caace`;
-evidence `17c291adfbe17499c2afd57b30cff4db99fc1bd6e1729addfa4273a4529631a6`;
-config `88c269c7163ef30050c91252e8136fb23ed0f0fa82072b4838ccd866d012c4d1`;
-installed 2026-11-03T19:38:59Z; deployed commit `f7d93c6a`; admission
+The installed release is `c3e44211031f2f4246c09eb8bbf3b5e7c5d7d2f23fe0f1fa4aa95b381618b360`;
+evidence `eff9ece2f2e3c516c553321e83454c43d5c99726b1226c14d18151ab379a878b`;
+config `9bb15bb968a2c02856a8fad4e775a2218453fc3323d5d44e729e06d5fd4a06e2`;
+installed 2026-11-04T18:05:42Z; deployed commit `a3299064`; admission
 ADMITTED on host and container; `.post-deploy-status`
-"2026-11-03T20:58:00Z f7d93c6a ok (cheap)". The install and deploy followed
-the release ceremony.
+"2026-11-04T18:27:35Z a3299064 ok (cheap)". This release is the report-bound
+leader live path: the policy version and economics are unchanged from the
+2026-11-03 `/3` install (release `4966fd7d...`, evidence `17c291ad...`), but
+the live input binding no longer requires the expired October monthly
+generation.
 
-**Forward record status: BLOCKED.** The `/3` forward record has zero
-completed sessions. The 2026-11-02 (`/2`) and 2026-11-03 (`/3`) nightlies
-both refused with `ValueError: Current causal timing publication required`;
-the holding model would fail next with `ValueError: Current causal model
-publication required`. The installed holding model, timing publication and
-residual month are all October-only (`fit_date` 2026-10-01), and every
-admission check requires the observed or decision session to be in the fit
-month. The `/3` install reused that generation unchanged
-(`model_publications_unchanged: true`, `no_new_fits: true`), and its
-`fresh_ordinary_paper_acceptance` was never run before the month boundary.
-No monthly producer or original input snapshot exists on this host, so a
-November refit is not currently reproducible. Diagnosis, evidence and
-options: `docs/research/forward-record-blocker-2026-11-04.md`. The
-recommended repair is to make the live path match the approved `/3` contract,
-which does not consult the learned scenario distribution or the
-fifteen-minute timing, and install through a new release; that is a live-path
-change and needs the owner's explicit authorization. The `/2` record also
-had zero verified sessions, and the paper account's 37 sessions were built
-under `/1` and are account history, not the `/3` record. The 252-session
-review is the out-of-sample arbiter; the B hold is the fallback.
+**Forward record status: AWAITING FIRST SESSION.** The `/3` forward record
+has zero completed sessions. The 2026-11-02 (`/2`) and 2026-11-03 (`/3`)
+nightlies refused with `ValueError: Current causal timing publication
+required` because the installed holding model, timing publication and
+residual month were October-only (`fit_date` 2026-10-01) and expired on
+2026-11-01. The 2026-11-04 repair makes the live path match the approved
+contract, which does not consult the learned scenario distribution or the
+fifteen-minute timing: the leader rule now binds the authenticated nightly
+report to the installed risk bank and keeps the installed timing-config hash
+and paper-broker guards. Diagnosis and resolution:
+`docs/research/forward-record-blocker-2026-11-04.md`. The first ordinary
+nightly after deploy (2026-11-04 19:30 ET) starts the record; the 252-session
+review is the out-of-sample arbiter; the B hold is the fallback. The `/2`
+record also had zero verified sessions, and the paper account's 37 sessions
+were built under `/1` and are account history, not the `/3` record.
 
 ## 3. The current-code honest baseline
 
@@ -177,6 +175,7 @@ question is answered and is not retried without a new pre-registration.
 | 2026-11-02 | sector-flow gate, flow tilt, QQQ brake, joint | **all four FAIL**: best arm 14.042% / 0.844; tilt paired -0.096 bp/day, t -0.47; brake 0/20 offsets; joint worst | none | `sector-flow-overlay-results-2026-11-02.md` |
 | 2026-11-03 | universe widening: honest `/3`, IT caps 50/35, volatility target 0.20, live book, live book + Utilities | **FAIL**: no arm passes; H0 13.28% / 0.816 / -39.42% worst; H50 inert; H35 +0.052 bp/day, t 0.84; HR -0.261 bp/day, t -2.03, worst -39.04%; L0 19.86% / 0.935 / -37.69%; LU 18.42% / 0.897 / -35.43%, turnover 10.06x | none | `universe-widening-results-2026-11-03.md` |
 | 2026-11-04 | why has the `/3` forward record not started? | **BLOCKED**: the October-only learned generation expired 2026-11-01; the 2026-11-02 and 2026-11-03 nightlies refused; no monthly producer or original input snapshot | none | `forward-record-blocker-2026-11-04.md` |
+| 2026-11-04 | report-bound leader live path | **INSTALLED**: the leader rule binds the authenticated nightly report and the installed risk bank; the monthly model, timing publication and residual month are no longer required; same `/3` economics | yes | `trading-approval-candidates-2026-11-04/report-bound-leader-live-path/` |
 
 ### Closed experiments
 
@@ -444,10 +443,11 @@ installed simplification is working. The B hold remains the fallback. No
 interim live changes except the conditional simplification or a correctness
 fix.
 
-The record has not started. The `/3` nightly is blocked by the expired
-October learned generation (`docs/research/forward-record-blocker-2026-11-04.md`),
-so the pre-registration cannot be completed against a zero-session record
-until the blocker is resolved.
+The record has not started. The expired October learned generation blocked
+the `/3` nightly; the 2026-11-04 report-bound repair removed that dependency
+and was installed and deployed (`a3299064`), so the record starts with the
+first ordinary nightly after deploy. The pre-registration is written against
+the zero-session record and the first session starts it.
 
 Gate: the pre-registered review. Owner: owner and program.
 
@@ -511,3 +511,14 @@ Gate: the pre-registered review. Owner: owner and program.
   every unique tip, tagged 50 unique remote tips and left the remote refs for
   owner review, and removed 10 clean stale worktrees. Admission is `ADMITTED`
   unchanged. Record: `docs/trading/CODE_HYGIENE.md`. No live change.
+- **2026-11-04:** forward-record blocker resolved under the owner's 2026-11-04
+  authorization (the incident note's option 1). The leader live path now
+  binds the authenticated nightly report and the installed risk bank and no
+  longer requires the expired October monthly model, timing publication or
+  residual month. Commit `a3299064`; release ceremony `approved_at`
+  2026-11-04T18:05:42Z; archive
+  `20261104T180542-leader-bfe1fa76433c4545a94bd896d774bf20`; evidence
+  `eff9ece2...`, release `c3e44211...`, config `9bb15bb9...`; admission
+  ADMITTED. Deploy `a3299064`; `.post-deploy-status`
+  "2026-11-04T18:27:35Z a3299064 ok (cheap)". Economics unchanged from `/3`.
+  The forward record starts with the first ordinary nightly after deploy.

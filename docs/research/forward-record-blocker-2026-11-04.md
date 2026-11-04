@@ -1,5 +1,7 @@
-Status: live incident, unresolved as of 2026-11-04. No live change was made
-while diagnosing it. The `/3` forward record has zero completed sessions.
+Status: resolved 2026-11-04 by the report-bound leader live path release
+(`a3299064`). No live change was made while diagnosing it. The `/3` forward
+record starts with the first ordinary nightly after the repair deploy; it had
+zero completed sessions before the repair.
 
 # Forward-record blocker: the learned monthly generation expired on 2026-11-01
 
@@ -211,3 +213,39 @@ in the live path.
   snapshot).
 - `data/market/desk/asof=2026-10-30/desk.json` (last written book).
 - Installed artifact hashes and fit dates as listed above.
+
+## Resolution
+
+Option 1 was implemented and installed through the release ceremony on
+2026-11-04.
+
+- Code: commit `a3299064ca68d75180532b3c319e3bce4d10dfa9`, "Bind the leader
+  live path to the authenticated nightly report". The leader path now builds
+  `backend/market/report_holding.py:ReportHoldingReader` from the
+  authenticated nightly report and the installed risk bank; it never loads the
+  monthly holding model, execution publication or residual month. `/1`,
+  retained and timed policies keep the monthly path unchanged.
+- The approved contract is unchanged: `grade-led-leader-weight/3`, same
+  parameters, same next-open execution. The policy version stays `/3`.
+- Install: `approved_at` 2026-11-04T18:05:42Z; archive
+  `20261104T180542-leader-bfe1fa76433c4545a94bd896d774bf20`; evidence
+  `eff9ece2f2e3c516c553321e83454c43d5c99726b1226c14d18151ab379a878b`;
+  release `c3e44211031f2f4246c09eb8bbf3b5e7c5d7d2f23fe0f1fa4aa95b381618b360`;
+  config `9bb15bb968a2c02856a8fad4e775a2218453fc3323d5d44e729e06d5fd4a06e2`;
+  admission ADMITTED.
+- Verification before install: full unit gate 11,730 passed, 94 skipped, 10
+  xfailed, 48 subtests in 907.33s; targeted trading gate 180 passed, 1
+  xfailed.
+- Deploy: `scripts/deploy.sh` fast-forwarded the deploy checkout to
+  `a3299064`; admission `ADMITTED` on host and container;
+  `.post-deploy-status` `2026-11-04T18:27:35Z a3299064 ok (cheap)`.
+- Candidate record:
+  `docs/research/trading-approval-candidates-2026-11-04/report-bound-leader-live-path/`.
+- Known degradations: the learned intraday entry display, the saved
+  model-decision view and the account-independent model allocation reader
+  refuse a report-based record and report unavailable; the nightly trading
+  path is unaffected.
+- Remaining acceptance: the first ordinary nightly after deploy (2026-11-04
+  19:30 ET) must complete and write a fresh plan, and the following paper
+  session must fill. `evidence.json` keeps
+  `fresh_ordinary_paper_acceptance: UNVERIFIED` until then.
