@@ -71,6 +71,7 @@ def _change_dict(change: ScheduledTaskChange) -> dict[str, Any]:
         "operation": change.operation,
         "task_id": str(change.task_id) if change.task_id else None,
         "conversation_id": str(change.conversation_id) if change.conversation_id else None,
+        "turn_id": change.turn_id,
         "before": json.loads(change.before) if change.before else None,
         "after": json.loads(change.after) if change.after else None,
         "created_at": change.created_at,
@@ -240,6 +241,7 @@ class ScheduledTaskRepository:
         after: dict[str, Any] | None,
         task_id: str | None = None,
         conversation_id: str | None = None,
+        turn_id: str | None = None,
     ) -> dict[str, Any]:
         change = ScheduledTaskChange(
             user_id=user_id,
@@ -247,6 +249,7 @@ class ScheduledTaskRepository:
             operation=operation,
             task_id=uuid.UUID(task_id) if task_id else None,
             conversation_id=_uuid_or_none(conversation_id),
+            turn_id=turn_id or None,
             before=json.dumps(before, default=str) if before is not None else None,
             after=json.dumps(after, default=str) if after is not None else None,
         )
@@ -281,20 +284,39 @@ class ScheduledTaskRepository:
         # undo the fact and leave the document (2026-09-02). The receipt is
         # stored sealed, so the kind is read after decryption, over a short
         # window of recent changes.
+        # Ten rows, not one: the newest can be a memory save the classifier
+        # wrote after the reply, while the change the person asked for in the
+        # same turn sits a row or two below it.
         result = await self.session.execute(
             select(ScheduledTaskChange)
             .where(*conditions)
             .order_by(ScheduledTaskChange.created_at.desc())
-            .limit(10 if receipt_kind else 1)
+            .limit(10)
         )
-        for change in result.scalars().all():
-            entry = _change_dict(change)
-            if receipt_kind is None:
+        entries = [_change_dict(change) for change in result.scalars().all()]
+        if receipt_kind is not None:
+            for entry in entries:
+                after = entry.get("after") if isinstance(entry.get("after"), dict) else {}
+                if str(after.get("kind") or "") == receipt_kind:
+                    return entry
+            return None
+        if not entries:
+            return None
+        newest = entries[0]
+        # A memory save is a side effect of the turn, written after the reply.
+        # When the same turn also did something the person asked for - a
+        # reminder, a check-in, a Scout schedule - "undo that" means that
+        # change, not the note the classifier saved about it. Without this,
+        # the room's "undo that" forgot the note and left the reminder armed
+        # (live sweep, 2026-11-04).
+        if newest["kind"] == "memory" and newest["operation"] == "save" and newest.get("turn_id"):
+            for entry in entries[1:]:
+                if entry.get("turn_id") != newest["turn_id"]:
+                    continue
+                if entry["kind"] == "memory" and entry["operation"] == "save":
+                    continue
                 return entry
-            after = entry.get("after") if isinstance(entry.get("after"), dict) else {}
-            if str(after.get("kind") or "") == receipt_kind:
-                return entry
-        return None
+        return newest
 
     async def mark_undone(self, user_id: str, change_id: str) -> bool:
         result = await self.session.execute(

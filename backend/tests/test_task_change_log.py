@@ -65,6 +65,51 @@ async def test_undo_itself_is_recorded_but_never_undoable():
         await _cleanup(user)
 
 
+async def test_undo_takes_the_asked_for_change_not_the_note_saved_after_it():
+    """A room reminder is recorded during the tool step; the memory
+    classifier saves a note about it after the reply, so the note is the
+    newer row. "Undo that" means the reminder, not the note (found by the
+    group undo journey on the live sweep, 2026-11-04)."""
+    user = f"undo_{uuid.uuid4().hex[:10]}"
+    conversation = str(uuid.uuid4())
+    try:
+        async with AsyncSessionLocal() as session:
+            repo = ScheduledTaskRepository(session)
+            task = await repo.create(
+                user, "stretch", Cadence("daily", 5, 0, "America/New_York", 0), "imessage_group"
+            )
+            scheduled = await repo.record_change(
+                user, "scheduled", "create", None, task, task_id=task["id"],
+                conversation_id=conversation, turn_id="turn-1",
+            )
+            await repo.record_change(
+                user, "memory", "save", None, {"kind": "semantic_fact", "id": "m1"},
+                conversation_id=conversation, turn_id="turn-1",
+            )
+            latest = await repo.latest_undoable(user, conversation)
+            assert latest["id"] == scheduled["id"]
+            assert latest["kind"] == "scheduled"
+
+            # A memory save from a later turn is the last thing the person
+            # did; the older reminder must not shadow it.
+            await repo.record_change(
+                user, "memory", "save", None, {"kind": "semantic_fact", "id": "m2"},
+                conversation_id=conversation, turn_id="turn-2",
+            )
+            latest = await repo.latest_undoable(user, conversation)
+            assert latest["kind"] == "memory"
+            assert latest["turn_id"] == "turn-2"
+
+            # Rows written before the column existed keep the newest-row rule.
+            await repo.record_change(
+                user, "memory", "save", None, {"kind": "semantic_fact", "id": "m3"},
+                conversation_id=conversation,
+            )
+            assert (await repo.latest_undoable(user, conversation))["kind"] == "memory"
+    finally:
+        await _cleanup(user)
+
+
 @pytest.mark.asyncio
 async def test_undo_never_reaches_another_conversation():
     """Deploy #16, 2026-08-28: "forget that" in a fresh conversation cancelled

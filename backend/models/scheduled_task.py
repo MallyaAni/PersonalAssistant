@@ -158,6 +158,13 @@ class ScheduledTaskChange(Base):
     # that" in a fresh conversation cancelled a reminder set minutes earlier
     # in another one (deploy #16, 2026-08-28). Null on rows from before.
     conversation_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True)
+    # The turn that wrote the change, as the tracer's id for it. A turn can
+    # write more than one row: the reminder the person asked for, then the
+    # memory note the classifier saved about it seconds later. "Undo that"
+    # means the asked-for change, so latest_undoable prefers a non-memory
+    # row from the same turn over the memory save that followed it. Null on
+    # rows from before this column existed.
+    turn_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
     # JSON snapshots, sealed: None before means the row did not exist, None
     # after means it was removed.
     before: Mapped[str | None] = mapped_column(EncryptedText, nullable=True)

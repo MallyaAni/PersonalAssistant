@@ -1160,6 +1160,10 @@ def _proposal_summary(proposal: dict[str, Any]) -> str:
 # change recorded during the turn carries it, and "undo" walks back only this
 # conversation's changes.
 _turn_conversation: ContextVar[str | None] = ContextVar("_turn_conversation", default=None)
+# The tracer's id for this turn, for the length of the request. Every change
+# recorded during the turn carries it, so "undo that" can prefer the change
+# the person asked for over the memory note the classifier saved afterwards.
+_turn_trace_id: ContextVar[str | None] = ContextVar("_turn_trace_id", default=None)
 
 
 # The member speaking in a group turn, for the length of the request; None
@@ -3850,6 +3854,7 @@ class ConversationService:
         _turn_zone.set(str((metadata or {}).get("timezone") or "").strip())
         _turn_channel.set(str((metadata or {}).get("channel") or "web"))
         _turn_conversation.set(resolved_conversation_id)
+        _turn_trace_id.set(trace_id)
         current_followup.set(None)
         account_charged_this_turn.set(False)
         _results_were_events.set(False)
@@ -4399,12 +4404,14 @@ class ConversationService:
         channel = str(context.get("channel") or "web")
         conversation = str(conversation_id or "")
         history = await self._conversation_history(user_id, conversation)
+        step_trace_id = f"run-step-{uuid.uuid4().hex[:12]}"
         set_vars: list[tuple[ContextVar[Any], Any]] = [
             (_turn_channel, channel),
             (_turn_speaker, str(context.get("speaker_user_id") or "").strip() or None),
             (_turn_zone, str(context.get("timezone") or "").strip()),
             (_turn_conversation, conversation or None),
             (_turn_query, str(query or "").strip()),
+            (_turn_trace_id, step_trace_id),
             (_replying_to, str(context.get("replying_to") or "").strip()),
             (_previous_assistant_said, _answering(context, history)),
         ]
@@ -4414,7 +4421,7 @@ class ConversationService:
                 context={"user_id": user_id, "query": query},
                 query=query,
                 conversation_id=conversation,
-                trace_id=f"run-step-{uuid.uuid4().hex[:12]}",
+                trace_id=step_trace_id,
                 query_embedding=None,
                 history=history,
                 emit=lambda event: None,
@@ -4713,6 +4720,7 @@ class ConversationService:
                 after,
                 task_id=task_id,
                 conversation_id=_turn_conversation.get(),
+                turn_id=_turn_trace_id.get(),
             )
         except Exception:
             logger.warning(
@@ -4987,6 +4995,7 @@ class ConversationService:
         _turn_zone.set(str((metadata or {}).get("timezone") or "").strip())
         _turn_channel.set(str((metadata or {}).get("channel") or "web"))
         _turn_conversation.set(resolved_conversation_id)
+        _turn_trace_id.set(trace_id)
         current_followup.set(None)
         history = await self.repository.get_history(resolved_conversation_id, user_id, self.history_turn_limit)
         _replying_to.set(str((metadata or {}).get("replying_to") or "").strip())
@@ -5661,6 +5670,7 @@ class ConversationService:
                 None,
                 task_id=change.get("task_id"),
                 conversation_id=_turn_conversation.get(),
+                turn_id=_turn_trace_id.get(),
             )
             return {"kind": "undone", "change": change, "task": after}
         if change["kind"] == "memory":
@@ -5671,7 +5681,15 @@ class ConversationService:
             if not forgotten:
                 return {"kind": "failed"}
             await self.scheduled_tasks.mark_undone(user_id, change["id"])
-            await self.scheduled_tasks.record_change(user_id, "memory", "undo", receipt, None, conversation_id=_turn_conversation.get())
+            await self.scheduled_tasks.record_change(
+                user_id,
+                "memory",
+                "undo",
+                receipt,
+                None,
+                conversation_id=_turn_conversation.get(),
+                turn_id=_turn_trace_id.get(),
+            )
             return {"kind": "undone", "change": change, "memory": receipt}
         if change["kind"] == "scout_schedule":
             if self.discovery_runs is None:
@@ -5695,7 +5713,8 @@ class ConversationService:
             if past_once:
                 await self.scheduled_tasks.mark_undone(user_id, change["id"])
                 await self.scheduled_tasks.record_change(
-                    user_id, change["kind"], "undo", after, restored, task_id=change.get("task_id"), conversation_id=_turn_conversation.get())
+                    user_id, change["kind"], "undo", after, restored, task_id=change.get("task_id"),
+                    conversation_id=_turn_conversation.get(), turn_id=_turn_trace_id.get())
                 return {"kind": "restored_past", "change": change, "task": restored}
         elif change["operation"] == "reschedule" and before is not None:
             restored = await self.scheduled_tasks.reschedule_owned(
@@ -5731,7 +5750,8 @@ class ConversationService:
             return {"kind": "nothing_to_undo"}
         await self.scheduled_tasks.mark_undone(user_id, change["id"])
         await self.scheduled_tasks.record_change(
-            user_id, change["kind"], "undo", after, restored, task_id=change.get("task_id"), conversation_id=_turn_conversation.get())
+            user_id, change["kind"], "undo", after, restored, task_id=change.get("task_id"),
+            conversation_id=_turn_conversation.get(), turn_id=_turn_trace_id.get())
         # A restored Scout schedule is not a task: it has no instruction, and
         # rendered as one it raised inside the reply graph (found by the
         # sweep's "undo a scout change" journey on 2026-08-26).
@@ -6094,7 +6114,8 @@ class ConversationService:
                     try:
                         await self.scheduled_tasks.record_change(
                             owner_id, "memory", "save", None,
-                            wrote if isinstance(wrote, dict) else {"kind": str(kind), "undoable": False}, conversation_id=_turn_conversation.get())
+                            wrote if isinstance(wrote, dict) else {"kind": str(kind), "undoable": False},
+                            conversation_id=_turn_conversation.get(), turn_id=_turn_trace_id.get())
                     except Exception:
                         logger.warning("Trace %s could not record a member's memory save", trace_id, exc_info=True)
             if persisted:
@@ -6112,7 +6133,8 @@ class ConversationService:
                 if self.scheduled_tasks is not None:
                     try:
                         await self.scheduled_tasks.record_change(
-                            user_id, "memory", "save", None, receipt, conversation_id=_turn_conversation.get())
+                            user_id, "memory", "save", None, receipt,
+                            conversation_id=_turn_conversation.get(), turn_id=_turn_trace_id.get())
                     except Exception:
                         logger.warning("Trace %s could not record a memory save", trace_id, exc_info=True)
         _trace("proposals_saved", [str(item.get("kind")) for item in saved])
