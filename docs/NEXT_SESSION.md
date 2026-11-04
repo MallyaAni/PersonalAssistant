@@ -27,10 +27,14 @@ passed on the live data: the desk report panel is the 94-name book plus SPY,
 all inside the risk bank's 96 symbols, and the bank's calendar is an exact
 prefix of the panel's.
 
-**Then milestone 5.** Pre-register the 252-session forward record review
-criteria before the record ends: forward Sharpe, drawdown, CAGR against SPY
-and QQQ, turnover, and whether the installed simplification is working. The
-B hold remains the fallback; no interim live change except a correctness fix.
+**Then milestone 5.** The review pre-registration is written and committed:
+[research/forward-record-review-preregistration-2026-11-04.md](research/forward-record-review-preregistration-2026-11-04.md).
+It fixes 252 completed return sessions after the baseline session, the metric
+definitions (matching the scorecard), and mechanical verdicts for the risk
+mandate, CAGR against SPY, top-tier eligibility, operations, turnover and
+contract conformance. After acceptance the record runs; the review executes
+at the 252nd return session. The B hold remains the fallback; no interim live
+change except a correctness fix.
 
 **Milestone 4 — code and branch hygiene: done 2026-11-04.** The audit and
 deletion record is `docs/trading/CODE_HYGIENE.md`: 151 dead historical and

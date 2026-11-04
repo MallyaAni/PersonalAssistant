@@ -447,8 +447,13 @@ fix.
 The record has not started. The expired October learned generation blocked
 the `/3` nightly; the 2026-11-04 report-bound repair removed that dependency
 and was installed and deployed (`a3299064`), so the record starts with the
-first ordinary nightly after deploy. The pre-registration is written against
-the zero-session record and the first session starts it.
+first ordinary nightly after deploy. The pre-registration is
+`docs/research/forward-record-review-preregistration-2026-11-04.md`, written
+and committed against the zero-session record before the first session: the
+first ordinary nightly is the baseline, the next 252 completed return sessions
+are the record, and the verdicts for the risk mandate, CAGR against SPY,
+top-tier eligibility, operations, turnover and contract conformance are fixed
+there.
 
 Gate: the pre-registered review. Owner: owner and program.
 
@@ -524,3 +529,8 @@ Gate: the pre-registered review. Owner: owner and program.
   `a3299064`); `.post-deploy-status` "2026-11-04T18:32:28Z 058b7aed ok
   (cheap)". Economics unchanged from `/3`. The forward record starts with
   the first ordinary nightly after deploy.
+- **2026-11-04:** milestone 5 pre-registration written before the record's
+  first session: `docs/research/forward-record-review-preregistration-2026-11-04.md`.
+  It fixes the record start and length, the metric definitions (matching the
+  scorecard), the mechanical verdicts, the statistical caveat for a single
+  path, and the no-interim-verdict rule. No live change.
