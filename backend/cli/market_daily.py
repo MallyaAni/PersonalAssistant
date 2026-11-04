@@ -930,8 +930,9 @@ def _forward_close_window(policy, instant, report):
     if policy is None:
         return False
     from backend.market.forward_arithmetic import ForwardVolatilityHoldingReader
+    from backend.market.report_holding import ReportHoldingReader
 
-    if isinstance(policy.reader, ForwardVolatilityHoldingReader):
+    if isinstance(policy.reader, (ForwardVolatilityHoldingReader, ReportHoldingReader)):
         policy.reader.validate_clock(instant)
         policy.reader.validate_report(report)
         return True
@@ -966,8 +967,9 @@ def _holding_broker(policy, client, decision_at):
     if datetime.fromisoformat(client.clock()["timestamp"]) != decision_at:
         raise ValueError("Joint private ledger must observe the exact decision clock")
     from backend.market.forward_arithmetic import ForwardVolatilityHoldingReader
+    from backend.market.report_holding import ReportHoldingReader
 
-    if isinstance(policy.reader, ForwardVolatilityHoldingReader):
+    if isinstance(policy.reader, (ForwardVolatilityHoldingReader, ReportHoldingReader)):
         policy.reader.validate_clock(decision_at)
 
 

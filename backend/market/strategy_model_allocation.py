@@ -93,6 +93,8 @@ def read(root, record, now):
     if config["policy"] not in learned_live_holding.GRADE_LED_POLICIES:
         raise ValueError("Installed grade-led model required")
     admission = record["paper"]["learned_holding"]
+    if "close_directory" not in admission:
+        raise ValueError("Installed report record has no learned model context")
     original, _ = holding_risk_bank.load_bank(
         learned_live_holding._folder(root, config["risk_directory"]),
         receipt_sha256=config["risk_receipt_sha256"], observed_at=now,

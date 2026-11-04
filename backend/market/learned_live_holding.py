@@ -26,6 +26,7 @@ from backend.market import forward_arithmetic as forward
 from backend.market import grade_led_leader_policy as leader
 from backend.market import joint_funded_policy as funded
 from backend.market import learned_holding_transition as transition
+from backend.market import report_holding
 from backend.market import sequential_shadow_context as context
 
 CONFIG = "desk/learned-holding/config.json"
@@ -59,6 +60,7 @@ def source_identity():
         root / funded.GradeLedFundedPolicy.protocol,
         Path(leader.__file__),
         root / leader.PROTOCOL,
+        Path(report_holding.__file__),
         Path(transition.__file__),
         root / transition.PROTOCOL,
         Path(context.__file__),
@@ -234,9 +236,8 @@ def _model_report(root, report, symbols, now):
     )
 
 
-# Admit matching published execution heads and residuals before planning funded legs.
-def _timing(root, config, original, now):
-    from backend.market import forward_execution, forward_probability_timing
+# Bind the installed execution configuration without reading its monthly artifacts.
+def _timing_config(root, config):
     from backend.market.live_probability_timing import POLICY
 
     raw = (Path(root) / learned_live_timing.CONFIG).read_bytes()
@@ -256,6 +257,15 @@ def _timing(root, config, original, now):
         or timing["cost_bps"] != config["cost_bps"]
     ):
         raise ValueError("Installed holding and execution configuration differ")
+    return raw
+
+
+# Admit matching published execution heads and residuals before planning funded legs.
+def _timing(root, config, original, now):
+    from backend.market import forward_execution, forward_probability_timing
+
+    raw = _timing_config(root, config)
+    timing = json.loads(raw)
     _, publication = forward_execution.load_publication(
         learned_live_timing._folder(root, timing["model_directory"]),
         receipt_sha256=timing["model_receipt_sha256"],
@@ -401,55 +411,91 @@ def prepare(root, report, *, clock=None):
         receipt_sha256=config["risk_receipt_sha256"],
         observed_at=started,
     )
-    timing_bytes = _timing(root, config, original, started)
-    model_folder = _folder(root, config["model_directory"])
-    inference_report = _model_report(root, report, original.symbols, started)
-    grades, membership, provenance = _inputs(root, inference_report, started)
-    current = forward.observe_close(
-        inference_report.panel,
-        grades,
-        membership,
-        provenance,
-        model_folder,
-        model_receipt_sha256=config["model_receipt_sha256"],
-        observed_at=started,
-    )
-    parent = (Path(root) / CONFIG).parent / "observations"
-    parent.mkdir(mode=0o700, parents=True, exist_ok=True)
-    folder = parent / uuid4().hex
-    digest = forward.write_close(folder, current, clock=clock)
-    folder.chmod(0o700)
-    for path in folder.iterdir():
-        path.chmod(0o600)
-    completed = context._instant(clock(), "Nightly completion")
-    current = forward.load_close(
-        folder, model_folder, receipt_sha256=digest, observed_at=completed
-    )
-    reader = forward.ForwardVolatilityHoldingReader(original, current)
-    reader.validate_report(report)
-    context._check_unchanged(provenance["sources"])
-    if (Path(root) / CONFIG).read_bytes() != raw or (
-        Path(root) / learned_live_timing.CONFIG
-    ).read_bytes() != timing_bytes:
-        raise ValueError("Concurrent installed policy configuration changes")
-    admission = {
-        "close_receipt_sha256": digest,
-        "close_directory": str(folder),
-        "config_sha256": sha256(raw).hexdigest(),
-        "provenance": provenance,
-    }
-    factory = (
-        GradeLedLeaderHoldingPolicy
-        if config["policy"] == leader.POLICY
-        else GradeLedHoldingPolicy
-        if config["policy"] == grade_led_policy.POLICY
-        else (
-            RetainedHoldingPolicy
-            if config["policy"] == transition.POLICY
-            else InstalledHoldingPolicy
+    # The leader rule sizes from the report's trailing closes and never reads
+    # the learned distribution or timing. Its live path binds the report and
+    # the installed risk bank without the expired monthly generation.
+    if config["policy"] == leader.POLICY:
+        timing_bytes = _timing_config(root, config)
+        _, _, provenance = _inputs(root, report, started)
+        reader = report_holding.ReportHoldingReader(
+            original,
+            report,
+            provenance,
+            risk_receipt_sha256=config["risk_receipt_sha256"],
+            observed_at=started,
         )
-    )
-    selected = factory(reader, config["cost_bps"], root, raw, admission, completed)
+        reader.validate_report(report)
+        context._check_unchanged(provenance["sources"])
+        completed = context._instant(clock(), "Nightly completion")
+        if (Path(root) / CONFIG).read_bytes() != raw or (
+            Path(root) / learned_live_timing.CONFIG
+        ).read_bytes() != timing_bytes:
+            raise ValueError("Concurrent installed policy configuration changes")
+        admission = {
+            "config_sha256": sha256(raw).hexdigest(),
+            "provenance": provenance,
+            "report": {
+                "session": reader.receipt["identity"]["session"],
+                "data_as_of": reader.receipt["identity"]["data_as_of"],
+                "daily_published_at": reader.receipt["identity"][
+                    "daily_published_at"
+                ],
+                "grade_sha256": reader.receipt["identity"]["grade_sha256"],
+                "prefix_sha256": reader.receipt["identity"]["prefix_sha256"],
+                "receipt_sha256": reader.receipt["identity_sha256"],
+            },
+        }
+        selected = GradeLedLeaderHoldingPolicy(
+            reader, config["cost_bps"], root, raw, admission, completed
+        )
+    else:
+        timing_bytes = _timing(root, config, original, started)
+        model_folder = _folder(root, config["model_directory"])
+        inference_report = _model_report(root, report, original.symbols, started)
+        grades, membership, provenance = _inputs(root, inference_report, started)
+        current = forward.observe_close(
+            inference_report.panel,
+            grades,
+            membership,
+            provenance,
+            model_folder,
+            model_receipt_sha256=config["model_receipt_sha256"],
+            observed_at=started,
+        )
+        parent = (Path(root) / CONFIG).parent / "observations"
+        parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+        folder = parent / uuid4().hex
+        digest = forward.write_close(folder, current, clock=clock)
+        folder.chmod(0o700)
+        for path in folder.iterdir():
+            path.chmod(0o600)
+        completed = context._instant(clock(), "Nightly completion")
+        current = forward.load_close(
+            folder, model_folder, receipt_sha256=digest, observed_at=completed
+        )
+        reader = forward.ForwardVolatilityHoldingReader(original, current)
+        reader.validate_report(report)
+        context._check_unchanged(provenance["sources"])
+        if (Path(root) / CONFIG).read_bytes() != raw or (
+            Path(root) / learned_live_timing.CONFIG
+        ).read_bytes() != timing_bytes:
+            raise ValueError("Concurrent installed policy configuration changes")
+        admission = {
+            "close_receipt_sha256": digest,
+            "close_directory": str(folder),
+            "config_sha256": sha256(raw).hexdigest(),
+            "provenance": provenance,
+        }
+        factory = (
+            GradeLedHoldingPolicy
+            if config["policy"] == grade_led_policy.POLICY
+            else (
+                RetainedHoldingPolicy
+                if config["policy"] == transition.POLICY
+                else InstalledHoldingPolicy
+            )
+        )
+        selected = factory(reader, config["cost_bps"], root, raw, admission, completed)
     if config["policy"] in GRADE_LED_POLICIES:
         from backend.market import strategy_publication
 

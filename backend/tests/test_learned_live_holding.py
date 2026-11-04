@@ -194,12 +194,20 @@ def test_installed_current_heads_and_funded_nightly(
         runtime.grade_led_policy.POLICY if retained == "grade" else
         runtime.transition.POLICY if retained else runtime.funded.MARKET_TIMED_POLICY
     )
-    assert (
-        chosen.reader.distribution(len(chosen.reader.dates) - 1, ("AAA",)).receipt[
-            "status"
-        ]
-        == "available"
-    )
+    if retained == "leader":
+        # The leader rule sizes from the report and publishes no learned close
+        # context; it refuses to fabricate a scenario distribution.
+        assert chosen.reader.receipt["status"] == "report_bound"
+        assert chosen.reader.current is None
+        with pytest.raises(ValueError, match="does not read the learned distribution"):
+            chosen.reader.distribution(len(chosen.reader.dates) - 1, ("AAA",))
+    else:
+        assert (
+            chosen.reader.distribution(len(chosen.reader.dates) - 1, ("AAA",)).receipt[
+                "status"
+            ]
+            == "available"
+        )
     broker = ReplayBroker(100000, 10)
     broker.observe(
         now,
@@ -277,7 +285,15 @@ def test_installed_current_heads_and_funded_nightly(
         }
     else:
         assert not sent
-    assert entry["learned_holding"]["close_receipt_sha256"]
+    if retained == "leader":
+        # The admission binds the authenticated report, not a monthly close.
+        admission = entry["learned_holding"]
+        assert "close_receipt_sha256" not in admission
+        assert admission["report"]["receipt_sha256"]
+        assert admission["report"]["session"] == str(shown.panel.dates[-1])
+        assert admission["report"]["grade_sha256"]
+    else:
+        assert entry["learned_holding"]["close_receipt_sha256"]
     # The private ledger itself is never mutated by this HTTP fixture.
     assert broker.account().cash == 100000
     assert len(broker.attempt_history) == 0

@@ -1,0 +1,38 @@
+{
+  "authorization": "Owner decision 2026-11-04: simplify the live path to match the approved grade-led-leader-weight/3 contract — stop requiring the monthly holding model, timing publication and residual month for the grade-led leader policy, keep the installed risk bank and report validation, and install through a new release.",
+  "comparative_performance": "No economic change. The leader sizing arithmetic and every parameter are identical to the installed grade-led-leader-weight/3 release: entry at A or better, held while A, exit below A, 1% minimum trade, 63-session leader tilt 0.5, EWMA-20 volatility target 0.25 with exposure floor 0.5, 25% per-name cap, P/E-history tilt off, next-open execution. The only change is the live input binding: the leader path reads the authenticated nightly report and the installed risk bank instead of the learned monthly generation that expired on 2026-11-01 and cannot be refitted locally. The /3 forward record has zero completed sessions; the first ordinary nightly after deploy starts it. The current-code honest-universe readings remain those recorded at the /3 install: 13.28% CAGR, -34.39% median drawdown, -39.42% worst drawdown, 0.816 Sharpe and 8.44x annual turnover at 25 bp, 20 offsets. The candidate still fails the program objective; this release is a correctness repair, not new economic evidence.",
+  "contract": "grade-led-leader-weight/3 (revision 8: entry at A, hold while A, exit below A, 1% minimum trade, 63-session leader tilt 0.5, EWMA-20 volatility target 0.25 with exposure floor 0.5, 25% per-name cap, P/E-history sizing tilt removed); the leader live path binds the authenticated nightly report and the installed risk bank's calendar prefix and symbol universe, keeps the installed timing configuration hash and the paper-broker guards, and never reads the learned monthly holding model, execution publication or residual month; valuation analyst at three votes; FOMC pre-meeting cut retired 2026-10-28 (fomc-hold-through-meeting/1), full exposure through meetings; an unknown FOMC calendar no longer blocks ordinary planning while retired; a cycle already open still restores at the decision-day close",
+  "execution": "every leg a market-on-open order at the nightly (revision 1); EWMA-20 volatility estimate (revision 2); entry at A or better, held while A, exit below A (revision 7); resizes under 1% of equity not traded, exits always (revision 5); P/E-history tilt removed (revision 8); no FOMC reduction is planned after 2026-10-28; the open 2026-10-28 cycle restores on the decision session's 3:45 PM candle (decision_close), and a cycle finished on the decision night hands the account back to the ordinary plan the same night; the market-open submission guard reads the reviewed regular XNYS session, not the broker's extended-hours flag",
+  "fresh_ordinary_paper_acceptance": "UNVERIFIED; required after installation",
+  "model_publications_unchanged": true,
+  "no_new_fits": true,
+  "original_evidence_sha256": "17c291adfbe17499c2afd57b30cff4db99fc1bd6e1729addfa4273a4529631a6",
+  "parameters": {
+    "analyst_weights": {
+      "fundamental": 1,
+      "rotation": 0.5,
+      "sentiment": 1,
+      "technical": 1,
+      "value": 3
+    },
+    "annualisation": 252,
+    "entry_grade": "A",
+    "exposure_floor": 0.5,
+    "hold_grade": "A",
+    "min_trade": 0.01,
+    "pe_history_tilt": {
+      "active": false,
+      "min_readings": 250,
+      "strength": 0.0,
+      "window_sessions": 756
+    },
+    "per_name_cap": 0.25,
+    "tilt_strength": 0.5,
+    "volatility_estimator": "ewma_span_20",
+    "volatility_target": 0.25,
+    "window_sessions": 63
+  },
+  "source_revision": "<the commit on main carrying the change>",
+  "source_sha256": "<computed at installation>",
+  "targeted_tests": "<written at installation>"
+}

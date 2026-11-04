@@ -22,6 +22,7 @@ from backend.market import grade_led_policy, learned_live_holding, live_model_de
 from backend.market import direct_daily_arithmetic, learned_entry_data, market_conditioned_calibration, probabilistic_execution
 from backend.market import strategy_model_allocation
 from backend.market.direct_daily_arithmetic import FEATURE_NAMES
+from backend.market.report_holding import ReportHoldingReader
 from backend.market.labels import Grade, GradeSignal
 
 VERSION = "strategy-model-allocation/2"
@@ -63,8 +64,9 @@ def _strategy_identity(sources, cost_bps, policy=grade_led_policy.POLICY):
     if policy not in learned_live_holding.GRADE_LED_POLICIES:
         raise ValueError("Installed grade-led strategy required")
     if policy == learned_live_holding.leader.POLICY:
-        # The leader sizing is its own economics; the installed identity keeps its bytes.
-        names = (*names, "grade_led_leader_policy.py")
+        # The leader sizing is its own economics; the installed identity keeps
+        # its bytes and the report binding that replaced the monthly model.
+        names = (*names, "grade_led_leader_policy.py", "report_holding.py")
     return _digest({"policy": policy,
                     "sources": {name: sources["backend/market/" + name] for name in names},
                     "basis": strategy_model_allocation.BASIS, 'economic_parameters':{'cost_bps':float(cost_bps)}})
@@ -105,33 +107,64 @@ def build(policy, report, blocked, *, observed_at):
     blocked = set(blocked) & set(names)
     targets, readings, receipt = strategy_model_allocation.targets_from_model(
         report, policy.reader, policy.cost_bps, blocked, config["policy"])
-    current = policy.reader.current
-    session = str(current.dates[-1])
     sources = _sources()
-    identity = {"schema": SCHEMA, "policy": config["policy"], "session": session,
-                "basis": strategy_model_allocation.BASIS,
-                "config_sha256": sha256(raw).hexdigest(),
-                "close_receipt_sha256": _sha(policy.admission["close_receipt_sha256"]),
-                "holding_model_receipt_sha256": config["model_receipt_sha256"],
-                "risk_receipt_sha256": config["risk_receipt_sha256"],
-                "timing_config_sha256": config["timing_config_sha256"],
-                "economic_parameters":{'cost_bps':policy.cost_bps},
-                "strategy_identity": _strategy_identity(sources,policy.cost_bps,config["policy"]), "source_sha256": sources,
-                "prefix_sha256": current.receipt["identity"]["prefix_sha256"]}
-    identity['close_context'] = _close_context(policy,current)
     evidence = {}
-    for name in names:
-        stock = current.symbols.index(name)
-        evidence[name] = {"inputs_as_of": session, "grade": readings[name]["grade"],
-                          "model_position_size": targets[name],
-                          "features": {key: float(value) for key, value in zip(FEATURE_NAMES, current.features[stock], strict=True) if np.isfinite(value)},
-                          "band_blocked": name in blocked,
-                          "price_basis": "adjusted_total_return",
-                          "reason": readings[name]["reason"],
-                          "timing_state": "awaiting_completed_regular_candle"}
+    if isinstance(policy.reader, ReportHoldingReader):
+        # The leader rule reads no learned distribution, close observation or
+        # monthly model. Its publication binds the authenticated report and
+        # records no fabricated features or model receipt.
+        reader = policy.reader
+        session = str(reader.dates[-1])
+        observed = reader.receipt["identity"]["published_at"]
+        identity = {"schema": SCHEMA, "policy": config["policy"], "session": session,
+                    "basis": strategy_model_allocation.BASIS,
+                    "config_sha256": sha256(raw).hexdigest(),
+                    "risk_receipt_sha256": config["risk_receipt_sha256"],
+                    "timing_config_sha256": config["timing_config_sha256"],
+                    "economic_parameters":{'cost_bps':policy.cost_bps},
+                    "strategy_identity": _strategy_identity(sources,policy.cost_bps,config["policy"]),
+                    "source_sha256": sources,
+                    "prefix_sha256": reader.receipt["identity"]["prefix_sha256"],
+                    "report_context": {
+                        "basis": "authenticated_current_nightly_report",
+                        "data_as_of": reader.receipt["identity"]["data_as_of"],
+                        "daily_published_at": reader.receipt["identity"]["daily_published_at"],
+                        "grade_sha256": reader.receipt["identity"]["grade_sha256"]}}
+        for name in names:
+            evidence[name] = {"inputs_as_of": session, "grade": readings[name]["grade"],
+                              "model_position_size": targets[name],
+                              "features": {},
+                              "band_blocked": name in blocked,
+                              "price_basis": "adjusted_total_return",
+                              "reason": readings[name]["reason"],
+                              "timing_state": "awaiting_completed_regular_candle"}
+    else:
+        current = policy.reader.current
+        session = str(current.dates[-1])
+        observed = current.receipt["identity"]["published_at"]
+        identity = {"schema": SCHEMA, "policy": config["policy"], "session": session,
+                    "basis": strategy_model_allocation.BASIS,
+                    "config_sha256": sha256(raw).hexdigest(),
+                    "close_receipt_sha256": _sha(policy.admission["close_receipt_sha256"]),
+                    "holding_model_receipt_sha256": config["model_receipt_sha256"],
+                    "risk_receipt_sha256": config["risk_receipt_sha256"],
+                    "timing_config_sha256": config["timing_config_sha256"],
+                    "economic_parameters":{'cost_bps':policy.cost_bps},
+                    "strategy_identity": _strategy_identity(sources,policy.cost_bps,config["policy"]), "source_sha256": sources,
+                    "prefix_sha256": current.receipt["identity"]["prefix_sha256"]}
+        identity['close_context'] = _close_context(policy,current)
+        for name in names:
+            stock = current.symbols.index(name)
+            evidence[name] = {"inputs_as_of": session, "grade": readings[name]["grade"],
+                              "model_position_size": targets[name],
+                              "features": {key: float(value) for key, value in zip(FEATURE_NAMES, current.features[stock], strict=True) if np.isfinite(value)},
+                              "band_blocked": name in blocked,
+                              "price_basis": "adjusted_total_return",
+                              "reason": readings[name]["reason"],
+                              "timing_state": "awaiting_completed_regular_candle"}
     value = {"version": VERSION, "status": "available", "reason": None,
              "policy": config["policy"], "basis": identity["basis"], "session": session,
-             "observed_at": current.receipt["identity"]["published_at"],
+             "observed_at": observed,
              "as_of": observed_at.isoformat(), "published_at": observed_at.isoformat(),
              "valid_until": live_model_decision._valid_until(session).isoformat(),
              "strategy_identity": identity["strategy_identity"], "snapshot_id": _digest(identity),

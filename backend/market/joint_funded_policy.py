@@ -16,6 +16,7 @@ from backend.market import adaptive_growth_policy as growth
 from backend.market import learned_holding_transition as transition
 from backend.market.direct_error_band import VolatilityHoldingReader
 from backend.market.forward_arithmetic import ForwardVolatilityHoldingReader
+from backend.market.report_holding import ReportHoldingReader
 
 POLICY = "joint-stock-risk-funded/1-research"
 MATURITY_POLICY = "joint-stock-risk-funded/2-maturity-shadow"
@@ -84,10 +85,15 @@ class JointFundedPolicy:
     protocol = PROTOCOL
     sizing_reason = "joint_net_growth"
 
-    # Admit original or published forward risk on the still-private funded path.
+    # Admit original, published forward or report-bound risk on the funded path.
     def __init__(self, reader, cost_bps):
         if not isinstance(
-            reader, (VolatilityHoldingReader, ForwardVolatilityHoldingReader)
+            reader,
+            (
+                VolatilityHoldingReader,
+                ForwardVolatilityHoldingReader,
+                ReportHoldingReader,
+            ),
         ):
             raise ValueError("Authenticated volatility holding reader required")
         if not _number(cost_bps) or cost_bps >= 10000:
@@ -122,7 +128,9 @@ class JointFundedPolicy:
     def decide(self, session, report, equity, held, prices, cash, blocked):
         if str(report.panel.dates[-1]) != session:
             raise ValueError("Exact current report session required")
-        if isinstance(self.reader, ForwardVolatilityHoldingReader):
+        if isinstance(
+            self.reader, (ForwardVolatilityHoldingReader, ReportHoldingReader)
+        ):
             self.reader.validate_report(report)
         dates = self.reader.dates
         hits = np.flatnonzero(dates == np.datetime64(session, "D"))
@@ -456,6 +464,10 @@ class MarketConditionedTimedFundedPolicy(ProbabilityTimedFundedPolicy):
             reader = MarketConditionedHoldingReader(reader)
         elif type(reader) is ForwardVolatilityHoldingReader:
             reader = ForwardMarketConditionedHoldingReader(reader)
+        elif type(reader) is ReportHoldingReader:
+            # The leader rule reads the report directly; its policy overrides
+            # every risk read, so no market-conditioning wrapper is built.
+            pass
         elif type(reader) not in (
             MarketConditionedHoldingReader,
             ForwardMarketConditionedHoldingReader,

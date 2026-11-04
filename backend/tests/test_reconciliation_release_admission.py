@@ -11,23 +11,28 @@ from backend.cli import market_release_admission as admission
 
 DAILY = "backend/cli/market_daily.py"
 VIEW = "backend/market/live_model_decision.py"
-# Pinned to the tree with the regular-session market-open guard (the nightly
-# decides submission by the reviewed exchange calendar, not the broker's
-# extended-hours clock; planning and persistence unchanged); before it
-# 4aad1d27... (the tree without the daily-price curve block: the nightly no
-# longer prices the old `desk/simulate.py` curve for the record; the Historical
-# simulation box reads the installed rule's replay instead; planning,
-# submission and persistence unchanged), 113d9cb4... (the closed-label tree:
-# order sides, desk actions, grade signals, grades, execution timings and plan
-# words compared and built as the `backend.market.labels` enums; same wire
-# strings, same decisions), 46975df3... (the FOMC decision-close tree: the
-# nightly holds decision-close restorations for the balancer, gives them their
-# session, and hands a released cycle back to the ordinary planner the same
-# night), b451c481... (the grade-led-leader-weight/1 tree), and before that
-# abff0526... and 3e894a1f.... The view pin was 56d62816... before the
-# closed-label tree.
-UNCHANGED = "a99533109909d91fd979a5fd4034b1df28ebd2ad507840a9817f4b75c2613d87"
-UNCHANGED_VIEW = "aa9134c3b5401051f38a2702d2f672cfd7e8cf59be624eff40145d47e23649b2"
+# Pinned to the tree with the report-bound leader live path: the leader policy
+# binds the authenticated nightly report and the installed risk bank instead of
+# the expired October monthly generation, and the saved model-decision reader
+# refuses a report record with a clear ValueError; planning, submission and
+# persistence are unchanged. Before it a9953310... (the tree with the
+# regular-session market-open guard: the nightly decides submission by the
+# reviewed exchange calendar, not the broker's extended-hours clock; planning
+# and persistence unchanged); before it 4aad1d27... (the tree without the
+# daily-price curve block: the nightly no longer prices the old
+# `desk/simulate.py` curve for the record; the Historical simulation box reads
+# the installed rule's replay instead; planning, submission and persistence
+# unchanged), 113d9cb4... (the closed-label tree: order sides, desk actions,
+# grade signals, grades, execution timings and plan words compared and built as
+# the `backend.market.labels` enums; same wire strings, same decisions),
+# 46975df3... (the FOMC decision-close tree: the nightly holds decision-close
+# restorations for the balancer, gives them their session, and hands a released
+# cycle back to the ordinary planner the same night), b451c481... (the
+# grade-led-leader-weight/1 tree), and before that abff0526... and 3e894a1f....
+# The view pin was aa9134c3... before the report-bound leader live path, and
+# 56d62816... before the closed-label tree.
+UNCHANGED = "0c2c3a2af6b602bc9d86ce15ed5fbe828c5c66c2de51350dcee5ac95bb7df824"
+UNCHANGED_VIEW = "6fb692695b3b52bd1bc7c46cc1d3a537cae389e600e85f14a77ab33dae676370"
 
 
 # Build a synthetic approval transition around the actual candidate CLI source.
