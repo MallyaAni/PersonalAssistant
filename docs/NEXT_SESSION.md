@@ -22,7 +22,10 @@ paper session.** The nightly runs from `~/deploy/anios` at 19:30 ET
 with today's session and complete the funded plan without the monthly
 artifacts; the following paper session must fill. `evidence.json` keeps
 `fresh_ordinary_paper_acceptance: UNVERIFIED` until then. The `/3` forward
-record starts with that session.
+record starts with that session. Pre-nightly readiness check (read-only)
+passed on the live data: the desk report panel is the 94-name book plus SPY,
+all inside the risk bank's 96 symbols, and the bank's calendar is an exact
+prefix of the panel's.
 
 **Then milestone 5.** Pre-register the 252-session forward record review
 criteria before the record ends: forward Sharpe, drawdown, CAGR against SPY

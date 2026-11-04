@@ -247,6 +247,13 @@ Option 1 was implemented and installed through the release ceremony on
   model-decision view and the account-independent model allocation reader
   refuse a report-based record and report unavailable; the nightly trading
   path is unaffected.
+- Pre-nightly readiness check (2026-11-04, read-only): the live desk report
+  panel is the 94-name book plus SPY (95 tickers); every one is in the
+  installed risk bank's 96 symbols (the extra is QQQ). The bank's 2,953 dates
+  (2015-01-02 .. 2026-09-30) are an exact prefix of the panel's 2,977 dates
+  (2015-01-02 .. 2026-11-03). `ReportHoldingReader`'s symbol and
+  calendar-prefix admissions therefore pass on the live report shape. No live
+  artifact was changed.
 - Remaining acceptance: the first ordinary nightly after deploy (2026-11-04
   19:30 ET) must complete and write a fresh plan, and the following paper
   session must fill. `evidence.json` keeps
