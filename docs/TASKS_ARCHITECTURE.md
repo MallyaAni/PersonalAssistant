@@ -149,7 +149,12 @@ What exists, and where:
   (snapshots sealed like the instruction; migration `20260826_0010`).
   `manage_tasks(operation="undo")` puts the latest one back: a cancelled
   task is re-created under its old id from its snapshot, a moved one moves
-  back, Scout's schedule returns to what it was or to none. The undo is
+  back, Scout's schedule returns to what it was or to none. A turn can write
+  two rows - the reminder the person asked for, then the memory note the
+  classifier saves about it after the reply - so each row carries the turn's
+  trace id and undo prefers the asked-for change from that turn over the
+  note that followed it (migration `20261104_0025`; the group undo journey
+  caught the note being taken back instead, 2026-11-04). The undo is
   recorded but never undoable, so "undo" twice walks back two changes.
   Added 2026-08-26 after a misread referent moved a reminder the person
   could not put back.
