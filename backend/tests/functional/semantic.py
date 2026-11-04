@@ -22,24 +22,9 @@ does not. Those checks are not about meaning and do not flake. This helper
 is for the assertions that were about meaning all along.
 """
 
-import json
-
 import pytest
 
-from backend.core.dependencies import get_routing_llm_client
-
-_VERDICT_SCHEMA = {
-    "type": "object",
-    "properties": {"holds": {"type": "boolean"}},
-    "required": ["holds"],
-    "additionalProperties": False,
-}
-
-_JUDGE_SYSTEM = (
-    "You judge whether a statement about a text is true. Read the text as a "
-    "whole; the statement is about what the text says or does, never about "
-    "which words it uses. Answer only through the schema."
-)
+from backend.services.semantic_judge import judge_answer
 
 
 def states(answer: str, statement: str) -> bool:
@@ -49,26 +34,14 @@ def states(answer: str, statement: str) -> bool:
     routing model is the judge because its engine enforces the schema (the
     property this repository verified before pinning six callers to it) and
     because at temperature zero the same answer gets the same verdict.
+
+    The judge itself lives in backend/services/semantic_judge.py so the live
+    sweep can call it from the runtime container, which has no pytest. Here
+    an unreachable judge is a skip; the sweep treats it as a failed journey.
     """
-    llm = get_routing_llm_client()
-    messages = [
-        {"role": "system", "content": _JUDGE_SYSTEM},
-        {
-            "role": "user",
-            "content": (
-                f"Text:\n{answer}\n\n"
-                f"Statement about the text: {statement}\n\n"
-                "Is the statement true of the text?"
-            ),
-        },
-    ]
     try:
-        result = llm.chat(messages, 1_024, _VERDICT_SCHEMA, 0.0)
+        return judge_answer(answer, statement)
     except Exception as exc:  # pragma: no cover - depends on the host runtime
         pytest.skip(
             f"routing model unreachable for semantic assert: {type(exc).__name__}"
         )
-    try:
-        return bool(json.loads(str(result.get("content") or "{}")).get("holds"))
-    except json.JSONDecodeError:  # pragma: no cover - engine contract violated
-        pytest.skip("routing engine returned non-JSON despite schema enforcement")

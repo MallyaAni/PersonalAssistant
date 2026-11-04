@@ -637,14 +637,17 @@ class Sweep:
 
     @staticmethod
     def judge(answer: str, statement: str) -> bool | None:
-        # `states` raises pytest's Skipped - a BaseException, not an
-        # Exception - when the judge model is unreachable or answers with
-        # non-JSON. Catching only Exception let that crash the whole sweep;
-        # catching BaseException without this filter would swallow a Ctrl-C.
+        # The judge is called directly, not through the functional tests'
+        # `states`: that module imports pytest, and the sweep runs inside the
+        # runtime container, where pytest is absent. The import failed for
+        # every statement and the harness reported "judge unavailable" while
+        # the replies were fine. judge_answer raises on an outage or a
+        # non-JSON verdict; None here is a failed journey, never a pass.
+        # Catching BaseException without this filter would swallow a Ctrl-C.
         try:
-            from backend.tests.functional.semantic import states
+            from backend.services.semantic_judge import judge_answer
 
-            return bool(states(answer, statement))
+            return judge_answer(answer, statement)
         except (KeyboardInterrupt, SystemExit, asyncio.CancelledError):
             raise
         except BaseException:
