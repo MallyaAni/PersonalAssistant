@@ -9,8 +9,9 @@ which never consults the learned distribution or fifteen-minute timing.
 Commit `a3299064`; release `c3e44211...`, evidence `eff9ece2...`, config
 `9bb15bb9...`; `approved_at` 2026-11-04T18:05:42Z; archive
 `20261104T180542-leader-bfe1fa76...`; admission `ADMITTED` on host and
-container; deploy `a3299064`; `.post-deploy-status`
-"2026-11-04T18:27:35Z a3299064 ok (cheap)". Economics unchanged from `/3`.
+container; deploy `058b7aed` (docs-only difference from the reviewed
+`a3299064`); `.post-deploy-status` "2026-11-04T18:32:28Z 058b7aed ok
+(cheap)". Economics unchanged from `/3`.
 Full unit gate: 11,730 passed, 94 skipped, 10 xfailed, 48 subtests in 907.33s;
 targeted trading gate: 180 passed, 1 xfailed. Resolution:
 [research/forward-record-blocker-2026-11-04.md](research/forward-record-blocker-2026-11-04.md).

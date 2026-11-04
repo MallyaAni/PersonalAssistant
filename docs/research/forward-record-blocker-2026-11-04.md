@@ -236,9 +236,11 @@ Option 1 was implemented and installed through the release ceremony on
 - Verification before install: full unit gate 11,730 passed, 94 skipped, 10
   xfailed, 48 subtests in 907.33s; targeted trading gate 180 passed, 1
   xfailed.
-- Deploy: `scripts/deploy.sh` fast-forwarded the deploy checkout to
-  `a3299064`; admission `ADMITTED` on host and container;
-  `.post-deploy-status` `2026-11-04T18:27:35Z a3299064 ok (cheap)`.
+- Deploy: `scripts/deploy.sh` fast-forwarded the deploy checkout the cron
+  jobs import (`~/deploy/anios`) to `058b7aed`; admission `ADMITTED` on host
+  and container; `.post-deploy-status`
+  `2026-11-04T18:32:28Z 058b7aed ok (cheap)`. The trading path is identical
+  to the reviewed `a3299064`; the later commits are docs only.
 - Candidate record:
   `docs/research/trading-approval-candidates-2026-11-04/report-bound-leader-live-path/`.
 - Known degradations: the learned intraday entry display, the saved

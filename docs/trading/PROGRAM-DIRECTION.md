@@ -1,9 +1,9 @@
 # Trading program direction
 
 Status: **binding direction document**. Written 2026-11-03. Last verified
-2026-11-04 against main `a5944827` and the live installed state in
-`data/market/desk/learned-holding/` (deployed commit `a3299064`; the trading
-path is identical between the two commits). It supersedes the direction and live-state
+2026-11-04 against main `058b7aed` and the live installed state in
+`data/market/desk/learned-holding/` (deployed commit `058b7aed`; the trading
+path is identical to the reviewed `a3299064`). It supersedes the direction and live-state
 claims of `docs/research/trading-program-2026-10-28.md`; that note remains the
 historical program record. Process rules remain `docs/trading/RULES.md`; the
 code map remains `docs/trading/CODE_MAP.md`; the current handoff remains
@@ -84,9 +84,10 @@ while A, exit below A (`ENTRY_GRADE = 2`, `HOLD_GRADE = 2`, `exit_letter =
 The installed release is `c3e44211031f2f4246c09eb8bbf3b5e7c5d7d2f23fe0f1fa4aa95b381618b360`;
 evidence `eff9ece2f2e3c516c553321e83454c43d5c99726b1226c14d18151ab379a878b`;
 config `9bb15bb968a2c02856a8fad4e775a2218453fc3323d5d44e729e06d5fd4a06e2`;
-installed 2026-11-04T18:05:42Z; deployed commit `a3299064`; admission
-ADMITTED on host and container; `.post-deploy-status`
-"2026-11-04T18:27:35Z a3299064 ok (cheap)". This release is the report-bound
+installed 2026-11-04T18:05:42Z; deployed commit `058b7aed` (the trading path
+is identical to the reviewed `a3299064`; the later commits are docs only);
+admission ADMITTED on host and container; `.post-deploy-status`
+"2026-11-04T18:32:28Z 058b7aed ok (cheap)". This release is the report-bound
 leader live path: the policy version and economics are unchanged from the
 2026-11-03 `/3` install (release `4966fd7d...`, evidence `17c291ad...`), but
 the live input binding no longer requires the expired October monthly
@@ -519,6 +520,7 @@ Gate: the pre-registered review. Owner: owner and program.
   2026-11-04T18:05:42Z; archive
   `20261104T180542-leader-bfe1fa76433c4545a94bd896d774bf20`; evidence
   `eff9ece2...`, release `c3e44211...`, config `9bb15bb9...`; admission
-  ADMITTED. Deploy `a3299064`; `.post-deploy-status`
-  "2026-11-04T18:27:35Z a3299064 ok (cheap)". Economics unchanged from `/3`.
-  The forward record starts with the first ordinary nightly after deploy.
+  ADMITTED. Deploy `058b7aed` (docs-only difference from the reviewed
+  `a3299064`); `.post-deploy-status` "2026-11-04T18:32:28Z 058b7aed ok
+  (cheap)". Economics unchanged from `/3`. The forward record starts with
+  the first ordinary nightly after deploy.
