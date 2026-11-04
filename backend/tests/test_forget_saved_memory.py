@@ -34,7 +34,7 @@ class _Log:
     async def mark_undone(self, user_id, change_id):
         self.undone.append(change_id); return True
 
-    async def record_change(self, user_id, kind, operation, before, after, task_id=None, conversation_id=None):
+    async def record_change(self, user_id, kind, operation, before, after, task_id=None, conversation_id=None, turn_id=None):
         self.recorded.append((kind, operation, before, after)); return {}
 
 

@@ -109,7 +109,7 @@ class _Tasks:
         self.deleted.append(task_id)
         return True
 
-    async def record_change(self, user_id, kind, operation, before, after, task_id=None, conversation_id=None):
+    async def record_change(self, user_id, kind, operation, before, after, task_id=None, conversation_id=None, turn_id=None):
         if self.change_fails:
             raise RuntimeError("the change log is unreachable")
         change = {
