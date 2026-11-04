@@ -165,6 +165,7 @@ question is answered and is not retried without a new pre-registration.
 | 2026-11-02 | A hold vs B hold significance | **FAIL**: +0.77 bp/day, Newey-West t 1.02, bootstrap -0.66..+2.18 | none | `installed-rule-significance-results-2026-11-02.md` |
 | 2026-11-02 | no-floor control | drift dominant; 17.088% retired; floor +0.330 CAGR, +0.009 Sharpe, -0.605 median drawdown, worst unchanged | none | `no-floor-control-results-2026-11-02.md` |
 | 2026-11-02 | sector-flow gate, flow tilt, QQQ brake, joint | **all four FAIL**: best arm 14.042% / 0.844; tilt paired -0.096 bp/day, t -0.47; brake 0/20 offsets; joint worst | none | `sector-flow-overlay-results-2026-11-02.md` |
+| 2026-11-03 | universe widening: honest `/3`, IT caps 50/35, volatility target 0.20, live book, live book + Utilities | **FAIL**: no arm passes; H0 13.28% / 0.816 / -39.42% worst; H50 inert; H35 +0.052 bp/day, t 0.84; HR -0.261 bp/day, t -2.03, worst -39.04%; L0 19.86% / 0.935 / -37.69%; LU 18.42% / 0.897 / -35.43%, turnover 10.06x | none | `universe-widening-results-2026-11-03.md` |
 
 ### Closed experiments
 
@@ -206,7 +207,7 @@ says what changed and why.
 |---|---|---|
 | Does each installed component earn its complexity? | **measured and installed 2026-11-03**; only the P/E tilt was removable (marginal +0.053 bp/day, Newey-West t 0.39, not significant; removal within tolerance and lower turnover). The volatility target, floor and leader tilt are kept because removal breaches a pre-registered tolerance; the cap is a risk limit and is inert on this universe. Installed as `/3`: the live ordering without P/E (`leader_ewma_minA_floor50_live`). | closed; milestone 2 |
 | Why is turnover 8.44x/year on the scorecard and about 30x/year on the live paper, against a 2x target? | **measured 2026-11-03; FAIL, no fix**: cadence is not dominant (daily 1.82x the 20-session arm, 51% of the live 30.2x); the 20-session fix fails the turnover-halving and drawdown gate; the live ledger's largest group is grade-driven exits and redeploys (27.7%). | closed; next diagnosis is a separate pre-registration |
-| Should the live book stay AI/software-concentrated or widen? | **decided 2026-11-03 under the owner's delegation**: keep the AI/software mandate live for the `/3` forward record and authorize the universe-widening study; no install unless the study passes the objective and the -35% worst-offset mandate and the owner authorizes the release. Evidence: the honest A/A+ book is diversified (IT 31.0% of 84 names, ten other sectors 69.0%); the live book is 85.1% IT eligible and 93.5% IT selected; the prior utilities widening improves return and Sharpe but is -42.05% worst drawdown, beyond the -35% mandate. | pre-registered widening study; milestone 3 gate remains the study result |
+| Should the live book stay AI/software-concentrated or widen? | **study FAIL 2026-11-03; keep the AI/software mandate**: the honest `/3` fails Sharpe, CAGR and the worst offset (13.28% / 0.816 / -39.42%); the 50% IT cap is inert; the 35% cap is marginal and insignificant; the 0.20 volatility target costs return and still fails the worst offset; the live book's `/3` fails Sharpe and the worst offset (19.86% / 0.935 / -37.69%); the Utilities widening improves drawdown but remains at -35.43% and raises turnover to 10.06x. | closed; milestone 4 |
 | Which branches, worktrees and research modules are dead? | audit complete; review pending | code/branch hygiene, milestone 4 |
 | Does the live rule work out of sample? | `/3` forward record restarted 2026-11-03; the `/2` record had zero verified sessions; acceptance pending | 252-session review, milestone 5 |
 
@@ -385,7 +386,22 @@ stays and the program moves to milestone 4.
 
 Pre-registration: `docs/research/universe-widening-preregistration-2026-11-03.md`.
 
-Gate: study result recorded with the full objective and the -35% worst-offset
+**Result (2026-11-03): FAIL.** The study's six fixed arms were run on the
+2026-10-30 vintage; H0 reproduced its anchor exactly. H0 (honest `/3`) is
+13.28% CAGR, -34.39% median drawdown, -39.42% worst drawdown and 0.816
+Sharpe at 25 bp; it fails Sharpe, CAGR against SPY and the worst-offset
+mandate. H50 is exactly inert; H35 changes +0.052 bp/day (Newey-West t 0.84,
+not significant) and still fails; HR lowers CAGR by 0.57 points, improves
+median drawdown by 2.69 points and still leaves the worst offset at -39.04%.
+The live book's `/3` (L0) is 19.86% / 0.935 / -37.69%, failing Sharpe and the
+worst-offset mandate; the Utilities widening (LU) is 18.42% / 0.897 /
+-35.43%, still beyond the mandate, with turnover 10.06x against 7.62x. No arm
+passes, so the mandate stays and no install is prepared. The prior utilities
+measurement is not reproduced on current code; the current L0/LU are the
+canonical measurements. Result:
+`docs/research/universe-widening-results-2026-11-03.md`.
+
+Gate: met by the FAIL result and the recorded decision to keep `/3` and the
 mandate. Owner: program for the study; owner for any install.
 
 ### Milestone 4: code and branch hygiene
@@ -460,3 +476,8 @@ Gate: the pre-registered review. Owner: owner and program.
   arms: H0 (installed `/3` on the honest universe, anchor
   `0.13275424766467725`), H50/H35 (IT caps), HR (volatility target 0.20), L0
   (installed `/3` on the live book) and LU (the live book plus Utilities).
+- **2026-11-03:** milestone 3 study FAIL. H0 13.28% / 0.816 / -39.42% worst;
+  H50 inert; H35 +0.052 bp/day, t 0.84; HR -0.261 bp/day, t -2.03, worst
+  -39.04%; L0 19.86% / 0.935 / -37.69%; LU 18.42% / 0.897 / -35.43%, turnover
+  10.06x. No arm passes; keep `/3` and the AI/software mandate. Result:
+  `docs/research/universe-widening-results-2026-11-03.md`.

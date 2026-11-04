@@ -61,18 +61,27 @@ and the milestone 2 turnover result; the 2026-11-02 section below is history.
   `docs/research/universe-mandate-memo-2026-11-03.md`.
 - **Decision (2026-11-03, under the owner's delegation of next steps):** keep
   the AI/software mandate live for the `/3` forward record and authorize the
-  pre-registered universe-widening study; no install unless the study passes
-  the objective and the -35% worst-offset mandate and the owner authorizes the
-  release. Pre-registration:
-  `docs/research/universe-widening-preregistration-2026-11-03.md`. The study
-  measures H0 (installed `/3` on the honest universe), H50/H35 (IT sector caps
-  50%/35%), HR (volatility target 0.20), L0 (installed `/3` on the live book)
-  and LU (the live book widened with the Utilities sector). H0's anchor is
-  13.275424766467725% median CAGR at 25 bp. No live change.
-- **Next.** Run the universe-widening study and write its results doc. If it
-  fails, milestone 4 (code and branch hygiene). The 252-session forward record
-  restarts under `/3`; the paper account's 37 sessions were built under `/1`
-  and are account history, not the `/3` record.
+  pre-registered universe-widening study. Pre-registration:
+  `docs/research/universe-widening-preregistration-2026-11-03.md`.
+- **Milestone 3 — universe-widening study: FAIL.** H0 (installed `/3` on the
+  honest universe) is 13.28% CAGR, -34.39% median drawdown, -39.42% worst
+  drawdown and 0.816 Sharpe at 25 bp; it fails Sharpe, CAGR against SPY and
+  the -35% worst-offset mandate. H50 is exactly inert; H35 is +0.052 bp/day,
+  Newey-West t 0.84, not significant, and still fails. HR (volatility target
+  0.20) is 12.71% / 0.817 / -39.04% worst, a return cost that still fails the
+  worst offset. L0 (live book) is 19.86% / 0.935 / -37.69%, failing Sharpe and
+  the worst offset and underperforming the equal-weight live book in 20/20
+  offsets. LU (live book + 29 Utilities) is 18.42% / 0.897 / -35.43%, still
+  beyond the mandate, with turnover 10.06x against 7.62x. No arm passes, so
+  the mandate stays and no install is prepared. The prior utilities
+  measurement is not reproduced on current code; L0/LU are the canonical
+  current-code measurements. Result:
+  `docs/research/universe-widening-results-2026-11-03.md`. No live change.
+- **Next.** Milestone 4 (code and branch hygiene): produce the dead-code and
+  branch audit, archive stale branches with tags, delete only after owner
+  review, run the full gate and confirm admission unchanged. The 252-session
+  forward record continues under `/3`; the paper account's 37 sessions were
+  built under `/1` and are account history, not the `/3` record.
 
 ## CURRENT 2026-11-02 — A hold installed and deployed; forward record restarts under /2
 

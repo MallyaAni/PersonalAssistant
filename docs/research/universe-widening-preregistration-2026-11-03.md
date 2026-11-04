@@ -7,6 +7,9 @@ rule, order, grade, prompt or risk dial, and prepares no release. Any install
 is a separate release-ceremony action requiring the owner's explicit
 authorization.
 
+**Result (2026-11-03): FAIL.** No arm passed. See
+`universe-widening-results-2026-11-03.md`.
+
 It follows `docs/research/universe-mandate-memo-2026-11-03.md` and milestone 3
 of `docs/trading/PROGRAM-DIRECTION.md`. The memo established that the live book
 is concentrated (85.1% IT eligible, 93.5% IT selected) while the honest
