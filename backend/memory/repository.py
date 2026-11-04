@@ -67,6 +67,46 @@ class MemoryRepository:
         await self.session.refresh(profile)
         return profile
 
+    # Merge a few preference keys into the profile, under a lock.
+    #
+    # `upsert_user_profile` replaces the whole document, which is right for the
+    # explicit profile PUT - the person is deliberately rewriting it - and
+    # wrong for two features each setting their own key. Read-modify-write on
+    # the whole dict let a style write and a check-in toggle race, and the
+    # later commit silently dropped the other's key. A None value removes its
+    # key, so a cleared style does not linger as an empty string.
+    async def update_preferences(
+        self, user_id: str, patch: dict[str, Any]
+    ) -> UserProfile:
+        # The advisory lock also serializes the first write, when there is no
+        # row for SELECT ... FOR UPDATE to lock yet.
+        await transaction_advisory_lock(self.session, "user-profile", user_id)
+        profile = (
+            await self.session.execute(
+                select(UserProfile)
+                .where(UserProfile.user_id == user_id)
+                .with_for_update()
+            )
+        ).scalar_one_or_none()
+        if profile is None:
+            profile = UserProfile(
+                user_id=user_id,
+                name=None,
+                preferences={
+                    key: value for key, value in patch.items() if value is not None
+                },
+            )
+            self.session.add(profile)
+        else:
+            merged = dict(profile.preferences or {})
+            merged.update(patch)
+            profile.preferences = {
+                key: value for key, value in merged.items() if value is not None
+            }
+        await self.session.commit()
+        await self.session.refresh(profile)
+        return profile
+
     async def get_current_fact(
         self,
         user_id: str,

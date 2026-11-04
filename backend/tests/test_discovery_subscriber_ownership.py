@@ -171,6 +171,83 @@ async def test_the_recorded_owner_is_read_back_not_the_earliest_row():
         await _cleanup(user_id)
 
 
+# Delivery resolves an address by taking the first row on the requested
+# channel, so the listing has to put the owner first. Here the guest's row is
+# older, which is the shape that used to send the owner's reminders to the
+# guest's phone.
+@pytest.mark.asyncio
+async def test_delivery_resolves_the_owner_before_an_older_guest():
+    user_id = f"own_{uuid.uuid4().hex[:12]}"
+    try:
+        async with AsyncSessionLocal() as session:
+            guest = DiscoverySubscriber(
+                user_id=user_id,
+                channel="imessage",
+                address="+15550199",
+                address_digest="d" * 64,
+                token="u" * 64,
+                active=True,
+                consented_at=_NOW - timedelta(days=3),
+                approved_at=_NOW - timedelta(days=3),
+                is_owner=False,
+                created_at=_NOW - timedelta(days=3),
+            )
+            owner = DiscoverySubscriber(
+                user_id=user_id,
+                channel="imessage",
+                address="+15550100",
+                address_digest="c" * 64,
+                token="t" * 64,
+                active=True,
+                consented_at=_NOW,
+                approved_at=_NOW,
+                is_owner=True,
+                created_at=_NOW,
+            )
+            session.add_all([guest, owner])
+            await session.commit()
+
+            listed = await SubscriberRepository(session).list_subscribers(
+                user_id, deliverable_only=True
+            )
+
+        assert [person.address for person in listed] == ["+15550100", "+15550199"]
+
+        from backend.workers.run_worker import _enrolled_address
+
+        assert await _enrolled_address(user_id, "imessage") == "+15550100"
+    finally:
+        await _cleanup(user_id)
+
+
+# A task saved from a group turn carries "imessage_group"; the address must
+# come from that channel rather than from whichever row was enrolled first.
+@pytest.mark.asyncio
+async def test_delivery_resolves_the_tasks_own_channel():
+    user_id = f"own_{uuid.uuid4().hex[:12]}"
+    try:
+        async with AsyncSessionLocal() as session:
+            people = SubscriberRepository(session)
+            direct = await people.enroll(
+                user_id, "imessage", "+15550100", consented=True, owner=True
+            )
+            room = await people.enroll(
+                user_id, "imessage_group", "iMessage;+;chat778899001122", consented=True
+            )
+
+            listed = await people.list_subscribers(user_id, deliverable_only=True)
+
+        assert direct.is_owner is True
+        assert room.deliverable is True
+        assert [person.channel for person in listed] == ["imessage", "imessage_group"]
+        assert [person.address for person in listed] == [
+            "+15550100",
+            "iMessage;+;chat778899001122",
+        ]
+    finally:
+        await _cleanup(user_id)
+
+
 # The one-per-account rule is a constraint, not a convention. A second owner
 # cannot be written even by hand, which is what makes the transfer above safe
 # to implement as "demote, flush, promote".

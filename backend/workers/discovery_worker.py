@@ -146,7 +146,11 @@ class DiscoveryWorker:
     # Claim and execute at most one run, so the loop stays testable.
     async def run_once(self) -> bool:
         async with AsyncSessionLocal() as session:
-            run = await DiscoveryRunRepository(session).claim_next(
+            runs = DiscoveryRunRepository(session)
+            # A flagged run whose worker died is invisible to `claim_next`; close
+            # it before looking for work so it does not sit running forever.
+            await runs.finalize_abandoned_cancellations()
+            run = await runs.claim_next(
                 self.worker_id,
                 settings.DISCOVERY_RUN_LEASE_SECONDS,
             )
@@ -223,6 +227,11 @@ class DiscoveryWorker:
                     # already announced finds it never sent.
                     await session.commit()
 
+                # The sweep is the long stage, so a cancellation requested
+                # while it ran is seen here, before anything is delivered.
+                if await runs.cancellation_requested(run_id):
+                    raise DiscoveryRunCancelledError()
+
                 # The message is written for this person, so it is handed the
                 # same approved context the sweep aimed with. Delivery withholds
                 # it when anyone but the owner is on the recipient list.
@@ -261,9 +270,12 @@ class DiscoveryWorker:
             )
         except DiscoveryRunCancelledError:
             async with AsyncSessionLocal() as session:
-                await DiscoveryRunRepository(session).mark_cancelled(
-                    run_id, self.worker_id
-                )
+                runs = DiscoveryRunRepository(session)
+                # `mark_cancelled` needs the lease this worker may have lost;
+                # `finalize_cancelled` closes the row on the flag alone, so a
+                # cancellation is terminal either way.
+                await runs.mark_cancelled(run_id, self.worker_id)
+                await runs.finalize_cancelled(run_id)
             logger.info("discovery_run_cancelled", extra={"run_id": run_id})
         except Exception:
             async with AsyncSessionLocal() as session:

@@ -365,9 +365,11 @@ async def test_lease_renewal_requires_the_owning_worker():
         await _cleanup(user_id)
 
 
-# A cancelled run must never be picked up, even while it is still queued.
+# A cancelled run must never be picked up, even while it is still queued. A
+# queued run has nothing to interrupt, so the request closes it outright
+# rather than leaving a flagged row no worker may claim.
 @pytest.mark.asyncio
-async def test_cancellation_removes_a_run_from_the_claimable_set():
+async def test_cancelling_a_queued_run_closes_it_outright():
     user_id = f"run_{uuid.uuid4().hex[:12]}"
     try:
         async with AsyncSessionLocal() as session:
@@ -379,10 +381,79 @@ async def test_cancellation_removes_a_run_from_the_claimable_set():
             run_id = [run for run in queued if run["user_id"] == user_id][0]["id"]
 
             assert await repo.request_cancel(user_id, run_id) is True
-            assert await repo.cancellation_requested(run_id) is True
+            closed = await repo.get_owned(user_id, run_id)
+            assert closed["status"] == "cancelled"
+            assert closed["error_code"] == "cancelled"
+            assert closed["completed_at"] is not None
 
             claimed = await repo.claim_next("worker-a", lease_seconds=60)
             assert claimed is None or claimed["id"] != run_id
+    finally:
+        await _cleanup(user_id)
+
+
+# A claimed run cannot be closed from under its worker: the request is a flag,
+# and the worker's own finalisation writes the terminal state. Without it the
+# flag left a `running` row that `claim_next` excludes forever.
+@pytest.mark.asyncio
+async def test_cancelling_a_claimed_run_is_finalised_by_the_worker():
+    user_id = f"run_{uuid.uuid4().hex[:12]}"
+    try:
+        async with AsyncSessionLocal() as session:
+            repo = DiscoveryRunRepository(session)
+            await _account(session, user_id)
+            await repo.upsert_schedule(user_id, _daily())
+            await _force_due(session, user_id)
+            await repo.enqueue_due_runs()
+            claimed = await repo.claim_next("worker-a", lease_seconds=60)
+            assert claimed is not None
+
+            assert await repo.request_cancel(user_id, claimed["id"]) is True
+            # Still running: the worker has to stop at its next stage.
+            assert (await repo.get_owned(user_id, claimed["id"]))["status"] == "running"
+            assert await repo.finalize_cancelled(claimed["id"]) is True
+
+            closed = await repo.get_owned(user_id, claimed["id"])
+            assert closed["status"] == "cancelled"
+            assert closed["completed_at"] is not None
+            # Idempotent: a second close has nothing left to do.
+            assert await repo.finalize_cancelled(claimed["id"]) is False
+    finally:
+        await _cleanup(user_id)
+
+
+# A worker that dies between the request and its own finalisation leaves a
+# flagged `running` row with an expired lease. `claim_next` skips flagged rows,
+# so the abandoned sweep is the only thing that can close it.
+@pytest.mark.asyncio
+async def test_a_flagged_run_whose_worker_died_is_closed_by_the_sweep():
+    user_id = f"run_{uuid.uuid4().hex[:12]}"
+    try:
+        async with AsyncSessionLocal() as session:
+            repo = DiscoveryRunRepository(session)
+            await _account(session, user_id)
+            await repo.upsert_schedule(user_id, _daily())
+            await _force_due(session, user_id)
+            await repo.enqueue_due_runs()
+            claimed = await repo.claim_next("worker-a", lease_seconds=60)
+            assert claimed is not None
+            # A digest waiting on a retry, so there is something to clear.
+            assert await repo.defer_delivery(
+                claimed["id"], "the digest", datetime.now(UTC) + timedelta(minutes=5)
+            )
+            assert await repo.request_cancel(user_id, claimed["id"]) is True
+
+            # The worker dies without acting on the flag; the lease lapses.
+            await _expire_lease(session, claimed["id"])
+            other = await repo.claim_next("worker-b", lease_seconds=60)
+            assert other is None or other["id"] != claimed["id"]
+
+            assert await repo.finalize_abandoned_cancellations() == 1
+            row = await session.get(DiscoveryRun, uuid.UUID(claimed["id"]))
+            assert row.status == "cancelled"
+            assert row.delivery_message is None
+            assert row.deliver_after is None
+            assert row.completed_at is not None
     finally:
         await _cleanup(user_id)
 

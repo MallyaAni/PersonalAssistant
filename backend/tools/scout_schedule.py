@@ -109,7 +109,14 @@ def parse(arguments: dict[str, Any]) -> ScoutScheduleAction | None:
     minute = arguments.get("minute")
     minute = minute if isinstance(minute, int) and 0 <= minute <= 59 else 0
     weekday = arguments.get("weekday")
-    weekday = weekday if isinstance(weekday, int) and 0 <= weekday <= 6 else 0
+    if cadence == "weekly":
+        # A weekly sweep with no day is not a weekly sweep. Defaulting to 0
+        # is how "weekly on Sundays" landed on Monday; refusing the call lets
+        # the router ask which day instead of silently picking one.
+        if not isinstance(weekday, int) or not 0 <= weekday <= 6:
+            return None
+    else:
+        weekday = weekday if isinstance(weekday, int) and 0 <= weekday <= 6 else 0
     return ScoutScheduleAction(
         cadence=str(cadence), hour=hour, minute=minute, weekday=weekday
     )

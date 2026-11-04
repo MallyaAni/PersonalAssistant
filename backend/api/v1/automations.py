@@ -113,7 +113,18 @@ async def toggle_task(
     tasks: DependencyScheduledTasks,
 ) -> dict[str, Any]:
     authorize_user(user_id, identity)
-    if not await tasks.set_enabled(user_id, task_id, body.enabled):
+    outcome = await tasks.set_enabled(user_id, task_id, body.enabled)
+    if outcome["kind"] == "missing":
         raise HTTPException(status_code=404, detail="Task not found")
-    task = await tasks.get_owned(user_id, task_id)
-    return _task_view(task) if task else {"id": task_id, "enabled": body.enabled}
+    if outcome["kind"] == "missed":
+        # A one-time task whose stated instant has passed is not resumed: it
+        # would fire a stale slot or apologise for one the person themselves
+        # paused. The panel asks for a new time instead.
+        raise HTTPException(
+            status_code=409,
+            detail=(
+                "That one-time reminder's time has already passed. "
+                "Set a new time instead."
+            ),
+        )
+    return _task_view(outcome["task"])

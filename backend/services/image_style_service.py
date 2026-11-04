@@ -19,6 +19,9 @@ class ProfileStore(Protocol):
     async def upsert_user_profile(
         self, user_id: str, name: str | None, preferences: dict[str, Any]
     ) -> dict[str, Any]: ...
+    async def update_preferences(
+        self, user_id: str, patch: dict[str, Any]
+    ) -> dict[str, Any]: ...
 
 
 class ImageStyleService:
@@ -56,14 +59,12 @@ class ImageStyleService:
         return descriptor
 
     async def _save(self, user_id: str, style: str) -> None:
-        profile = await self.memory.get_user_profile(user_id)
-        preferences = dict(profile.get("preferences") or {})
+        # One key merged under a lock: replacing the whole document here could
+        # drop a concurrent check-in toggle, and vice versa.
         cleaned = style.strip()[:_MAX_STYLE_CHARS]
-        if cleaned:
-            preferences["image_style"] = cleaned
-        else:
-            preferences.pop("image_style", None)
-        await self.memory.upsert_user_profile(user_id, profile.get("name"), preferences)
+        await self.memory.update_preferences(
+            user_id, {"image_style": cleaned or None}
+        )
 
     async def _distill(self, existing: str, feedback: str) -> str | None:
         messages = [

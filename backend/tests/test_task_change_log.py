@@ -41,7 +41,8 @@ async def test_a_cancelled_task_comes_back_from_its_snapshot_under_its_old_id():
 
             latest = await repo.latest_undoable(user)
             assert latest["id"] == change["id"]
-            restored = await repo.restore(user, latest["before"])
+            restored, past_once = await repo.restore(user, latest["before"])
+            assert past_once is False
             assert restored["id"] == task["id"]
             assert (restored["cadence"], restored["hour"], restored["enabled"]) == ("daily", 18, True)
             assert restored["next_run_at"] is not None

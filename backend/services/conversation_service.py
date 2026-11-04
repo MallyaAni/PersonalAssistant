@@ -116,7 +116,9 @@ from backend.services.search_planner import SearchPlanner
 from backend.skills.repository import SkillRepository
 from backend.services.checkin_arming import (
     arm_check_in,
+    is_check_in,
     stand_down,
+    waiting_check_ins,
     waiting_subjects,
 )
 from backend.tasks.repository import ScheduledTaskRepository
@@ -900,7 +902,47 @@ def _answering(metadata: dict[str, Any] | None, history: list[dict[str, Any]]) -
     replied_to = str((metadata or {}).get("replying_to") or "").strip()
     if replied_to:
         return replied_to
+    # A reminder or check-in fires on the task's own conversation, which the
+    # live thread never sees, so "it went great" arrived with nothing to
+    # answer. Delivery records the last bubble it sent and when; that is the
+    # question only if it is newer than the thread's last turn - otherwise
+    # the thread has moved on and its own last response is the subject.
+    previous = str((metadata or {}).get("previous_reply") or "").strip()
+    if previous:
+        previous_at = _epoch((metadata or {}).get("previous_reply_at"))
+        last_at = _last_turn_at(history)
+        if previous_at and (last_at is None or previous_at > last_at):
+            return previous
     return str((history[-1].get("response") or "")) if history else ""
+
+
+# A moment as an epoch second, from an epoch number or an ISO timestamp.
+def _epoch(value: Any) -> float:
+    if isinstance(value, (int, float)):
+        return float(value)
+    raw = str(value or "").strip()
+    if not raw:
+        return 0.0
+    try:
+        return float(raw)
+    except ValueError:
+        pass
+    try:
+        when = datetime.fromisoformat(raw)
+    except ValueError:
+        return 0.0
+    if when.tzinfo is None:
+        when = when.replace(tzinfo=UTC)
+    return when.timestamp()
+
+
+# When the thread's last turn was said, as an epoch second, or None when the
+# history is empty or carries no usable timestamp.
+def _last_turn_at(history: list[dict[str, Any]]) -> float | None:
+    if not history:
+        return None
+    at = _epoch(history[-1].get("created_at"))
+    return at or None
 # What this turn decided and did - route, picker, proposals, outcomes, search
 # state - saved with the turn as extra_data["trace"] and read back by
 # backend/cli/explain_turn.py. Reconstructing 2026-08-26's chain of three
@@ -1214,8 +1256,17 @@ def _mark_turn(
 # to an unbounded search rather than to no search - the person still gets
 # their answer, just from all of history.
 def _stated_window(
-    since: str | None, until: str | None
+    since: str | None, until: str | None, zone: Any | None = None
 ) -> tuple[datetime | None, datetime | None]:
+    """The instants the model's words name, resolved against the reader's clock.
+
+    A bare date is midnight where the person is, not in UTC: a Sydney reader
+    asking "what did Scout send me today?" must not exclude a digest sent at
+    07:00 local because that was 20:00 UTC the day before. With no zone known
+    the old UTC reading stands, because a wrong zone is worse than a stated
+    default.
+    """
+
     def _parse(value: str | None) -> datetime | None:
         if not value:
             return None
@@ -1223,7 +1274,14 @@ def _stated_window(
             moment = datetime.fromisoformat(value.strip())
         except ValueError:
             return None
-        return moment if moment.tzinfo else moment.replace(tzinfo=UTC)
+        if moment.tzinfo:
+            return moment
+        if zone is not None:
+            try:
+                return moment.replace(tzinfo=zone)
+            except (TypeError, ValueError):
+                pass
+        return moment.replace(tzinfo=UTC)
 
     start = _parse(since)
     end = _parse(until)
@@ -4368,6 +4426,38 @@ class ConversationService:
             logger.warning("Forgetting a saved %s failed", kind, exc_info=True)
         return False
 
+    # Record a change for "undo that" without letting the record decide the
+    # reply. The write it describes has already committed: a dropped
+    # connection between the two commits used to turn a reminder that exists
+    # (and will fire) into "I couldn't set that", and a cancel that already
+    # happened into a denial. Losing the log entry costs the person the undo,
+    # not the change, so it is logged and swallowed.
+    async def _record_change(
+        self,
+        user_id: str,
+        kind: str,
+        operation: str,
+        before: dict[str, Any] | None,
+        after: dict[str, Any] | None,
+        task_id: str | None = None,
+    ) -> None:
+        if self.scheduled_tasks is None:
+            return
+        try:
+            await self.scheduled_tasks.record_change(
+                user_id,
+                kind,
+                operation,
+                before,
+                after,
+                task_id=task_id,
+                conversation_id=_turn_conversation.get(),
+            )
+        except Exception:
+            logger.warning(
+                "change_log_write_failed: %s %s", kind, operation, exc_info=True
+            )
+
     # Set when Scout's own sweep runs and say what happened, as a record the
     # reply reports from. The same path the memory proposal takes for a
     # stated schedule, reached by a named tool instead of a captured fact;
@@ -4403,9 +4493,7 @@ class ConversationService:
                 return {"kind": "invalid", "reason": str(exc), "requested": requested}
             before = await self.discovery_runs.get_schedule(user_id)
             schedule = await self.discovery_runs.upsert_schedule(user_id, cadence)
-            if self.scheduled_tasks is not None:
-                await self.scheduled_tasks.record_change(
-                    user_id, "scout_schedule", "schedule", before, schedule, conversation_id=_turn_conversation.get())
+            await self._record_change(user_id, "scout_schedule", "schedule", before, schedule)
             return {"kind": "scheduled", "schedule": schedule}
         except Exception as exc:
             logger.warning(
@@ -4420,14 +4508,9 @@ class ConversationService:
     async def _apply_scout_digest(
         self, user_id: str, action: ScoutDigestAction
     ) -> dict[str, Any]:
-        since, until = _stated_window(action.since, action.until)
-        try:
-            finds = await self.sent_finds.sent_for(user_id, since=since, until=until)
-        except Exception:
-            logger.warning("Reading back what Scout sent failed", exc_info=True)
-            return {"kind": "failed"}
-        if not finds:
-            return {"kind": "empty"}
+        # The reader's own zone resolves the model's bare dates and is the
+        # zone the items are dated in, so "today" means the same day in both
+        # halves of the answer.
         zone_name = (
             await self._primary_timezone(user_id)
             if self.discovery_profile is not None
@@ -4441,6 +4524,14 @@ class ConversationService:
                 zone = ZoneInfo(zone_name)
             except Exception:
                 zone = None
+        since, until = _stated_window(action.since, action.until, zone)
+        try:
+            finds = await self.sent_finds.sent_for(user_id, since=since, until=until)
+        except Exception:
+            logger.warning("Reading back what Scout sent failed", exc_info=True)
+            return {"kind": "failed"}
+        if not finds:
+            return {"kind": "empty"}
         return {
             "kind": "digest",
             # The loop's next decision reads this to know the evidence is in
@@ -4767,10 +4858,9 @@ class ConversationService:
         return preferences.get("check_ins") is True
 
     async def _set_check_ins(self, user_id: str, enabled: bool) -> None:
-        profile = await self.memory.get_user_profile(user_id)
-        preferences = dict((profile or {}).get("preferences") or {})
-        preferences["check_ins"] = enabled
-        await self.memory.upsert_user_profile(user_id, (profile or {}).get("name"), preferences)
+        # Merged under a lock, not a whole-document replace: a style write
+        # racing this one would otherwise drop the toggle, and vice versa.
+        await self.memory.update_preferences(user_id, {"check_ins": enabled})
 
     # The check-in tool: on, off, once, status. Reported through the same
     # outcome record a scheduled task uses, so the reply model is told what
@@ -4796,10 +4886,18 @@ class ConversationService:
                 return {"kind": "check_ins_on", "already": already, "waiting": waiting}
             if action.mode == "off":
                 await self._set_check_ins(user_id, False)
+                # Every enabled check-in, not the first MAX_WAITING: pausing
+                # and resuming can leave more than the cap enabled, and "stop
+                # checking in on me" means stop, not "after these".
                 dropped = 0
-                for subject in waiting:
-                    if await stand_down(self.scheduled_tasks, user_id, subject):
-                        dropped += 1
+                for task in await waiting_check_ins(self.scheduled_tasks, user_id):
+                    try:
+                        if await self.scheduled_tasks.delete_owned(
+                            user_id, str(task.get("id"))
+                        ):
+                            dropped += 1
+                    except Exception:
+                        logger.warning("check_in_stand_down_failed", exc_info=True)
                 return {"kind": "check_ins_off", "dropped": dropped}
             timezone = str(await self._primary_timezone(user_id) or "") if self.discovery_profile is not None else ""
             requested = f"a check-in about {action.subject}"
@@ -4822,6 +4920,13 @@ class ConversationService:
                 after_days=after_days,
                 hour=hour,
             )
+            # Asking for a check-in is an explicit opt-in, and the fire-time
+            # gate reads the preference - so arming one while check-ins are
+            # off would create a task that can never fire. Turn it on here,
+            # and say so in the reply.
+            enabled_now = not await self._check_ins_enabled(user_id)
+            if enabled_now:
+                await self._set_check_ins(user_id, True)
             armed = await arm_check_in(
                 self.scheduled_tasks,
                 user_id,
@@ -4831,7 +4936,23 @@ class ConversationService:
                 in_group=str(metadata.get("channel") or "") == "imessage_group",
             )
             if armed.armed:
-                return {"kind": "check_in_armed", "task": armed.task, "subject": check_in.subject}
+                # An armed check-in is an ordinary one-off task, and "undo
+                # that" right after it has to take it back. The change log is
+                # what undo reads, so the arm is recorded like any reminder.
+                await self._record_change(
+                    user_id,
+                    "scheduled",
+                    "create",
+                    None,
+                    armed.task,
+                    task_id=str(armed.task["id"]),
+                )
+                return {
+                    "kind": "check_in_armed",
+                    "task": armed.task,
+                    "subject": check_in.subject,
+                    "enabled_now": enabled_now,
+                }
             return {"kind": "check_in_refused", "reason": armed.reason, "requested": requested, "waiting": waiting}
         except Exception as exc:
             logger.warning("check_ins_action_failed: %s: %s", type(exc).__name__, str(exc)[:200])
@@ -4890,6 +5011,13 @@ class ConversationService:
                 _trace("check_in", f"{'dropped' if dropped else 'not_found'}:{judged.calls_off}")
             if judged.arm is None:
                 return
+            # "Stop checking in on me" may have landed while the judgement was
+            # running: the preference was read before this call, and arming
+            # after the stand-down would create exactly the question the
+            # person just asked not to receive.
+            if not await self._check_ins_enabled(user_id):
+                _trace("check_in", "off_while_judging")
+                return
             outcome = await arm_check_in(
                 self.scheduled_tasks,
                 user_id,
@@ -4904,6 +5032,18 @@ class ConversationService:
                 "check_in",
                 f"{outcome.reason}:{judged.arm.subject}" if outcome.armed else outcome.reason,
             )
+            # Same record as the explicit tool path: "undo that" after a
+            # check-in the assistant armed on its own has to take it back,
+            # and undo acts only on the change log.
+            if outcome.armed and outcome.task is not None:
+                await self._record_change(
+                    user_id,
+                    "scheduled",
+                    "create",
+                    None,
+                    outcome.task,
+                    task_id=str(outcome.task["id"]),
+                )
         except Exception:
             logger.warning("check_in_failed", exc_info=True)
 
@@ -5078,14 +5218,8 @@ class ConversationService:
         # receipt "undo that" right after the confirmation either answered
         # "nothing to undo" or undid an older memory save instead (review,
         # 2026-09-17).
-        await self.scheduled_tasks.record_change(
-            user_id,
-            "scheduled",
-            "create",
-            None,
-            task,
-            task_id=task["id"],
-            conversation_id=_turn_conversation.get(),
+        await self._record_change(
+            user_id, "scheduled", "create", None, task, task_id=task["id"]
         )
         return {"kind": "scheduled", "task": task}
 
@@ -5131,8 +5265,9 @@ class ConversationService:
                     # A row already gone (or refused) must not be reported as
                     # cancelled; the change log would point at nothing.
                     continue
-                await self.scheduled_tasks.record_change(
-                    user_id, "task", "cancel", before, None, task_id=before["id"], conversation_id=_turn_conversation.get())
+                await self._record_change(
+                    user_id, "task", "cancel", before, None, task_id=before["id"]
+                )
                 cancelled.append(before)
             if not cancelled:
                 return {
@@ -5147,8 +5282,14 @@ class ConversationService:
             for before in selected:
                 outcome = await self._reschedule_task(user_id, before["id"], action, before)
                 if outcome.get("kind") == "rescheduled":
-                    await self.scheduled_tasks.record_change(
-                        user_id, "task", "reschedule", before, outcome["task"], task_id=before["id"], conversation_id=_turn_conversation.get())
+                    await self._record_change(
+                        user_id,
+                        "task",
+                        "reschedule",
+                        before,
+                        outcome["task"],
+                        task_id=before["id"],
+                    )
                     moved.append(outcome["task"])
                 elif first_failure is None:
                     first_failure = outcome
@@ -5158,18 +5299,38 @@ class ConversationService:
             # invalid cadence) rather than claiming a move that never happened.
             return {**(first_failure or {}), "kind": first_failure.get("kind") if first_failure else "not_found", "tasks": selected}
         changed: list[dict[str, Any]] = []
+        missed: list[dict[str, Any]] = []
         for before in selected:
-            flipped = await self.scheduled_tasks.set_enabled(
+            outcome = await self.scheduled_tasks.set_enabled(
                 user_id, before["id"], action.operation == "resume"
             )
-            if not flipped:
+            if outcome["kind"] == "missing":
                 # A task that refused the change (missing, not owned) must not
                 # be reported as paused or resumed.
                 continue
-            task = await self.scheduled_tasks.get_owned(user_id, before["id"]) or before
-            await self.scheduled_tasks.record_change(
-                user_id, "task", action.operation, before, task, task_id=before["id"], conversation_id=_turn_conversation.get())
+            if outcome["kind"] == "missed":
+                # A one-time task whose stated instant has passed is not
+                # re-armed: it would fire a stale slot, or apologise for one
+                # that passed while the person themselves had paused it.
+                missed.append(outcome["task"])
+                continue
+            task = outcome["task"]
+            await self._record_change(
+                user_id,
+                "task",
+                action.operation,
+                before,
+                task,
+                task_id=before["id"],
+            )
             changed.append(task)
+        if missed and not changed:
+            return {
+                "kind": "resume_missed",
+                "task": missed[0],
+                "tasks": missed,
+                "requested": action.which,
+            }
         if not changed:
             return {"kind": "not_found", "tasks": selected, "requested": action.which}
         return {"kind": f"{action.operation}d", "tasks": changed}
@@ -5248,7 +5409,12 @@ class ConversationService:
                     enabled=bool(before.get("enabled", True)),
                 )
         elif change["operation"] == "cancel" and before is not None:
-            restored = await self.scheduled_tasks.restore(user_id, before)
+            restored, past_once = await self.scheduled_tasks.restore(user_id, before)
+            if past_once:
+                await self.scheduled_tasks.mark_undone(user_id, change["id"])
+                await self.scheduled_tasks.record_change(
+                    user_id, change["kind"], "undo", after, restored, task_id=change.get("task_id"), conversation_id=_turn_conversation.get())
+                return {"kind": "restored_past", "change": change, "task": restored}
         elif change["operation"] == "reschedule" and before is not None:
             restored = await self.scheduled_tasks.reschedule_owned(
                 user_id,
@@ -5268,10 +5434,17 @@ class ConversationService:
                 instruction=str(before.get("instruction") or "") or None,
             )
         elif change["operation"] in ("pause", "resume") and before is not None:
-            await self.scheduled_tasks.set_enabled(
+            outcome = await self.scheduled_tasks.set_enabled(
                 user_id, str(before["id"]), bool(before.get("enabled", True))
             )
-            restored = await self.scheduled_tasks.get_owned(user_id, str(before["id"]))
+            if outcome["kind"] == "missed":
+                # Undoing a pause would resume a one-time task whose slot has
+                # passed. Nothing is armed, and the change stays on the log so
+                # the person can act on it rather than have it silently closed.
+                return {"kind": "resume_missed", "change": change, "task": outcome["task"]}
+            if outcome["kind"] == "missing":
+                return {"kind": "nothing_to_undo"}
+            restored = outcome["task"]
         else:
             return {"kind": "nothing_to_undo"}
         await self.scheduled_tasks.mark_undone(user_id, change["id"])

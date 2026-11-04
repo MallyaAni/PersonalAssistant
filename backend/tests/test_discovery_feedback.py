@@ -259,6 +259,62 @@ async def test_an_unreachable_bridge_is_not_a_failure():
 
 
 @pytest.mark.asyncio
+async def test_an_identical_bubble_on_two_rows_is_not_guessed_at():
+    # The owner and a guest receive the same digest text, and the bridge
+    # matches a copy by its text. A tapback on either copy would be attributed
+    # to the first position, so neither is asked about: a lost signal is
+    # better than recording a guest's verdict as the owner's.
+    sent = _Sent(
+        (("row-owner", "A jazz trio plays"), ("row-guest", "A jazz trio plays"))
+    )
+    invoker = _Invoker(json.dumps({"reactions": [{"index": 0, "reaction": "liked"}]}))
+
+    assert await ReactionCollector(sent, invoker).collect() == 0
+    assert sent.recorded == []
+    assert invoker.calls == []
+
+
+@pytest.mark.asyncio
+async def test_the_unambiguous_rows_are_still_asked_about():
+    # One duplicated bubble does not silence the rest of the poll: the unique
+    # rows keep their own positions in the request.
+    sent = _Sent(
+        (
+            ("row-owner", "A jazz trio plays"),
+            ("row-guest", "A jazz trio plays"),
+            ("row-2", "A guided marsh walk"),
+        )
+    )
+    invoker = _Invoker(json.dumps({"reactions": [{"index": 0, "reaction": "liked"}]}))
+
+    recorded = await ReactionCollector(sent, invoker).collect()
+
+    assert recorded == 1
+    assert sent.recorded == [("row-2", "liked")]
+    assert invoker.calls[0][1] == {"bodies": ["A guided marsh walk"]}
+
+
+@pytest.mark.asyncio
+async def test_a_shorter_bubble_that_prefixes_a_longer_one_is_skipped():
+    # The bridge matches by containment, so "A jazz trio plays" would match
+    # the copy of "A jazz trio plays tonight" too. The shorter row is the
+    # ambiguous one; the longer row still answers for itself.
+    sent = _Sent(
+        (
+            ("row-short", "A jazz trio plays"),
+            ("row-long", "A jazz trio plays tonight at the hall"),
+        )
+    )
+    invoker = _Invoker(json.dumps({"reactions": [{"index": 0, "reaction": "liked"}]}))
+
+    recorded = await ReactionCollector(sent, invoker).collect()
+
+    assert recorded == 1
+    assert sent.recorded == [("row-long", "liked")]
+    assert invoker.calls[0][1] == {"bodies": ["A jazz trio plays tonight at the hall"]}
+
+
+@pytest.mark.asyncio
 async def test_only_thumbs_are_taken_from_the_six_tapbacks():
     sent = _Sent((("row-1", "A jazz trio plays"),))
     invoker = _Invoker(json.dumps({"reactions": [{"index": 0, "reaction": "loved"}]}))

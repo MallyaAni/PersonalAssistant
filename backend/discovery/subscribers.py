@@ -53,7 +53,20 @@ class SubscriberRepository:
     async def list_subscribers(
         self, user_id: str, deliverable_only: bool = False
     ) -> tuple[Subscriber, ...]:
-        stmt = select(DiscoverySubscriber).where(DiscoverySubscriber.user_id == user_id)
+        # Owner first, then oldest. Delivery resolves an address by taking the
+        # first row on the task's channel; unordered, an older guest row won
+        # and the owner never saw their own reminders. The recorded flag beats
+        # the earliest-row convention here for the same reason it does in
+        # `owner_subscriber_id`.
+        stmt = (
+            select(DiscoverySubscriber)
+            .where(DiscoverySubscriber.user_id == user_id)
+            .order_by(
+                DiscoverySubscriber.is_owner.desc(),
+                DiscoverySubscriber.created_at.asc(),
+                DiscoverySubscriber.id.asc(),
+            )
+        )
         rows = (await self.session.execute(stmt)).scalars().all()
         selected = [row for row in rows if row.deliverable or not deliverable_only]
         return tuple(_to_subscriber(row) for row in selected)

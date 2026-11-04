@@ -68,6 +68,11 @@ _PENDING_INDEX_KEY = "imessage:chat:pending"
 # The last bubble sent to an address, for the readiness judgement's "what
 # the assistant said before these fragments".
 _LAST_REPLY_KEY = "imessage:chat:last_reply:{to}"
+# When that bubble went out. A fired reminder lives on the task's own
+# conversation, which the live thread never sees, so a reply to it arrives
+# with nothing to answer; this timestamp says whether the last delivery is
+# newer than anything in the live history.
+_LAST_REPLY_AT_KEY = "imessage:chat:last_reply_at:{to}"
 # Recent text bubbles Scout sent, keyed together so one bounded bridge query can
 # ask only whether those exact messages received a tapback.
 _OUTGOING_BUBBLES_KEY = "imessage:chat:outgoing_bubbles"
@@ -512,6 +517,7 @@ class IMessageChatWorker:
                         active_image=pinned,
                         status=status,
                         replying_to=answering,
+                        reply_to=reply_to,
                     ),
                     reply_to,
                     status,
@@ -716,6 +722,7 @@ class IMessageChatWorker:
                         status=status,
                         room=room,
                         replying_to=answering,
+                        reply_to=reply_to,
                     ),
                     reply_to,
                     status,
@@ -1037,7 +1044,9 @@ class IMessageChatWorker:
         status: list[str] = []
         try:
             turn = await self._with_ack(
-                self._converse(user_id, text, status=status, room=room),
+                self._converse(
+                    user_id, text, status=status, room=room, reply_to=reply_to
+                ),
                 reply_to,
                 status,
             )
@@ -1230,6 +1239,7 @@ class IMessageChatWorker:
                     status=status,
                     room=room,
                     replying_to=str(record.get("replying_to") or ""),
+                    reply_to=reply_to,
                 ),
                 reply_to,
                 status,
@@ -1407,6 +1417,7 @@ class IMessageChatWorker:
                         active_image=record.get("pinned"),
                         status=status,
                         room=record.get("room"),
+                        reply_to=reply_to,
                     ),
                     reply_to,
                     status,
@@ -1504,6 +1515,9 @@ class IMessageChatWorker:
         try:
             await self.redis.set(
                 _LAST_REPLY_KEY.format(to=reply_to), plain_text(turn.reply)[:4000], ex=_PENDING_TTL_SECONDS
+            )
+            await self.redis.set(
+                _LAST_REPLY_AT_KEY.format(to=reply_to), str(time.time()), ex=_PENDING_TTL_SECONDS
             )
         except Exception:
             pass
@@ -1640,6 +1654,7 @@ class IMessageChatWorker:
         status: list[str] | None = None,
         room: dict | None = None,
         replying_to: str = "",
+        reply_to: str = "",
     ) -> "TurnResult":
         token = issue_user_token(user_id, ttl_seconds=600, scopes=["chat", "vision"])
         body: dict[str, object] = {
@@ -1657,6 +1672,17 @@ class IMessageChatWorker:
         # more than any resolver can infer from the words alone.
         if replying_to:
             body["metadata"]["replying_to"] = replying_to[:4000]  # type: ignore[index]
+        elif reply_to:
+            # No native reply, so the live history is the only candidate -
+            # except that a reminder fired on the task's own conversation is
+            # not in it. The last bubble delivered to this address is, with
+            # its time; the backend uses it only when it is newer than
+            # anything in the thread.
+            delivered = await self._last_delivery(reply_to)
+            if delivered is not None:
+                previous, at = delivered
+                body["metadata"]["previous_reply"] = previous[-4000:]  # type: ignore[index]
+                body["metadata"]["previous_reply_at"] = at  # type: ignore[index]
         body.update(await self._thread_state(user_id, pinned=active_image))
         collected: list[str] = []
         images: list[TurnImage] = []
@@ -1713,6 +1739,22 @@ class IMessageChatWorker:
         reply = "".join(collected).strip()
         carried = tuple(image for image in images if image.data_base64)
         return TurnResult(reply or _FAILURE_REPLY, carried, allowed_urls(seen_urls), failed=not reply)
+
+    # The last bubble delivered to this address and when it went out, or None.
+    # Both keys are written together at delivery, so a half-read pair is a
+    # miss rather than a guess.
+    async def _last_delivery(self, reply_to: str) -> tuple[str, float] | None:
+        try:
+            body = await self.redis.get(_LAST_REPLY_KEY.format(to=reply_to))
+            at = await self.redis.get(_LAST_REPLY_AT_KEY.format(to=reply_to))
+        except Exception:
+            return None
+        if not body or not at:
+            return None
+        try:
+            return str(body), float(at)
+        except (TypeError, ValueError):
+            return None
 
     # What the thread already established: its conversation id and, when a
     # photo was sent recently, the picture-in-view a follow-up text edits.

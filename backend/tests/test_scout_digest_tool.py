@@ -115,7 +115,8 @@ async def test_the_service_reads_the_stored_rows_with_the_stated_window():
     assert outcome["items"][0]["title"] == "A jazz trio plays"
     assert outcome["items"][0]["reaction"] == "liked"
     # A bare date as the upper bound means the whole of that day, resolved to
-    # instants before it reaches the repository.
+    # instants before it reaches the repository. No profile is wired here, so
+    # no zone is known and the stated default is UTC.
     user, since, until = service.sent_finds.calls[0]
     assert user == "ani"
     assert since == datetime(2026, 10, 31, tzinfo=UTC)
@@ -135,6 +136,44 @@ async def test_the_service_reads_the_stored_rows_with_the_stated_window():
 
 async def _empty():
     return ()
+
+
+# A bare date is the reader's day, not UTC's. A Sydney reader asking "what
+# did Scout send me today?" must not exclude a digest sent at 07:00 local
+# because that was 20:00 UTC the day before.
+@pytest.mark.asyncio
+async def test_a_bare_date_is_midnight_where_the_reader_is():
+    from zoneinfo import ZoneInfo
+
+    from backend.services.conversation_service import ConversationService
+
+    class _Sent:
+        def __init__(self):
+            self.calls = []
+
+        async def sent_for(self, user_id, since=None, until=None, limit=40):
+            self.calls.append((since, until))
+            return ()
+
+    service = ConversationService.__new__(ConversationService)
+    service.sent_finds = _Sent()
+    service.discovery_profile = object()
+
+    async def sydney(user_id):
+        return "Australia/Sydney"
+
+    service._primary_timezone = sydney
+    await service._apply_scout_digest(
+        "ani", ScoutDigestAction(since="2026-10-31", until="2026-10-31")
+    )
+
+    since, until = service.sent_finds.calls[0]
+    zone = ZoneInfo("Australia/Sydney")
+    assert since == datetime(2026, 10, 31, tzinfo=zone)
+    assert until == datetime(2026, 11, 1, tzinfo=zone)
+    # Sydney is UTC+11 on that date, so midnight local is 13:00 UTC the day
+    # before - the instant the repository compares against.
+    assert since.astimezone(UTC) == datetime(2026, 10, 30, 13, 0, tzinfo=UTC)
 
 
 @pytest.mark.asyncio

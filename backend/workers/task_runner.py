@@ -12,12 +12,13 @@ import asyncio
 import uuid
 
 import httpx
-from sqlalchemy import select
 
 from backend.config.settings import settings
 from backend.core.auth import issue_user_token
 from backend.core.logging_config import get_logger
 from backend.database.session import AsyncSessionLocal
+from backend.memory.repository import MemoryRepository
+from backend.services.checkin_arming import is_check_in
 from backend.tasks.repository import ScheduledTaskRepository
 from backend.tasks.quiet import is_nothing_to_report
 from backend.workers.imessage_chat import (
@@ -91,6 +92,15 @@ class TaskRunner:
             await self._apologize_missed(task)
             await self._finish(run["id"], "missed", task, error_code="missed_slot")
             return True
+        # The preference is read at fire time, not only when the check-in was
+        # armed: "stop checking in on me" must stop the ones already waiting,
+        # including any the stand-down could not reach.
+        if is_check_in(task) and not await self._check_ins_enabled(
+            str(task["user_id"])
+        ):
+            await self._stand_down(task)
+            await self._finish(run["id"], "quiet", task)
+            return True
         stop = asyncio.Event()
         heartbeat = asyncio.create_task(self._renew(run["id"], stop))
         try:
@@ -103,6 +113,32 @@ class TaskRunner:
             return True
         await self._deliver(run["id"], task, turn)
         return True
+
+    # Whether the person still wants check-ins. Any failure to read is "off",
+    # because the safe mistake is to stay quiet.
+    async def _check_ins_enabled(self, user_id: str) -> bool:
+        try:
+            async with AsyncSessionLocal() as db:
+                profile = await MemoryRepository(db).get_user_profile(user_id)
+                preferences = (
+                    dict(profile.preferences or {}) if profile is not None else {}
+                )
+        except Exception:
+            logger.warning("check_ins_preference_unreadable", exc_info=True)
+            return False
+        return preferences.get("check_ins") is True
+
+    # A check-in the person no longer wants is disabled, not fired. The row
+    # stays so a mention of the same subject later is still recognised as
+    # already asked - the duplicate rule reads disabled rows.
+    async def _stand_down(self, task: dict) -> None:
+        try:
+            async with AsyncSessionLocal() as db:
+                await ScheduledTaskRepository(db).set_enabled(
+                    str(task["user_id"]), str(task["id"]), False
+                )
+        except Exception:
+            logger.warning("check_in_stand_down_failed", exc_info=True)
 
     # Hold the claim while the turn runs.
     async def _renew(self, run_id: str, stop: asyncio.Event) -> None:
@@ -132,14 +168,26 @@ class TaskRunner:
         if task["channel"] not in _MESSAGES_CHANNELS:
             await self._finish(run_id, "completed", task, turn.reply)
             return
-        address = await self._address_for(task["user_id"])
+        address = await self._address_for(str(task["user_id"]), str(task["channel"]))
         if address is None:
             await self._finish(
                 run_id, "undeliverable", task, turn.reply, "no_subscriber"
             )
             return
         try:
-            await self.chat._deliver(address, turn)
+            # The bubble is remembered against the person it belongs to, so a
+            # reply to a fired reminder is read as an answer to it: the
+            # firing's own conversation is never the live thread, and the
+            # live history therefore holds nothing the person could be
+            # answering.
+            room = (
+                {"chat_name": address, "members": [str(task["user_id"])]}
+                if task["channel"] == "imessage_group"
+                else None
+            )
+            await self.chat._deliver(
+                address, turn, user_id=str(task["user_id"]), room=room
+            )
         except Exception as exc:
             logger.warning(
                 "scheduled_task_delivery_failed: %s: %s",
@@ -189,9 +237,10 @@ class TaskRunner:
 
     # One short line on the task's own channel when a firing is given up on.
     async def _apologize(self, task: dict) -> None:
-        if task.get("channel") not in _MESSAGES_CHANNELS:
+        channel = str(task.get("channel") or "")
+        if channel not in _MESSAGES_CHANNELS:
             return
-        address = await self._address_for(str(task["user_id"]))
+        address = await self._address_for(str(task["user_id"]), channel)
         if address is None:
             return
         instruction = str(task.get("instruction") or "your scheduled task")
@@ -214,9 +263,10 @@ class TaskRunner:
     # watching, so it will not run again - say that plainly, and offer to
     # set it anew, rather than promising it is still on the schedule.
     async def _apologize_missed(self, task: dict) -> None:
-        if task.get("channel") not in _MESSAGES_CHANNELS:
+        channel = str(task.get("channel") or "")
+        if channel not in _MESSAGES_CHANNELS:
             return
-        address = await self._address_for(str(task["user_id"]))
+        address = await self._address_for(str(task["user_id"]), channel)
         if address is None:
             return
         instruction = str(task.get("instruction") or "your one-time reminder")
@@ -317,22 +367,25 @@ class TaskRunner:
                 )
             )
 
-    # The person's active, approved iMessage address, or None.
-    async def _address_for(self, user_id: str) -> str | None:
-        from backend.models.discovery_subscriber import DiscoverySubscriber
+    # The address to deliver a task on, or None.
+    #
+    # The task's own channel is required: a person with both a direct and a
+    # group subscription had a group reminder delivered to their DM (or a DM
+    # reminder posted into the room) because the query accepted either and took
+    # the oldest. Ownership is resolved by `list_subscribers`, which orders the
+    # account holder's own row first - `is_owner` is a permission boundary, and
+    # without it delivery went to whichever guest was enrolled first.
+    async def _address_for(self, user_id: str, channel: str) -> str | None:
+        from backend.discovery.subscribers import SubscriberRepository
 
         async with AsyncSessionLocal() as db:
-            row = await db.scalar(
-                select(DiscoverySubscriber)
-                .where(
-                    DiscoverySubscriber.user_id == user_id,
-                    DiscoverySubscriber.channel.in_(_MESSAGES_CHANNELS),
-                    DiscoverySubscriber.active.is_(True),
-                    DiscoverySubscriber.approved_at.is_not(None),
-                )
-                .order_by(DiscoverySubscriber.created_at)
+            subscribers = await SubscriberRepository(db).list_subscribers(
+                user_id, deliverable_only=True
             )
-        return str(row.address) if row else None
+        for subscriber in subscribers:
+            if subscriber.channel == channel:
+                return subscriber.address
+        return None
 
 
 # The loop the discovery worker process hosts alongside its own.

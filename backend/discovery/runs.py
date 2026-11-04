@@ -465,10 +465,75 @@ class DiscoveryRunRepository:
         if run is None or run.status in {"ready", "failed", "cancelled"}:
             await self.session.rollback()
             return False
+        if run.status == "queued":
+            # Nothing has started, so there is nothing to interrupt. Closing it
+            # now is the difference between a cancelled run and a flagged row
+            # `claim_next` excludes forever.
+            _close_cancelled(run, datetime.now(UTC))
+            await self.session.commit()
+            return True
         run.cancel_requested = True
         run.updated_at = datetime.now(UTC)
         await self.session.commit()
         return True
+
+    # Close a run whose cancellation was requested but whose worker never acted
+    # on it - it died, or lost its lease. The flag is the person's decision and
+    # does not depend on a worker still owning the row, so any caller may close
+    # it. Returns whether this call closed it.
+    async def finalize_cancelled(self, run_id: str) -> bool:
+        try:
+            key = uuid.UUID(run_id)
+        except (AttributeError, ValueError):
+            return False
+        stmt = select(DiscoveryRun).where(DiscoveryRun.id == key).with_for_update()
+        run = (await self.session.execute(stmt)).scalars().first()
+        if (
+            run is None
+            or not run.cancel_requested
+            or run.status in {"ready", "failed", "cancelled"}
+        ):
+            await self.session.rollback()
+            return False
+        _close_cancelled(run, datetime.now(UTC))
+        await self.session.commit()
+        return True
+
+    # Flagged runs no live worker can still act on. `claim_next` excludes every
+    # flagged row, so without this sweep a worker that died between the request
+    # and its own finalisation leaves the run neither running nor cancelled.
+    async def finalize_abandoned_cancellations(
+        self, now: datetime | None = None
+    ) -> int:
+        moment = now or datetime.now(UTC)
+        stmt = (
+            select(DiscoveryRun)
+            .where(
+                DiscoveryRun.cancel_requested.is_(True),
+                or_(
+                    (
+                        DiscoveryRun.status.in_(("queued", "running"))
+                        & or_(
+                            DiscoveryRun.lease_expires_at.is_(None),
+                            DiscoveryRun.lease_expires_at < moment,
+                        )
+                    ),
+                    # A run flagged during its delivery stage can reach "ready"
+                    # with a retry outstanding; `claim_pending_delivery` skips
+                    # every flagged row, so nothing would ever send or close it.
+                    DiscoveryRun.deliver_after.is_not(None),
+                ),
+            )
+            .with_for_update(skip_locked=True)
+        )
+        runs = (await self.session.execute(stmt)).scalars().all()
+        if not runs:
+            await self.session.rollback()
+            return 0
+        for run in runs:
+            _close_cancelled(run, moment)
+        await self.session.commit()
+        return len(runs)
 
     async def cancellation_requested(self, run_id: str) -> bool:
         run = await self.session.get(DiscoveryRun, uuid.UUID(run_id))
@@ -520,3 +585,16 @@ class DiscoveryRunRepository:
     async def _schedule_for(self, user_id: str) -> DiscoverySchedule | None:
         stmt = select(DiscoverySchedule).where(DiscoverySchedule.user_id == user_id)
         return (await self.session.execute(stmt)).scalars().first()
+
+
+# The terminal state of a cancelled run, in one place. The rendered digest is
+# dropped: it existed only to be sent, and a cancelled run will never send it.
+def _close_cancelled(run: DiscoveryRun, moment: datetime) -> None:
+    run.status = "cancelled"
+    run.error_code = "cancelled"
+    run.delivery_message = None
+    run.deliver_after = None
+    run.worker_id = None
+    run.lease_expires_at = None
+    run.completed_at = moment
+    run.updated_at = moment

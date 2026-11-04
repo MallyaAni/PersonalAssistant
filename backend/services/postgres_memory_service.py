@@ -81,6 +81,14 @@ class PostgresMemoryService(MemoryService, SemanticMemoryWriter):
         profile = await self.repo.upsert_user_profile(user_id, name, preferences)
         return profile.to_dict()
 
+    # Merge preference keys rather than replacing the document, so two
+    # features writing different keys cannot drop one another's.
+    async def update_preferences(
+        self, user_id: str, patch: dict[str, Any]
+    ) -> dict[str, Any]:
+        profile = await self.repo.update_preferences(user_id, patch)
+        return profile.to_dict()
+
     async def approve_preferred_name(
         self,
         user_id: str,

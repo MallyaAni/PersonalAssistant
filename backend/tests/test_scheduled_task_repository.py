@@ -220,6 +220,73 @@ async def test_claim_is_exclusive_and_finish_stamps_the_task():
 
 # Pausing keeps the task; resuming re-arms it; cancelling removes it and
 # its runs, and none of that works across owners.
+# Resuming a one-time task whose stated instant has passed must not arm it.
+# Arming would fire the past slot immediately, or enqueue an apology for a
+# slot that passed while the person themselves had paused it.
+@pytest.mark.asyncio
+async def test_resuming_a_one_time_task_after_its_slot_reports_missed():
+    user_id = f"task_{uuid.uuid4().hex[:12]}"
+    try:
+        async with AsyncSessionLocal() as session:
+            repo = ScheduledTaskRepository(session)
+            past = datetime.now(UTC) - timedelta(days=1)
+            task = await repo.create(
+                user_id,
+                "call the dentist",
+                Cadence(
+                    cadence="once",
+                    hour=9,
+                    minute=0,
+                    weekday=0,
+                    timezone=_ZONE,
+                    on_date=past.date(),
+                ),
+                "imessage",
+            )
+            assert (await repo.set_enabled(user_id, task["id"], False))["kind"] == "disabled"
+
+            outcome = await repo.set_enabled(user_id, task["id"], True)
+
+        assert outcome["kind"] == "missed"
+        assert outcome["task"]["enabled"] is False
+        assert outcome["task"]["next_run_at"] < datetime.now(UTC)
+    finally:
+        await _cleanup(user_id)
+
+
+# Restoring a cancelled one-time task whose slot has passed brings it back
+# disabled with no next slot, and says so, rather than arming a stale instant.
+@pytest.mark.asyncio
+async def test_restoring_a_one_time_task_after_its_slot_reports_restored_past():
+    user_id = f"task_{uuid.uuid4().hex[:12]}"
+    try:
+        async with AsyncSessionLocal() as session:
+            repo = ScheduledTaskRepository(session)
+            past = datetime.now(UTC) - timedelta(days=1)
+            task = await repo.create(
+                user_id,
+                "call the dentist",
+                Cadence(
+                    cadence="once",
+                    hour=9,
+                    minute=0,
+                    weekday=0,
+                    timezone=_ZONE,
+                    on_date=past.date(),
+                ),
+                "imessage",
+            )
+            assert await repo.delete_owned(user_id, task["id"])
+
+            restored, past_once = await repo.restore(user_id, task)
+
+        assert past_once is True
+        assert restored["enabled"] is False
+        assert restored["next_run_at"] is None
+    finally:
+        await _cleanup(user_id)
+
+
 @pytest.mark.asyncio
 async def test_pause_resume_and_cancel_respect_ownership():
     user_id = f"task_{uuid.uuid4().hex[:12]}"
@@ -227,10 +294,10 @@ async def test_pause_resume_and_cancel_respect_ownership():
         async with AsyncSessionLocal() as session:
             repo = ScheduledTaskRepository(session)
             task = await repo.create(user_id, "stretch", _daily(), "imessage")
-            assert await repo.set_enabled("intruder", task["id"], False) is False
-            assert await repo.set_enabled(user_id, task["id"], False) is True
+            assert (await repo.set_enabled("intruder", task["id"], False))["kind"] == "missing"
+            assert (await repo.set_enabled(user_id, task["id"], False))["kind"] == "disabled"
             assert await repo.list_for_user(user_id) == []
-            assert await repo.set_enabled(user_id, task["id"], True) is True
+            assert (await repo.set_enabled(user_id, task["id"], True))["kind"] == "enabled"
             assert (await repo.get_owned(user_id, task["id"]))["next_run_at"] > (
                 datetime.now(UTC)
             )

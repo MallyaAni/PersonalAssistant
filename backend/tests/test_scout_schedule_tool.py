@@ -41,6 +41,31 @@ def test_a_missing_hour_or_a_task_cadence_is_no_call():
     assert parse_builtin("scout_schedule", {"cadence": "daily", "hour": 24}, "") is None
 
 
+def test_a_weekly_sweep_without_a_day_is_no_call():
+    # The schema requires the day, but a router that left it out used to get
+    # Monday by default - the exact failure the description records ("left
+    # out, 'weekly on Sundays' landed on Monday"). Refusing the call lets the
+    # reply ask which day instead of silently picking one.
+    assert parse_builtin("scout_schedule", {"cadence": "weekly", "hour": 9}, "") is None
+    assert (
+        parse_builtin(
+            "scout_schedule", {"cadence": "weekly", "hour": 9, "weekday": "Sunday"}, ""
+        )
+        is None
+    )
+    assert (
+        parse_builtin(
+            "scout_schedule", {"cadence": "weekly", "hour": 9, "weekday": 7}, ""
+        )
+        is None
+    )
+    # A daily sweep has no day to name, and 0 is the stored value.
+    assert (
+        parse_builtin("scout_schedule", {"cadence": "daily", "hour": 9}, "").weekday
+        == 0
+    )
+
+
 def test_it_is_withheld_from_a_firing_and_labelled_for_the_person():
     assert "scout_schedule" in AUTOMATION_TOOLS
     assert describe_action(ScoutScheduleAction("daily", 15)) == ("Scout schedule", "daily at 15:00")

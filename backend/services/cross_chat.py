@@ -5,9 +5,9 @@ picture, then wrote "try again" in their one-to-one chat. That chat's own
 history said nothing about a picture, so the router read "try again" against
 its last direct topic and searched for events. Twice. The follow-up
 resolver and the router decide what the newest message refers to from the
-recent history they are shown; this gives them the person's own recent room
-turns beside the direct ones, each marked as having happened in a group
-chat, so "try again" can be read as the retry it was. The model still
+recent history they are shown; this gives them the recent turns in the
+person's rooms beside the direct ones, each marked as having happened in a
+group chat, so "try again" can be read as the retry it was. The model still
 decides; nothing here says what the message means.
 
 Only for a direct message, only rooms the person belongs to, only the last

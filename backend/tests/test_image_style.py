@@ -39,6 +39,17 @@ class StubMemory:
         self.saved = {"name": name, "preferences": preferences}
         return {"preferences": preferences}
 
+    async def update_preferences(
+        self, user_id: str, patch: dict[str, Any]
+    ) -> dict[str, Any]:
+        for key, value in patch.items():
+            if value is None:
+                self.preferences.pop(key, None)
+            else:
+                self.preferences[key] = value
+        self.saved = {"name": "Ani", "preferences": dict(self.preferences)}
+        return {"preferences": self.preferences}
+
 
 def _service(memory: StubMemory, reply: str) -> ImageStyleService:
     return ImageStyleService(memory, StubLLM(reply))  # type: ignore[arg-type]

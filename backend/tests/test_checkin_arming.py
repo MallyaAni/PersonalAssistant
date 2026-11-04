@@ -19,9 +19,11 @@ from backend.services.checkin_arming import (
     MAX_WAITING,
     arm_check_in,
     instruction_for,
+    is_check_in,
     is_same_subject,
     kind_for,
     stand_down,
+    waiting_check_ins,
     waiting_subjects,
 )
 
@@ -391,6 +393,25 @@ async def test_an_unreadable_task_list_offers_nothing_rather_than_failing():
             raise RuntimeError("no database today")
 
     assert await waiting_subjects(_Broken(), "ani") == ()
+
+
+# Turning check-ins off has to reach every waiting one, not the first three
+# the judgement is shown. Pausing and resuming through `manage_tasks` can
+# leave more than MAX_WAITING enabled, so the stand-down listing is unbounded.
+@pytest.mark.asyncio
+async def test_standing_down_reads_every_waiting_check_in_not_just_the_cap():
+    tasks = _Tasks([
+        _armed(f"thing {index}", "2026-09-05") for index in range(MAX_WAITING + 2)
+    ])
+    tasks.existing.append(
+        {"id": "r", "kind": "reminder", "instruction": "Call the bank.",
+         "enabled": True}
+    )
+    found = await waiting_check_ins(tasks, "ani")
+    assert len(found) == MAX_WAITING + 2
+    assert all(is_check_in(task) for task in found)
+    # The capped listing the judgement sees stays capped.
+    assert len(await waiting_subjects(tasks, "ani")) == MAX_WAITING
 
 
 # Standing one down: the code half, which is about not taking down the wrong

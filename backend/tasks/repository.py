@@ -149,17 +149,38 @@ class ScheduledTaskRepository:
         task = await self._owned(user_id, task_id)
         return _task_dict(task) if task else None
 
-    # Enabling re-arms the next slot from now; disabling leaves the slot as
-    # is but skipped, so re-enabling later never fires a stale one.
-    async def set_enabled(self, user_id: str, task_id: str, enabled: bool) -> bool:
+    # Enable or disable one task.
+    #
+    # Resuming re-arms the next slot from now - except for a one-time task
+    # whose stated instant has passed. Arming that would fire it immediately
+    # when the slot is inside the stale window, or enqueue an apology for a
+    # slot that passed while the person themselves had paused it. It stays
+    # disabled and reports "missed", so the reply offers a new time instead of
+    # promising a past one.
+    #
+    # The outcome is a dict rather than a bool because "missing" and "missed"
+    # are different answers, and only one of them is an error.
+    async def set_enabled(
+        self, user_id: str, task_id: str, enabled: bool
+    ) -> dict[str, Any]:
         task = await self._owned(user_id, task_id)
         if task is None:
-            return False
-        task.enabled = enabled
-        if enabled:
-            task.next_run_at = next_run_at(self._cadence(task), datetime.now(UTC))
+            return {"kind": "missing"}
+        if not enabled:
+            task.enabled = False
+            await self.session.commit()
+            await self.session.refresh(task)
+            return {"kind": "disabled", "task": _task_dict(task)}
+        now = datetime.now(UTC)
+        cadence = self._cadence(task)
+        moment = next_run_at(cadence, now)
+        if cadence.cadence == "once" and moment <= now:
+            return {"kind": "missed", "task": _task_dict(task)}
+        task.enabled = True
+        task.next_run_at = moment
         await self.session.commit()
-        return True
+        await self.session.refresh(task)
+        return {"kind": "enabled", "task": _task_dict(task)}
 
     # Move an existing task to a new schedule, and optionally change what it
     # says. Re-arming from `now` is the whole point: the row's old slot may
@@ -292,9 +313,14 @@ class ScheduledTaskRepository:
     # Put a cancelled task back from its snapshot, under its old id so its
     # conversation and run history still belong to it. The next run is
     # computed afresh: the snapshot's may be in the past.
+    #
+    # A one-time task whose stated instant has passed comes back disabled with
+    # no next slot, and the second element of the result is True: restoring it
+    # armed would fire a stale instant, and the person needs to be told the
+    # time passed rather than shown a reminder that will never arrive.
     async def restore(
         self, user_id: str, snapshot: dict[str, Any], now: datetime | None = None
-    ) -> dict[str, Any]:
+    ) -> tuple[dict[str, Any], bool]:
         moment = now or datetime.now(UTC)
         cadence = Cadence(
             cadence=str(snapshot["cadence"]),
@@ -308,6 +334,8 @@ class ScheduledTaskRepository:
                 else None
             ),
         )
+        arm_at = next_run_at(cadence, moment)
+        past_once = cadence.cadence == "once" and arm_at <= moment
         task = ScheduledTask(
             id=uuid.UUID(str(snapshot["id"])) if snapshot.get("id") else uuid.uuid4(),
             user_id=user_id,
@@ -326,13 +354,13 @@ class ScheduledTaskRepository:
                 if snapshot.get("conversation_id")
                 else uuid.uuid4()
             ),
-            next_run_at=next_run_at(cadence, moment),
-            enabled=bool(snapshot.get("enabled", True)),
+            next_run_at=None if past_once else arm_at,
+            enabled=bool(snapshot.get("enabled", True)) and not past_once,
         )
         self.session.add(task)
         await self.session.commit()
         await self.session.refresh(task)
-        return _task_dict(task)
+        return _task_dict(task), past_once
 
     async def _owned(self, user_id: str, task_id: str) -> ScheduledTask | None:
         try:

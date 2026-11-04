@@ -615,6 +615,22 @@ def _render_task_outcome(outcome: dict[str, Any]) -> str:
             "not have been saved - and suggest they check or ask again. Never "
             "say it was done, and never say it failed.\n"
         )
+    if outcome.get("kind") == "resume_missed":
+        # Resuming a one-time task whose stated instant has passed would arm
+        # a slot in the past: it would fire immediately or apologise for a
+        # slot that passed while the person had paused it. Nothing is armed,
+        # and the reply must not promise a firing.
+        lines.append(
+            "- Not resumed: this one-time reminder's time has already passed, so "
+            "nothing is armed and it will not fire. Say the time passed and offer "
+            "to set a new one; never say it was resumed.\n"
+        )
+    if outcome.get("kind") == "restored_past":
+        lines.append(
+            "- Restored but not armed: this one-time reminder's time has already "
+            "passed, so it is back but will not fire. Say the time passed and "
+            "offer to set a new one; never say it is still on the schedule.\n"
+        )
     if outcome.get("kind") == "not_found":
         # Stated as flatly as "nothing to undo" is: with the person's own
         # words and a "Done - paused" just before it in the thread, the reply
@@ -665,10 +681,15 @@ def _render_check_in_outcome(outcome: dict[str, Any]) -> list[str]:
         state = "on" if outcome.get("enabled") else "off (they can ask to turn them on)"
         return [f"- Check-ins are {state}{listed or '; nothing is waiting'}. Report exactly that.\n"]
     if kind == "check_in_armed":
+        turned_on = (
+            " Check-ins were off and are now on, because they asked for this one; say so."
+            if outcome.get("enabled_now")
+            else ""
+        )
         return [
             f"- A check-in about {outcome.get('subject') or 'that'} is set (the task above says when). "
             "Say in one line that you'll ask then, in their words; do not call it a task, a reminder, "
-            "or an automation.\n"
+            f"or an automation.{turned_on}\n"
         ]
     if kind == "check_in_refused":
         why = _REFUSALS.get(str(outcome.get("reason") or ""), "it could not be set; say so plainly.")

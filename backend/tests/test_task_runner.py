@@ -34,6 +34,7 @@ class _Harness:
         self.sent: list[dict] = []
         self.finished: list[tuple] = []
         self.turn_bodies: list[dict] = []
+        self.address_calls: list[tuple[str, str]] = []
 
         async def fake_turn(task):
             self.turn_bodies.append(task)
@@ -42,7 +43,8 @@ class _Harness:
         async def fake_finish(run_id, status, task=None, output=None, error_code=None):
             self.finished.append((run_id, status, output, error_code))
 
-        async def fake_address(user_id):
+        async def fake_address(user_id, channel):
+            self.address_calls.append((user_id, channel))
             return address
 
         async def fake_mark_delivered(run_id):
@@ -162,6 +164,53 @@ async def test_run_once_closes_a_run_whose_turn_failed(monkeypatch):
     assert harness.sent == []
 
 
+# A check-in the person has since turned off is not fired. The preference is
+# read at fire time, not only when it was armed: "stop checking in on me"
+# must stop the ones already waiting.
+@pytest.mark.asyncio
+async def test_a_check_in_the_person_turned_off_is_not_fired(monkeypatch):
+    harness = _Harness(monkeypatch, TurnResult("How did it go?", ()), "+15550001111")
+    stood_down: list[dict] = []
+
+    async def off(user_id):
+        return False
+
+    async def stand_down(task):
+        stood_down.append(task)
+
+    monkeypatch.setattr(harness.runner, "_check_ins_enabled", off)
+    monkeypatch.setattr(harness.runner, "_stand_down", stand_down)
+
+    class _Repo:
+        def __init__(self, _db):
+            pass
+
+        async def claim_next(self, worker_id, lease):
+            task = _task()
+            task["kind"] = "checkin:following_up"
+            return {"id": "run-6", "user_id": "user-1", "task": task}
+
+        async def renew_lease(self, run_id, worker_id, lease):
+            return True
+
+    class _Session:
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *exc):
+            return False
+
+    import backend.workers.task_runner as module
+
+    monkeypatch.setattr(module, "ScheduledTaskRepository", _Repo)
+    monkeypatch.setattr(module, "AsyncSessionLocal", lambda: _Session())
+
+    assert await harness.runner.run_once() is True
+    assert harness.finished == [("run-6", "quiet", None, None)]
+    assert harness.turn_bodies == []
+    assert [task["kind"] for task in stood_down] == ["checkin:following_up"]
+
+
 @pytest.mark.asyncio
 async def test_a_group_task_is_delivered_into_the_chat(monkeypatch):
     room = "iMessage;+;chat778899001122"
@@ -169,3 +218,64 @@ async def test_a_group_task_is_delivered_into_the_chat(monkeypatch):
     await harness.runner._deliver("run-1", _task("imessage_group"), TurnResult("Digest for the crew", ()))
     assert harness.sent == [{"to": room, "body": "Digest for the crew"}]
     assert harness.finished == [("run-1", "delivered", "Digest for the crew", None)]
+
+
+# The task's own channel decides where it lands. A person with both a direct
+# and a group subscription had a group reminder delivered to their DM (or the
+# reverse) because the resolver accepted either and took the oldest row.
+@pytest.mark.asyncio
+async def test_delivery_resolves_the_address_on_the_tasks_own_channel(monkeypatch):
+    harness = _Harness(monkeypatch, TurnResult("Digest", ()), "+15550001111")
+    await harness.runner._deliver("run-1", _task("imessage"), TurnResult("Digest", ()))
+    assert harness.address_calls == [("user-1", "imessage")]
+
+    harness.address_calls.clear()
+    harness.finished.clear()
+    await harness.runner._deliver(
+        "run-2", _task("imessage_group"), TurnResult("Digest", ())
+    )
+    assert harness.address_calls == [("user-1", "imessage_group")]
+
+
+# The apology paths use the same resolver as delivery, so they cannot reach a
+# guest's phone when the task belongs to the owner's room.
+@pytest.mark.asyncio
+async def test_apologies_use_the_tasks_channel(monkeypatch):
+    harness = _Harness(monkeypatch, None, "+15550001111")
+    await harness.runner._apologize(_task("imessage_group"))
+    assert harness.address_calls == [("user-1", "imessage_group")]
+
+
+# The delivered bubble is remembered against the person it belongs to. A
+# reply to a fired reminder is answered from that bubble: the firing's own
+# conversation is never the live thread.
+@pytest.mark.asyncio
+async def test_delivery_remembers_the_bubble_against_the_person(monkeypatch):
+    harness = _Harness(monkeypatch, None, "+15550001111")
+    seen: dict[str, Any] = {}
+
+    async def record(reply_to, turn, *, user_id="", room=None):
+        seen.update({"to": reply_to, "user_id": user_id, "room": room})
+
+    monkeypatch.setattr(harness.runner.chat, "_deliver", record)
+    await harness.runner._deliver("run-1", _task("imessage"), TurnResult("hi", ()))
+
+    assert seen == {"to": "+15550001111", "user_id": "user-1", "room": None}
+
+
+@pytest.mark.asyncio
+async def test_a_group_delivery_remembers_the_room(monkeypatch):
+    room = "iMessage;+;chat778899001122"
+    harness = _Harness(monkeypatch, None, room)
+    seen: dict[str, Any] = {}
+
+    async def record(reply_to, turn, *, user_id="", room=None):
+        seen.update({"to": reply_to, "user_id": user_id, "room": room})
+
+    monkeypatch.setattr(harness.runner.chat, "_deliver", record)
+    await harness.runner._deliver(
+        "run-1", _task("imessage_group"), TurnResult("hi", ())
+    )
+
+    assert seen["user_id"] == "user-1"
+    assert seen["room"] == {"chat_name": room, "members": ["user-1"]}

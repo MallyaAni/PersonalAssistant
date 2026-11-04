@@ -28,6 +28,11 @@ logger = get_logger(__name__)
 # bounded by what fits one tool call rather than by cost.
 MAX_BODIES_PER_POLL = 200
 
+# How much of a body the bridge compares, mirrored here because the ambiguity
+# check below has to reason about exactly the match the bridge will make.
+# `bridges/imessage_mac/server.py` holds the same number for the same reason.
+BODY_MATCH_CHARS = 80
+
 type ToolInvoker = Callable[[str, dict[str, object]], Awaitable[object]]
 
 
@@ -50,9 +55,23 @@ class ReactionCollector:
         pending = await self.sent_finds.awaiting_reaction(limit=MAX_BODIES_PER_POLL)
         if not pending:
             return 0
+        # A digest goes to every deliverable subscriber with identical text, so
+        # two pending rows can carry the same bubble. The bridge matches a copy
+        # by its text and answers with one position, so a tapback on the
+        # guest's copy would be recorded as the owner's. Ask only about bodies
+        # whose prefix is unique among the rows: a lost signal is better than
+        # recording one person's verdict against another's.
+        ambiguous = _ambiguous_indices([body for _, body in pending])
+        asked = [
+            (row_id, body)
+            for index, (row_id, body) in enumerate(pending)
+            if index not in ambiguous
+        ]
+        if not asked:
+            return 0
         # Positional, so the bridge answers about "the third body you were
         # given" and never has to be told what any of them are for.
-        bodies = [body for _, body in pending]
+        bodies = [body for _, body in asked]
         try:
             answer = await self.invoke_tool(self.tool_name, {"bodies": bodies})
         except Exception:
@@ -64,16 +83,34 @@ class ReactionCollector:
         for entry in _reactions(answer):
             index = entry.get("index")
             reaction = entry.get("reaction")
-            if not isinstance(index, int) or not 0 <= index < len(pending):
+            if not isinstance(index, int) or not 0 <= index < len(asked):
                 continue
             if reaction not in (LIKED, DISLIKED):
                 continue
-            row_id, _ = pending[index]
+            row_id, _ = asked[index]
             if await self.sent_finds.record_reaction(row_id, reaction, _at(entry)):
                 recorded += 1
         if recorded:
             logger.info("discovery_reactions_recorded", extra={"count": recorded})
         return recorded
+
+
+# Positions whose body prefix could belong to more than one pending row.
+#
+# The bridge compares the first BODY_MATCH_CHARS of each body against every
+# message copy it finds and maps a copy to the first position it matches. Two
+# identical digests - the owner's and a guest's - therefore collapse onto one
+# position, and a reaction on either is attributed to the first. A position is
+# ambiguous when its prefix appears in another row's text too, including the
+# prefix-of-a-longer-body case the bridge's `in` comparison also collapses.
+def _ambiguous_indices(bodies: list[str]) -> set[int]:
+    flat = [" ".join(body.split()) for body in bodies]
+    prefixes = [text[:BODY_MATCH_CHARS] for text in flat]
+    return {
+        index
+        for index, prefix in enumerate(prefixes)
+        if prefix and sum(1 for text in flat if prefix in text) > 1
+    }
 
 
 # The reaction list out of whatever the tool boundary handed back.

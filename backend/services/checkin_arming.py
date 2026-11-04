@@ -80,6 +80,22 @@ async def waiting_subjects(tasks: Any, user_id: str, limit: int = MAX_WAITING) -
     return tuple(subject for subject in found if subject)[:limit]
 
 
+# Every enabled check-in, unbounded.
+#
+# `waiting_subjects` is capped because the judgement only needs a few to
+# recognise. Turning check-ins off has to reach all of them: pausing and
+# resuming through `manage_tasks` can leave more than MAX_WAITING enabled,
+# and dropping only the first three would leave questions still arriving
+# after the person said stop.
+async def waiting_check_ins(tasks: Any, user_id: str) -> tuple[dict[str, Any], ...]:
+    try:
+        existing = await tasks.list_for_user(user_id, enabled_only=True)
+    except Exception:
+        logger.warning("check_in_waiting_unreadable", exc_info=True)
+        return ()
+    return tuple(task for task in existing if is_check_in(task))
+
+
 @dataclass(frozen=True, slots=True)
 class Armed:
     """What happened, for the trace. `task` is set only when one was created."""
