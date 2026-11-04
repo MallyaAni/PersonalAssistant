@@ -1,9 +1,9 @@
 # Trading program direction
 
 Status: **binding direction document**. Written 2026-11-03. Last verified
-2026-11-04 against main `058b7aed` and the live installed state in
-`data/market/desk/learned-holding/` (deployed commit `058b7aed`; the trading
-path is identical to the reviewed `a3299064`). It supersedes the direction and live-state
+2026-11-04 against the deployed commit `058b7aed` and the live installed
+state in `data/market/desk/learned-holding/` (the trading path is identical
+to the reviewed `a3299064`; later commits are docs only). It supersedes the direction and live-state
 claims of `docs/research/trading-program-2026-10-28.md`; that note remains the
 historical program record. Process rules remain `docs/trading/RULES.md`; the
 code map remains `docs/trading/CODE_MAP.md`; the current handoff remains
