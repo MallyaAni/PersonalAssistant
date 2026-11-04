@@ -12,6 +12,7 @@ from backend.core.dependencies import get_embedding_provider
 from backend.database.session import SessionLocal
 from backend.embeddings.base import EmbeddingProvider
 from backend.main import app
+from backend.models.agent_memory import DocumentParseJob
 from backend.models.artifact import VisualArtifact
 from backend.models.auth import AccessRequest
 from backend.models.conversation import Conversation
@@ -38,6 +39,7 @@ class DeterministicEmbeddingProvider(EmbeddingProvider):
 def _remove_test_user(user_id: str):
     with SessionLocal() as session:
         session.execute(delete(VisualArtifact).where(VisualArtifact.user_id == user_id))
+        session.execute(delete(DocumentParseJob).where(DocumentParseJob.user_id == user_id))
         session.execute(delete(MemoryFact).where(MemoryFact.user_id == user_id))
         session.execute(delete(SemanticMemory).where(SemanticMemory.user_id == user_id))
         session.execute(delete(EpisodicMemory).where(EpisodicMemory.user_id == user_id))
@@ -207,6 +209,7 @@ def test_memory_api_persists_searches_scopes_and_deletes_personal_memory():
                 "procedures": 0,
                 "entities": 0,
                 "knowledge_documents": 0,
+                "document_parse_jobs": 0,
                 "artifacts": 0,
             }
 
@@ -587,6 +590,41 @@ def test_delete_all_propagates_to_conversations_and_tool_memory():
             )
     finally:
         app.dependency_overrides.pop(get_embedding_provider, None)
+        _remove_test_user(user_id)
+
+
+# "Forget me" must take a queued parse job with it. The job holds the file and
+# its conversation; left behind, the queue re-ingests the document after the
+# person asked to be forgotten.
+def test_delete_all_forgets_queued_parse_jobs():
+    user_id = f"prop_{uuid.uuid4()}"
+    try:
+        with SessionLocal() as session:
+            session.add(
+                DocumentParseJob(
+                    user_id=user_id,
+                    filename="later.pdf",
+                    media_type="application/pdf",
+                    content=b"%PDF-1.4 private",
+                    note="",
+                )
+            )
+            session.commit()
+
+        with TestClient(app) as client:
+            deleted = client.delete(f"/api/v1/memory/{user_id}").json()["deleted"]
+            assert deleted["document_parse_jobs"] == 1
+
+        with SessionLocal() as session:
+            remaining = (
+                session.execute(
+                    select(DocumentParseJob).where(DocumentParseJob.user_id == user_id)
+                )
+                .scalars()
+                .all()
+            )
+            assert remaining == []
+    finally:
         _remove_test_user(user_id)
 
 

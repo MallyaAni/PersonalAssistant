@@ -113,7 +113,14 @@ def _picture_options() -> dict[str, str]:
         return {}
     api = {
         "url": url,
-        "params": {"model": settings.DOCLING_PICTURE_MODEL, "max_tokens": 160},
+        "params": {
+            "model": settings.DOCLING_PICTURE_MODEL,
+            "max_tokens": 160,
+            # The V4.1 runtime reads the reasoning level only from
+            # chat_template_kwargs; without this the describer thinks first
+            # and the 160-token caption budget is spent on reasoning.
+            "chat_template_kwargs": {"thinking": False},
+        },
         "prompt": PICTURE_PROMPT,
         "timeout": settings.DOCLING_PICTURE_TIMEOUT_SECONDS,
         "concurrency": 1,
@@ -179,7 +186,11 @@ async def parse_document(filename: str, content: bytes) -> ParsedDocument:
     if not isinstance(content, str):
         raise ParseError("The document parser returned invalid data.")
     markdown = mark_pictures(content.strip())
-    if payload.get("status") not in (None, "success") or not markdown:
+    # Docling reports partial_success when some pages failed but the rest
+    # converted; the readable Markdown is still worth storing, and rejecting
+    # it throws away the whole document over one bad page.
+    status = payload.get("status")
+    if status not in (None, "success", "partial_success") or not markdown:
         raise ParseError(f'I could not get any readable text out of "{filename}".')
     pages = markdown.count(PAGE_BREAK) + 1
     return ParsedDocument(markdown=markdown, pages=pages, media_type=media_type)

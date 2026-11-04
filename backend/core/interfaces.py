@@ -149,6 +149,14 @@ class OriginalDocumentRepository(ABC):
 
 
 class BinaryArtifactRepository(ArtifactRepository, OriginalDocumentRepository):
+    # List slide images generated for one owned presentation, with their
+    # private storage keys, so deleting a deck removes them too. Not
+    # abstract, so doubles that know nothing of presentations keep working.
+    async def list_for_presentation(
+        self, user_id: str, presentation_id: str
+    ) -> list[dict[str, Any]]:
+        return []
+
     # Persist a pending generated or uploaded image before binary work begins.
     @abstractmethod
     async def create_binary_pending(

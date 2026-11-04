@@ -98,13 +98,15 @@ class SQLAlchemyPresentationJobRepository:
                 select(PresentationJob)
                 .where(
                     or_(
-                        PresentationJob.status == "queued",
-                        (
-                            (PresentationJob.status == "running")
-                            & (PresentationJob.lease_expires_at < now)
-                        ),
+                        # Queued work that nobody has cancelled.
+                        (PresentationJob.status == "queued")
+                        & (PresentationJob.cancel_requested.is_(False)),
+                        # Running work whose worker is gone, cancelled or not:
+                        # a cancel request whose worker died before recording
+                        # it must not leave the job running forever.
+                        (PresentationJob.status == "running")
+                        & (PresentationJob.lease_expires_at < now),
                     ),
-                    PresentationJob.cancel_requested.is_(False),
                 )
                 .order_by(PresentationJob.created_at.asc())
                 .with_for_update(skip_locked=True)
@@ -113,6 +115,12 @@ class SQLAlchemyPresentationJobRepository:
         )
         if job is None:
             await self.session.rollback()
+            return None
+        if job.status == "running" and job.cancel_requested:
+            # The worker that held this lease asked to stop and then died
+            # before it could record the cancellation. Finish it here; the
+            # next tick takes the next job.
+            await self._finish_unsuccessfully(job, "cancelled", "cancelled")
             return None
         revision = cast(
             PresentationRevision | None,

@@ -16,6 +16,7 @@ from backend.embeddings.base import EmbeddingProvider
 from backend.memory.retrieval import SemanticRetrievalPolicy
 from backend.models.agent_memory import (
     ConversationSummary,
+    DocumentParseJob,
     KnowledgeChunk,
     KnowledgeDocument,
     MemoryEntity,
@@ -1022,6 +1023,10 @@ class AgentMemoryManager:
             ("procedures", ProcedureMemory),
             ("entities", MemoryEntity),
             ("knowledge_documents", KnowledgeDocument),
+            # A queued parse job holds the file and the conversation it belongs
+            # to; left behind, the queue would re-ingest the document after
+            # the person asked to be forgotten.
+            ("document_parse_jobs", DocumentParseJob),
         ):
             result = await self.session.execute(
                 delete(model).where(model.user_id == user_id)

@@ -340,6 +340,28 @@ class SQLAlchemyArtifactRepository(
         payload["_storage_key"] = artifact.storage_key
         return payload
 
+    # The images generated for one owned presentation, with their private
+    # storage keys, so deleting the deck removes the files with the rows.
+    async def list_for_presentation(
+        self,
+        user_id: str,
+        presentation_id: str,
+    ) -> list[dict[str, Any]]:
+        result = await self.session.execute(
+            select(VisualArtifact)
+            .where(
+                VisualArtifact.user_id == user_id,
+                VisualArtifact.extra_data["presentation_id"].astext == presentation_id,
+            )
+            .order_by(VisualArtifact.created_at, VisualArtifact.id)
+        )
+        payloads: list[dict[str, Any]] = []
+        for artifact in result.scalars().all():
+            payload = artifact.to_dict()
+            payload["_storage_key"] = artifact.storage_key
+            payloads.append(payload)
+        return payloads
+
     # List recent user-owned artifacts across conversations, newest first.
     async def list_for_user(
         self,

@@ -727,7 +727,13 @@ async def test_image_artifact_service_persists_source_conditioned_edit(
         "id": "parent-image",
         "kind": "generated_image",
         "mime_type": "image/png",
-        "metadata": {"generation_prompt": "a black sports car by the coast"},
+        "metadata": {
+            "generation_prompt": "a black sports car by the coast",
+            # A refined slide image is still that slide's image.
+            "presentation_id": "deck-1",
+            "slide_id": "slide-a",
+            "presentation_auto_generated": True,
+        },
     }
 
     ready = await service.edit(
@@ -754,6 +760,11 @@ async def test_image_artifact_service_persists_source_conditioned_edit(
     assert repository.record["parent_artifact_id"] == "parent-image"
     assert ready["metadata"]["refinement_feedback"] == "make this car red"
     assert ready["metadata"]["generation_prompt"] == ("a black sports car by the coast")
+    # The slide fields survive the refinement, so the image is still found by
+    # deck cleanup and is not pulled into chat as an unrelated picture.
+    assert ready["metadata"]["presentation_id"] == "deck-1"
+    assert ready["metadata"]["slide_id"] == "slide-a"
+    assert ready["metadata"]["presentation_auto_generated"] is True
 
 
 # Verify provider failures leave a terminal sanitized artifact without bytes.

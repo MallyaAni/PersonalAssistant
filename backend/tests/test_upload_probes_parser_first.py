@@ -105,6 +105,37 @@ def test_plain_text_is_read_without_asking_the_parser(monkeypatch):
             client.delete(f"/api/v1/memory/{user_id}/agent")
 
 
+def test_an_oversized_upload_is_refused_as_too_large(monkeypatch):
+    """The size check ran outside the route's try, so UploadTooLargeError
+    escaped as an unhandled 500 instead of the vision route's 413."""
+    from backend.config.settings import settings
+
+    monkeypatch.setattr(settings, "DOCUMENT_UPLOAD_MAX_BYTES", 16)
+    user_id = f"oversized-{uuid.uuid4().hex[:8]}"
+    with TestClient(app, headers=_bearer(user_id)) as client:
+        response = client.post(
+            f"/api/v1/memory/{user_id}/agent/knowledge/document",
+            files={"document": ("big.pdf", PDF, "application/pdf")},
+            data={"note": "", "source_conversation_id": str(uuid.uuid4())},
+        )
+    assert response.status_code == 413, response.text
+    assert "too large" in response.text
+
+
+def test_a_mislabelled_file_is_refused_as_unreadable(monkeypatch):
+    """A file whose bytes contradict its name is the sharer's mistake, so it
+    comes back as a 422 with the parser's sentence, not an internal fault."""
+    user_id = f"mislabelled-{uuid.uuid4().hex[:8]}"
+    with TestClient(app, headers=_bearer(user_id)) as client:
+        response = client.post(
+            f"/api/v1/memory/{user_id}/agent/knowledge/document",
+            files={"document": ("payload.pdf", b"#!/bin/sh\necho hi\n", "application/pdf")},
+            data={"note": "", "source_conversation_id": str(uuid.uuid4())},
+        )
+    assert response.status_code == 422, response.text
+    assert "does not look like a PDF" in response.text
+
+
 def test_an_upload_response_tells_the_client_to_reconnect(monkeypatch):
     # The facts pass runs after the response on the request's session and
     # holds the connection meanwhile; a client reusing it for its next request

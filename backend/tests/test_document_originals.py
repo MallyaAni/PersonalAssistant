@@ -4,7 +4,7 @@ originals answers None."""
 import pytest
 
 from backend.artifacts.storage import LocalBinaryArtifactStore
-from backend.services.document_originals import keep_original, original_bytes
+from backend.services.document_originals import delete_original, keep_original, original_bytes
 from backend.services.document_writer import render_docx
 
 
@@ -28,6 +28,13 @@ class _Repository:
                 return dict(row)
         return None
 
+    async def delete(self, user_id, artifact_id):
+        row = self.rows.get(artifact_id)
+        if row is None or row.get("user_id") != user_id:
+            return False
+        del self.rows[artifact_id]
+        return True
+
 
 @pytest.mark.asyncio
 async def test_a_word_file_is_kept_and_read_back(tmp_path):
@@ -48,6 +55,26 @@ async def test_a_pdf_is_not_kept_and_an_unknown_document_has_no_original(tmp_pat
     repository = _Repository()
     assert await keep_original(repository, store, "ani", None, None, "doc-2", "Itinerary.pdf", b"%PDF-1.4 print") is None  # type: ignore[arg-type]
     assert await original_bytes(repository, store, "ani", "doc-2") is None  # type: ignore[arg-type]
+
+
+@pytest.mark.asyncio
+async def test_deleting_the_document_removes_its_kept_original(tmp_path):
+    """Forgetting a document must forget the whole Word file too. The
+    knowledge rows were deleted while the original artifact stayed listed and
+    downloadable."""
+    store = LocalBinaryArtifactStore(tmp_path)
+    repository = _Repository()
+    original = render_docx("Choral Tour", "# Choral Tour\n\n- Day 1: arrive")
+    kept = await keep_original(repository, store, "ani", None, None, "doc-1", "Choral Tour.docx", original)  # type: ignore[arg-type]
+    assert kept is not None
+    key = kept["_storage_key"]
+    assert (tmp_path / key).exists()
+
+    assert await delete_original(repository, store, "ani", "doc-1") is True
+    assert await original_bytes(repository, store, "ani", "doc-1") is None
+    assert not (tmp_path / key).exists()
+    # A second forget is a no-op, not an error.
+    assert await delete_original(repository, store, "ani", "doc-1") is False
 
 
 @pytest.mark.asyncio

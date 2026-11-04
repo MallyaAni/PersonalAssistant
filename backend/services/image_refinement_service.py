@@ -115,16 +115,18 @@ class ImageRefinementService:
     ) -> dict[str, Any]:
         owned = await self.images.read_owned(user_id, artifact_id)
         if owned is None:
-            raise RefinementError("No owned image matched the request")
+            # Shown to the person as the reply: a plain sentence, not an
+            # internal one about ownership or matching.
+            raise RefinementError("I couldn't find that picture any more.")
         record, source_content = owned
         if record is None or record.get("kind") not in {
             "generated_image",
             "uploaded_image",
         }:
-            raise RefinementError("No owned image matched the request")
+            raise RefinementError("I couldn't find that picture any more.")
         instruction = feedback.strip()[:_MAX_FEEDBACK_CHARS]
         if not instruction:
-            raise RefinementError("Image feedback cannot be empty")
+            raise RefinementError("Tell me what to change about the picture.")
         # An edit that needs the scene rebuilt is not something the editor can
         # do, and no wording makes it one. Measured against the shipped model
         # (`flux-2-klein-4b`): reference-conditioned editing left the picture

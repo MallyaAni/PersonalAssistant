@@ -93,11 +93,21 @@ async def process_pending(parse=parse_document, limit: int = 20, reachable=parse
             return 0
         manager = get_agent_memory_manager(session, get_embedding_provider())
         changes = ScheduledTaskRepository(session)
-        for job in rows:
+        # A failure path rolls the session back, which expires every loaded
+        # row - including the jobs later in this pass. Reload each one by its
+        # id so the next iteration never touches an expired attribute.
+        job_ids = [row.id for row in rows]
+        for job_id in job_ids:
+            job = await session.get(DocumentParseJob, job_id)
+            if job is None:
+                continue
             job.attempts += 1
             job.updated_at = datetime.now(UTC)
+            # Hold the bytes in a local before the row's copy is cleared: the
+            # Word original is written from them after the document lands.
+            content = job.content
             try:
-                parsed = await parse(job.filename, job.content)
+                parsed = await parse(job.filename, content)
             except ParseUnavailable as exc:
                 # The parser answered its health check moments ago, so this is
                 # the file (a timeout on a huge scan, a crash mid-parse), not
@@ -106,31 +116,71 @@ async def process_pending(parse=parse_document, limit: int = 20, reachable=parse
                 job.last_error = str(exc)
                 if job.attempts >= REACHABLE_ATTEMPTS:
                     job.status = "failed"
+                    # A failed job will never read these bytes again.
+                    job.content = b""
                 await session.commit()
                 continue
             except ParseError as exc:
                 job.status = "failed"
                 job.last_error = str(exc)
+                job.content = b""
+                await session.commit()
+                continue
+            except Exception:
+                # An unexpected parser failure is about this file too; count
+                # it like the others so one job cannot block the queue.
+                logger.warning("Queued document parse failed unexpectedly", exc_info=True)
+                job.last_error = "the document could not be read"
+                if job.attempts >= REACHABLE_ATTEMPTS:
+                    job.status = "failed"
+                    job.content = b""
                 await session.commit()
                 continue
             body = parsed.markdown if not job.note.strip() else f"{job.note.strip()}\n\n{parsed.markdown}"
-            stored = await manager.knowledge.ingest(
-                job.user_id,
-                job.filename,
-                body,
-                f"upload://{job.filename}",
-                "uploaded_document",
-                str(job.source_conversation_id) if job.source_conversation_id else None,
-                None,
-            )
-            await changes.record_change(
-                job.user_id,
-                "memory",
-                "save",
-                None,
-                {"kind": "knowledge_document", "id": stored["id"], "title": job.filename, "undoable": True},
-                conversation_id=str(job.source_conversation_id) if job.source_conversation_id else None,
-            )
+            try:
+                stored = await manager.knowledge.ingest(
+                    job.user_id,
+                    job.filename,
+                    body,
+                    f"upload://{job.filename}",
+                    "uploaded_document",
+                    str(job.source_conversation_id) if job.source_conversation_id else None,
+                    None,
+                )
+            except Exception:
+                # The file parsed but could not be stored. Roll back whatever
+                # the failed ingest left uncommitted, then count the attempt
+                # on a clean session: the queue must not stop at this job.
+                logger.warning("Could not store queued document %s", job.filename, exc_info=True)
+                await session.rollback()
+                job = await session.get(DocumentParseJob, job_id)
+                if job is None:
+                    continue
+                job.attempts += 1
+                job.updated_at = datetime.now(UTC)
+                job.last_error = "the document could not be stored"
+                if job.attempts >= REACHABLE_ATTEMPTS:
+                    job.status = "failed"
+                    job.content = b""
+                await session.commit()
+                continue
+            try:
+                await changes.record_change(
+                    job.user_id,
+                    "memory",
+                    "save",
+                    None,
+                    {"kind": "knowledge_document", "id": stored["id"], "title": job.filename, "undoable": True},
+                    conversation_id=str(job.source_conversation_id) if job.source_conversation_id else None,
+                )
+            except Exception:
+                # The document is stored; a missing undo receipt must not make
+                # the queue ingest it again on the next pass.
+                logger.warning("Could not record the queued document change", exc_info=True)
+                await session.rollback()
+                job = await session.get(DocumentParseJob, job_id)
+                if job is None:
+                    continue
             job.status = "done"
             job.document_id = uuid.UUID(stored["id"])
             job.last_error = None
@@ -139,7 +189,8 @@ async def process_pending(parse=parse_document, limit: int = 20, reachable=parse
             await session.commit()
             landed += 1
             # The Word original is kept beside the landed document, as the
-            # inline share keeps it (document_originals.py).
+            # inline share keeps it (document_originals.py). The bytes are the
+            # copy read before the row was cleared.
             try:
                 from backend.artifacts.storage import LocalBinaryArtifactStore
                 from backend.services.artifact_repository import SQLAlchemyArtifactRepository
@@ -148,7 +199,7 @@ async def process_pending(parse=parse_document, limit: int = 20, reachable=parse
                 await keep_original(
                     SQLAlchemyArtifactRepository(session), LocalBinaryArtifactStore(settings.ARTIFACT_STORAGE_ROOT),
                     job.user_id, str(job.source_conversation_id) if job.source_conversation_id else None, None,
-                    stored["id"], job.filename, job.content,
+                    stored["id"], job.filename, content,
                 )
             except Exception:
                 logger.warning("Could not keep the Word original from the queue", exc_info=True)

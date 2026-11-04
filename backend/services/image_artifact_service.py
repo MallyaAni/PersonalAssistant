@@ -308,6 +308,18 @@ class ImageArtifactService:
             )
             storage_key = stored.storage_key
             parent_metadata = parent.get("metadata") or {}
+            # A refined slide stays a slide: without its presentation fields a
+            # refined image could be pulled into chat by "show me that
+            # picture" and would not be found by deck cleanup.
+            presentation_fields = {
+                key: parent_metadata[key]
+                for key in (
+                    "presentation_id",
+                    "slide_id",
+                    "presentation_auto_generated",
+                )
+                if key in parent_metadata
+            }
             ready = await self.repository.mark_binary_ready(
                 artifact_id=artifact_id,
                 user_id=user_id,
@@ -317,6 +329,7 @@ class ImageArtifactService:
                 height=edited.height,
                 metadata={
                     **edited.metadata,
+                    **presentation_fields,
                     "provider_job_id": edited.provider_job_id,
                     "generation_prompt": str(
                         parent_metadata.get("generation_prompt") or ""

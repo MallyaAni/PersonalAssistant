@@ -95,6 +95,8 @@ def test_a_described_picture_is_one_marked_passage_and_a_bare_placeholder_is_dro
 
 
 def test_picture_options_are_off_without_a_describer(monkeypatch):
+    import json
+
     from backend.config.settings import settings
     from backend.services.document_parser import _picture_options
 
@@ -108,6 +110,12 @@ def test_picture_options_are_off_without_a_describer(monkeypatch):
     # model nothing served.
     assert settings.DOCLING_PICTURE_MODEL in options["picture_description_api"]
     assert options["picture_description_area_threshold"] == "0.05"
+    # The runtime reads the reasoning level only from chat_template_kwargs.
+    # Without this the describer thinks first and the 160-token caption budget
+    # is spent on reasoning instead of on the caption.
+    api = json.loads(options["picture_description_api"])
+    assert api["params"]["max_tokens"] == 160
+    assert api["params"]["chat_template_kwargs"] == {"thinking": False}
 
 
 # The instruction sent to the picture describer is a prompt file, not a string
@@ -119,3 +127,55 @@ def test_the_picture_prompt_comes_from_the_prompt_folder():
     expected = load("document/picture")
     assert PICTURE_PROMPT == expected
     assert "Describe what this picture shows" in PICTURE_PROMPT
+
+
+def _docling_returning(payload: dict, monkeypatch) -> None:
+    from backend.config.settings import settings
+    from backend.services import document_parser
+
+    monkeypatch.setattr(settings, "DOCLING_BASE_URL", "http://parser.invalid:5001")
+
+    class Response:
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return payload
+
+    class Client:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *exc):
+            return False
+
+        async def post(self, *args, **kwargs):
+            return Response()
+
+    monkeypatch.setattr(document_parser.httpx, "AsyncClient", Client)
+
+
+# Docling reports partial_success when some pages failed but the rest
+# converted. Rejecting it threw away the whole document over one bad page.
+@pytest.mark.asyncio
+async def test_a_partial_success_with_readable_text_is_accepted(monkeypatch):
+    _docling_returning(
+        {"status": "partial_success", "document": {"md_content": "# Day 1\n\nArrive."}},
+        monkeypatch,
+    )
+    parsed = await parse_document("scan.pdf", b"%PDF-1.4 fake")
+    assert parsed.markdown == "# Day 1\n\nArrive."
+    assert parsed.pages == 1
+
+
+@pytest.mark.asyncio
+async def test_a_partial_success_with_no_text_is_still_refused(monkeypatch):
+    _docling_returning(
+        {"status": "partial_success", "document": {"md_content": "  "}},
+        monkeypatch,
+    )
+    with pytest.raises(ParseError, match="readable text"):
+        await parse_document("scan.pdf", b"%PDF-1.4 fake")

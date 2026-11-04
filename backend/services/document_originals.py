@@ -69,3 +69,27 @@ async def original_bytes(
     content = await store.read(str(artifact["_storage_key"]))
     artifact.pop("_storage_key", None)
     return artifact, content
+
+
+# Remove the kept Word file for a knowledge document: its artifact row and,
+# when a store is supplied, its bytes. Forgetting the document itself must not
+# fail because this secondary copy could not be found, so it reports rather
+# than raises.
+async def delete_original(
+    repository: BinaryArtifactRepository,
+    store: BinaryArtifactStore | None,
+    user_id: str,
+    document_id: str,
+) -> bool:
+    artifact = await repository.original_for_document(user_id, document_id)
+    if artifact is None:
+        return False
+    try:
+        storage_key = str(artifact.get("_storage_key") or "")
+        removed = await repository.delete(user_id, str(artifact["id"]))
+        if removed and storage_key and store is not None:
+            await store.delete(storage_key)
+        return bool(removed)
+    except Exception:
+        logger.warning("Could not delete the Word original of %s", document_id, exc_info=True)
+        return False

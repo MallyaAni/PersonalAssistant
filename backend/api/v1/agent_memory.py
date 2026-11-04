@@ -378,7 +378,7 @@ async def ingest_document(
     speaker_name: Annotated[str | None, Form()] = None,
     members_json: Annotated[str | None, Form()] = None,
 ) -> dict[str, Any]:
-    from backend.api.v1.vision import _read_bounded_upload
+    from backend.api.v1.vision import UploadTooLargeError, _read_bounded_upload
     from backend.config.settings import settings
     from backend.services.document_parse_queue import enqueue_document, parser_reachable
     from backend.services.document_parser import (
@@ -391,9 +391,12 @@ async def ingest_document(
     )
 
     filename = (document.filename or "document").rsplit("/", 1)[-1]
-    content = await _read_bounded_upload(document, settings.DOCUMENT_UPLOAD_MAX_BYTES)
-    media_type = classify(filename, content)
     try:
+        # Reading and classifying are inside the try: an oversized upload or a
+        # file whose bytes contradict its name is a refusal, not a server
+        # error, and must come back as 413/422 like the vision route's.
+        content = await _read_bounded_upload(document, settings.DOCUMENT_UPLOAD_MAX_BYTES)
+        media_type = classify(filename, content)
         # Ask whether the parser is there before handing it the file: while
         # its host is down a connection attempt hangs, and the sharer would
         # wait minutes to hear "queued" (measured 2026-09-02). The probe is
@@ -401,6 +404,11 @@ async def ingest_document(
         if needs_parser(media_type) and settings.DOCLING_BASE_URL and not await parser_reachable():
             raise ParseUnavailable(PARSER_AWAY)
         parsed = await parse_document(filename, content)
+    except UploadTooLargeError as exc:
+        raise HTTPException(
+            status_code=status.HTTP_413_CONTENT_TOO_LARGE,
+            detail="That file is too large to read.",
+        ) from exc
     except ParseUnavailable as exc:
         # The file is fine; the parser is away. Keep it and finish later
         # (document_parse_queue), telling the caller it is queued, not lost.
@@ -510,9 +518,16 @@ async def delete_knowledge(
     user_id: UserId,
     document_id: uuid.UUID,
     manager: DependencyAgentMemoryManager,
+    artifacts: ArtifactRepositoryDependency,
+    artifact_store: BinaryArtifactStoreDependency,
 ) -> dict[str, bool]:
     if not await manager.knowledge.delete(user_id, str(document_id)):
         raise HTTPException(status_code=404, detail="Knowledge document not found")
+    # The kept Word original is a second copy of the same document; the panel's
+    # delete removes it too, so nothing is left listed or downloadable.
+    from backend.services.document_originals import delete_original
+
+    await delete_original(artifacts, artifact_store, user_id, str(document_id))
     return {"deleted": True}
 
 

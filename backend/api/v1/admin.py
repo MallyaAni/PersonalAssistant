@@ -21,6 +21,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import delete, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.artifacts.storage import LocalBinaryArtifactStore
 from backend.config.settings import settings
 from backend.core.auth import AdminDependency, IdentityDependency
 from backend.core.dependencies import (
@@ -772,6 +773,26 @@ async def set_account_active(
 # group is an account, and its memory, tasks, subscriber row, and turns are
 # keyed by its user_id like anybody's (ADR 0016).
 async def purge_owned_rows(db: AsyncSession, user_id: str) -> dict[str, int]:
+    # Artifact binaries are files, not rows, so the table sweep below cannot
+    # reach them. Delete the rows first and take the storage keys with them,
+    # then remove the files: leaving them behind keeps a deleted account's
+    # pictures on disk until an operator runs collect_storage.
+    from backend.services.artifact_repository import SQLAlchemyArtifactRepository
+
+    artifacts_removed = 0
+    try:
+        artifacts_removed, storage_keys = await SQLAlchemyArtifactRepository(db).delete_all_owned(user_id)
+        store = LocalBinaryArtifactStore(settings.ARTIFACT_STORAGE_ROOT)
+        for storage_key in storage_keys:
+            try:
+                await store.delete(storage_key)
+            except Exception:
+                logger.warning(
+                    "Could not delete artifact binary %s for %s", storage_key, user_id, exc_info=True
+                )
+    except Exception:
+        logger.warning("Could not clear artifact rows for %s", user_id, exc_info=True)
+        await db.rollback()
     tables = [
         row[0]
         for row in (
@@ -808,6 +829,10 @@ async def purge_owned_rows(db: AsyncSession, user_id: str) -> dict[str, int]:
                 status_code=status.HTTP_409_CONFLICT,
                 detail=f"Could not clear: {', '.join(sorted(pending))}.",
             )
+    if artifacts_removed:
+        # The sweep finds no artifact rows left to count; report what the
+        # binary-aware delete above actually removed.
+        removed["visual_artifacts"] = removed.get("visual_artifacts", 0) + artifacts_removed
     return removed
 
 

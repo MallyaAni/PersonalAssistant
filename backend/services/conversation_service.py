@@ -4329,7 +4329,27 @@ class ConversationService:
                 store = getattr(self, "agent_memory", None)
                 if store is None:
                     return False
-                return bool(await store.knowledge.delete(user_id, str(receipt["id"])))
+                document_id = str(receipt["id"])
+                deleted = bool(await store.knowledge.delete(user_id, document_id))
+                if deleted:
+                    # The kept Word original is a second copy of the same
+                    # document; forgetting the document forgets it too.
+                    from backend.services.document_originals import delete_original
+
+                    image_generation = getattr(self, "image_generation", None)
+                    artifacts = (
+                        image_generation.repository
+                        if image_generation is not None
+                        else getattr(self, "image_artifacts", None)
+                    )
+                    if artifacts is not None:
+                        await delete_original(
+                            artifacts,
+                            image_generation.store if image_generation is not None else None,
+                            user_id,
+                            document_id,
+                        )
+                return deleted
             if kind in ("semantic_fact", "episodic") and receipt.get("id"):
                 return bool(
                     await self.memory.delete_memory(

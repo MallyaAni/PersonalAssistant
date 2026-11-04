@@ -200,6 +200,10 @@ class StubRepository:
         self.revision_arguments = args
         return _deck(), {"id": "revision-2"}
 
+    # Report one revision binary to remove, as the durable repository does.
+    async def delete(self, user_id: str, presentation_id: str) -> list[str]:
+        return ["user/revision-1.pptx"]
+
 
 class StubArtifactRepository:
     """Return one owned ready image for renderer hydration tests."""
@@ -217,6 +221,32 @@ class StubArtifactRepository:
             "mime_type": "image/png",
             "_storage_key": "user/image.png",
         }
+
+
+class StubSlideArtifactRepository:
+    """List and delete the slide images generated for one deck."""
+
+    # Initialize the captured listings and deletions.
+    def __init__(self) -> None:
+        self.listed: tuple[str, str] | None = None
+        self.deleted: list[tuple[str, str]] = []
+
+    # Return the deck's images with their opaque storage keys.
+    async def list_for_presentation(
+        self,
+        user_id: str,
+        presentation_id: str,
+    ) -> list[dict[str, Any]]:
+        self.listed = (user_id, presentation_id)
+        return [
+            {"id": "image-1", "_storage_key": "user/image-1.png"},
+            {"id": "image-2", "_storage_key": "user/image-2.png"},
+        ]
+
+    # Remove one owned image row.
+    async def delete(self, user_id: str, artifact_id: str) -> bool:
+        self.deleted.append((user_id, artifact_id))
+        return True
 
 
 class StubPresentationCoordinator:
@@ -316,6 +346,32 @@ async def test_slide_revision_changes_only_the_selected_slide(
     assert revised.slides[1].slide_id == base.slides[1].slide_id
     assert repository.revision_arguments is not None
     assert repository.revision_arguments[3] == "slide-b"
+
+
+# Deleting a deck removes its generated slide images as well as its revision
+# binaries; otherwise the images stay listed and downloadable with no deck.
+@pytest.mark.asyncio
+async def test_deleting_a_deck_removes_its_generated_slide_images() -> None:
+    store = StubStore()
+    artifacts = StubSlideArtifactRepository()
+    service = PresentationService(
+        StubAgent(),  # type: ignore[arg-type]
+        StubRenderer(),  # type: ignore[arg-type]
+        StubRepository(),  # type: ignore[arg-type]
+        store,  # type: ignore[arg-type]
+        "test",
+        "test-model",
+        artifacts,  # type: ignore[arg-type]
+    )
+
+    assert await service.delete("user", "presentation") is True
+    assert artifacts.listed == ("user", "presentation")
+    assert artifacts.deleted == [("user", "image-1"), ("user", "image-2")]
+    assert store.deleted == [
+        "user/revision-1.pptx",
+        "user/image-1.png",
+        "user/image-2.png",
+    ]
 
 
 # Verify progressive drafts precede one validated ready promotion.

@@ -13,7 +13,7 @@ import asyncio
 import logging
 from collections.abc import Sequence
 
-from sqlalchemy import select
+from sqlalchemy import and_, or_, select
 
 from backend.artifacts.storage import LocalBinaryArtifactStore
 from backend.config.settings import settings
@@ -66,7 +66,23 @@ async def _failed_artifacts(user_id: str | None) -> list[VisualArtifact]:
                 VisualArtifact.status == "ready",
                 VisualArtifact.kind.in_(RECOVERABLE_KINDS),
                 VisualArtifact.storage_key.is_not(None),
-                VisualArtifact.extra_data["analysis_status"].astext == "failed",
+                or_(
+                    VisualArtifact.extra_data["analysis_status"].astext == "failed",
+                    # A crash between storing the upload and writing its
+                    # analysis leaves it pending; nothing else recovers it.
+                    and_(
+                        VisualArtifact.extra_data["analysis_status"].astext == "pending",
+                        VisualArtifact.extra_data["analysis_reasoned"].astext.is_(None),
+                    ),
+                    # A crash during deferred reasoning leaves the artifact
+                    # ready but never reasoned; finish that answer rather than
+                    # losing it.
+                    and_(
+                        VisualArtifact.extra_data["analysis_status"].astext == "ready",
+                        VisualArtifact.extra_data["analysis_needs_reasoning"].astext == "true",
+                        VisualArtifact.extra_data["analysis_reasoned"].astext.is_(None),
+                    ),
+                ),
             )
             .order_by(VisualArtifact.created_at)
         )
@@ -86,6 +102,18 @@ async def _recover_one(
     except Exception as exc:
         logger.warning("Vision recovery unreadable %s: %s", artifact.id, exc)
         return False
+    metadata = artifact.extra_data or {}
+    # A deferred answer that never ran is finished from the stored analysis,
+    # not re-inspected: the observation and the question are already there.
+    if (
+        metadata.get("analysis_status") == "ready"
+        and metadata.get("analysis_needs_reasoning")
+        and not metadata.get("analysis_reasoned")
+        and await service.finish_deferred_reasoning(
+            str(artifact.user_id), str(artifact.id)
+        )
+    ):
+        return True
     updated = await service.recover_analysis(
         str(artifact.user_id),
         str(artifact.id),

@@ -542,6 +542,27 @@ class PresentationService:
             return False
         for storage_key in storage_keys:
             await self.store.delete(storage_key)
+        # The slide images were generated for this deck and are not revision
+        # binaries; without this they stay listed and downloadable after the
+        # deck is gone.
+        if self.artifact_repository is not None:
+            try:
+                artifacts = await self.artifact_repository.list_for_presentation(
+                    user_id, presentation_id
+                )
+                for artifact in artifacts:
+                    storage_key = str(artifact.get("_storage_key") or "")
+                    removed = await self.artifact_repository.delete(
+                        user_id, str(artifact["id"])
+                    )
+                    if removed and storage_key:
+                        await self.store.delete(storage_key)
+            except Exception:
+                logger.warning(
+                    "Could not delete the images of presentation %s",
+                    presentation_id,
+                    exc_info=True,
+                )
         return True
 
     # Render a validated spec and make the revision current only after all checks pass.
