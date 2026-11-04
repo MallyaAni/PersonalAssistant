@@ -187,6 +187,11 @@ state file hash. It does not rewrite the state or any live artifact.
 - It is not a claim about the removed P/E tilt, the learned monthly model, the
   timing publication or the fifteen-minute execution; the contract does not
   consult them, and no live evidence about them is produced.
+- It is not replaceable by a 4-8 week holdout. That is 20-40 returns with an
+  annualized Sharpe standard error of about 3-4, a single window, no offsets
+  and no paired test, and the recent window is the one the direction doc bans
+  chasing. The scorecard's 20-offset causal backtest is the statistical
+  evidence; a short holdout is at most a secondary guard for a new signal.
 - It is not a reason to change the rule mid-record. The direction doc's rule
   stands: no interim live change except an owner-authorized simplification or
   a correctness fix.

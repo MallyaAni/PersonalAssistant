@@ -256,7 +256,12 @@ says what changed and why.
    does not earn its complexity is removed.
 5. **The honest universe is the test; the live book is the mandate.** A rule
    that only works on the live 94-name book is not evidence. A rule that only
-   works in 2024-2026 is not the objective.
+   works in 2024-2026 is not the objective. A 4-8 week holdout is not a test:
+   it is 20-40 returns, the annualized Sharpe standard error there is about
+   3-4, and the recent window is the one this document bans chasing. The
+   20-offset causal scorecard is the statistical test; the forward record is
+   the live test. A short holdout can be a secondary guard for a new signal,
+   never a substitute for either.
 6. **Costs and statistics.** 10 and 25 bp; 20 offsets; medians and worst;
    paired daily differences; Newey-West t at lag 20; month-block bootstrap;
    PSR. No single-number claims.
