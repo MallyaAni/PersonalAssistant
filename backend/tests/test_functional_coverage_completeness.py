@@ -27,9 +27,15 @@ INTERNET_TOOLS = ("search_web", "get_weather", "search_credits")
 # where they are proven instead.
 JOURNEY_EXEMPT = {
     "Edits to a shared file": "needs a Word file shared in the conversation; the sweep uploads nothing - walked by the live acceptance (scripts kept on the Spark) and the router functional test",
-    "Presentations": "a deck build runs minutes in the presentation worker; frontend/e2e/presentations.spec.ts walks it",
     "Background runs": "needs a run parked on an approval, which the sweep cannot stage over HTTP; the router and reply are walked by functional/test_run_answers_behaviour.py and the answer path by test_run_answers.py on the real schema",
     "Send links for listed events": "needs a listing rendered in a prior turn, which the sweep cannot stage over HTTP; the router and picker are walked by functional/test_send_event_links_behaviour.py",
+    # Not a registry label: MCP tools are registered at runtime from the
+    # configured server, so this line records the debt rather than exempting
+    # a label the sweep could have walked. Execution is proven structurally
+    # in test_mcp_tool_orchestration.py, and the selector's toolbox choice in
+    # functional/test_main_action_selector_behaviour.py; no functional test
+    # calls a real MCP tool, because the sweep has no MCP server.
+    "MCP toolbox execution": "needs an MCP server, which the sweep does not have; structural proof in test_mcp_tool_orchestration.py and the selector proof in functional/test_main_action_selector_behaviour.py",
 }
 
 
@@ -63,7 +69,13 @@ def test_every_tool_has_a_live_functional_test():
 
 
 def test_every_capability_is_walked_by_a_sweep_journey():
-    walked = {label for journey in JOURNEYS for label in journey.expect_action if label}
+    # Only the primary label counts. An expectation may list an alternative
+    # ("Skill" beside "Web search") because either route is a fair answer, but
+    # a journey that took the alternative did not walk the capability named
+    # first - so counting every label in the tuple let an alternative stand in
+    # for a route no journey ever exercised. The sweep prints the label it
+    # actually took; this test holds the expectation to its primary.
+    walked = {journey.expect_action[0] for journey in JOURNEYS if journey.expect_action and journey.expect_action[0]}
     labels = [module.TOOL.label for module in registry._MODULES]
     missing = [label for label in labels if label not in walked and label not in JOURNEY_EXEMPT]
     assert not missing, f"no sweep journey expects these routes over HTTP: {missing}"

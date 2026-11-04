@@ -75,6 +75,10 @@ class Journey:
     # Room chatter the assistant only reads (posted to /chat/observe as the
     # group with the sweep user speaking, in the journey's conversation).
     observed_before: tuple[str, ...] = ()
+    # Whether this journey needs the picture machine. A negative picture
+    # journey ("edit with no image") is about the absence of one, so it runs
+    # even when the machine is off - it used to be skipped with the rest.
+    picture_gated: bool = True
 
 
 JOURNEYS = [
@@ -200,6 +204,14 @@ JOURNEYS = [
     # Every capability walked at least once (test_functional_coverage_completeness).
     Journey("diagram", "draw me a diagram of the agile process", ("Diagrams",),
             does_not_hold=("The reply says it cannot make diagrams.",)),
+    # The deck route is walked over HTTP; the build itself runs for minutes in
+    # the presentation worker, and the finished deck is covered by
+    # frontend/e2e/presentations.spec.ts. What this pins is the hand-off: the
+    # reply says a job was queued, and the row exists for this person.
+    Journey("ask for a deck", "make me a short presentation about the history of tea", ("Presentations",),
+            holds=("The reply says a deck or presentation is being created, handed off, or queued in the background.",),
+            does_not_hold=("The reply says it cannot make presentations or decks.",),
+            sql_holds=("select count(*) >= 1 from presentation_jobs where user_id = :u",)),
     Journey("save a skill", "save this as a skill called weekend brief: list three things to do this weekend in one line each", ("Skills",),
             holds=("The reply confirms a skill or routine was saved.",)),
     Journey("list skills", "what skills do i have?", ("Manage skills",),
@@ -209,7 +221,10 @@ JOURNEYS = [
             does_not_hold=("The reply says it cannot edit pictures.",)),
     Journey("edit with no image", "make the background of my photo blue", (None, "Image edits"),
             holds=("The reply says there is no picture to edit yet and asks for one, or asks which picture.",),
-            does_not_hold=("The reply claims a picture was edited.",)),
+            does_not_hold=("The reply claims a picture was edited.",),
+            # The point of the journey is that there is no picture: it must
+            # run when the picture machine is off, not be skipped with it.
+            picture_gated=False),
     # 2026-08-26: "send another don tito reminder at 7" was captured as Scout's
     # sweep schedule (daily, 7 AM) and announced as saved. A reminder's time is
     # never the sweep's cadence.
@@ -288,7 +303,12 @@ JOURNEYS = [
     # 0/9 before the follow-up resolver, 2026-08-27).
     Journey("opinion about the picture (image referent)", "which hat would look better with this outfit, straw or cowboy?", ("About the picture", None),
             before=("make a picture of me in a linen outfit with a straw hat",),
-            does_not_hold=("The reply says it edited, changed, or is changing the picture.",)),
+            # The opinion is answered about the picture itself, even when no
+            # image is attached to the turn: the discussion recalls it. A
+            # reply that cannot see it is the failure this pins.
+            holds=("The reply refers to the hat, the outfit, or what is in the picture, and answers the question about it.",),
+            does_not_hold=("The reply says it edited, changed, or is changing the picture.",
+                           "The reply says it cannot see, view, or access the picture.",)),
     # A draft continuation goes to no tool: measured 6/12 before the resolver
     # withheld automation for such turns (2026-08-27).
     Journey("more casual (draft referent)", "make it more casual and ask them to reply by Thursday at noon", (None,),
@@ -381,6 +401,17 @@ JOURNEYS = [
     Journey("group: weather here is the speaker's here", "Scout hows the weather here today?", ("Weather",),
             as_group=True, holds=("the reply gives today's weather for a specific place",),
             does_not_hold=("the reply asks where the person is",)),
+    # Undo in a room: the change log is scoped to the conversation the change
+    # was made in, so the room's "undo that" must take back the room's
+    # reminder - not the newest change in some other conversation of the
+    # account, and not the 9pm reminder an earlier journey left in another.
+    # 6am, and no other group journey uses it.
+    Journey("group: undo that removes the room's reminder", "undo that", ("Manage scheduled tasks",),
+            as_group=True,
+            before=("Scout, remind us to stretch at 6am tomorrow",),
+            holds=("The reply says the stretch reminder was undone, cancelled, or removed.",),
+            does_not_hold=("The reply says nothing could be undone.",),
+            sql_holds=("select count(*) = 0 from scheduled_tasks where user_id = :g and kind = 'reminder' and hour = 6",)),
 ]
 
 
@@ -419,6 +450,11 @@ class Sweep:
         self.user, self.member, self.group_chat = sweep_identities(run)
         self.headers: dict[str, str] = {}
         self.failures: list[str] = []
+        # The route label each journey actually took. An expectation may list
+        # alternatives ("Skill" beside "Web search"), and only the primary
+        # label proves that capability was walked - so the label taken is
+        # recorded and reported rather than inferred from the expectation.
+        self.routes: dict[str, str | None] = {}
         # The group the group journeys run in, and its other member - made
         # only when a group journey is selected.
         self.member_headers: dict[str, str] = {}
@@ -601,11 +637,17 @@ class Sweep:
 
     @staticmethod
     def judge(answer: str, statement: str) -> bool | None:
+        # `states` raises pytest's Skipped - a BaseException, not an
+        # Exception - when the judge model is unreachable or answers with
+        # non-JSON. Catching only Exception let that crash the whole sweep;
+        # catching BaseException without this filter would swallow a Ctrl-C.
         try:
             from backend.tests.functional.semantic import states
 
             return bool(states(answer, statement))
-        except Exception:
+        except (KeyboardInterrupt, SystemExit, asyncio.CancelledError):
+            raise
+        except BaseException:
             return None
 
     # Whether the picture machine answers: picture journeys are skipped, not
@@ -615,7 +657,10 @@ class Sweep:
 
         try:
             response = await client.get(f"{settings.IMAGE_PROVIDER_BASE_URL.rstrip('/')}/system_stats", timeout=5.0)
-            return response.status_code < 500
+            # Healthy is a 2xx, not "anything that is not a crash": a 404 or
+            # a 503 from a half-started machine is not a machine that can
+            # draw, and treating it as one failed every picture journey.
+            return 200 <= response.status_code < 300
         except httpx.HTTPError:
             return False
 
@@ -644,8 +689,9 @@ class Sweep:
                 print("picture machine unreachable: picture journeys will be skipped, not failed", flush=True)
             try:
                 for journey in self.journeys:
-                    needs_pictures = bool(set(journey.expect_action) & _PICTURE_ROUTES) or any(
-                        "picture" in earlier.lower() for earlier in journey.before
+                    needs_pictures = journey.picture_gated and (
+                        bool(set(journey.expect_action) & _PICTURE_ROUTES)
+                        or any("picture" in earlier.lower() for earlier in journey.before)
                     )
                     if needs_pictures and not pictures:
                         print(f"SKIP {journey.name}: picture machine unreachable", flush=True)
@@ -694,6 +740,7 @@ class Sweep:
                         async with AsyncSessionLocal() as db:
                             if not await db.scalar(text(statement), {"u": self.user, "g": self.group_id, "m": self.member}):
                                 problems.append(f"db: not true: {statement}")
+                    self.routes[journey.name] = r["action"]
                     if r["error"]:
                         problems.append(f"error={r['error']}")
                     if r["action"] not in journey.expect_action:
@@ -712,15 +759,38 @@ class Sweep:
                         verdict = self.judge(r["text"], statement)
                         if verdict is False:
                             problems.append(f"does not hold: {statement}")
+                        elif verdict is None:
+                            # A judge outage is not a pass. Treating it as one
+                            # let a sweep report green while nothing was read.
+                            problems.append(f"judge unavailable: {statement}")
                     for statement in journey.does_not_hold:
                         verdict = self.judge(r["text"], statement)
                         if verdict is True:
                             problems.append(f"holds but must not: {statement}")
+                        elif verdict is None:
+                            problems.append(f"judge unavailable: {statement}")
                     status = "PASS" if not problems else "GAP "
                     if problems:
                         self.failures.append(journey.name)
                     print(f"{status} {journey.name}: route={r['action']} sources={r['sources']} | {'; '.join(problems) or 'ok'}", flush=True)
                     print(f"      reply: {r['text'][:220]!r}", flush=True)
+                # Which label each journey actually took, against the primary
+                # one its expectation names. An alternative is a legitimate
+                # route, but it does not prove the primary capability was
+                # walked, so the difference is reported rather than hidden.
+                off_primary = [
+                    f"{name} -> {route!r} (primary {journey.expect_action[0]!r})"
+                    for journey in self.journeys
+                    if (route := self.routes.get(journey.name)) is not None
+                    and journey.expect_action
+                    and journey.expect_action[0] is not None
+                    and route != journey.expect_action[0]
+                ]
+                print(
+                    f"routes: {len(self.routes)} taken; off primary: "
+                    f"{'; '.join(off_primary) or 'none'}",
+                    flush=True,
+                )
                 # Every routed turn must have saved its trace: the record that
                 # makes "why did it do that" a minute's work. Checked here, on
                 # the HTTP path, because the in-process tests cannot see a

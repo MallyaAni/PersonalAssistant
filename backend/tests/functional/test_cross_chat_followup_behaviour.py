@@ -84,3 +84,71 @@ async def test_without_the_room_turn_the_same_words_are_not_a_picture(selector):
         if isinstance(action, GenerateImageAction):
             pictures += 1
     assert pictures <= 1, seen
+
+
+async def test_another_members_room_request_is_not_retried_from_a_direct_message(selector):
+    """The room's rows share one account, so the speaker decides whose turn it is.
+
+    A asks the room for a chess picture. B, in a direct message minutes later,
+    says "try again". Before the speaker filter the room turn was merged into
+    B's direct history and the router could retry A's picture as B's request.
+    This seeds both turns in the real schema, reads the room turns as each
+    member, and asks the real router what B's "try again" refers to.
+    """
+    import uuid
+
+    from backend.database.session import AsyncSessionLocal
+    from backend.groups.repository import ConversationGroupRepository, group_user_id
+    from backend.services.cross_chat import merged_for_routing, recent_room_turns
+    from backend.services.repository import SQLAlchemyConversationRepository
+
+    suffix = uuid.uuid4().hex[:8]
+    asker = f"functional-cross-a-{suffix}"
+    other = f"functional-cross-b-{suffix}"
+    chat_address = f"imessage;+;chat-functional-cross-{suffix}"
+    group_account = group_user_id(chat_address)
+    conversation_id = str(uuid.uuid4())
+
+    async with AsyncSessionLocal() as session:
+        await ConversationGroupRepository(session).provision(
+            chat_address, "Cross chat test", (asker, other)
+        )
+        await SQLAlchemyConversationRepository(session).save_turn(
+            conversation_id,
+            {
+                "user_id": group_account,
+                "query": "Can you please generate a picture that shows a castle in chess?",
+                "response": "Here's the image you asked for.",
+                "metadata": {
+                    "channel": "imessage_group",
+                    "group": {"speaker_user_id": asker, "speaker_name": "A"},
+                },
+            },
+        )
+
+    try:
+        as_asker = await recent_room_turns(asker)
+        as_other = await recent_room_turns(other)
+        assert any("castle" in str(turn.get("query") or "").casefold() for turn in as_asker), as_asker
+        assert as_other == [], f"another member's room turn was merged: {as_other}"
+
+        merged = merged_for_routing(_DIRECT, as_other)
+        assert not any("castle" in str(turn.get("query") or "").casefold() for turn in merged), merged
+        pictures = 0
+        seen = []
+        for _ in range(3):
+            action = await selector.select(other, "try again", merged, None)
+            seen.append(action)
+            if isinstance(action, GenerateImageAction):
+                pictures += 1
+        assert pictures <= 1, f"B's direct retry acted on A's room request: {seen}"
+    finally:
+        from backend.api.v1.admin import purge_owned_rows
+
+        async with AsyncSessionLocal() as session:
+            try:
+                await purge_owned_rows(session, group_account)
+                await session.commit()
+            except Exception:
+                await session.rollback()
+            await ConversationGroupRepository(session).delete(group_account)
