@@ -254,6 +254,20 @@ Option 1 was implemented and installed through the release ceremony on
   (2015-01-02 .. 2026-11-03). `ReportHoldingReader`'s symbol and
   calendar-prefix admissions therefore pass on the live report shape. No live
   artifact was changed.
+- Sizing null test (2026-11-04, read-only, research script
+  `~/dsv41/universe/live_path_replay.py`): the live sizing function
+  `leader.size_report` and the research `/3` arm
+  `market_pit_scorecard._leader_live` produced **identical** weight vectors on
+  the authentic nightly desk report for the live book over the last 40
+  completed sessions (2026-09-09 .. 2026-11-03), max absolute difference 0.0
+  and 0 mismatched names in every session. The untruncated live call also
+  equals the causal view at the last session (0.0). Panel 2,977 sessions, 95
+  tickers (94 book names + SPY); 5-10 A/A+ names per session; live gross
+  0.5000-0.7235, with the 0.5 exposure floor binding on the last session
+  (8 names, gross 0.5). Code revision `7562b8f2`. This isolates the sizing
+  arithmetic the `/3` install changed (P/E off); the buy-permission block and
+  account state are not part of this comparison. Summary:
+  `~/dsv41/universe/live_path_replay_summary.json`.
 - Remaining acceptance: the first ordinary nightly after deploy (2026-11-04
   19:30 ET) must complete and write a fresh plan, and the following paper
   session must fill. `evidence.json` keeps

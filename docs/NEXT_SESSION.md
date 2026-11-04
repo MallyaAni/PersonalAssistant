@@ -25,7 +25,12 @@ artifacts; the following paper session must fill. `evidence.json` keeps
 record starts with that session. Pre-nightly readiness check (read-only)
 passed on the live data: the desk report panel is the 94-name book plus SPY,
 all inside the risk bank's 96 symbols, and the bank's calendar is an exact
-prefix of the panel's.
+prefix of the panel's. The sizing null test (read-only) also passed: over the
+last 40 completed sessions (2026-09-09 .. 2026-11-03), the live
+`leader.size_report` and the research `/3` arm produced identical weight
+vectors on the authentic nightly report, max difference 0.0 and 0 mismatched
+names in every session. Summary:
+`~/dsv41/universe/live_path_replay_summary.json`.
 
 **Then milestone 5.** The review pre-registration is written and committed:
 [research/forward-record-review-preregistration-2026-11-04.md](research/forward-record-review-preregistration-2026-11-04.md).
