@@ -1634,6 +1634,11 @@ def get_main_action_selector(
         diagram_enabled=diagram_artifacts is not None,
         presentation_enabled=presentation_jobs is not None,
         embedder=get_embedding_provider(),
+        # The router offered search whenever the MCP server could be invoked,
+        # while execution also needed a configured local provider. With none,
+        # a chosen search silently produced nothing and the reply answered
+        # from training. Read the provider's own answer, not the server's.
+        search_enabled=get_search_provider().is_enabled(),
     )
 
 

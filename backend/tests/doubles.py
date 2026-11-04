@@ -6,6 +6,7 @@ from backend.core.interfaces import (
     ConversationTracer,
     MemoryService,
 )
+from backend.services.turn_steps import Act
 
 
 class StubMemoryService(MemoryService):
@@ -149,8 +150,10 @@ class StubMainActionSelector:
     test_search_wiring.py, test_show_image.py and test_diagram_artifacts.py -
     and on 2026-08-29 adding a keyword argument to the real selector turned
     twenty tests red in four files at once, each needing the same edit. The
-    signature below mirrors MainActionSelector.select; when that gains an
-    argument, this is the one place that has to learn about it.
+    signature below mirrors MainActionSelector.decide; when that gains an
+    argument, this is the one place that has to learn about it. The service
+    reads the typed decision now, so the stub wraps its fixed action in
+    `Act` - the same answer a router that chose that action returns.
     """
 
     def __init__(self, action: Any) -> None:
@@ -159,7 +162,7 @@ class StubMainActionSelector:
         # passed down without a second double.
         self.calls: list[dict[str, Any]] = []
 
-    async def select(
+    async def decide(
         self,
         user_id: str,
         query: str,
@@ -173,7 +176,9 @@ class StubMainActionSelector:
         steps_taken: list[str] | None = None,
         zone: str = "",
         replying_to: str = "",
-    ) -> Any:
+        later_step_seconds: float | None = None,
+        excluding: frozenset[str] | None = None,
+    ) -> Act:
         self.calls.append(
             {
                 "user_id": user_id,
@@ -184,4 +189,4 @@ class StubMainActionSelector:
                 "replying_to": replying_to,
             }
         )
-        return self.action
+        return Act(self.action)

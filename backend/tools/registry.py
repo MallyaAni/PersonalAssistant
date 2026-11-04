@@ -145,9 +145,11 @@ AUTOMATION_TOOLS: frozenset[str] = frozenset(
 # recalls nothing - its instruction is the whole message - and offered
 # history recall, "Remind me to stretch" in a thread with earlier turns was
 # routed to it and answered with "when would you like that reminder?"
-# (2026-08-26, found by exercise_search_scenarios).
+# (2026-08-26, found by exercise_search_scenarios). Presentation delegation
+# is withheld too: the firing path skips delegation, so offering the deck
+# tool let a firing choose it and the step was dropped with no outcome.
 UNATTENDED_WITHHELD: frozenset[str] = AUTOMATION_TOOLS | frozenset(
-    (search_history.NAME, send_event_links.NAME)
+    (search_history.NAME, send_event_links.NAME, presentation.NAME)
 )
 # Withheld when the newest message is about a draft - text being written
 # together. A draft is not a picture: "make it more casual" after a drafted

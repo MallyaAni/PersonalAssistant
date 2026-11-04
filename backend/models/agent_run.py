@@ -83,6 +83,15 @@ class AgentRun(Base):
         UUID(as_uuid=True), nullable=True
     )
     channel: Mapped[str] = mapped_column(String(20), nullable=False, default="web")
+    # The turn the run continues, beyond its conversation: who spoke (the
+    # person in a room, where a group's members share one account), the zone
+    # their clock was read in, and the message they replied to. A step applied
+    # by the run is applied as that turn - the room's check-in guard, the
+    # speaker's zone, the undo scope - not as an anonymous request from a
+    # worker. Null on a run that continues no turn.
+    speaker_user_id: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    timezone: Mapped[str | None] = mapped_column(String(60), nullable=True)
+    replying_to: Mapped[str | None] = mapped_column(String(300), nullable=True)
     # What the run produced, as JSON: the evidence the verifier found, the
     # summary for the person.
     result: Mapped[str | None] = mapped_column(EncryptedText, nullable=True)

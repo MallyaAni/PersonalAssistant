@@ -83,6 +83,7 @@ from backend.services.main_action_selector import (
     CreateDiagramAction,
     CreateDocumentAction,
     DelegateAction,
+    DiscussImageAction,
     EditDocumentAction,
     EditImageAction,
     GenerateImageAction,
@@ -124,7 +125,20 @@ from backend.services.checkin_arming import (
 from backend.tasks.repository import ScheduledTaskRepository
 from backend.services.chat_steps import action_of, decision_view
 from backend.services.cross_chat import merged_for_routing, recent_room_turns
-from backend.services.turn_steps import UNAPPLIED, Decision, TurnResult, run_steps, BUDGET, CEILING, Unavailable, status_of
+from backend.services.turn_steps import (
+    BUDGET,
+    CEILING,
+    UNAPPLIED,
+    Act,
+    Decision,
+    Done,
+    NeedsInput,
+    Refused,
+    TurnResult,
+    Unavailable,
+    run_steps,
+    status_of,
+)
 
 if TYPE_CHECKING:  # names used only in annotations, never at runtime
     from backend.services.readiness import Readiness
@@ -234,15 +248,48 @@ def worth_continuing(turn: TurnResult) -> bool:
     )
 
 
+# The action a decision leaves the turn, and the note the reply needs when
+# there is none. "Nothing further" is a clean stop; a router that failed, needs
+# something the message did not say, or refused is not, and collapsing all of
+# them into None is how a failed router became a confident answer from memory.
+def router_outcome(decision: Decision) -> tuple[MainAction, dict[str, Any] | None]:
+    if isinstance(decision, Act):
+        return decision.action, None
+    if isinstance(decision, NeedsInput):
+        return None, {
+            "needs_input": decision.missing or decision.tool,
+            "tool": decision.tool,
+        }
+    if isinstance(decision, Unavailable):
+        return None, {"router_unavailable": decision.reason}
+    if isinstance(decision, Refused):
+        return None, {"router_refused": decision.reason}
+    return None, None
+
+
+# A router note folded into whatever context the turn already carries, so the
+# reply reads one dictionary rather than a second channel.
+def _with_router_note(
+    context: dict[str, Any] | None, note: dict[str, Any] | None
+) -> dict[str, Any] | None:
+    if not note:
+        return context
+    return {**(context or {}), **note}
+
+
 # The run that finishes a cut-short turn: the person's words as its
-# objective, the turn's step lines as what it starts from, the turn's
-# channel so the person is told where they asked.
+# objective, the turn's step lines as what it starts from, and the turn's own
+# context - channel, speaker, zone, replied-to message - so every step the run
+# applies is applied as that turn and not as an anonymous request.
 async def _create_continuation_run(
     user_id: str,
     query: str,
     lines: list[str],
     conversation_id: str | None,
     channel: str,
+    speaker_user_id: str | None = None,
+    timezone: str | None = None,
+    replying_to: str | None = None,
 ) -> dict[str, Any] | None:
     from backend.database.session import AsyncSessionLocal
     from backend.runs.repository import AgentRunRepository
@@ -259,6 +306,9 @@ async def _create_continuation_run(
             max_creates=int(settings.TURN_MAX_CREATES),
             conversation_id=conversation_id,
             channel=channel if channel in ("web", "imessage", "imessage_group") else "web",
+            speaker_user_id=speaker_user_id,
+            timezone=timezone,
+            replying_to=replying_to,
         )
 
 
@@ -1582,7 +1632,17 @@ class ConversationService:
     # room's own turn reads its room alone; a failure to read the rooms
     # leaves the direct history as it was.
     async def _history_for_routing(self, user_id: str, history: list[dict[str, Any]]) -> list[dict[str, Any]]:
-        if str(_turn_channel.get() or "web") == "imessage_group" or not user_id:
+        return await self._routing_history_for(
+            user_id, history, str(_turn_channel.get() or "web")
+        )
+
+    # The same merge, with the channel passed in rather than read from the
+    # turn's context: a continuation decides in another process, where the
+    # ContextVar was never set for this turn.
+    async def _routing_history_for(
+        self, user_id: str, history: list[dict[str, Any]], channel: str
+    ) -> list[dict[str, Any]]:
+        if channel == "imessage_group" or not user_id:
             return history
         reader = getattr(self, "room_turns_reader", None) or recent_room_turns
         try:
@@ -1607,17 +1667,29 @@ class ConversationService:
         active_image_artifact_id: str | None,
         skills: list[dict[str, Any]] | None = None,
         unattended: bool = False,
-    ) -> MainAction:
+        routing_history: list[dict[str, Any]] | None = None,
+    ) -> Decision:
         if self.main_action_selector is None:
-            return None
+            return Done("no router in this process")
         # A direct message that continues something the person just did in
         # one of their rooms - "try again" after a picture asked for in the
         # group - is routed against both; the room turns are marked as the
         # room's. Twice on 2026-09-04/05 "try again" in the direct chat was
         # searched as events because the request it retried was in the group.
-        history = await self._history_for_routing(user_id, history)
+        # The turn computes it once and passes it here and to every later
+        # decision, so the merge cannot be skipped by one of them.
+        history = (
+            routing_history
+            if routing_history is not None
+            else await self._history_for_routing(user_id, history)
+        )
         try:
-            return await self.main_action_selector.select(
+            # The typed decision, not the collapsed action: a router that
+            # failed and a router that declined are different answers, and
+            # `select` turned both into None. The reply is told which one it
+            # got, so a live-fact question is not answered from memory after
+            # the router could not be reached.
+            return await self.main_action_selector.decide(
                 user_id,
                 query,
                 history,
@@ -1635,9 +1707,9 @@ class ConversationService:
                 # no resolver can infer from "try again".
                 replying_to=_replying_to.get(),
             )
-        except Exception:
+        except Exception as exc:
             logger.warning("Main action selection failed", exc_info=True)
-            return None
+            return Unavailable(f"the router could not be reached: {type(exc).__name__}")
 
     # The skills the router may choose for this person: the ones they taught
     # plus the shipped packs, a taught one winning over a pack of the same
@@ -1671,9 +1743,11 @@ class ConversationService:
         active_image_artifact_id: str | None,
         unattended: bool = False,
         asked: str = "",
+        routing_history: list[dict[str, Any]] | None = None,
+        router_note: dict[str, Any] | None = None,
     ) -> tuple[MainAction, dict[str, Any] | None]:
         if not isinstance(action, UseSkillAction):
-            return action, None
+            return action, _with_router_note(None, router_note)
         if self.skills is not None and action.source == "user":
             with suppress(Exception):
                 await self.skills.touch_used(user_id, action.skill_id)
@@ -1694,7 +1768,9 @@ class ConversationService:
             active_image_artifact_id,
             skills=[],
             unattended=unattended,
+            routing_history=routing_history,
         )
+        inner_action, inner_note = router_outcome(inner)
         context = {
             "skill": {
                 "id": action.skill_id,
@@ -1703,7 +1779,11 @@ class ConversationService:
                 "source": action.source,
             }
         }
-        return inner, context
+        # A skill whose instruction routed to nothing is a clean stop. One
+        # whose re-route failed or needs input is not: the note rides beside
+        # the skill so the reply can say the skill could not check rather
+        # than answer as though it had.
+        return inner_action, _with_router_note(context, inner_note)
 
     # What the person is shown while the turn runs: the capability chosen
     # and a playful line for the wait. Nothing for a plain reply.
@@ -1827,6 +1907,26 @@ class ConversationService:
             extra_context=extra_context,
         )
 
+    # Queue one deck job. The live delegation and a continuation's step both
+    # cross the same boundary, so a deck queued from either is the same row
+    # with the same conversation and trace; raises when the service is not
+    # wired or the queue refuses, and each caller reports that its own way.
+    async def _enqueue_presentation_job(
+        self,
+        user_id: str,
+        conversation_id: str,
+        trace_id: str,
+        query: str,
+    ) -> dict[str, Any]:
+        if self.presentation_jobs is None:
+            raise RuntimeError("Presentation jobs are not configured")
+        return await self.presentation_jobs.enqueue(
+            user_id,
+            conversation_id,
+            trace_id,
+            query,
+        )
+
     # Queue a specialist presentation job and persist the delegated chat turn.
     async def _process_presentation_delegation(
         self,
@@ -1852,7 +1952,7 @@ class ConversationService:
             self.history_turn_limit,
         )
         try:
-            job = await self.presentation_jobs.enqueue(
+            job = await self._enqueue_presentation_job(
                 user_id,
                 conversation_id,
                 trace_id,
@@ -2778,12 +2878,35 @@ class ConversationService:
         )
         image_matches: list[dict[str, Any]] = []
         if active_image is None:
-            image_matches = await self._recall_image_matches(
-                user_id,
-                query,
-                trace_id,
-                query_embedding,
-            )
+            # "What do you think of it?" about an earlier picture is routed
+            # as DiscussImageAction, and the reply needs that picture's
+            # description in its context. The artifact-context router gates
+            # recall separately and does not see the routing decision, so it
+            # vetoed the one recall that would have supplied it and the reply
+            # answered an opinion about a picture it could not see. The
+            # router has already decided this turn is about a picture, so the
+            # gate is redundant here; the ranked loaders still apply their
+            # own ownership and relevance checks.
+            if isinstance(action, DiscussImageAction):
+                image_matches = await self._load_image_matches(
+                    user_id,
+                    query,
+                    trace_id,
+                    query_embedding,
+                )
+                if not image_matches:
+                    image_matches = await self._load_visual_memory_matches(
+                        user_id,
+                        query,
+                        query_embedding,
+                    )
+            else:
+                image_matches = await self._recall_image_matches(
+                    user_id,
+                    query,
+                    trace_id,
+                    query_embedding,
+                )
         prompt_images = self._prompt_images(active_image, image_matches)
         if prompt_images:
             lineages = await self._resolve_lineage(user_id, prompt_images)
@@ -3737,6 +3860,15 @@ class ConversationService:
         limit = await self._search_limit()
         if limit is not None:
             current_search_limit.set(limit)
+        # The history every routing decision in this turn reads: the direct
+        # conversation's own turns with the person's recent room turns merged
+        # in. Computed once, here, after the channel is known, and passed to
+        # the router, the skill re-route, the search planner, retrieval and
+        # the later-step decisions. Before this it was computed for the first
+        # decision alone; a DM "try again" after a group request was routed
+        # correctly and then re-composed against the DM transcript, which is
+        # the 2026-09-04/05 failure the merge exists to fix.
+        routing_history = await self._history_for_routing(user_id, history)
         # A scheduled task fires with nobody watching, so the tools that
         # change what is scheduled or taught are withheld from it.
         unattended = bool((metadata or {}).get("scheduled_task"))
@@ -3744,14 +3876,42 @@ class ConversationService:
         # call mom" - is the message; it is not routed. Asked, the router
         # searched the web for "time to call mom" two times in three
         # (2026-08-26), and nobody is there to notice a wasted search.
+        router_note: dict[str, Any] | None = None
         if unattended and _is_plain_reminder(query):
             action = None
         else:
-            action = await self._select_main_action(
-                user_id, query, history, active_image_artifact_id, unattended=unattended
+            decision = await self._select_main_action(
+                user_id,
+                query,
+                history,
+                active_image_artifact_id,
+                unattended=unattended,
+                routing_history=routing_history,
             )
+            # One retry, so a transport blip does not turn a live-fact
+            # question into an answer from memory. A second failure is
+            # reported to the reply, never read as "no tool".
+            if isinstance(decision, Unavailable):
+                decision = await self._select_main_action(
+                    user_id,
+                    query,
+                    history,
+                    active_image_artifact_id,
+                    unattended=unattended,
+                    routing_history=routing_history,
+                )
+            action, router_note = router_outcome(decision)
+            if router_note:
+                _trace("router", router_note)
         events, action, skill_context, asked = await self._decide(
-            user_id, query, action, history, active_image_artifact_id, unattended
+            user_id,
+            query,
+            action,
+            history,
+            active_image_artifact_id,
+            unattended,
+            routing_history=routing_history,
+            router_note=router_note,
         )
         for event in events:
             yield event
@@ -3763,7 +3923,7 @@ class ConversationService:
             resolved_conversation_id,
             trace_id,
             metadata or {},
-            history,
+            routing_history,
             active_image_artifact_id,
         )
         if branch is not None:
@@ -3792,6 +3952,7 @@ class ConversationService:
             active_image_artifact_id,
             preselected_action=action,
             extra_context=skill_context,
+            routing_history=routing_history,
         ):
             yield event
 
@@ -4145,6 +4306,9 @@ class ConversationService:
                 lines,
                 conversation_id or None,
                 str(metadata.get("channel") or "web"),
+                speaker_user_id=_turn_speaker.get(),
+                timezone=str(metadata.get("timezone") or "").strip() or None,
+                replying_to=str(metadata.get("replying_to") or "").strip() or None,
             )
         except Exception:
             logger.warning("The hand-off to a run failed; the turn ends here", exc_info=True)
@@ -4156,16 +4320,31 @@ class ConversationService:
     # One step of this loop decided on request, for a run continuing a
     # turn in another process: the router under the later-step policy for
     # the time left, shown every step already taken.
+    #
+    # The decision is made against the conversation the turn was in, with
+    # the person's recent room turns merged in for a direct message - the
+    # same history the first decision saw. Passing an empty history here
+    # re-composed "try again" against nothing, which is the 2026-09-04/05
+    # failure the merge exists to fix, one process removed.
     async def decide_step(
-        self, user_id: str, query: str, lines: list[str], remaining_seconds: float
+        self,
+        user_id: str,
+        query: str,
+        lines: list[str],
+        remaining_seconds: float,
+        conversation_id: str | None = None,
+        context: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         selector = getattr(self, "main_action_selector", None)
         if selector is None:
             return decision_view(Unavailable("no router in this process"))
+        channel = str((context or {}).get("channel") or "web")
+        history = await self._conversation_history(user_id, conversation_id)
+        history = await self._routing_history_for(user_id, history, channel)
         decision = await selector.decide(
             user_id,
             query,
-            [],
+            history,
             None,
             local_now=await self._local_now(user_id),
             zone=await self._primary_timezone(user_id) or "",
@@ -4173,31 +4352,81 @@ class ConversationService:
             later_step_seconds=max(0.0, float(remaining_seconds)),
             excluding=_NOT_IN_LOOP,
             steps_taken=list(lines),
+            replying_to=str((context or {}).get("replying_to") or "").strip(),
         )
         action = getattr(decision, "action", None)
         return decision_view(decision, self._toolbox_contract(action) if action is not None else None)
 
+    # The stored turns of one conversation, or nothing when it cannot be
+    # read: a continuation still runs, it just runs without history.
+    async def _conversation_history(
+        self, user_id: str, conversation_id: str | None
+    ) -> list[dict[str, Any]]:
+        if not conversation_id or getattr(self, "repository", None) is None:
+            return []
+        try:
+            return await self.repository.get_history(
+                str(conversation_id), user_id, self.history_turn_limit
+            )
+        except Exception:
+            logger.warning("continuation_history_unreadable", exc_info=True)
+            return []
+
     # One step carried out on request, through the same executor the turn
     # uses, with a frame of its own: the outcome in the vocabulary the loop
     # reads, or `unavailable` for a call this loop does not carry out.
+    #
+    # The step is applied as the turn that handed it over, not as an
+    # anonymous request: the run carries the turn's channel, speaker, zone,
+    # conversation and replied-to message, and they are set for the duration
+    # of the execution and restored afterwards. Without them a reminder made
+    # by a group continuation was saved on "web" and never sent, a room
+    # check-in skipped the room's sensitive-subject refusal, and the change
+    # log wrote a null conversation so "undo that" inside the run was
+    # unscoped.
     async def apply_step(
-        self, user_id: str, query: str, conversation_id: str | None, call: dict[str, Any]
+        self,
+        user_id: str,
+        query: str,
+        conversation_id: str | None,
+        call: dict[str, Any],
+        context: dict[str, Any] | None = None,
     ) -> dict[str, Any]:
         action = action_of(call)
         if action is None:
             return {"kind": "", "outcome": {"kind": "invalid", "error": "the call names no action"}}
-        frame = _StepFrame(
-            context={"user_id": user_id, "query": query},
-            query=query,
-            conversation_id=str(conversation_id or ""),
-            trace_id=f"run-step-{uuid.uuid4().hex[:12]}",
-            query_embedding=None,
-            history=[],
-            emit=lambda event: None,
-            image_matches=[],
-            unattended=False,
-        )
-        applied = await self._execute_step(user_id, action, {}, frame)
+        context = dict(context or {})
+        channel = str(context.get("channel") or "web")
+        conversation = str(conversation_id or "")
+        history = await self._conversation_history(user_id, conversation)
+        set_vars: list[tuple[ContextVar[Any], Any]] = [
+            (_turn_channel, channel),
+            (_turn_speaker, str(context.get("speaker_user_id") or "").strip() or None),
+            (_turn_zone, str(context.get("timezone") or "").strip()),
+            (_turn_conversation, conversation or None),
+            (_turn_query, str(query or "").strip()),
+            (_replying_to, str(context.get("replying_to") or "").strip()),
+            (_previous_assistant_said, _answering(context, history)),
+        ]
+        tokens = [(var, var.set(value)) for var, value in set_vars]
+        try:
+            frame = _StepFrame(
+                context={"user_id": user_id, "query": query},
+                query=query,
+                conversation_id=conversation,
+                trace_id=f"run-step-{uuid.uuid4().hex[:12]}",
+                query_embedding=None,
+                history=history,
+                emit=lambda event: None,
+                image_matches=[],
+                unattended=False,
+            )
+            applied = await self._execute_step(
+                user_id, action, {"channel": channel}, frame
+            )
+        finally:
+            for var, token in reversed(tokens):
+                var.reset(token)
         if applied is None:
             return {"kind": "", "outcome": {"kind": "unavailable", "error": "not a step this loop carries out"}}
         kind, outcome = applied
@@ -4294,7 +4523,30 @@ class ConversationService:
             if getattr(self, "sent_finds", None) is None:
                 return "digest", {"kind": "unavailable"}
             return "digest", await self._apply_scout_digest(user_id, action)
-            return "recall", await self._recall_step(user_id, frame, action)
+        # A continuation can choose the deck tool, and the live turn's
+        # delegation branch is not reached from a step. Queue it here so the
+        # step the router chose is either carried out or reported, instead of
+        # being dropped after the interface announced it.
+        if isinstance(action, DelegateAction):
+            if (
+                action.capability_id != "presentation_agent"
+                or getattr(self, "presentation_jobs", None) is None
+            ):
+                return "delegation", {"kind": "unavailable"}
+            try:
+                job = await self._enqueue_presentation_job(
+                    user_id,
+                    frame.conversation_id,
+                    frame.trace_id,
+                    frame.query,
+                )
+            except Exception:
+                logger.exception(
+                    "Presentation delegation failed for trace %s",
+                    frame.trace_id,
+                )
+                return "delegation", {"kind": "failed"}
+            return "delegation", {"kind": "delegated", "job_id": str(job["id"])}
         if isinstance(action, ToolboxAction):
             return "tool", await self._toolbox_step(user_id, frame, action)
         return None
@@ -4318,6 +4570,15 @@ class ConversationService:
             raised.append(event)
             frame.emit(event)
         if not raised:
+            # The router chose a search but the provider is not configured, so
+            # nothing ran. Say so on the turn's context: without it the reply
+            # answered a live-fact question from training as though it had
+            # checked.
+            frame.context["search_state"] = {
+                "ran": False,
+                "failed": True,
+                "reason": "the search provider is not configured",
+            }
             return {"kind": "unavailable"}
         if any(event.get("event") == "search_blocked" for event in raised):
             return {"kind": "blocked"}
@@ -4554,6 +4815,8 @@ class ConversationService:
         history: list[dict[str, Any]],
         active_image_artifact_id: str | None,
         unattended: bool = False,
+        routing_history: list[dict[str, Any]] | None = None,
+        router_note: dict[str, Any] | None = None,
     ) -> tuple[list[ChatStreamEvent], MainAction, dict[str, Any] | None, str]:
         events: list[ChatStreamEvent] = []
         if isinstance(action, UseSkillAction):
@@ -4561,7 +4824,14 @@ class ConversationService:
             if skill_event is not None:
                 events.append(skill_event)
         action, skill_context = await self._resolve_skill(
-            user_id, action, history, active_image_artifact_id, unattended, asked=query
+            user_id,
+            action,
+            history,
+            active_image_artifact_id,
+            unattended,
+            asked=query,
+            routing_history=routing_history,
+            router_note=router_note,
         )
         status = self._action_event(action)
         if status is not None:
@@ -4592,7 +4862,11 @@ class ConversationService:
         started = (_turn_trace.get() or {}).get("_started")
         if started:
             _trace("route_ms", int((time.monotonic() - started) * 1000))
-        asked = str(skill_context["skill"]["instruction"]) if skill_context else query
+        # Only a chosen skill carries an instruction to re-ask with. A router
+        # note rides in the same dict without one, and reading "skill"
+        # unconditionally turned a note into a KeyError.
+        skill = (skill_context or {}).get("skill") or {}
+        asked = str(skill.get("instruction") or query)
         return events, action, skill_context, asked
 
     # Save, list, or delete a skill and say what happened, as a record the
@@ -4726,6 +5000,14 @@ class ConversationService:
         # the classifier is skipped when the speaker is not an approved account
         # (the worker marks the room that way, 2026-09-02).
         if room is not None and room.get("speaker_approved") is False:
+            # Only the classifier is skipped. The turn itself is stored, as the
+            # worker's comment and this method's docstring say: it is what the
+            # next answered turn reads as the room's context. Returning before
+            # the save dropped a stranger's message from the room entirely.
+            await self.repository.save_turn(
+                resolved_conversation_id,
+                {"user_id": user_id, "query": query, "response": "", "metadata": _with_trace(metadata)},
+            )
             return resolved_conversation_id
         candidates = await self._classify_memory_proposals(query, trace_id, user_id, room=room)
         await self._persist_memory_proposals(user_id, resolved_conversation_id, trace_id, candidates, room=room)
@@ -5847,6 +6129,7 @@ class ConversationService:
         active_image_artifact_id: str | None = None,
         preselected_action: MainAction = None,
         extra_context: dict[str, Any] | None = None,
+        routing_history: list[dict[str, Any]] | None = None,
     ) -> AsyncGenerator[ChatStreamEvent, None]:
         # 1. Plan and load only the context components needed for this request.
         plan_result = None
@@ -5938,6 +6221,10 @@ class ConversationService:
         # What the assistant should know about someone belongs in memory, which
         # is retrieved per question and only when it is relevant. Scout's
         # profile exists to steer a scheduled sweep, not conversation.
+        # The planner, retrieval and the later-step decisions read the merged
+        # routing history, so the room turn that explains "try again" is in
+        # view for all of them and not only for the first decision.
+        seen_for_routing = routing_history if routing_history is not None else history
         async for retrieval_event in self._stream_retrieved_context(
             context,
             user_id,
@@ -5946,7 +6233,7 @@ class ConversationService:
             query_embedding,
             preselected_action,
             active_image_artifact_id,
-            history=history,
+            history=seen_for_routing,
         ):
             yield retrieval_event
 
@@ -5963,7 +6250,7 @@ class ConversationService:
             metadata,
             extra_context,
             query=query,
-            history=history,
+            history=seen_for_routing,
             unattended=bool(metadata.get("scheduled_task")),
             context=context,
             conversation_id=conversation_id,

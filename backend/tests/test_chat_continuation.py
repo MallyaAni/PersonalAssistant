@@ -110,13 +110,17 @@ class ScriptedAssistant:
         self.shown: list[list[str]] = []
         self.outcome = outcome or {"kind": "found", "count": 3}
 
-    async def decide(self, user_id: str, query: str, lines: list[str], remaining_seconds: float) -> dict[str, Any]:
+    async def decide(self, user_id: str, query: str, lines: list[str], remaining_seconds: float, context: dict[str, Any] | None = None) -> dict[str, Any]:
         self.shown.append(list(lines))
+        self.contexts = getattr(self, "contexts", [])
+        self.contexts.append(context)
         index = len(self.applied)
         return self.plan[index] if index < len(self.plan) else {"kind": "done", "reason": "nothing further"}
 
-    async def apply(self, user_id: str, query: str, conversation_id: str | None, call: dict[str, Any]) -> dict[str, Any]:
+    async def apply(self, user_id: str, query: str, conversation_id: str | None, call: dict[str, Any], context: dict[str, Any] | None = None) -> dict[str, Any]:
         self.applied.append(call)
+        self.applied_contexts = getattr(self, "applied_contexts", [])
+        self.applied_contexts.append(context)
         return {"kind": "search", "outcome": dict(self.outcome), "line": "web search"}
 
 
@@ -174,6 +178,38 @@ async def _claim(user: str, lines: list[str] | None = None) -> dict[str, Any]:
 async def _clean(user: str) -> None:
     async with AsyncSessionLocal() as db:
         await AgentRunRepository(db).delete_for_user(user)
+
+
+# A run continues a turn in another process, where the ContextVars the turn
+# set are gone. The run carries the turn's channel, speaker, zone and
+# replied-to message, and every decision and every step it makes travels with
+# them - the API applies the step as that turn.
+async def test_the_runs_turn_context_travels_with_every_step():
+    run = {
+        "id": "run-1",
+        "user_id": "ani",
+        "objective": "book the room",
+        "acceptance": [],
+        "conversation_id": "conv-1",
+        "channel": "imessage_group",
+        "speaker_user_id": "member-a",
+        "timezone": "America/New_York",
+        "replying_to": "guid-1",
+        "budget_seconds": 30.0,
+    }
+    assistant = ScriptedAssistant([_step(SearchAction(query="the room", max_results=None))])
+    world = ChatContinuationWorld(run, assistant)
+    decision = await world.decide([])
+    assert isinstance(decision, Act)
+    assert await world.apply(decision.action) == ("search", {"kind": "found", "count": 3})
+    expected = {
+        "channel": "imessage_group",
+        "speaker_user_id": "member-a",
+        "timezone": "America/New_York",
+        "replying_to": "guid-1",
+    }
+    assert assistant.contexts == [expected]
+    assert assistant.applied_contexts == [expected]
 
 
 def test_the_turns_lines_come_from_the_runs_acceptance():
@@ -275,8 +311,8 @@ def _service(monkeypatch, created: list[dict[str, Any]]):
 
     service = ConversationService.__new__(ConversationService)
 
-    async def creator(user_id, query, lines, conversation_id, channel):
-        run = {"id": "run-1", "user_id": user_id, "query": query, "lines": list(lines), "conversation_id": conversation_id, "channel": channel}
+    async def creator(user_id, query, lines, conversation_id, channel, **turn):
+        run = {"id": "run-1", "user_id": user_id, "query": query, "lines": list(lines), "conversation_id": conversation_id, "channel": channel, **turn}
         created.append(run)
         return run
 
@@ -382,29 +418,54 @@ def test_the_step_routes_reach_the_service_with_the_call_intact(monkeypatch):
 
     seen: dict[str, Any] = {}
 
-    async def decide_step(self, user_id, query, lines, remaining_seconds):
-        seen["decide"] = (user_id, query, list(lines), remaining_seconds)
+    async def decide_step(self, user_id, query, lines, remaining_seconds, conversation_id=None, context=None):
+        seen["decide"] = (user_id, query, list(lines), remaining_seconds, conversation_id, context)
         return decision_view(Act(SearchAction(query="weather tonight", max_results=None)))
 
-    async def apply_step(self, user_id, query, conversation_id, call):
-        seen["apply"] = (user_id, query, conversation_id, call)
+    async def apply_step(self, user_id, query, conversation_id, call, context=None):
+        seen["apply"] = (user_id, query, conversation_id, call, context)
         return {"kind": "search", "outcome": {"kind": "found", "count": 2}, "line": "web search: weather tonight (2 results)"}
 
     monkeypatch.setattr(ConversationService, "decide_step", decide_step)
     monkeypatch.setattr(ConversationService, "apply_step", apply_step)
     monkeypatch.setattr(settings, "AUTH_REQUIRED", False)
+    context = {
+        "channel": "imessage_group",
+        "speaker_user_id": "member-a",
+        "timezone": "America/New_York",
+        "replying_to": "guid-1",
+    }
     with TestClient(app) as client:
         decided = client.post(
             "/api/v1/chat/ani/steps/decide",
-            json={"query": "ramen and weather", "lines": ["web search: ramen (3 results)"], "remaining_seconds": 40},
+            json={
+                "query": "ramen and weather",
+                "conversation_id": "c1",
+                "lines": ["web search: ramen (3 results)"],
+                "remaining_seconds": 40,
+                "context": context,
+            },
         )
         assert decided.status_code == 200, decided.text
         assert decided.json()["kind"] == "act"
-        assert seen["decide"] == ("ani", "ramen and weather", ["web search: ramen (3 results)"], 40.0)
+        assert seen["decide"] == (
+            "ani",
+            "ramen and weather",
+            ["web search: ramen (3 results)"],
+            40.0,
+            "c1",
+            context,
+        )
         applied = client.post(
             "/api/v1/chat/ani/steps/apply",
-            json={"query": "ramen and weather", "conversation_id": "c1", "call": decided.json()["call"]},
+            json={
+                "query": "ramen and weather",
+                "conversation_id": "c1",
+                "call": decided.json()["call"],
+                "context": context,
+            },
         )
         assert applied.status_code == 200, applied.text
         assert applied.json()["outcome"] == {"kind": "found", "count": 2}
         assert action_of(seen["apply"][3]) == SearchAction(query="weather tonight", max_results=None)
+        assert seen["apply"][4] == context

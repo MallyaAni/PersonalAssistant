@@ -24,13 +24,16 @@ flowchart TB
     Boundary[A figure the sources do not support<br/>must become a plainer layout]
     Boundary -.-> Research
 
+    Delete[Deleting a deck removes its revisions<br/>and the slide images it generated]
+    Delete -.-> Revision
+
     classDef interface fill:#f5f5f7,stroke:#86868b,color:#1d1d1f;
     classDef application fill:#e8f1fb,stroke:#5e8fc4,color:#102a43;
     classDef data fill:#eef7ee,stroke:#5f9562,color:#183b1b;
     classDef external fill:#f1edff,stroke:#8872c6,color:#2e2450;
     classDef warning fill:#fff3cd,stroke:#b78b20,color:#4d3900,stroke-dasharray:5 4;
     class Ask interface;
-    class Supervisor,Worker,Compile,Visual,Render,Research application;
+    class Supervisor,Worker,Compile,Visual,Render,Research,Delete application;
     class Job,Revision data;
     class Image external;
     class Outline,Slide data;

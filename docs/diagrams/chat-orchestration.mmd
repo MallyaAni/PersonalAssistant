@@ -20,7 +20,7 @@ flowchart TB
 
     Selector -->|generate_image or edit_image| ImageAction[Generate or source-conditioned<br/>edit via ComfyUI FLUX]
     Selector -->|show_image| Referent
-    Selector -->|discuss_image: nothing runs| Memory
+    Selector -->|discuss_image: the picture is recalled<br/>even with no active image| Memory
     ImageAction -->|explicit image| ImageArtifact[Persist ready/failed<br/>image artifact]
     ImageAction -->|no explicit image| Referent[DeepSeek V4 Flash<br/>owned-image referent resolution]
     Referent -->|one match| ImageArtifact
@@ -36,8 +36,8 @@ flowchart TB
     Selector -->|search_web, search_history, get_weather,<br/>search_credits, a toolbox tool, schedule_task,<br/>manage_tasks, manage_check_ins, scout_schedule,<br/>scout_digest, save_skill, manage_skills, manage_runs| Steps
     Steps[Turn step loop · run_steps<br/>TURN_MAX_STEPS, TURN_STEP_BUDGET_SECONDS read<br/>before every decision and action,<br/>TURN_MAX_CREATES new things] --> Apply[Carry out one step · outcome recorded<br/>found, done, scheduled · failed, not_found,<br/>refused, blocked · unknown when cut at the deadline]
     Apply -->|what was done and how it went;<br/>offered only tools whose effect contract<br/>allows a later step: a read or a write to<br/>this system's records, not expensive,<br/>no approval| Selector
-    Apply -->|no next tool · needs input · router failed<br/>· a repeat by key · the creation allowance<br/>· the step ceiling · the clock| Memory
-    Apply -->|the clock or the ceiling, work left,<br/>AGENT_RUNS_ENABLED| HandOff[(agent_runs · chat_continuation<br/>the words · the step lines · the channel<br/>finished by the run worker; reply says so)]
+    Apply -->|no next tool · needs input<br/>· router failed, named to the reply<br/>· a repeat by key · the creation allowance<br/>· the step ceiling · the clock| Memory
+    Apply -->|the clock or the ceiling, work left,<br/>AGENT_RUNS_ENABLED| HandOff[(agent_runs · chat_continuation<br/>the words · the step lines · the turn's<br/>channel · speaker · zone · replied-to<br/>each step applied as that turn;<br/>finished by the run worker; reply says so)]
     Contracts[Effect contracts on every tool row<br/>effect · cost · key · creates · approval · retry] -.-> Steps
     Contracts -.-> MCP
 

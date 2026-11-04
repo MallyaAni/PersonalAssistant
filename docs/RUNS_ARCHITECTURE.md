@@ -137,14 +137,21 @@ a kind nobody registered fails the run with `no_world` rather than guessing.
 - `chat_continuation` - a chat turn's unfinished work (`backend/agents/chat/`):
   a turn whose step loop stopped on its wall clock or step ceiling with the
   router still naming steps creates one, carrying the person's words, the
-  step lines the turn recorded and the turn's channel. The world asks the
-  same router for the next step, shown every step so far, and carries it out
-  through the same executor - over the API with a short-lived `chat` token
+  step lines the turn recorded and the turn's own context - its channel, who
+  spoke, the zone their clock was read in, and the message they replied to.
+  The world asks the same router for the next step, shown every step so far
+  and the conversation's history (with the person's recent room turns merged
+  in for a direct message), and carries it out through the same executor -
+  over the API with a short-lived `chat` token
   (`/api/v1/chat/{user_id}/steps/decide` and `/apply`), since the worker is
-  another process. Its grant is the built-in tools whose contracts allow a
-  later step plus reads through any MCP server (`mcp:read`); a step that
-  sends, spends or changes something outside this system parks the run for
-  the person's yes. Done when the router declines after its steps were
+  another process. Each step is applied as that turn: the channel, speaker,
+  zone and conversation are set for its duration, so a reminder is saved on
+  the room's channel and delivered, a room check-in faces the room's
+  sensitive-subject refusal, and the change log scopes "undo that" to the
+  thread the run continues. Its grant is the built-in tools whose contracts
+  allow a later step plus reads through any MCP server (`mcp:read`); a step
+  that sends, spends or changes something outside this system parks the run
+  for the person's yes. Done when the router declines after its steps were
   carried out; `needs_input` when the router needs something the message did
   not say. The reply of the cut-short turn says the rest continues
   (`reply/handed_off`), never that it is done.
@@ -167,9 +174,10 @@ never take each other's work.
 - An approval can be answered from chat (`manage_runs`, below) or the runs
   API; nothing yet lets a person answer by a tapback or a phone reply
   outside a conversation turn.
-- A continuation carries the person's words and the step lines, not the
-  turn's retrieved context or history; a step that needed them is decided
-  afresh by the router from the words alone.
+- A continuation carries the person's words, the step lines and the turn's
+  channel, speaker, zone and replied-to message, and its decisions read the
+  conversation's history. It does not carry the turn's retrieved context; a
+  step that needed that is decided afresh by the router.
 - The grant is a set of tool names checked in this process, not a token
   another service could verify; that is D8's second shape.
 - Retention deletes finished runs with their actions, approvals and events

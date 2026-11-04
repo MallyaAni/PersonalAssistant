@@ -546,3 +546,49 @@ async def test_visual_memory_collapses_an_uploaded_image_and_its_edit() -> None:
     )
 
     assert [item["id"] for item in matches] == ["edit"]
+
+
+# The router has already decided this turn is about a picture ("what did you
+# think of that hat?"), but the separate artifact-context router does not see
+# that decision and vetoed recall, so the reply gave an opinion about a
+# picture it had never been shown. DiscussImageAction loads the ranked matches
+# itself.
+@pytest.mark.asyncio
+async def test_discussing_a_picture_recalls_it_without_the_artifact_gate() -> None:
+    from backend.services.main_action_selector import DiscussImageAction
+
+    upload = {
+        "id": "hat",
+        "kind": "uploaded_image",
+        "status": "ready",
+        "title": "Uploaded image",
+        "metadata": {"analysis": "A man in a wide-brimmed black cowboy hat."},
+        "parent_artifact_id": None,
+    }
+    service = ConversationService.__new__(ConversationService)
+    service.memory = StubMemory()
+    router = StubArtifactContextRouter(needs_image=False)
+    service.artifact_context_router = router
+    service.image_search = StubSearch([upload])
+    service.image_retrieval = KeepAll()
+    service.image_search_limit = 5
+    service.lineage = None
+    service.search = None
+
+    context: dict[str, Any] = {}
+    events = [
+        event
+        async for event in service._stream_retrieved_context(
+            context,
+            "owner",
+            "what did you think of that hat?",
+            "trace",
+            None,
+            DiscussImageAction("the hat"),
+        )
+    ]
+
+    # The artifact gate is not consulted for a picture the router named.
+    assert router.calls == 0
+    assert "black cowboy hat" in context["images"][0]["description"]
+    assert events[0]["event"] == "image_matches"

@@ -27,9 +27,13 @@ RECENT_ROOM_MINUTES = 45
 ROUTING_HISTORY_TURNS = 12
 
 
-# The person's rooms' turns in the window, oldest first, each marked with
-# the room it happened in. Empty on any failure: routing then reads the
-# direct history alone, as it did before this existed.
+# The person's own turns in their rooms in the window, oldest first, each
+# marked with the room it happened in. Only the asking member's turns: the
+# room's rows share one account, so without the speaker filter another
+# member's request would be merged into this person's direct chat and a
+# "try again" here could act on what someone else asked there. A turn with no
+# speaker on record is dropped rather than guessed at. Empty on any failure:
+# routing then reads the direct history alone, as it did before this existed.
 async def recent_room_turns(user_id: str, now: datetime | None = None) -> list[dict[str, Any]]:
     try:
         from sqlalchemy import select
@@ -58,6 +62,9 @@ async def recent_room_turns(user_id: str, now: datetime | None = None) -> list[d
             if not str(turn.get("query") or "").strip():
                 continue
             metadata = dict(turn.get("metadata") or {})
+            room = metadata.get("group") if isinstance(metadata.get("group"), dict) else {}
+            if str((room or {}).get("speaker_user_id") or "") != user_id:
+                continue
             metadata["cross_chat"] = {"chat_name": names.get(str(row.user_id), "") or "the group chat"}
             turn["metadata"] = metadata
             turns.append(turn)

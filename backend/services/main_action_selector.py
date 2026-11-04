@@ -296,6 +296,7 @@ class MainActionSelector:
         diagram_enabled: bool,
         presentation_enabled: bool,
         embedder: Any | None = None,
+        search_enabled: bool = True,
     ) -> None:
         self.llm = llm
         self.mcp_invocation = mcp_invocation
@@ -308,6 +309,13 @@ class MainActionSelector:
         # needed rather than naming it. Optional: without one the ranking is
         # lexical, and the model's own naming is unaffected either way.
         self.embedder = embedder
+        # Whether the local search provider is configured at all. The router
+        # offered search_web whenever the MCP server could be invoked, while
+        # execution also required a local provider; with none, the chosen
+        # search yielded nothing and the reply answered from training without
+        # saying it had not checked. Off here means neither the tool nor the
+        # capability sentence is offered.
+        self.search_enabled = search_enabled
 
     # Resolve the live search_web schema, or omit the tool when it is unavailable.
     async def _search_tool_definition(self) -> dict[str, Any] | None:
@@ -395,6 +403,8 @@ class MainActionSelector:
     # server's own wording, and a second `list_tools` round-trip per turn would
     # spawn the search server again for a sentence in a prompt.
     def _search_is_available(self) -> bool:
+        if not self.search_enabled:
+            return False
         if self.mcp_invocation is None:
             return False
         return self.mcp_invocation.can_auto_invoke(self.search_server_id)

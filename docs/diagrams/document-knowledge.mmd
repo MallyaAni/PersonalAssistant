@@ -6,7 +6,7 @@ flowchart TB
     Drive([A Google Drive folder,<br/>read-only, every 15 min]) -. new or changed files .-> Queue
     Classify -->|PDF · Word · PowerPoint| Probe{Parser<br/>answering?}
     Probe -->|yes| Docling[Docling on the desktop GPU<br/>Markdown with page breaks<br/>pictures above 5% of the page<br/>described by spark2 vision]
-    Probe -->|no| Queue[(Durable parse queue<br/>health-gated passes,<br/>no attempts burned while down)]
+    Probe -->|no| Queue[(Durable parse queue<br/>health-gated passes · a failing job<br/>is closed, never blocks the pass<br/>no attempts burned while down)]
     Queue -. when the desktop returns .-> Docling
     Docling --> Ingest[Page-aware chunks · content hash<br/>same bytes reuse · new version supersedes]
     Ingest --> Store[(Knowledge store in pgvector<br/>the memory space, 768-d nomic<br/>owner-scoped, encrypted, backed up)]
@@ -20,6 +20,7 @@ flowchart TB
     Ask -. "shared a document" line<br/>keeps the file the referent .-> Search
 
     Forget([Forget that document]) --> Undo[Undo ledger: newest<br/>document receipt] --> Store
+    Undo -. the kept Word original goes too .-> Original
 
     Want([Put that in a PDF /<br/>update the file I sent]) --> Writer[create_document: new Word file<br/>in the writer template<br/>edit_document: the original rewritten<br/>in its own styles]
     Original -. body replaced, parts kept .-> Writer

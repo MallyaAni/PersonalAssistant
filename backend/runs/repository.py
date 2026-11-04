@@ -60,6 +60,9 @@ def _run_dict(run: AgentRun) -> dict[str, Any]:
         "lease_expires_at": run.lease_expires_at,
         "conversation_id": str(run.conversation_id) if run.conversation_id else None,
         "channel": run.channel,
+        "speaker_user_id": run.speaker_user_id,
+        "timezone": run.timezone,
+        "replying_to": run.replying_to,
         "result": _loads(run.result, None),
         "error_code": run.error_code,
         "started_at": run.started_at,
@@ -135,6 +138,9 @@ class AgentRunRepository:
         prompt_versions: dict[str, str] | None = None,
         conversation_id: str | None = None,
         channel: str = "web",
+        speaker_user_id: str | None = None,
+        timezone: str | None = None,
+        replying_to: str | None = None,
     ) -> dict[str, Any]:
         run = AgentRun(
             tenant_id=tenant_id,
@@ -151,6 +157,9 @@ class AgentRunRepository:
             prompt_versions=json.dumps(prompt_versions or {}, sort_keys=True),
             conversation_id=uuid.UUID(conversation_id) if conversation_id else None,
             channel=channel,
+            speaker_user_id=speaker_user_id,
+            timezone=timezone,
+            replying_to=replying_to,
         )
         self.session.add(run)
         await self.session.commit()

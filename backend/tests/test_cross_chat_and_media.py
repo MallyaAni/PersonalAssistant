@@ -50,6 +50,83 @@ def test_the_merge_is_bounded_and_empty_rooms_change_nothing():
     assert merged_for_routing(_DIRECT, []) == _DIRECT
 
 
+# The room's rows share one account, so without a speaker filter another
+# member's request merged into this person's direct chat and "try again" here
+# could act on what someone else asked there. A turn with no speaker on
+# record is dropped rather than guessed at.
+async def test_only_the_asking_members_room_turns_are_read(monkeypatch):
+    from backend.database import session as session_module
+    from backend.groups import repository as groups_module
+    from backend.services.cross_chat import recent_room_turns
+
+    class _Group:
+        def __init__(self, user_id, display_name):
+            self.user_id = user_id
+            self.display_name = display_name
+
+    class _Turn:
+        def __init__(self, user_id, query, speaker):
+            self.user_id = user_id
+            self._query = query
+            self._speaker = speaker
+
+        def to_dict(self):
+            return {
+                "query": self._query,
+                "response": "Here is the picture.",
+                "created_at": "2026-09-04T21:10:00",
+                "metadata": {"group": {"speaker_user_id": self._speaker}},
+            }
+
+    class _Result:
+        def scalars(self):
+            return self
+
+        def all(self):
+            return rows
+
+    class _Session:
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *exc):
+            return False
+
+        async def execute(self, _statement):
+            return _Result()
+
+    class _Groups:
+        def __init__(self, db):
+            pass
+
+        async def groups_for_member(self, member_user_id):
+            return (_Group("group-1", "Groupie"),)
+
+    rows = [
+        _Turn("group-1", "draw me a chess picture", "member-a"),
+        _Turn("group-1", "try again", "member-b"),
+        _Turn("group-1", "who is playing tonight", ""),
+    ]
+    monkeypatch.setattr(session_module, "AsyncSessionLocal", _Session)
+    monkeypatch.setattr(groups_module, "ConversationGroupRepository", _Groups)
+
+    turns = await recent_room_turns("member-a")
+
+    assert [turn["query"] for turn in turns] == ["draw me a chess picture"]
+    assert turns[0]["metadata"]["cross_chat"] == {"chat_name": "Groupie"}
+
+
+# The search planner composes from the same history the router read. Given
+# only the direct transcript, "try again" was composed against the last direct
+# topic and searched for events; the room's request is what explains it.
+def test_the_search_planner_sees_the_room_turn_that_explains_a_retry():
+    from backend.services.conversation_service import _planner_history
+
+    composed = _planner_history(merged_for_routing(_DIRECT, _ROOM), "UTC")
+
+    assert any("castle in chess" in turn["content"] for turn in composed)
+
+
 async def test_a_direct_message_is_routed_with_the_rooms_turns_and_a_rooms_own_is_not(monkeypatch):
     from backend.services import conversation_service as module
     from backend.services.conversation_service import ConversationService

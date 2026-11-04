@@ -31,16 +31,35 @@ KIND = "chat_continuation"
 # read is what the turn would have done next; anything that sends, spends
 # or changes something outside this system needs the person's yes.
 UNATTENDED_EFFECTS = frozenset({"read", "write"})
-# How many times the router may fail before the run gives up on it.
-MAX_ROUTER_FAILURES = 3
+
+
+# The turn a run continues, beyond its conversation: where the person spoke,
+# who they were, the clock they read, and the message they replied to. The
+# worker is another process and has none of this; the run carries it so each
+# step is applied as the turn that handed it over.
+@dataclass(frozen=True, slots=True)
+class TurnContext:
+    channel: str = "web"
+    speaker_user_id: str | None = None
+    timezone: str | None = None
+    replying_to: str | None = None
+
+    # The shape the API's StepContext reads.
+    def as_dict(self) -> dict[str, Any]:
+        return {
+            "channel": self.channel,
+            "speaker_user_id": self.speaker_user_id,
+            "timezone": self.timezone,
+            "replying_to": self.replying_to,
+        }
 
 
 class StepClient(Protocol):
     """How the world reaches the assistant."""
 
-    async def decide(self, user_id: str, query: str, lines: list[str], remaining_seconds: float) -> dict[str, Any]: ...
+    async def decide(self, user_id: str, query: str, lines: list[str], remaining_seconds: float, context: dict[str, Any] | None = None) -> dict[str, Any]: ...
 
-    async def apply(self, user_id: str, query: str, conversation_id: str | None, call: dict[str, Any]) -> dict[str, Any]: ...
+    async def apply(self, user_id: str, query: str, conversation_id: str | None, call: dict[str, Any], context: dict[str, Any] | None = None) -> dict[str, Any]: ...
 
 
 @dataclass(frozen=True, slots=True)
@@ -78,20 +97,31 @@ class ChatContinuationWorld:
         self.conversation_id = str(run["conversation_id"]) if run.get("conversation_id") else None
         self.before = lines_of(run)
         self.budget = float(run.get("budget_seconds") or 60.0)
+        self.context = TurnContext(
+            channel=str(run.get("channel") or "web"),
+            speaker_user_id=run.get("speaker_user_id"),
+            timezone=run.get("timezone"),
+            replying_to=run.get("replying_to"),
+        )
         self.started = time.monotonic()
         self.taken: list[str] = []
-        self.router_failures = 0
         self.stopped_by: str = ""
 
     # The router's next step, shown the turn's steps and the run's.
     async def decide(self, lines: list[str]) -> Decision:
         remaining = max(0.0, self.budget - (time.monotonic() - self.started))
         try:
-            view = await self.client.decide(self.user_id, self.query, [*self.before, *lines], remaining)
+            view = await self.client.decide(
+                self.user_id,
+                self.query,
+                [*self.before, *lines],
+                remaining,
+                context=self.context.as_dict(),
+            )
         except Exception as exc:
-            self.router_failures += 1
-            if self.router_failures >= MAX_ROUTER_FAILURES:
-                return Unavailable(f"the router could not be reached: {type(exc).__name__}")
+            # A router that cannot be reached is not a clean stop, and the
+            # controller already bounds how many times a run may retry; a
+            # second counter here only ever returned the same decision.
             return Unavailable(f"the router could not be reached: {type(exc).__name__}")
         kind = str(view.get("kind") or "")
         if kind == "act":
@@ -132,7 +162,13 @@ class ChatContinuationWorld:
     async def apply(self, action: Any) -> tuple[str, dict[str, Any]] | None:
         if not isinstance(action, StepCall):
             return None
-        applied = await self.client.apply(self.user_id, self.query, self.conversation_id, action.call)
+        applied = await self.client.apply(
+            self.user_id,
+            self.query,
+            self.conversation_id,
+            action.call,
+            context=self.context.as_dict(),
+        )
         kind = str(applied.get("kind") or "")
         outcome = applied.get("outcome")
         if not kind or not isinstance(outcome, dict):

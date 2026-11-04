@@ -44,14 +44,36 @@ class HttpStepClient:
         payload = response.json()
         return payload if isinstance(payload, dict) else {}
 
-    async def decide(self, user_id: str, query: str, lines: list[str], remaining_seconds: float) -> dict[str, Any]:
-        return await self._post(
-            user_id, "decide",
-            {"query": query, "lines": list(lines), "remaining_seconds": float(remaining_seconds)},
-        )
+    async def decide(
+        self,
+        user_id: str,
+        query: str,
+        lines: list[str],
+        remaining_seconds: float,
+        context: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        body: dict[str, Any] = {
+            "query": query,
+            "lines": list(lines),
+            "remaining_seconds": float(remaining_seconds),
+        }
+        if context:
+            body["context"] = context
+        return await self._post(user_id, "decide", body)
 
-    async def apply(self, user_id: str, query: str, conversation_id: str | None, call: dict[str, Any]) -> dict[str, Any]:
-        return await self._post(
-            user_id, "apply",
-            {"query": query, "conversation_id": conversation_id, "call": call},
-        )
+    async def apply(
+        self,
+        user_id: str,
+        query: str,
+        conversation_id: str | None,
+        call: dict[str, Any],
+        context: dict[str, Any] | None = None,
+    ) -> dict[str, Any]:
+        body: dict[str, Any] = {
+            "query": query,
+            "conversation_id": conversation_id,
+            "call": call,
+        }
+        if context:
+            body["context"] = context
+        return await self._post(user_id, "apply", body)

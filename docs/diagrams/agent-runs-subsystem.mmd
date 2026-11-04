@@ -3,14 +3,14 @@ title: Durable runs - an agent's loop that outlives a turn
 ---
 flowchart LR
     Trigger([A turn cut short with work left<br/>a schedule · a repository event · an alert]) --> Create[AgentRunRepository.create<br/>principal · actor · kind · objective<br/>acceptance criteria · budget · allowance]
-    Create --> Runs[(agent_runs<br/>leased claim · cancel flag<br/>tenant_id carried)]
+    Create --> Runs[(agent_runs<br/>leased claim · cancel flag · tenant_id<br/>a chat run's channel · speaker · zone<br/>and the message it replies to)]
     Worker[Discovery worker process<br/>run loop · AGENT_RUNS_ENABLED] -->|claim: fewest running per principal, then oldest<br/>renew lease| Runs
     Worker -->|after each attempt| Delivery[RunDelivery<br/>completed · failed · waiting_approval<br/>summary only, on the run's channel]
     Delivery -->|enrolled address| Person
     Delivery -->|delivered · delivery_skipped · delivery_failed| Events
     Runs --> Controller[RunController<br/>run_steps over durable rows<br/>bound_first · resume from actions]
     Worlds[(WORLDS + GRANTS registry<br/>kind -> RunWorld · kind -> tools it may call)] --> Controller
-    World -->|chat_continuation: decide · apply<br/>the chat steps routes · a short-lived chat token| API
+    World -->|chat_continuation: decide · apply<br/>each step applied as the turn it continues<br/>the chat steps routes · a short-lived chat token| API
     Controller -->|a step outside the grant:<br/>refused · unauthorized_tool · not retried| Actions
     Controller -->|decide · apply · key · creates<br/>needs_approval · reconcile · verify| World[RunWorld<br/>the agent's judgement and effects]
     World -->|next decision| Router[Routing model<br/>or the agent's own prompt]

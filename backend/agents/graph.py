@@ -1028,6 +1028,7 @@ def _build_turn_context(
         _render_skill_context(context_data),
         _render_handed_off(context_data.get("handed_off") or {}),
         _render_run_context(context_data),
+        _render_router_state(context_data),
         _render_group_turn_context(context_data),
         # Last on purpose: the model follows the last instruction on a subject,
         # and what the message is about outranks everything else here.
@@ -1076,6 +1077,42 @@ def _render_run_context(context_data: dict[str, Any]) -> str:
         for view in still:
             lines.append(f"- {view.get('number')}. {view.get('kind')} wants to: {view.get('summary')} (for: {view.get('objective')})\n")
     return "".join(lines) + ("\n" if lines else "")
+
+
+# What the router did with the message, when it did not name an action.
+#
+# "Nothing further" is the router's own stop and needs no note. A router that
+# failed, needs something the message did not say, or refused is not a stop -
+# and the reply used to receive all four as the same None, so a live-fact
+# question after a router failure was answered from training with nothing
+# said. The note names which happened and what the reply should do about it.
+def _render_router_state(context_data: dict[str, Any]) -> str:
+    unavailable = str(context_data.get("router_unavailable") or "").strip()
+    if unavailable:
+        return (
+            "Routing: the router could not decide this turn, so no tool ran "
+            f"({unavailable}). If answering needs live or personal information "
+            "- the web, the weather, their tasks, their pictures, their memory "
+            "- say plainly that it could not be checked this time and invite "
+            "them to ask again; do not answer as though it had been checked. "
+            "Otherwise answer normally.\n"
+        )
+    missing = str(context_data.get("needs_input") or "").strip()
+    if missing:
+        tool = str(context_data.get("tool") or "").strip()
+        asked_for = f" for {tool}" if tool else ""
+        return (
+            f"Routing: the request needs {missing}{asked_for}, which the message "
+            "did not give. Ask for it in one friendly sentence; do not claim "
+            "anything was set up or changed.\n"
+        )
+    refused = str(context_data.get("router_refused") or "").strip()
+    if refused:
+        return (
+            f"Routing: the request was refused on policy ({refused}). Say so "
+            "plainly and do not carry it out.\n"
+        )
+    return ""
 
 
 # The hand-off of a cut-short turn to a run, for the reply to report from:

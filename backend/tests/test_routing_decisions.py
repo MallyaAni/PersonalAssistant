@@ -88,6 +88,55 @@ async def test_the_cache_key_changes_when_a_tools_definition_changes():
     assert _decision_key("u", "body", before, None) == _decision_key("u", "body", list(before), None)
 
 
+# The conversation service used `select`, which collapsed every non-action to
+# None, so a router that could not be reached looked like a router that chose
+# nothing and the reply answered from training. `decide` keeps the reason.
+async def test_the_conversation_router_keeps_a_failed_router_typed():
+    from backend.services.conversation_service import ConversationService, router_outcome
+
+    service = ConversationService.__new__(ConversationService)
+
+    class _FailingSelector:
+        async def decide(self, *args, **kwargs):
+            raise RuntimeError("the model is down")
+
+    async def local_now(user_id):
+        return "2026-09-05 10:00"
+
+    async def zone(user_id):
+        return "UTC"
+
+    async def skills(user_id):
+        return []
+
+    service.main_action_selector = _FailingSelector()
+    service._local_now = local_now
+    service._primary_timezone = zone
+    service._offered_skills = skills
+
+    decision = await service._select_main_action(
+        "u", "what happened in the news today", [], None, routing_history=[]
+    )
+
+    # Not None: the reply has to know the router failed rather than declined.
+    assert isinstance(decision, Unavailable)
+    action, note = router_outcome(decision)
+    assert action is None
+    assert "router_unavailable" in note
+    assert "RuntimeError" in note["router_unavailable"]
+
+
+def test_a_router_that_needs_input_asks_for_it_rather_than_declining():
+    from backend.services.conversation_service import router_outcome
+
+    action, note = router_outcome(NeedsInput("schedule_task", "a time"))
+    assert action is None
+    assert note == {"needs_input": "a time", "tool": "schedule_task"}
+
+    action, note = router_outcome(Done("nothing further"))
+    assert action is None and note is None
+
+
 # The same positional alias pointing at a different server's tool is a
 # different offer, because the alias's definition carries the tool's own
 # description and schema.
