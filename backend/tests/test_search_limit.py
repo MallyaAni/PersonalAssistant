@@ -32,6 +32,7 @@ from backend.services.conversation_service import (
     _search_limit_evidence,
     _search_state_for,
 )
+from backend.services.turn_steps import Done
 
 NOW = datetime(2026, 8, 25, 18, 0, tzinfo=UTC)
 
@@ -291,9 +292,9 @@ class _RecordingSelector:
     def __init__(self) -> None:
         self.seen: list[SearchLimit | None] = []
 
-    async def select(self, user_id, query, history, active_image_artifact_id, **kwargs):
+    async def decide(self, user_id, query, history, active_image_artifact_id, **kwargs):
         self.seen.append(current_search_limit.get())
-        return None
+        return Done("no tool")
 
     def describe_capabilities(self):
         return []

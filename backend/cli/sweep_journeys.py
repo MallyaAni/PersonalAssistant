@@ -405,13 +405,13 @@ JOURNEYS = [
     # was made in, so the room's "undo that" must take back the room's
     # reminder - not the newest change in some other conversation of the
     # account, and not the 9pm reminder an earlier journey left in another.
-    # 6am, and no other group journey uses it.
+    # 5am: no other journey arms it (test_sweep_cleanup owns the hours).
     Journey("group: undo that removes the room's reminder", "undo that", ("Manage scheduled tasks",),
             as_group=True,
-            before=("Scout, remind us to stretch at 6am tomorrow",),
+            before=("Scout, remind us to stretch at 5am tomorrow",),
             holds=("The reply says the stretch reminder was undone, cancelled, or removed.",),
             does_not_hold=("The reply says nothing could be undone.",),
-            sql_holds=("select count(*) = 0 from scheduled_tasks where user_id = :g and kind = 'reminder' and hour = 6",)),
+            sql_holds=("select count(*) = 0 from scheduled_tasks where user_id = :g and kind = 'reminder' and hour = 5",)),
 ]
 
 
@@ -779,7 +779,7 @@ class Sweep:
                 # route, but it does not prove the primary capability was
                 # walked, so the difference is reported rather than hidden.
                 off_primary = [
-                    f"{name} -> {route!r} (primary {journey.expect_action[0]!r})"
+                    f"{journey.name} -> {route!r} (primary {journey.expect_action[0]!r})"
                     for journey in self.journeys
                     if (route := self.routes.get(journey.name)) is not None
                     and journey.expect_action

@@ -6,6 +6,7 @@ import pytest
 
 from backend.services.conversation_service import ConversationService
 from backend.services.main_action_selector import MainAction, SearchAction
+from backend.services.turn_steps import Act
 from backend.tests.doubles import StubConversationRepository, StubMemoryService, StubTracer
 from backend.tools.actions import UseSkillAction
 
@@ -14,9 +15,9 @@ class _RecordingSelector:
     def __init__(self) -> None:
         self.routed: list[str] = []
 
-    async def select(self, user_id, query, history, active_image_artifact_id, **kwargs) -> MainAction:
+    async def decide(self, user_id, query, history, active_image_artifact_id, **kwargs) -> Act:
         self.routed.append(query)
-        return SearchAction(query="events in Canggu this weekend", max_results=None)
+        return Act(SearchAction(query="events in Canggu this weekend", max_results=None))
 
     def describe_capabilities(self):
         return []

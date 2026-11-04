@@ -104,10 +104,17 @@ async def test_a_quiet_firing_is_finished_without_a_message(monkeypatch) -> None
     async def finish(run_id, status, task=None, output=None, error_code=None):
         finished.append((run_id, status, output, error_code))
 
-    async def deliver(address, turn):
+    async def deliver(address, turn, user_id=None, room=None):
         sent.append((address, turn.reply))
+        # The bubble is remembered against the task's own person, so a reply
+        # to a fired check is read as an answer to it.
+        assert user_id == "ani.mallya"
+        assert room is None
 
-    async def address_for(user_id):
+    channels: list[str] = []
+
+    async def address_for(user_id, channel):
+        channels.append(channel)
         return "+17039290948"
 
     async def mark_delivered(run_id):
@@ -129,6 +136,9 @@ async def test_a_quiet_firing_is_finished_without_a_message(monkeypatch) -> None
     )
     assert sent == [("+17039290948", "Search credits are nearly gone: 7 of 1,000 left.")]
     assert finished[-1][:2] == ("run-2", "delivered")
+    # The address is resolved for the task's own channel, not the first
+    # subscriber that happens to exist.
+    assert channels == ["imessage"]
 
 
 def test_the_meter_summary_names_who_serves() -> None:
