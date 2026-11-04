@@ -1,6 +1,36 @@
 # Next session
 
-## CURRENT 2026-11-03 — /3 installed and deployed; turnover diagnosis FAIL; universe/mandate memo written
+## CURRENT 2026-11-04 — milestone 4 done; the /3 forward record is blocked
+
+**Blocker.** The `/3` forward record has zero completed sessions. The
+2026-11-02 (`/2`) and 2026-11-03 (`/3`) nightlies both refused with
+`ValueError: Current causal timing publication required`; the holding model
+would fail next with `ValueError: Current causal model publication required`.
+The whole learned monthly generation is October-only (`fit_date` 2026-10-01
+for the holding model, timing publication and residual month), and every
+admission check requires the observed or decision session to be in the fit
+month. No monthly producer or original input snapshot exists on this host.
+Diagnosis, evidence and options:
+[research/forward-record-blocker-2026-11-04.md](research/forward-record-blocker-2026-11-04.md).
+
+**Recommendation.** Simplify the live path to match the approved `/3`
+contract: the contract already says the policy does not read the learned
+scenario distribution or the fifteen-minute timing, so stop requiring those
+monthly artifacts for grade-led policies, keep the risk bank and report
+validation, and install through a new release. No live change has been made;
+the install needs the owner's explicit authorization.
+
+**Milestone 4 — code and branch hygiene: done 2026-11-04.** The audit and
+deletion record is `docs/trading/CODE_HYGIENE.md`: 151 dead historical and
+intraday files removed (55,352 lines), preserved by
+`archive/2026-11-04/pre-hygiene`; 28 local branches deleted (15 merged, 13
+unique and tagged); 50 unique remote tips tagged locally and left on `origin`;
+10 clean stale worktrees removed; 41 dirty worktrees and one root-owned
+directory remain. The post-deletion unit gate passed (11,729 passed, 94
+skipped, 10 xfailed, 48 subtests; the 218 fewer tests are exactly the removed
+suites) and admission is `ADMITTED` unchanged.
+
+## 2026-11-03 — /3 installed and deployed; turnover diagnosis FAIL; universe/mandate memo written
 
 **Direction.** [trading/PROGRAM-DIRECTION.md](trading/PROGRAM-DIRECTION.md) is
 the binding direction document. This section records the milestone 1 install
