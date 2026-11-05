@@ -204,11 +204,17 @@ JOURNEYS = [
             holds=("The reply says it cannot send email and offers to draft the text instead, or similar.",),
             does_not_hold=("The reply claims the email was sent or will be sent.",)),
     Journey("opening hours", "is the Apple Store in Clarendon open on Sunday?", ("Web search",),
-            holds=("The reply gives hours from a live source or says it could not check.",)),
+            # The route and source count prove the search ran. Asking the
+            # judge to confirm "from a live source" made it read a correct
+            # caveat ("the page's table covers Oct 20-26") as not-live and
+            # answer false; the reply assertion is about the hours.
+            holds=("The reply gives Sunday hours, or says it could not check.",)),
     Journey("currency", "100 euros in dollars today?", ("Web search", None),
             holds=("The reply gives an amount and says the rate is approximate or as of a time, or that it could not check the live rate.",)),
     Journey("sports score", "did the Commanders win their last game?", ("Web search",),
-            holds=("The reply gives a result from live sources or says it could not check.",)),
+            # Same split as opening hours: the route and source count prove
+            # the search, the judge checks that a result was reported.
+            holds=("The reply gives a game result, or says it could not check.",)),
     Journey("stock price", "what's Nvidia trading at?", ("Web search",),
             holds=("The reply gives a price with a time or 'as of' caveat, or says it could not check live.",)),
     # Every capability walked at least once (test_functional_coverage_completeness).
