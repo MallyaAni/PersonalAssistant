@@ -90,7 +90,10 @@ JOURNEYS = [
     Journey("follow-up keeps the subject", "does only one person win at the end?", ("Web search",),
             before=("Please describe the premise of Netflix's Surviving Paradise",),
             holds=("The reply is about Surviving Paradise.",),
-            does_not_hold=("The reply presents facts about a different show (Love Island, Squid Game, The Circle) as the answer.",),
+            # The judge sees the last question, not the turn before it, so the
+            # statement must name the failure in terms the reply itself shows:
+            # answering about another show instead of the one under discussion.
+            does_not_hold=("The reply answers about Love Island, Squid Game, or The Circle instead of the show the person asked about.",),
             sql_holds=("select count(*) >= 1 from conversations where user_id = :u and extra_data->'trace'->'route'->>'detail' ilike '%surviving paradise%'",
                        "select count(*) = 0 from conversations where user_id = :u and (extra_data->'trace'->'route'->>'detail' ilike '%love island%' or extra_data->'trace'->'route'->>'detail' ilike '%squid game%')")),
     # 2026-08-27 (ama_edm): "DC this weekend" was answered with a ZIP request.
@@ -113,7 +116,11 @@ JOURNEYS = [
             holds=("The reply gives a price or price range and says it is current or as of today, or that it could not check.",),
             does_not_hold=("The reply states a single exact price as certain fact without any source, date, or caveat.",)),
     Journey("news this week", "what happened with the Federal Reserve this week?", ("Web search",),
-            holds=("The reply reports something dated this week from live sources, or says it could not check live sources.",)),
+            # "dated this week" asked the judge to verify a date the reply does
+            # not always print, and "from live sources" a provenance it does
+            # not always link. The route and source count prove the search ran;
+            # this statement is about what the reply reports.
+            holds=("The reply reports recent news, or says it could not check live sources.",)),
     Journey("place nearby", "good ramen place near me for dinner tonight?", ("Web search",),
             holds=("The reply names specific restaurants in or near Arlington, Virginia, or says it could not check.",),
             does_not_hold=("The reply asks the reader where they are located.",)),
@@ -636,7 +643,7 @@ class Sweep:
         return seen
 
     @staticmethod
-    def judge(answer: str, statement: str) -> bool | None:
+    def judge(answer: str, statement: str, question: str | None = None) -> bool | None:
         # The judge is called directly, not through the functional tests'
         # `states`: that module imports pytest, and the sweep runs inside the
         # runtime container, where pytest is absent. The import failed for
@@ -647,7 +654,7 @@ class Sweep:
         try:
             from backend.services.semantic_judge import judge_answer
 
-            return judge_answer(answer, statement)
+            return judge_answer(answer, statement, question)
         except (KeyboardInterrupt, SystemExit, asyncio.CancelledError):
             raise
         except BaseException:
@@ -759,7 +766,7 @@ class Sweep:
                         if phrase in lowered:
                             problems.append(f"says {phrase!r}")
                     for statement in journey.holds:
-                        verdict = self.judge(r["text"], statement)
+                        verdict = self.judge(r["text"], statement, journey.query)
                         if verdict is False:
                             problems.append(f"does not hold: {statement}")
                         elif verdict is None:
@@ -767,7 +774,7 @@ class Sweep:
                             # let a sweep report green while nothing was read.
                             problems.append(f"judge unavailable: {statement}")
                     for statement in journey.does_not_hold:
-                        verdict = self.judge(r["text"], statement)
+                        verdict = self.judge(r["text"], statement, journey.query)
                         if verdict is True:
                             problems.append(f"holds but must not: {statement}")
                         elif verdict is None:

@@ -27,20 +27,25 @@ import pytest
 from backend.services.semantic_judge import judge_answer
 
 
-def states(answer: str, statement: str) -> bool:
+def states(answer: str, statement: str, question: str | None = None) -> bool:
     """Whether the answer, read as a whole, does what the statement says.
 
     Judged rather than matched, so a run is not failed by a synonym. The
-    routing model is the judge because its engine enforces the schema (the
-    property this repository verified before pinning six callers to it) and
-    because at temperature zero the same answer gets the same verdict.
+    judge is the reply model with thinking on because its engine enforces the
+    schema and the routing model's reasoning-off setting returned false for
+    plainly true statements (measured 2026-11-04); at temperature zero the
+    same answer gets the same verdict.
+
+    `question` is the turn the answer replies to. Pass it when the statement
+    depends on context the answer need not repeat, such as the place a
+    forecast is for.
 
     The judge itself lives in backend/services/semantic_judge.py so the live
     sweep can call it from the runtime container, which has no pytest. Here
     an unreachable judge is a skip; the sweep treats it as a failed journey.
     """
     try:
-        return judge_answer(answer, statement)
+        return judge_answer(answer, statement, question)
     except Exception as exc:  # pragma: no cover - depends on the host runtime
         pytest.skip(
             f"routing model unreachable for semantic assert: {type(exc).__name__}"
