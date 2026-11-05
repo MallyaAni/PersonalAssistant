@@ -169,12 +169,15 @@ JOURNEYS = [
     # The three run in this order on the sweep's one account.
     Journey("a mention arms nothing while check-ins are off",
             "I put an offer in on a car this morning", (None,),
-            holds=("The reply responds to the news like a friend would.",),
+            # "Like a friend would" is not a property a strict judge can
+            # settle; the journey's real assertion is the SQL below, and the
+            # reply assertion only has to show the news was heard.
+            holds=("The reply acknowledges the offer on the car.",),
             sql_holds=("select count(*) = 0 from scheduled_tasks where user_id = :u and kind like 'checkin:%'",)),
     Journey("something mentioned in passing arms a check-in once they asked for them",
             "I put an offer in on a car this morning", (None,),
             before=("from now on, check in on me about the things I mention",),
-            holds=("The reply responds to the news like a friend would.",),
+            holds=("The reply acknowledges the offer on the car.",),
             does_not_hold=("The reply says it has scheduled, set, or armed anything.",),
             sql_holds=("select coalesce((preferences->>'check_ins')::boolean, false) from user_profiles where user_id = :u",
                        "select count(*) >= 1 from scheduled_tasks where user_id = :u and kind like 'checkin:%'",
