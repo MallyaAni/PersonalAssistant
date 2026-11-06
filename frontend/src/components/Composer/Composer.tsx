@@ -4,6 +4,7 @@ import {
   analyzeImage,
   getArtifact,
   getArtifactImage,
+  getDocumentParseJob,
   ingestDocument, uploadDocument,
   refineImage,
   streamChat,
@@ -201,6 +202,7 @@ const Composer: React.FC<ComposerProps> = ({
           'assistant',
           `Got **${file.name}**. The reader isn't reachable right now, so I've kept it and will read it as soon as it's back.`,
         )
+        if (stored.job_id) await pollForDocumentParse(stored.job_id, file.name)
         return
       }
       const pages = typeof stored.pages === 'number' && stored.pages > 1 ? ` (${stored.pages} pages)` : ''
@@ -212,6 +214,33 @@ const Composer: React.FC<ComposerProps> = ({
       onSendMessage('assistant', error instanceof Error ? error.message : `I couldn't read ${file.name}.`)
     }
   }
+  // Watch a queued document until the parser finishes with it.
+  //
+  // Bounded like pollForReasonedAnswer: five minutes at two seconds. A timeout
+  // says nothing extra because the "kept it" line already explained what is
+  // happening, and the terminal turn the queue writes is the durable record.
+  const pollForDocumentParse = async (jobId: string, filename: string) => {
+    for (let attempt = 0; attempt < 150; attempt += 1) {
+      await new Promise(resolve => setTimeout(resolve, 2_000))
+      try {
+        const job = await getDocumentParseJob(userId, jobId)
+        if (job.status === 'done') {
+          onSendMessage('assistant', `I've read **${filename}** — you can ask me about it now.`)
+          return
+        }
+        if (job.status === 'failed') {
+          onSendMessage(
+            'assistant',
+            `I couldn't read **${filename}**: ${job.last_error ?? 'the document could not be read.'}`,
+          )
+          return
+        }
+      } catch {
+        return
+      }
+    }
+  }
+
   // Read a text document and index it into memory so it can be recalled later.
   const ingestAttachedDocument = async (file: File, note: string) => {
     onSendMessage('user', note ? `${note}\n\n📎 ${file.name}` : `📎 ${file.name}`)

@@ -933,6 +933,27 @@ export async function uploadDocument(
   return await response.json() as { id?: string; title?: string; pages?: number; chunk_count?: number; queued?: boolean; job_id?: string }
 }
 
+// Read one queued document's parse status, so the upload can say when the
+// reader has finished instead of leaving the person guessing.
+export function getDocumentParseJob(
+  userId: string,
+  jobId: string,
+  signal?: AbortSignal,
+) {
+  return apiRequest<{
+    id: string
+    filename: string
+    status: string
+    attempts: number
+    last_error: string | null
+    document_id: string | null
+    created_at: string
+  }>(
+    `/api/v1/memory/${encodeURIComponent(userId)}/agent/knowledge/parse-jobs/${encodeURIComponent(jobId)}`,
+    { signal },
+  )
+}
+
 // Ingest an uploaded text document into the user's knowledge store so it is
 // chunked, embedded, and recalled by ordinary conversation turns.
 export function ingestDocument(
