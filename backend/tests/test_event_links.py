@@ -8,9 +8,15 @@ the fence exists and why these are built here.
 
 from datetime import UTC, datetime, time
 
+import pytest
+
+import backend.tasks.picker as picker_module
 from backend.core.event_extraction import ListedEvent
 from backend.core.event_links import event_link_lines, render_links_for
 from backend.core.links import URL_IN_TEXT, template_is_grounded
+from backend.services import conversation_service as cs
+from backend.services import last_listing_store as listing_store
+from backend.tools.actions import SendEventLinksAction
 
 NOW = datetime(2026, 8, 29, 9, 0, tzinfo=UTC)
 EVIDENCE = (
@@ -80,3 +86,94 @@ def test_an_event_with_no_artist_and_no_source_gets_only_what_it_can():
     assert "[Calendar](" in links
     assert "[Hear it](" not in links
     assert "[Details](" not in links
+
+
+def _service() -> cs.ConversationService:
+    """A service with only what the link lookup touches."""
+    service = cs.ConversationService.__new__(cs.ConversationService)
+    service.main_action_selector = None
+    service.llm = None
+    return service
+
+
+def _listing(rendered: str, name: str) -> dict:
+    return {
+        "rendered": rendered,
+        "calendar_base_url": BASE,
+        "saved_at": "2026-09-04T11:00:00+00:00",
+        "events": [_event(name=name)],
+    }
+
+
+@pytest.mark.asyncio
+async def test_a_direct_message_sends_links_from_the_room_that_showed_them(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    asked: dict[str, object] = {}
+
+    async def load_own(user_id: str) -> dict:
+        return _listing("own listing", "Own Event")
+
+    async def load_member(user_id: str, group_user_ids) -> dict:
+        asked["call"] = (user_id, list(group_user_ids))
+        return _listing("room listing", "Sunday Sessions")
+
+    async def member_groups(self, user_id: str) -> list[str]:
+        return ["group:chess"]
+
+    async def pick(llm, which, items, describe, hint=""):
+        return [0]
+
+    monkeypatch.setattr(listing_store, "load_last_listing", load_own)
+    monkeypatch.setattr(listing_store, "load_last_listing_for_member", load_member)
+    monkeypatch.setattr(cs.ConversationService, "_member_group_ids", member_groups)
+    monkeypatch.setattr(picker_module, "pick_many", pick)
+
+    result = await _service()._apply_event_links(
+        "ani", SendEventLinksAction(which="the salsa night")
+    )
+
+    # The member's own listing is not what they meant: the room showed the
+    # newest one, and that is where the links come from.
+    assert asked["call"] == ("ani", ["group:chess"])
+    assert result["kind"] == "links"
+    assert "Sunday Sessions" in result["message"]
+
+
+@pytest.mark.asyncio
+async def test_a_room_turn_never_reads_the_speakers_personal_listing(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    read: list[str] = []
+
+    async def load_own(user_id: str) -> dict:
+        read.append(user_id)
+        return _listing("room listing", "Sunday Sessions")
+
+    async def load_member(*args, **kwargs) -> dict:
+        raise AssertionError("a room turn must not read a member's listings")
+
+    async def member_groups(self, user_id: str) -> list[str]:
+        raise AssertionError("a room turn has no member listings to look up")
+
+    async def pick(llm, which, items, describe, hint=""):
+        return [0]
+
+    monkeypatch.setattr(listing_store, "load_last_listing", load_own)
+    monkeypatch.setattr(listing_store, "load_last_listing_for_member", load_member)
+    monkeypatch.setattr(cs.ConversationService, "_member_group_ids", member_groups)
+    monkeypatch.setattr(picker_module, "pick_many", pick)
+
+    token = cs._turn_speaker.set("ani")
+    try:
+        result = await _service()._apply_event_links(
+            "group:chess", SendEventLinksAction(which="the salsa night")
+        )
+    finally:
+        cs._turn_speaker.reset(token)
+
+    # The room reads the room's own listing; the speaker's private one stays
+    # private even though they are the one asking.
+    assert read == ["group:chess"]
+    assert result["kind"] == "links"
+    assert "Sunday Sessions" in result["message"]

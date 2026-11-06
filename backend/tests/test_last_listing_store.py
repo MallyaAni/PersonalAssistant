@@ -7,6 +7,7 @@ stop. So the test is a round-trip: what is saved is exactly what comes back,
 in the fields the link builder needs.
 """
 
+import json
 from datetime import UTC, datetime, time
 
 import pytest
@@ -14,6 +15,7 @@ import pytest
 from backend.core.event_extraction import ListedEvent
 from backend.services.last_listing_store import (
     load_last_listing,
+    load_last_listing_for_member,
     save_last_listing,
 )
 
@@ -44,8 +46,24 @@ class FakeRedis:
     async def get(self, key):
         return self.data.get(key)
 
+    async def mget(self, keys):
+        return [self.data.get(key) for key in keys]
+
     async def aclose(self):
         self.closed = True
+
+
+# Save one listing, then stamp when it was shown, so "newest" is decided by
+# the test rather than by how fast two saves ran.
+async def _save_at(redis, user_id, rendered, saved_at):
+    await save_last_listing(user_id, rendered, [EVENT], redis=redis)
+    key = f"anios:last_listing:{user_id}"
+    payload = json.loads(redis.data[key])
+    if saved_at is None:
+        payload.pop("saved_at", None)
+    else:
+        payload["saved_at"] = saved_at
+    redis.data[key] = json.dumps(payload)
 
 
 async def test_saved_records_come_back_with_every_field():
@@ -60,6 +78,9 @@ async def test_saved_records_come_back_with_every_field():
     assert store is not None
     assert store["rendered"] == RENDERED
     assert store["calendar_base_url"] == "https://deep-matter.com/api/v1/discovery"
+    # The moment it was shown, so a direct message can tell this listing from
+    # one a room showed later.
+    assert datetime.fromisoformat(store["saved_at"]).tzinfo is not None
     back = store["events"][0]
     assert back.name == "Sunday Sessions"
     assert back.venue == "The Lawn"
@@ -104,3 +125,51 @@ async def test_corrupt_records_are_treated_as_no_listing():
     assert await load_last_listing("u-1", redis=redis) is None
     redis.data["anios:last_listing:u-1"] = '{"events": []}'
     assert await load_last_listing("u-1", redis=redis) is None
+
+
+async def test_a_direct_message_finds_the_listing_a_room_showed():
+    # A listing asked for in a room belongs to the room account. Without
+    # looking across the member's rooms, "send me the links" in a direct
+    # message would find nothing.
+    redis = FakeRedis()
+    await _save_at(redis, "u-1", "own listing", "2026-09-04T10:00:00+00:00")
+    await _save_at(redis, "group:chess", "room listing", "2026-09-04T11:00:00+00:00")
+    store = await load_last_listing_for_member("u-1", ["group:chess"], redis=redis)
+    assert store is not None
+    assert store["rendered"] == "room listing"
+
+
+async def test_the_members_own_listing_wins_when_it_is_newer():
+    redis = FakeRedis()
+    await _save_at(redis, "u-1", "own listing", "2026-09-04T12:00:00+00:00")
+    await _save_at(redis, "group:chess", "room listing", "2026-09-04T11:00:00+00:00")
+    store = await load_last_listing_for_member("u-1", ["group:chess"], redis=redis)
+    assert store["rendered"] == "own listing"
+
+
+async def test_an_undated_listing_never_beats_a_dated_one():
+    # Records written before `saved_at` existed must not win a comparison
+    # they cannot enter; the dated listing is the one they most likely mean.
+    redis = FakeRedis()
+    await _save_at(redis, "u-1", "old listing", None)
+    await _save_at(redis, "group:chess", "room listing", "2026-09-04T11:00:00+00:00")
+    store = await load_last_listing_for_member("u-1", ["group:chess"], redis=redis)
+    assert store["rendered"] == "room listing"
+    assert store["saved_at"] == "2026-09-04T11:00:00+00:00"
+
+
+async def test_with_no_dated_listing_the_members_own_comes_first():
+    redis = FakeRedis()
+    await _save_at(redis, "u-1", "own listing", None)
+    await _save_at(redis, "group:chess", "room listing", None)
+    store = await load_last_listing_for_member("u-1", ["group:chess"], redis=redis)
+    assert store["rendered"] == "own listing"
+    assert store["saved_at"] is None
+
+
+async def test_a_corrupt_room_record_does_not_hide_the_members_listing():
+    redis = FakeRedis()
+    await _save_at(redis, "u-1", "own listing", "2026-09-04T10:00:00+00:00")
+    redis.data["anios:last_listing:group:chess"] = "not json"
+    store = await load_last_listing_for_member("u-1", ["group:chess"], redis=redis)
+    assert store["rendered"] == "own listing"

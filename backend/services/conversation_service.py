@@ -4200,19 +4200,47 @@ class ConversationService:
             logger.warning("Answering a run failed", exc_info=True)
             return {"kind": "failed"}
 
+    # The rooms this person belongs to, as account ids. Empty on any failure:
+    # a direct message then reads only the person's own listing, as before.
+    async def _member_group_ids(self, user_id: str) -> list[str]:
+        try:
+            from backend.database.session import AsyncSessionLocal
+            from backend.groups.repository import ConversationGroupRepository
+
+            async with AsyncSessionLocal() as db:
+                groups = await ConversationGroupRepository(db).groups_for_member(user_id)
+            return [group.user_id for group in groups]
+        except Exception:
+            logger.warning("looking up the member's groups failed", exc_info=True)
+            return []
+
     # Deliver the map, calendar and event-page links for the listed events the
     # person just named. Which events they mean is the picker's judgement
     # against the last listing this conversation showed; the links themselves
     # are built by code from the typed records, so nothing is invented. With
     # no listing on record, or nothing matching what they named, the outcome
     # says so and the reply asks rather than guessing.
+    #
+    # A room turn reads only the room's own listing: a member's private
+    # listing must never be posted into the room. A direct message reads the
+    # newest of the person's own listing and the listings of the rooms they
+    # belong to, because a listing asked for in a room is the room's and a
+    # "send me the links" here would otherwise find nothing.
     async def _apply_event_links(
         self, user_id: str, action: SendEventLinksAction
     ) -> dict[str, Any]:
         try:
-            from backend.services.last_listing_store import load_last_listing
+            from backend.services.last_listing_store import (
+                load_last_listing,
+                load_last_listing_for_member,
+            )
 
-            store = await load_last_listing(user_id)
+            if _turn_speaker.get():
+                store = await load_last_listing(user_id)
+            else:
+                store = await load_last_listing_for_member(
+                    user_id, await self._member_group_ids(user_id)
+                )
         except Exception:
             logger.warning("loading last listing failed", exc_info=True)
             store = None

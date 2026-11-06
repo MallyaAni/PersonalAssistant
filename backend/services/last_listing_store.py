@@ -14,7 +14,8 @@ it and degrade to the prose path.
 from __future__ import annotations
 
 import json
-from datetime import datetime, time
+from collections.abc import Iterable
+from datetime import UTC, datetime, time
 
 from redis.asyncio import Redis
 
@@ -81,6 +82,10 @@ async def save_last_listing(
         {
             "rendered": rendered,
             "calendar_base_url": calendar_base_url or "",
+            # When this listing was shown. A direct message can see several
+            # listings - the person's own and each of their rooms' - and the
+            # one they are most likely to mean is the newest.
+            "saved_at": datetime.now(UTC).isoformat(),
             "events": [_serialize(event) for event in events],
         }
     )
@@ -89,6 +94,41 @@ async def save_last_listing(
     finally:
         if redis is None:
             await client.aclose()
+
+
+# One stored payload as the dict callers act on, or None when it is absent or
+# unreadable. Corrupt records are treated as no listing rather than guessed at.
+def _payload(raw: str | None) -> dict | None:
+    if not raw:
+        return None
+    try:
+        stored = json.loads(raw)
+    except ValueError:
+        return None
+    if not isinstance(stored, dict):
+        return None
+    events = stored.get("events") or []
+    if not isinstance(events, list) or not events:
+        return None
+    return {
+        "rendered": str(stored.get("rendered") or ""),
+        "calendar_base_url": str(stored.get("calendar_base_url") or ""),
+        "saved_at": str(stored.get("saved_at") or "") or None,
+        "events": [
+            _deserialize(record) for record in events if isinstance(record, dict)
+        ],
+    }
+
+
+# When a stored payload was shown, or the epoch for a payload written before
+# `saved_at` existed: an undated listing must never beat a dated one.
+def _saved_at(payload: dict) -> datetime:
+    raw = str(payload.get("saved_at") or "")
+    try:
+        parsed = datetime.fromisoformat(raw)
+    except ValueError:
+        return datetime.min.replace(tzinfo=UTC)
+    return parsed if parsed.tzinfo else parsed.replace(tzinfo=UTC)
 
 
 # The most recent listing for this person, or None when there is none on
@@ -104,19 +144,39 @@ async def load_last_listing(
     finally:
         if redis is None:
             await client.aclose()
-    if not raw:
+    return _payload(raw)
+
+
+# The newest listing visible to a member: their own, or one shown in any room
+# they belong to. A listing asked for in a group is the group account's, so
+# without this a member's "send me the links" in a direct message could not
+# find it. One MGET, not one round trip per room.
+async def load_last_listing_for_member(
+    member_user_id: str,
+    group_user_ids: Iterable[str],
+    redis: Redis | None = None,
+) -> dict | None:
+    if not member_user_id:
         return None
+    keys = [_KEY.format(user_id=member_user_id)]
+    keys.extend(
+        _KEY.format(user_id=group)
+        for group in group_user_ids
+        if group and group != member_user_id
+    )
+    client = redis or _client()
     try:
-        payload = json.loads(raw)
-    except ValueError:
-        return None
-    events = payload.get("events") or []
-    if not isinstance(events, list) or not events:
-        return None
-    return {
-        "rendered": str(payload.get("rendered") or ""),
-        "calendar_base_url": str(payload.get("calendar_base_url") or ""),
-        "events": [
-            _deserialize(record) for record in events if isinstance(record, dict)
-        ],
-    }
+        raws = await client.mget(keys)
+    finally:
+        if redis is None:
+            await client.aclose()
+    newest: dict | None = None
+    newest_at: datetime | None = None
+    for raw in raws:
+        payload = _payload(raw)
+        if payload is None:
+            continue
+        shown_at = _saved_at(payload)
+        if newest is None or newest_at is None or shown_at > newest_at:
+            newest, newest_at = payload, shown_at
+    return newest

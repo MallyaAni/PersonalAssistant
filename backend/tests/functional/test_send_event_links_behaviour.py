@@ -127,3 +127,66 @@ async def test_the_picker_targets_the_named_event_and_the_links_are_grounded():
         assert cleaned in sources or template_is_grounded(
             cleaned, LISTING
         ), cleaned
+
+
+async def test_a_listing_shown_in_a_room_is_what_a_direct_message_links_to():
+    """A listing asked for in a room belongs to the room account, so the
+    follow-up in a direct message has to find it through the rooms the person
+    belongs to. This is the live shape of that journey: real Redis, the real
+    typed records a room saved, and the real picker resolving what was named
+    against them.
+    """
+    import uuid
+
+    from redis.asyncio import Redis
+
+    from backend.config.settings import settings
+    from backend.core.event_links import render_links_for
+    from backend.core.links import URL_IN_TEXT, template_is_grounded
+    from backend.services.last_listing_store import (
+        load_last_listing_for_member,
+        save_last_listing,
+    )
+
+    redis = Redis.from_url(settings.REDIS_URL, decode_responses=True)
+    member = f"links-member-{uuid.uuid4().hex[:8]}"
+    room = f"group:links-{uuid.uuid4().hex[:8]}"
+    try:
+        await save_last_listing(room, LISTING, LISTED, redis=redis)
+        store = await load_last_listing_for_member(member, [room], redis=redis)
+        assert store is not None, "the room's listing was not visible to its member"
+        assert store["rendered"] == LISTING
+
+        items = [
+            {"id": str(i), "name": e.name, "venue": e.venue, "area": e.area}
+            for i, e in enumerate(store["events"])
+        ]
+
+        def _describe(item: dict) -> str:
+            where = ", ".join(
+                part for part in (item.get("venue") or "", item.get("area") or "") if part
+            )
+            return f"{item.get('name')} at {where}"
+
+        picked = await pick_many(
+            get_routing_llm_client(),
+            "the sunset session at potato head",
+            items,
+            _describe,
+            hint=store["rendered"],
+        )
+        assert picked, picked
+        chosen = [store["events"][int(i)] for i in picked]
+        message = render_links_for(chosen)
+        assert "Sunset Session" in message, message
+        assert "Potato Head" in message, message
+        assert "Sunday Sessions" not in message, message
+        sources = {e.source_url for e in chosen}
+        for url in URL_IN_TEXT.findall(message):
+            cleaned = url.rstrip(".,;:!?)]}\"'")
+            assert cleaned in sources or template_is_grounded(cleaned, LISTING), cleaned
+    finally:
+        await redis.delete(
+            f"anios:last_listing:{member}", f"anios:last_listing:{room}"
+        )
+        await redis.aclose()
