@@ -109,3 +109,34 @@ async def test_taught_skills_round_trip_replace_by_name_and_stay_owned():
         async with AsyncSessionLocal() as session:
             await session.execute(delete(UserSkill).where(UserSkill.user_id == user_id))
             await session.commit()
+
+
+# A group turn offers the room's skills, not the speaker's: `user_id` is the
+# group account. A member's private skills can carry their own habits and
+# wording, and a room turn must not use them on the member's behalf.
+@pytest.mark.asyncio
+async def test_a_group_turn_offers_the_rooms_skills_not_the_speakers():
+    from backend.services import conversation_service as cs
+
+    class _Skills:
+        def __init__(self) -> None:
+            self.asked: list[str] = []
+
+        async def list_for_user(self, user_id: str) -> list[dict]:
+            self.asked.append(user_id)
+            if user_id == "group:abc":
+                return [{"slug": "room-skill", "instruction": "the room's way"}]
+            return [{"slug": "personal-skill", "instruction": "the speaker's way"}]
+
+    service = cs.ConversationService.__new__(cs.ConversationService)
+    service.skills = _Skills()
+    token = cs._turn_speaker.set("ani")
+    try:
+        offered = await service._offered_skills("group:abc")
+    finally:
+        cs._turn_speaker.reset(token)
+
+    slugs = {skill["slug"] for skill in offered}
+    assert "room-skill" in slugs
+    assert "personal-skill" not in slugs
+    assert service.skills.asked == ["group:abc"]

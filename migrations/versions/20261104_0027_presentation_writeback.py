@@ -6,7 +6,8 @@ now remembers the channel it was queued from and whether it has already told
 anyone, so the worker can write one assistant-only turn and send the same
 sentence where the request came from - once, even if it crashes and retries.
 
-Additive and nullable; jobs queued before this keep the old silent behaviour.
+Additive and nullable; a job queued before this has no channel on record, so
+it writes the turn but sends nothing.
 
 Revision ID: 20261104_0027
 Revises: 20261104_0026

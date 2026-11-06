@@ -1718,6 +1718,12 @@ class ConversationService:
     # The skills the router may choose for this person: the ones they taught
     # plus the shipped packs, a taught one winning over a pack of the same
     # name. Empty when no skill store is wired.
+    #
+    # In a room this is the room's list, because `user_id` is the group
+    # account: a group turn offers the skills the room was taught, never the
+    # speaker's personal ones. A member's private skills can carry their own
+    # habits and wording, and offering them to the router in front of the
+    # room would let a group turn use them on the member's behalf.
     async def _offered_skills(self, user_id: str) -> list[dict[str, Any]]:
         if self.skills is None:
             return []
@@ -5189,6 +5195,13 @@ class ConversationService:
     # outcome record a scheduled task uses, so the reply model is told what
     # is now set rather than left to guess. Turning them off also drops what
     # is waiting: "stop checking in on me" means stop, not "after these".
+    #
+    # In a room every read and write here is scoped to the room account:
+    # `user_id` is the group's, so "stop checking in on me" turns off the
+    # room's check-ins and drops the room's waiting ones. It does not touch
+    # the speaker's personal preference or their own check-ins - a member
+    # speaking in a group cannot silence what the assistant asks them in
+    # private, and the room cannot be made to speak for them.
     async def _apply_check_ins(
         self, user_id: str, action: ManageCheckInsAction, metadata: dict[str, Any]
     ) -> dict[str, Any]:

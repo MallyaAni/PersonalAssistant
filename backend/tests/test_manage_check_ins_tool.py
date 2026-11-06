@@ -83,12 +83,25 @@ class _Tasks:
         self.rows = list(rows or [])
         self.deleted: list[str] = []
         self.changes: list[dict[str, Any]] = []
+        # Which accounts arming was serialized for. The real repository takes
+        # an advisory lock; this records the call without a database.
+        self.locks: list[str] = []
         # The change log is a second commit after the write. Setting this
         # simulates a connection drop between the two.
         self.change_fails = False
 
+    async def lock_arming(self, user_id: str) -> None:
+        self.locks.append(user_id)
+
     async def list_for_user(self, user_id: str, enabled_only: bool = True):
-        return [dict(row) for row in self.rows if row.get("enabled", True) or not enabled_only]
+        # Owned like the real repository: a room's account and a member's
+        # account do not see each other's rows.
+        return [
+            dict(row)
+            for row in self.rows
+            if row.get("user_id", user_id) == user_id
+            and (row.get("enabled", True) or not enabled_only)
+        ]
 
     async def create(self, user_id, instruction, cadence, channel, kind=None, subject="", **_):
         row = {
@@ -223,6 +236,60 @@ async def test_off_drops_every_enabled_check_in_past_the_cap():
     assert off == {"kind": "check_ins_off", "dropped": 5}
     assert tasks.rows == []
     assert profiles.preferences == {"check_ins": False}
+
+
+# "Stop checking in on me" said in a room is the room's instruction. The
+# account the tool acts on is the group's, so the room's preference and the
+# room's waiting check-ins change; the speaker's personal ones are untouched.
+@pytest.mark.asyncio
+async def test_a_rooms_stop_leaves_the_speakers_own_check_ins_alone():
+    class _PerUserProfiles:
+        def __init__(self, preferences):
+            self.preferences = {
+                user_id: dict(values) for user_id, values in preferences.items()
+            }
+
+        async def get_user_profile(self, user_id: str) -> dict[str, Any]:
+            return {
+                "user_id": user_id,
+                "name": None,
+                "preferences": dict(self.preferences.get(user_id, {})),
+            }
+
+        async def update_preferences(self, user_id: str, patch: dict[str, Any]) -> None:
+            current = self.preferences.setdefault(user_id, {})
+            for key, value in patch.items():
+                if value is None:
+                    current.pop(key, None)
+                else:
+                    current[key] = value
+
+    profiles = _PerUserProfiles({
+        "group:abc": {"check_ins": True},
+        "ani": {"check_ins": True},
+    })
+    tasks = _Tasks()
+    tasks.rows.extend([
+        {"id": "room", "user_id": "group:abc", "kind": "checkin:following_up",
+         "subject": "the trip", "instruction": "Ask how the trip went.", "enabled": True},
+        {"id": "personal", "user_id": "ani", "kind": "checkin:following_up",
+         "subject": "the interview", "instruction": "Ask how the interview went.",
+         "enabled": True},
+    ])
+    service = _service(profiles, tasks)
+
+    outcome = await service._apply_check_ins(
+        "group:abc",
+        ManageCheckInsAction(mode="off"),
+        {"channel": "imessage_group", "group": {"speaker_user_id": "ani"}},
+    )
+
+    assert outcome == {"kind": "check_ins_off", "dropped": 1}
+    assert profiles.preferences == {
+        "group:abc": {"check_ins": False},
+        "ani": {"check_ins": True},
+    }
+    assert [row["id"] for row in tasks.rows] == ["personal"]
 
 
 # Asking for a check-in is an explicit opt-in: arming one while check-ins

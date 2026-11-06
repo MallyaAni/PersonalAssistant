@@ -18,6 +18,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.config.settings import settings
+from backend.database.locks import transaction_advisory_lock
 from backend.discovery.schedule import Cadence, next_run_at
 from backend.models.scheduled_task import (
     ScheduledTask,
@@ -99,6 +100,16 @@ class ScheduledTaskRepository:
 
     def __init__(self, session: AsyncSession) -> None:
         self.session = session
+
+    # Serialize check-in arming for one person.
+    #
+    # Arming reads what is already waiting and then creates a task, and two
+    # concurrent turns both read "nothing armed" and both create one, so the
+    # person is asked the same question twice. The advisory lock is
+    # transaction-scoped: the commit that saves the task releases it, and so
+    # does a rollback, so a failed arming cannot wedge the person's next one.
+    async def lock_arming(self, user_id: str) -> None:
+        await transaction_advisory_lock(self.session, "check-in-arm", user_id)
 
     # Create a task and arm its first slot.
     async def create(

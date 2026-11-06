@@ -244,6 +244,17 @@ async def arm_check_in(
         # Without a timezone there is no hour to land on, and guessing one
         # is how a check-in arrives at 4am.
         return Armed(False, "no_timezone")
+    # Two turns arriving together both read "nothing armed" and both create
+    # a task, so the person is asked the same question twice. The repository
+    # serializes arming per person when it can; a repository that cannot lock
+    # still gets the duplicate check below, just not serialized, which is the
+    # behaviour this had before the lock existed.
+    lock_arming = getattr(tasks, "lock_arming", None)
+    if lock_arming is not None:
+        try:
+            await lock_arming(user_id)
+        except Exception:
+            logger.warning("check_in_arming_lock_failed", exc_info=True)
     try:
         existing = await tasks.list_for_user(user_id, enabled_only=False)
     except Exception:

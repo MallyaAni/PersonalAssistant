@@ -8,10 +8,14 @@ model and cannot drift when the wording changes.
 
 from __future__ import annotations
 
+import asyncio
+import uuid
 from datetime import UTC, datetime
 from typing import Any
 
 import pytest
+from sqlalchemy import delete, text
+from sqlalchemy.exc import ProgrammingError
 
 from backend.core.checkin import FOLLOWING_UP, WELLBEING, CheckIn
 from backend.services.checkin_arming import (
@@ -493,3 +497,67 @@ def test_a_check_in_never_lands_before_the_thing_it_asks_about():
     assert fields.index("reading") < fields.index("check_in")
     assert fields.index("calls_off") < fields.index("check_in")
     assert fields.index("check_in") < fields.index("subject")
+
+
+# Two turns arriving together both read "nothing armed" and both create a
+# task, so the person is asked the same question twice. The repository
+# serializes arming per person with an advisory lock: the second read happens
+# after the first task exists, and the duplicate check refuses it. Runs
+# against the real database; skipped where it is not migrated.
+@pytest.mark.asyncio
+async def test_concurrent_armings_arm_only_one_check_in():
+    from backend.database.session import AsyncSessionLocal
+    from backend.models.scheduled_task import ScheduledTask
+    from backend.tasks.repository import ScheduledTaskRepository
+
+    user_id = f"checkin-race-{uuid.uuid4().hex[:8]}"
+    try:
+        try:
+            async with AsyncSessionLocal() as session:
+                await session.execute(text("select 1 from scheduled_tasks limit 1"))
+        except ProgrammingError:
+            pytest.skip("scheduled_tasks is not migrated in this database yet")
+        except (ConnectionError, OSError) as exc:
+            pytest.skip(f"database unreachable: {type(exc).__name__}")
+
+        async def arm() -> Any:
+            async with AsyncSessionLocal() as session:
+                return await arm_check_in(
+                    ScheduledTaskRepository(session),
+                    user_id,
+                    CheckIn(
+                        FOLLOWING_UP,
+                        "the dentist appointment",
+                        "Ask how the dentist appointment went.",
+                        1,
+                        11,
+                    ),
+                    ZONE,
+                    "imessage",
+                    now=NOW,
+                )
+
+        first, second = await asyncio.wait_for(
+            asyncio.gather(arm(), arm()), timeout=10
+        )
+        outcomes = [first, second]
+        assert [outcome.armed for outcome in outcomes].count(True) == 1
+        refused = next(outcome for outcome in outcomes if not outcome.armed)
+        assert refused.reason == "already_armed"
+
+        async with AsyncSessionLocal() as session:
+            rows = await ScheduledTaskRepository(session).list_for_user(
+                user_id, enabled_only=False
+            )
+        assert len(rows) == 1
+    except (ConnectionError, OSError) as exc:
+        pytest.skip(f"database unreachable: {type(exc).__name__}")
+    finally:
+        try:
+            async with AsyncSessionLocal() as session:
+                await session.execute(
+                    delete(ScheduledTask).where(ScheduledTask.user_id == user_id)
+                )
+                await session.commit()
+        except (ConnectionError, OSError):
+            pass

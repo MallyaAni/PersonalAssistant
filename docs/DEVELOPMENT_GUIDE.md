@@ -1804,13 +1804,17 @@ A successful Alembic command does not prove application tables exist. Verify the
 docker compose exec -T db psql -U postgres -d anios_db -c "\dt"
 ```
 
-The current migration head is `20260802_0025`. Revision `0023` adds invite-only
-accounts and revocable browser sessions; revision `0024` separates the unique
-login name from the stable owned user ID without rewriting owned data; revision
-`0025` adds digest-only, expiring, one-time registration invitations. Revisions
-`0021` and `0022` add reversible travel mode and its single-active-destination
-invariant. Earlier revisions retain the presentation, artifact, structured
-memory, tool-memory, and pgvector history described in their migration files.
+The current migration head is `20261104_0027`. Revision `0026` gives the
+document parse queue a claim and lease so two workers cannot read the same file
+and a crashed worker's row is reclaimed; revision `0027` records the channel a
+presentation job was queued from and whether its result has already been
+announced. Revision `0023` adds invite-only accounts and revocable browser
+sessions; revision `0024` separates the unique login name from the stable owned
+user ID without rewriting owned data; revision `0025` adds digest-only,
+expiring, one-time registration invitations. Revisions `0021` and `0022` add
+reversible travel mode and its single-active-destination invariant. Earlier
+revisions retain the presentation, artifact, structured memory, tool-memory,
+and pgvector history described in their migration files.
 
 Create or reset migrations only as part of an explicitly approved schema task. Treat deletion of the `pgdata` volume as destructive.
 

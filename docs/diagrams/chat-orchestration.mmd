@@ -10,8 +10,9 @@ flowchart TB
     Search_Tool[Internet MCP server<br/>search_web · get_weather<br/>search_credits for operators only] -.-> Selector
     Toolbox[User-registered<br/>MCP tools, shortlisted] -.-> Selector
 
-    Selector -->|delegate_to_presentation_agent| Presentation[Queue durable<br/>PresentationAgent job]
+    Selector -->|delegate_to_presentation_agent| Presentation[Queue durable<br/>PresentationAgent job<br/>the channel it came from travels with it]
     Presentation --> Progress[Return job ID<br/>and background progress]
+    Presentation -. ready, failed or cancelled, once .-> DeckResult[One assistant-only turn<br/>in the conversation that asked<br/>and the same line on its iMessage channel]
 
     Selector -->|create_diagram| Diagram[DiagramAgent]
     Diagram --> Inference[Provider-neutral<br/>inference adapter]
@@ -71,7 +72,7 @@ flowchart TB
     classDef failure fill:#fff3cd,stroke:#b78b20,color:#4d3900;
     class User,UI interface;
     class HandOff store;
-    class API,Selector,Search_Tool,Toolbox,Presentation,Progress,Diagram,Artifact,ImageAction,ImageArtifact,Memory,Visual,MCP,Search,History,Context,Inference,Persist,Stream,Proposal,FollowUp,Steps,Apply,Contracts application;
+    class API,Selector,Search_Tool,Toolbox,Presentation,Progress,DeckResult,Diagram,Artifact,ImageAction,ImageArtifact,Memory,Visual,MCP,Search,History,Context,Inference,Persist,Stream,Proposal,FollowUp,Steps,Apply,Contracts application;
     class Persona application;
     class Main,DiagramModel,Interest,ArtifactGate,VisualPolicy,Referent,Personalize model;
     class Failure failure;
