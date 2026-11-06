@@ -89,3 +89,62 @@ async def test_a_cancelled_running_job_whose_worker_died_is_finalized():
         pytest.skip(f"database unreachable: {type(exc).__name__}")
     finally:
         await _cleanup(user_id)
+
+
+async def test_a_job_keeps_the_channel_it_was_queued_from():
+    """The worker delivers the finished deck where the request came from; the
+    channel has to survive the queue row to make that possible."""
+    await _require_tables()
+    user_id = f"deck-{uuid.uuid4().hex[:8]}"
+    try:
+        async with await _session() as session:
+            repository = SQLAlchemyPresentationJobRepository(session)
+            queued = await repository.enqueue(
+                user_id,
+                str(uuid.uuid4()),
+                str(uuid.uuid4()),
+                "Make a deck",
+                "test",
+                None,
+                3,
+                "imessage",
+            )
+        assert queued["channel"] == "imessage"
+        row = await _job(queued["id"])
+        assert row.channel == "imessage" and row.notified_at is None
+    except (ConnectionError, OSError) as exc:
+        pytest.skip(f"database unreachable: {type(exc).__name__}")
+    finally:
+        await _cleanup(user_id)
+
+
+async def test_a_terminal_job_can_be_notified_only_once():
+    """The conditional update is the lock: a worker that dies after marking a
+    deck ready and is retried later must not send the message again."""
+    await _require_tables()
+    user_id = f"deck-{uuid.uuid4().hex[:8]}"
+    try:
+        async with await _session() as session:
+            repository = SQLAlchemyPresentationJobRepository(session)
+            queued = await repository.enqueue(
+                user_id,
+                str(uuid.uuid4()),
+                str(uuid.uuid4()),
+                "Make a deck",
+                "test",
+                None,
+                3,
+            )
+            claimed = await repository.claim_next("worker-1", 60)
+            assert claimed is not None
+            await repository.mark_ready(queued["id"], "worker-1")
+
+            assert await repository.claim_notification(queued["id"]) is True
+            assert await repository.claim_notification(queued["id"]) is False
+
+        row = await _job(queued["id"])
+        assert row.notified_at is not None
+    except (ConnectionError, OSError) as exc:
+        pytest.skip(f"database unreachable: {type(exc).__name__}")
+    finally:
+        await _cleanup(user_id)

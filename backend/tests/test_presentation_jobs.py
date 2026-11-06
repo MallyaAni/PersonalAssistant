@@ -17,12 +17,14 @@ class StubJobRepository:
     # Initialize captured enqueue inputs and one configurable job.
     def __init__(self) -> None:
         self.enqueued: tuple[Any, ...] | None = None
+        self.enqueued_kwargs: dict[str, Any] = {}
         self.job: dict[str, Any] | None = None
         self.cancelled: tuple[str, str] | None = None
 
     # Return one queued handle after capturing private creation inputs.
-    async def enqueue(self, *args: Any) -> dict[str, Any]:
+    async def enqueue(self, *args: Any, **kwargs: Any) -> dict[str, Any]:
         self.enqueued = args
+        self.enqueued_kwargs = kwargs
         return {
             "id": "11111111-1111-4111-8111-111111111111",
             "presentation_id": "22222222-2222-4222-8222-222222222222",
@@ -117,6 +119,29 @@ async def test_job_service_queues_without_running_the_presentation_agent() -> No
     assert queued["auto_image_max"] == 2
     assert jobs.enqueued is not None
     assert jobs.enqueued[3] == "Create a presentation on horses, 6 slides"
+
+
+# Verify the channel the request came from travels with the job, so the worker
+# can deliver the finished deck where it was asked for.
+@pytest.mark.asyncio
+async def test_job_service_keeps_the_channel_it_was_queued_from() -> None:
+    jobs = StubJobRepository()
+    service = PresentationJobService(
+        jobs,  # type: ignore[arg-type]
+        StubPresentationRepository(),  # type: ignore[arg-type]
+        "lm_studio",
+        "google/gemma-4-12b",
+    )
+
+    await service.enqueue(
+        "ani.mallya",
+        "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+        "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+        "Create a presentation on horses",
+        channel="imessage",
+    )
+
+    assert jobs.enqueued_kwargs == {"channel": "imessage"}
 
 
 # Verify a terminal job reconnect includes its promoted presentation.

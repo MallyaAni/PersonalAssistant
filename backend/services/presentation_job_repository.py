@@ -2,7 +2,7 @@ import uuid
 from datetime import UTC, datetime, timedelta
 from typing import Any, cast
 
-from sqlalchemy import or_, select
+from sqlalchemy import or_, select, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from backend.models.presentation import (
@@ -30,6 +30,7 @@ class SQLAlchemyPresentationJobRepository:
         provider: str,
         model: str | None,
         expected_slide_count: int | None,
+        channel: str | None = None,
     ) -> dict[str, Any]:
         pending_title = " ".join(prompt.split())[:100] or "Untitled presentation"
         presentation = Presentation(
@@ -60,6 +61,7 @@ class SQLAlchemyPresentationJobRepository:
             status="queued",
             prompt=prompt,
             expected_slide_count=expected_slide_count,
+            channel=channel,
         )
         self.session.add(job)
         await self.session.commit()
@@ -206,6 +208,24 @@ class SQLAlchemyPresentationJobRepository:
         job.completed_at = now
         job.updated_at = now
         await self.session.commit()
+
+    # Claim the one notification a terminal job may send.
+    #
+    # Conditional on notified_at being null, so the claim is the lock: a
+    # worker that dies after marking a deck ready and is retried later finds
+    # the timestamp already set and sends nothing. Returns whether this
+    # caller won the claim.
+    async def claim_notification(self, job_id: str) -> bool:
+        result = await self.session.execute(
+            update(PresentationJob)
+            .where(
+                PresentationJob.id == uuid.UUID(job_id),
+                PresentationJob.notified_at.is_(None),
+            )
+            .values(notified_at=datetime.now(UTC))
+        )
+        await self.session.commit()
+        return bool(getattr(result, "rowcount", 0))
 
     # Record one terminal failure on both the job and its pending revision.
     async def mark_failed(

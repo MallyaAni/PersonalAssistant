@@ -34,6 +34,7 @@ class PresentationJobService:
         conversation_id: str,
         trace_id: str,
         prompt: str,
+        channel: str = "web",
     ) -> dict[str, Any]:
         job = await self.jobs.enqueue(
             user_id,
@@ -43,6 +44,7 @@ class PresentationJobService:
             self.provider_name,
             self.model_name,
             requested_slide_count(prompt),
+            channel=channel,
         )
         job["auto_image_max"] = self.auto_image_max
         return job

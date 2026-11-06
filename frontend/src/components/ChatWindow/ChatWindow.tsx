@@ -112,6 +112,10 @@ const restoredMessages = (
       assistant.artifactStatus = 'failed'
       assistant.artifactError = 'Unable to create the diagram.'
     }
+    // A background result (a finished deck, a parsed document) is persisted
+    // as an assistant-only turn; pairing it with an empty user bubble would
+    // put a blank message in the transcript.
+    if (turn.metadata.assistant_only === true) return [assistant]
     return [
       { role: 'user', content: turn.query } satisfies Message,
       assistant,

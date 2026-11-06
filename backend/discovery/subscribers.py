@@ -8,6 +8,7 @@ from datetime import UTC, datetime
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from backend.database.session import AsyncSessionLocal
 from backend.discovery.addressing import address_digest, normalize_address
 from backend.discovery.errors import DiscoveryProfileLimitError
 from backend.models.discovery_subscriber import DiscoverySubscriber
@@ -374,6 +375,18 @@ async def owner_subscriber_id(
         .limit(1)
     )
     return (await session.execute(earliest)).scalars().first()
+
+
+# The address a person enrolled for a channel, from the discovery
+# subscribers - the one place this system keeps who may be messaged where.
+# Shared by the run worker and the presentation worker, so both resolve a
+# destination through the same consent rule rather than each reading rows.
+async def enrolled_address(user_id: str, channel: str) -> str | None:
+    async with AsyncSessionLocal() as db:
+        for subscriber in await SubscriberRepository(db).list_subscribers(user_id):
+            if subscriber.channel == channel and subscriber.active and subscriber.approved:
+                return subscriber.address
+    return None
 
 
 def _to_subscriber(row: DiscoverySubscriber) -> Subscriber:

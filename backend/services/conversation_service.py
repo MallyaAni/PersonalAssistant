@@ -1921,6 +1921,7 @@ class ConversationService:
         conversation_id: str,
         trace_id: str,
         query: str,
+        channel: str = "web",
     ) -> dict[str, Any]:
         if self.presentation_jobs is None:
             raise RuntimeError("Presentation jobs are not configured")
@@ -1929,6 +1930,7 @@ class ConversationService:
             conversation_id,
             trace_id,
             query,
+            channel=channel,
         )
 
     # Queue a specialist presentation job and persist the delegated chat turn.
@@ -1961,6 +1963,7 @@ class ConversationService:
                 conversation_id,
                 trace_id,
                 query,
+                str(metadata.get("channel") or "web"),
             )
         except Exception:
             logger.exception(
@@ -4546,6 +4549,7 @@ class ConversationService:
                     frame.conversation_id,
                     frame.trace_id,
                     frame.query,
+                    str(metadata.get("channel") or "web"),
                 )
             except Exception:
                 logger.exception(

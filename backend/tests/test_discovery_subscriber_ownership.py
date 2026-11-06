@@ -213,9 +213,9 @@ async def test_delivery_resolves_the_owner_before_an_older_guest():
 
         assert [person.address for person in listed] == ["+15550100", "+15550199"]
 
-        from backend.workers.run_worker import _enrolled_address
+        from backend.discovery.subscribers import enrolled_address
 
-        assert await _enrolled_address(user_id, "imessage") == "+15550100"
+        assert await enrolled_address(user_id, "imessage") == "+15550100"
     finally:
         await _cleanup(user_id)
 

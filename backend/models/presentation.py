@@ -190,6 +190,13 @@ class PresentationJob(Base):
         DateTime(timezone=True), nullable=True
     )
     error_code: Mapped[str | None] = mapped_column(String(60), nullable=True)
+    # Where the deck was asked for, and whether the terminal result has been
+    # told there. notified_at is claimed before the write, so a worker that
+    # dies between marking ready and notifying cannot send twice.
+    channel: Mapped[str | None] = mapped_column(String(50), nullable=True)
+    notified_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now(), nullable=False
     )
@@ -218,6 +225,10 @@ class PresentationJob(Base):
             "attempt_count": self.attempt_count,
             "cancel_requested": self.cancel_requested,
             "error_code": self.error_code,
+            "channel": self.channel,
+            "notified_at": (
+                self.notified_at.isoformat() if self.notified_at else None
+            ),
             "created_at": self.created_at.isoformat() if self.created_at else None,
             "started_at": self.started_at.isoformat() if self.started_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,

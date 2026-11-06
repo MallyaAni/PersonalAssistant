@@ -185,23 +185,12 @@ async def review_schedule_loop() -> None:
         await asyncio.sleep(3600)
 
 
-# The address a person enrolled for a channel, from the discovery
-# subscribers - the one place this system keeps who may be messaged where.
-async def _enrolled_address(user_id: str, channel: str) -> str | None:
-    from backend.discovery.subscribers import SubscriberRepository
-
-    async with AsyncSessionLocal() as db:
-        for subscriber in await SubscriberRepository(db).list_subscribers(user_id):
-            if subscriber.channel == channel and subscriber.active and subscriber.approved:
-                return subscriber.address
-    return None
-
-
 # The delivery the worker uses, on the discovery channels.
 def _delivery() -> RunDelivery:
     from backend.core.dependencies import get_discovery_channels
+    from backend.discovery.subscribers import enrolled_address
 
-    return RunDelivery(get_discovery_channels(), _enrolled_address)
+    return RunDelivery(get_discovery_channels(), enrolled_address)
 
 
 class RunWorker:
