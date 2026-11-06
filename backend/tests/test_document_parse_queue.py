@@ -14,8 +14,9 @@ from sqlalchemy.exc import ProgrammingError
 from backend.artifacts.storage import LocalBinaryArtifactStore
 from backend.models.agent_memory import DocumentParseJob
 from backend.models.artifact import VisualArtifact
+from backend.models.conversation import Conversation
 from backend.services.artifact_repository import SQLAlchemyArtifactRepository
-from backend.services.document_parse_queue import enqueue_document, process_pending
+from backend.services.document_parse_queue import claim_next, enqueue_document, process_pending
 from backend.services.document_parser import ParsedDocument, ParseError, ParseUnavailable
 from backend.services.document_writer import render_docx
 from backend.tasks.repository import ScheduledTaskRepository
@@ -63,6 +64,9 @@ async def _cleanup(user_id: str) -> None:
             if row.document_id:
                 await manager.knowledge.delete(user_id, str(row.document_id))
         await session.execute(delete(DocumentParseJob).where(DocumentParseJob.user_id == user_id))
+        # A terminal job leaves one result turn in the conversation it came
+        # from; the test's conversation id is throwaway too.
+        await session.execute(delete(Conversation).where(Conversation.user_id == user_id))
         # A queued Word file leaves an artifact row and its binary behind.
         await session.execute(delete(VisualArtifact).where(VisualArtifact.user_id == user_id))
         await session.commit()
@@ -254,6 +258,127 @@ async def test_a_failed_change_log_write_still_marks_the_document_done(monkeypat
         assert landed >= 1
         row = await _status(job["id"])
         assert row.status == "done" and row.document_id is not None and row.content == b""
+    except (ConnectionError, OSError) as exc:
+        pytest.skip(f"database unreachable: {type(exc).__name__}")
+    finally:
+        await _cleanup(user_id)
+
+
+async def test_a_claimed_job_is_not_claimed_by_a_second_worker():
+    """Two API processes run this loop. The claim commits the row as
+    processing with a lease, so the second process walks past it instead of
+    parsing and storing the same file twice."""
+    await _require_table()
+    user_id = f"queue-{uuid.uuid4().hex[:8]}"
+    try:
+        async with await _session() as session:
+            job = await enqueue_document(session, user_id, "once.pdf", "application/pdf", b"%PDF-1.7 x", "", None)
+
+        async with await _session() as first:
+            claimed = await claim_next(first, "worker-a")
+            assert claimed is not None and str(claimed.id) == job["id"]
+
+        async with await _session() as second:
+            assert await claim_next(second, "worker-b") is None
+
+        row = await _status(job["id"])
+        assert row.status == "processing"
+        assert row.worker_id == "worker-a"
+        assert row.lease_expires_at is not None
+    except (ConnectionError, OSError) as exc:
+        pytest.skip(f"database unreachable: {type(exc).__name__}")
+    finally:
+        await _cleanup(user_id)
+
+
+async def test_an_expired_lease_is_reclaimed_after_a_worker_crash():
+    """A worker that dies mid-parse leaves the row processing. The lease is
+    what lets the next process pick it up rather than leaving the file
+    unread forever."""
+    await _require_table()
+    user_id = f"queue-{uuid.uuid4().hex[:8]}"
+    try:
+        async with await _session() as session:
+            job = await enqueue_document(session, user_id, "crashed.pdf", "application/pdf", b"%PDF-1.7 x", "", None)
+
+        async with await _session() as crashed:
+            assert await claim_next(crashed, "worker-a", lease_seconds=-1) is not None
+
+        async with await _session() as next_worker:
+            reclaimed = await claim_next(next_worker, "worker-b")
+        assert reclaimed is not None and str(reclaimed.id) == job["id"]
+        row = await _status(job["id"])
+        assert row.status == "processing" and row.worker_id == "worker-b"
+    except (ConnectionError, OSError) as exc:
+        pytest.skip(f"database unreachable: {type(exc).__name__}")
+    finally:
+        await _cleanup(user_id)
+
+
+async def test_a_landed_document_leaves_one_turn_in_its_conversation():
+    """The queued branch of the upload never writes a turn, so without this
+    the document appears in knowledge with no line saying it was read."""
+    await _require_table()
+    user_id = f"queue-{uuid.uuid4().hex[:8]}"
+    conversation_id = uuid.uuid4()
+    try:
+        async with await _session() as session:
+            job = await enqueue_document(
+                session, user_id, "notes.pdf", "application/pdf", b"%PDF-1.7 x", "", str(conversation_id)
+            )
+
+        async def parser(filename, content):
+            return ParsedDocument(markdown="The settling tank was cleaned each spring.", pages=1, media_type="application/pdf")
+
+        landed = await process_pending(parse=parser, reachable=_up)
+        assert landed >= 1
+        async with await _session() as session:
+            turns = (
+                await session.execute(select(Conversation).where(Conversation.conversation_id == conversation_id))
+            ).scalars().all()
+        assert len(turns) == 1
+        assert turns[0].query == "📎 notes.pdf"
+        assert "you can ask me about it now" in turns[0].response
+        assert turns[0].extra_data == {
+            "kind": "document_parse_result",
+            "job_id": job["id"],
+            "status": "done",
+        }
+    except (ConnectionError, OSError) as exc:
+        pytest.skip(f"database unreachable: {type(exc).__name__}")
+    finally:
+        await _cleanup(user_id)
+
+
+async def test_a_failed_document_tells_its_conversation_why():
+    """A queued file that cannot be read used to fail into a log line the
+    uploader never saw. The terminal turn is where the promise made at upload
+    time is either kept or corrected."""
+    await _require_table()
+    user_id = f"queue-{uuid.uuid4().hex[:8]}"
+    conversation_id = uuid.uuid4()
+    try:
+        async with await _session() as session:
+            job = await enqueue_document(
+                session, user_id, "bad.pdf", "application/pdf", b"%PDF-1.7 x", "", str(conversation_id)
+            )
+
+        async def parser(filename, content):
+            raise ParseError('I could not get any readable text out of "bad.pdf".')
+
+        await process_pending(parse=parser, reachable=_up)
+        async with await _session() as session:
+            turns = (
+                await session.execute(select(Conversation).where(Conversation.conversation_id == conversation_id))
+            ).scalars().all()
+        assert len(turns) == 1
+        assert turns[0].query == "📎 bad.pdf"
+        assert "readable text" in turns[0].response
+        assert turns[0].extra_data == {
+            "kind": "document_parse_result",
+            "job_id": job["id"],
+            "status": "failed",
+        }
     except (ConnectionError, OSError) as exc:
         pytest.skip(f"database unreachable: {type(exc).__name__}")
     finally:

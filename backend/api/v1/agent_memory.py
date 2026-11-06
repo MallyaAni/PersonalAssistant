@@ -487,6 +487,23 @@ async def ingest_document(
     return stored
 
 
+# Whether a queued upload has been read yet, so the uploader can ask rather
+# than wait for the conversation line. get_owned scopes it to the path user,
+# so another account's job id is a 404 rather than a status.
+@router.get("/{user_id}/agent/knowledge/parse-jobs/{job_id}")
+async def get_document_parse_job(
+    user_id: UserId,
+    job_id: str,
+    manager: DependencyAgentMemoryManager,
+) -> dict[str, Any]:
+    from backend.services.document_parse_queue import get_owned
+
+    job = await get_owned(manager.session, user_id, job_id)
+    if job is None:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No such document parse job.")
+    return job
+
+
 # Search embedded knowledge chunks by meaning.
 @router.get("/{user_id}/agent/knowledge/search")
 async def search_knowledge(

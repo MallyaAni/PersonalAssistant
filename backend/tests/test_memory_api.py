@@ -628,6 +628,50 @@ def test_delete_all_forgets_queued_parse_jobs():
         _remove_test_user(user_id)
 
 
+# The uploader polls this while the parser is away. It must report the job's
+# own outcome and refuse a job that belongs to another account.
+def test_parse_job_status_is_readable_only_by_its_uploader():
+    user_id = f"prop_{uuid.uuid4()}"
+    other_user = f"prop_{uuid.uuid4()}"
+    try:
+        with SessionLocal() as session:
+            job = DocumentParseJob(
+                user_id=user_id,
+                filename="later.pdf",
+                media_type="application/pdf",
+                content=b"%PDF-1.4 private",
+                note="",
+            )
+            session.add(job)
+            session.commit()
+            job_id = str(job.id)
+
+        with TestClient(app) as client:
+            status = client.get(
+                f"/api/v1/memory/{user_id}/agent/knowledge/parse-jobs/{job_id}"
+            )
+            assert status.status_code == 200
+            body = status.json()
+            assert body["id"] == job_id
+            assert body["filename"] == "later.pdf"
+            assert body["status"] == "pending"
+
+            assert (
+                client.get(
+                    f"/api/v1/memory/{other_user}/agent/knowledge/parse-jobs/{job_id}"
+                ).status_code
+                == 404
+            )
+            assert (
+                client.get(
+                    f"/api/v1/memory/{user_id}/agent/knowledge/parse-jobs/not-a-uuid"
+                ).status_code
+                == 404
+            )
+    finally:
+        _remove_test_user(user_id)
+
+
 # The number given at sign-up lives on the approved access request, not on the
 # account row, so this is the case a "does the export cover every table"
 # sweep cannot catch: the row is keyed by desired_username, not user_id.
