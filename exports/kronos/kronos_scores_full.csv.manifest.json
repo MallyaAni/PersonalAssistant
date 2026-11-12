@@ -1,0 +1,115 @@
+{
+ "script": "kronos_score.py",
+ "script_sha256": "8b2ae64e965913c7e1446bc262aaa0d603e3d25ebcf75a0e72827ca75872429e",
+ "model_id": "NeoQuasar/Kronos-base",
+ "tokenizer_id": "NeoQuasar/Kronos-Tokenizer-base",
+ "device": "cuda",
+ "sample_count": 10,
+ "conventions": {
+  "lookback": 512,
+  "min_context": 60,
+  "pred_len": 20,
+  "temperature": 1.0,
+  "top_p": 0.9,
+  "open_convention": "previous session adjusted close",
+  "adjustment": "Adj Close; High/Low rescaled by Adj/Close",
+  "seed": "crc32(ticker|date)"
+ },
+ "jobs_file": "jobs_all.csv",
+ "attempted_this_run": 2799,
+ "scored_this_run": 2781,
+ "resumed_skip": 0,
+ "skipped": [
+  {
+   "ticker": "ARM",
+   "date": "2023-09-18",
+   "reason": "only 3 context bars (< 60)"
+  },
+  {
+   "ticker": "ARM",
+   "date": "2023-10-16",
+   "reason": "only 23 context bars (< 60)"
+  },
+  {
+   "ticker": "ARM",
+   "date": "2023-11-13",
+   "reason": "only 43 context bars (< 60)"
+  },
+  {
+   "ticker": "CORZ",
+   "date": "2024-02-09",
+   "reason": "only 13 context bars (< 60)"
+  },
+  {
+   "ticker": "CORZ",
+   "date": "2024-03-11",
+   "reason": "only 33 context bars (< 60)"
+  },
+  {
+   "ticker": "CORZ",
+   "date": "2024-03-18",
+   "reason": "only 38 context bars (< 60)"
+  },
+  {
+   "ticker": "CORZ",
+   "date": "2024-04-09",
+   "reason": "only 53 context bars (< 60)"
+  },
+  {
+   "ticker": "NBIS",
+   "date": "2024-10-28",
+   "reason": "only 6 context bars (< 60)"
+  },
+  {
+   "ticker": "NBIS",
+   "date": "2024-11-25",
+   "reason": "only 26 context bars (< 60)"
+  },
+  {
+   "ticker": "NBIS",
+   "date": "2024-12-24",
+   "reason": "only 46 context bars (< 60)"
+  },
+  {
+   "ticker": "SNDK",
+   "date": "2025-02-25",
+   "reason": "only 8 context bars (< 60)"
+  },
+  {
+   "ticker": "SNDK",
+   "date": "2025-03-11",
+   "reason": "only 18 context bars (< 60)"
+  },
+  {
+   "ticker": "SNDK",
+   "date": "2025-03-25",
+   "reason": "only 28 context bars (< 60)"
+  },
+  {
+   "ticker": "CRWV",
+   "date": "2025-04-23",
+   "reason": "only 18 context bars (< 60)"
+  },
+  {
+   "ticker": "SNDK",
+   "date": "2025-04-23",
+   "reason": "only 48 context bars (< 60)"
+  },
+  {
+   "ticker": "CRWV",
+   "date": "2025-05-20",
+   "reason": "only 37 context bars (< 60)"
+  },
+  {
+   "ticker": "CRWV",
+   "date": "2025-05-21",
+   "reason": "only 38 context bars (< 60)"
+  },
+  {
+   "ticker": "CRWV",
+   "date": "2025-06-20",
+   "reason": "only 58 context bars (< 60)"
+  }
+ ],
+ "total_wall_seconds": 2634.9
+}
