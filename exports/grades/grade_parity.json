@@ -1,0 +1,635 @@
+{
+  "version": "grade-parity/1",
+  "rows": [
+    {
+      "version": "grade-parity/1",
+      "date": "2026-09-25",
+      "checked": "2026-09-28T03:21:52+00:00",
+      "ok": true,
+      "mode": "parity",
+      "code": {
+        "record": "508c66c9",
+        "replay": "508c66c9"
+      },
+      "moved_inputs": [],
+      "names": 94,
+      "members": 94,
+      "on_board": 94,
+      "targets_compared": true,
+      "replay_session": "2026-09-25",
+      "membership_history": "/home/animallya96/deploy/anios/backend/market/data/membership_history.csv",
+      "basis": "replay = market_daily.desk_report (live inputs, fundamentals=current) restricted by point_in_time.point_in_time, letter at the record's session; targets = live_policy.targets on the same report",
+      "mismatches": []
+    },
+    {
+      "version": "grade-parity/1",
+      "date": "2026-09-28",
+      "checked": "2026-09-28T23:46:35+00:00",
+      "ok": true,
+      "mode": "parity",
+      "code": {
+        "record": "80b58819",
+        "replay": "80b58819"
+      },
+      "moved_inputs": [],
+      "names": 94,
+      "members": 94,
+      "on_board": 94,
+      "targets_compared": true,
+      "replay_session": "2026-09-28",
+      "membership_history": "/home/animallya96/deploy/anios/backend/market/data/membership_history.csv",
+      "basis": "replay = market_daily.desk_report (live inputs, fundamentals=current) restricted by point_in_time.point_in_time, letter at the record's session; targets = live_policy.targets on the same report",
+      "mismatches": []
+    },
+    {
+      "version": "grade-parity/1",
+      "date": "2026-09-29",
+      "checked": "2026-09-29T23:46:33+00:00",
+      "ok": true,
+      "mode": "parity",
+      "code": {
+        "record": "eefe06e9",
+        "replay": "eefe06e9"
+      },
+      "moved_inputs": [],
+      "names": 94,
+      "members": 94,
+      "on_board": 94,
+      "targets_compared": true,
+      "replay_session": "2026-09-29",
+      "membership_history": "/home/animallya96/deploy/anios/backend/market/data/membership_history.csv",
+      "basis": "replay = market_daily.desk_report (live inputs, fundamentals=current) restricted by point_in_time.point_in_time, letter at the record's session; targets = live_policy.targets on the same report",
+      "mismatches": []
+    },
+    {
+      "version": "grade-parity/1",
+      "date": "2026-09-30",
+      "checked": "2026-09-30T23:46:12+00:00",
+      "ok": true,
+      "mode": "parity",
+      "code": {
+        "record": "94393800",
+        "replay": "94393800"
+      },
+      "moved_inputs": [],
+      "names": 94,
+      "members": 94,
+      "on_board": 94,
+      "targets_compared": true,
+      "replay_session": "2026-09-30",
+      "membership_history": "/home/animallya96/deploy/anios/backend/market/data/membership_history.csv",
+      "basis": "replay = market_daily.desk_report (live inputs, fundamentals=current) restricted by point_in_time.point_in_time, letter at the record's session; targets = live_policy.targets on the same report",
+      "mismatches": []
+    },
+    {
+      "version": "grade-parity/1",
+      "date": "2026-10-01",
+      "checked": "2026-10-01T23:48:18+00:00",
+      "ok": true,
+      "mode": "parity",
+      "code": {
+        "record": "d17f1632",
+        "replay": "d17f1632"
+      },
+      "moved_inputs": [],
+      "names": 94,
+      "members": 94,
+      "on_board": 94,
+      "targets_compared": true,
+      "replay_session": "2026-10-01",
+      "membership_history": "/home/animallya96/deploy/anios/backend/market/data/membership_history.csv",
+      "basis": "replay = market_daily.desk_report (live inputs, fundamentals=current) restricted by point_in_time.point_in_time, letter at the record's session; targets = live_policy.targets on the same report",
+      "mismatches": []
+    },
+    {
+      "version": "grade-parity/1",
+      "date": "2026-10-02",
+      "checked": "2026-10-02T23:47:02+00:00",
+      "ok": true,
+      "mode": "parity",
+      "code": {
+        "record": "7634deaf",
+        "replay": "7634deaf"
+      },
+      "moved_inputs": [],
+      "names": 94,
+      "members": 94,
+      "on_board": 94,
+      "targets_compared": true,
+      "replay_session": "2026-10-02",
+      "membership_history": "/home/animallya96/deploy/anios/backend/market/data/membership_history.csv",
+      "basis": "replay = market_daily.desk_report (live inputs, fundamentals=current) restricted by point_in_time.point_in_time, letter at the record's session; targets = live_policy.targets on the same report",
+      "mismatches": [],
+      "tone_expiry": "hard"
+    },
+    {
+      "version": "grade-parity/1",
+      "date": "2026-10-05",
+      "checked": "2026-10-05T23:49:09+00:00",
+      "ok": true,
+      "mode": "parity",
+      "code": {
+        "record": "e8e339e0",
+        "replay": "e8e339e0"
+      },
+      "moved_inputs": [],
+      "names": 94,
+      "members": 94,
+      "on_board": 94,
+      "targets_compared": true,
+      "replay_session": "2026-10-05",
+      "membership_history": "/home/animallya96/deploy/anios/backend/market/data/membership_history.csv",
+      "basis": "replay = market_daily.desk_report (live inputs, fundamentals=current) restricted by point_in_time.point_in_time, letter at the record's session; targets = live_policy.targets on the same report",
+      "mismatches": [],
+      "tone_expiry": "hard"
+    },
+    {
+      "version": "grade-parity/1",
+      "date": "2026-10-06",
+      "checked": "2026-10-06T23:48:02+00:00",
+      "ok": true,
+      "mode": "parity",
+      "code": {
+        "record": "e8e339e0",
+        "replay": "e8e339e0"
+      },
+      "moved_inputs": [],
+      "names": 94,
+      "members": 94,
+      "on_board": 94,
+      "targets_compared": true,
+      "replay_session": "2026-10-06",
+      "membership_history": "/home/animallya96/deploy/anios/backend/market/data/membership_history.csv",
+      "basis": "replay = market_daily.desk_report (live inputs, fundamentals=current) restricted by point_in_time.point_in_time, letter at the record's session; targets = live_policy.targets on the same report",
+      "mismatches": [],
+      "tone_expiry": "hard"
+    },
+    {
+      "version": "grade-parity/1",
+      "date": "2026-10-07",
+      "checked": "2026-10-07T23:50:14+00:00",
+      "ok": true,
+      "mode": "parity",
+      "code": {
+        "record": "92b11bb9",
+        "replay": "92b11bb9"
+      },
+      "moved_inputs": [],
+      "names": 94,
+      "members": 94,
+      "on_board": 94,
+      "targets_compared": true,
+      "replay_session": "2026-10-07",
+      "membership_history": "/home/animallya96/deploy/anios/backend/market/data/membership_history.csv",
+      "basis": "replay = market_daily.desk_report (live inputs, fundamentals=current) restricted by point_in_time.point_in_time, letter at the record's session; targets = live_policy.targets on the same report",
+      "mismatches": [],
+      "tone_expiry": "hard"
+    },
+    {
+      "version": "grade-parity/1",
+      "date": "2026-10-08",
+      "checked": "2026-10-08T23:47:53+00:00",
+      "ok": true,
+      "mode": "parity",
+      "code": {
+        "record": "92b11bb9",
+        "replay": "92b11bb9"
+      },
+      "moved_inputs": [],
+      "names": 94,
+      "members": 94,
+      "on_board": 94,
+      "targets_compared": true,
+      "replay_session": "2026-10-08",
+      "membership_history": "/home/animallya96/deploy/anios/backend/market/data/membership_history.csv",
+      "basis": "replay = market_daily.desk_report (live inputs, fundamentals=current) restricted by point_in_time.point_in_time, letter at the record's session; targets = live_policy.targets on the same report",
+      "mismatches": [],
+      "tone_expiry": "hard"
+    },
+    {
+      "version": "grade-parity/1",
+      "date": "2026-10-09",
+      "checked": "2026-10-09T23:47:51+00:00",
+      "ok": true,
+      "mode": "parity",
+      "code": {
+        "record": "92b11bb9",
+        "replay": "92b11bb9"
+      },
+      "moved_inputs": [],
+      "names": 94,
+      "members": 94,
+      "on_board": 94,
+      "targets_compared": true,
+      "replay_session": "2026-10-09",
+      "membership_history": "/home/animallya96/deploy/anios/backend/market/data/membership_history.csv",
+      "basis": "replay = market_daily.desk_report (live inputs, fundamentals=current) restricted by point_in_time.point_in_time, letter at the record's session; targets = live_policy.targets on the same report",
+      "mismatches": [],
+      "tone_expiry": "hard"
+    },
+    {
+      "version": "grade-parity/1",
+      "date": "2026-10-13",
+      "checked": "2026-10-13T23:48:11+00:00",
+      "ok": false,
+      "mode": "parity",
+      "code": {
+        "record": "42b11a76",
+        "replay": "42b11a76"
+      },
+      "moved_inputs": [],
+      "names": 94,
+      "members": 94,
+      "on_board": 94,
+      "targets_compared": true,
+      "replay_session": "2026-10-13",
+      "membership_history": "/home/animallya96/deploy/anios/backend/market/data/membership_history.csv",
+      "basis": "replay = market_daily.desk_report (live inputs, fundamentals=current) restricted by point_in_time.point_in_time, letter at the record's session; targets = live_policy.targets on the same report",
+      "mismatches": [
+        {
+          "kind": "targets",
+          "ticker": "ALAB",
+          "live": 0.08956273706612647,
+          "replay": 0.125,
+          "detail": "record target differs from live_policy.targets by more than 1e-09"
+        },
+        {
+          "kind": "targets",
+          "ticker": "GEV",
+          "live": 0.020403798473345613,
+          "replay": 0.125,
+          "detail": "record target differs from live_policy.targets by more than 1e-09"
+        },
+        {
+          "kind": "targets",
+          "ticker": "HPE",
+          "live": 0.11671648120878106,
+          "replay": 0.125,
+          "detail": "record target differs from live_policy.targets by more than 1e-09"
+        },
+        {
+          "kind": "targets",
+          "ticker": "MU",
+          "live": 0.09717803259960481,
+          "replay": 0.125,
+          "detail": "record target differs from live_policy.targets by more than 1e-09"
+        },
+        {
+          "kind": "targets",
+          "ticker": "NTAP",
+          "live": 0.1885527591827488,
+          "replay": 0.125,
+          "detail": "record target differs from live_policy.targets by more than 1e-09"
+        },
+        {
+          "kind": "targets",
+          "ticker": "SMCI",
+          "live": 0.14491311095153603,
+          "replay": 0.125,
+          "detail": "record target differs from live_policy.targets by more than 1e-09"
+        },
+        {
+          "kind": "targets",
+          "ticker": "SNDK",
+          "live": 0.0905088973034839,
+          "replay": 0.125,
+          "detail": "record target differs from live_policy.targets by more than 1e-09"
+        },
+        {
+          "kind": "targets",
+          "ticker": "SNPS",
+          "live": 0.060411716607464895,
+          "replay": 0.125,
+          "detail": "record target differs from live_policy.targets by more than 1e-09"
+        }
+      ],
+      "tone_expiry": "hard"
+    },
+    {
+      "version": "grade-parity/1",
+      "date": "2026-10-19",
+      "checked": "2026-10-19T23:51:15+00:00",
+      "ok": false,
+      "mode": "parity",
+      "code": {
+        "record": "b4b2eeb9",
+        "replay": "b4b2eeb9"
+      },
+      "moved_inputs": [],
+      "names": 94,
+      "members": 94,
+      "on_board": 94,
+      "targets_compared": false,
+      "target_basis": "recorded learned proposal with grade constraints reapplied to the original account snapshot; not a new model inference",
+      "replay_session": "2026-10-19",
+      "membership_history": "/home/animallya96/deploy/anios/backend/market/data/membership_history.csv",
+      "basis": "replay = market_daily.desk_report (live inputs, fundamentals=current) restricted by point_in_time.point_in_time, letter at the record's session; targets = recorded learned proposal with grade constraints reapplied to the original account snapshot; not a new model inference",
+      "mismatches": [
+        {
+          "kind": "targets",
+          "detail": "Matching available grade-led allocation receipt required"
+        }
+      ],
+      "tone_expiry": "hard"
+    },
+    {
+      "version": "grade-parity/1",
+      "date": "2026-10-20",
+      "checked": "2026-10-20T23:48:24+00:00",
+      "ok": true,
+      "mode": "parity",
+      "code": {
+        "record": "efc649a0",
+        "replay": "efc649a0"
+      },
+      "moved_inputs": [],
+      "names": 94,
+      "members": 94,
+      "on_board": 94,
+      "targets_compared": true,
+      "target_basis": "recorded learned proposal with grade constraints reapplied to the original account snapshot; not a new model inference",
+      "replay_session": "2026-10-20",
+      "membership_history": "/home/animallya96/deploy/anios/backend/market/data/membership_history.csv",
+      "basis": "replay = market_daily.desk_report (live inputs, fundamentals=current) restricted by point_in_time.point_in_time, letter at the record's session; targets = recorded learned proposal with grade constraints reapplied to the original account snapshot; not a new model inference",
+      "mismatches": [],
+      "tone_expiry": "hard"
+    },
+    {
+      "version": "grade-parity/1",
+      "date": "2026-10-21",
+      "checked": "2026-10-21T23:50:47+00:00",
+      "ok": true,
+      "mode": "parity",
+      "code": {
+        "record": "1fa135f9",
+        "replay": "1fa135f9"
+      },
+      "moved_inputs": [],
+      "names": 94,
+      "members": 94,
+      "on_board": 94,
+      "targets_compared": true,
+      "target_basis": "recorded learned proposal with grade constraints reapplied to the original account snapshot; not a new model inference",
+      "replay_session": "2026-10-21",
+      "membership_history": "/home/animallya96/deploy/anios/backend/market/data/membership_history.csv",
+      "fundamentals": {
+        "live": "current",
+        "replay": "current",
+        "research": "corrected",
+        "live_source": "fundamentals-features/3",
+        "research_source": "fundamentals-features/2",
+        "note": "The nightly and this replay use the reporting-period safeguard (current, fundamentals-features/3); the research scorecard uses the generic desk default (corrected, fundamentals-features/2). The difference is deliberate: replaying the research mode here would report the safeguard's vote resets as drift."
+      },
+      "basis": "replay = market_daily.desk_report (live inputs, fundamentals=current) restricted by point_in_time.point_in_time, letter at the record's session; fundamentals live/replay=current, research=corrected; targets = recorded learned proposal with grade constraints reapplied to the original account snapshot; not a new model inference",
+      "mismatches": [],
+      "tone_expiry": "hard"
+    },
+    {
+      "version": "grade-parity/1",
+      "date": "2026-10-22",
+      "checked": "2026-10-23T02:59:44+00:00",
+      "ok": true,
+      "mode": "drift",
+      "code": {
+        "record": "f91745da",
+        "replay": "d1773c8f"
+      },
+      "moved_inputs": [
+        "bars_15m_sip/asof=2026-10-22"
+      ],
+      "names": 94,
+      "members": 94,
+      "on_board": 94,
+      "targets_compared": false,
+      "target_basis": "the FOMC risk rule owned this session's paper plan; no allocation targets were set, so none were compared",
+      "replay_session": "2026-10-22",
+      "membership_history": "/home/animallya96/deploy/anios/backend/market/data/membership_history.csv",
+      "fundamentals": {
+        "live": "current",
+        "replay": "current",
+        "research": "corrected",
+        "live_source": "fundamentals-features/3",
+        "research_source": "fundamentals-features/2",
+        "note": "The nightly and this replay use the reporting-period safeguard (current, fundamentals-features/3); the research scorecard uses the generic desk default (corrected, fundamentals-features/2). The difference is deliberate: replaying the research mode here would report the safeguard's vote resets as drift."
+      },
+      "basis": "replay = market_daily.desk_report (live inputs, fundamentals=current) restricted by point_in_time.point_in_time, letter at the record's session; fundamentals live/replay=current, research=corrected; targets = the FOMC risk rule owned this session's paper plan; no allocation targets were set, so none were compared",
+      "mismatches": [],
+      "tone_expiry": "hard"
+    },
+    {
+      "version": "grade-parity/1",
+      "date": "2026-10-23",
+      "checked": "2026-10-23T23:49:49+00:00",
+      "ok": true,
+      "mode": "parity",
+      "code": {
+        "record": "aae39d40",
+        "replay": "aae39d40"
+      },
+      "moved_inputs": [],
+      "names": 94,
+      "members": 94,
+      "on_board": 94,
+      "targets_compared": false,
+      "target_basis": "the FOMC risk rule owned this session's paper plan; no allocation targets were set, so none were compared",
+      "replay_session": "2026-10-23",
+      "membership_history": "/home/animallya96/deploy/anios/backend/market/data/membership_history.csv",
+      "fundamentals": {
+        "live": "current",
+        "replay": "current",
+        "research": "corrected",
+        "live_source": "fundamentals-features/3",
+        "research_source": "fundamentals-features/2",
+        "note": "The nightly and this replay use the reporting-period safeguard (current, fundamentals-features/3); the research scorecard uses the generic desk default (corrected, fundamentals-features/2). The difference is deliberate: replaying the research mode here would report the safeguard's vote resets as drift."
+      },
+      "basis": "replay = market_daily.desk_report (live inputs, fundamentals=current) restricted by point_in_time.point_in_time, letter at the record's session; fundamentals live/replay=current, research=corrected; targets = the FOMC risk rule owned this session's paper plan; no allocation targets were set, so none were compared",
+      "mismatches": [],
+      "tone_expiry": "hard"
+    },
+    {
+      "version": "grade-parity/1",
+      "date": "2026-10-26",
+      "checked": "2026-10-26T23:51:18+00:00",
+      "ok": true,
+      "mode": "parity",
+      "code": {
+        "record": "54908830",
+        "replay": "54908830"
+      },
+      "moved_inputs": [],
+      "names": 94,
+      "members": 94,
+      "on_board": 94,
+      "targets_compared": false,
+      "target_basis": "the FOMC risk rule owned this session's paper plan; no allocation targets were set, so none were compared",
+      "replay_session": "2026-10-26",
+      "membership_history": "/home/animallya96/deploy/anios/backend/market/data/membership_history.csv",
+      "fundamentals": {
+        "live": "current",
+        "replay": "current",
+        "research": "corrected",
+        "live_source": "fundamentals-features/6",
+        "research_source": "fundamentals-features/7",
+        "note": "The nightly and this replay use the reporting-period safeguard (current, fundamentals-features/6); the research scorecard uses the generic desk default (corrected, fundamentals-features/7). The difference is deliberate: replaying the research mode here would report the safeguard's vote resets as drift."
+      },
+      "basis": "replay = market_daily.desk_report (live inputs, fundamentals=current) restricted by point_in_time.point_in_time, letter at the record's session; fundamentals live/replay=current, research=corrected; targets = the FOMC risk rule owned this session's paper plan; no allocation targets were set, so none were compared",
+      "mismatches": [],
+      "tone_expiry": "hard"
+    },
+    {
+      "version": "grade-parity/1",
+      "date": "2026-10-27",
+      "checked": "2026-10-27T23:53:01+00:00",
+      "ok": true,
+      "mode": "parity",
+      "code": {
+        "record": "54908830",
+        "replay": "54908830"
+      },
+      "moved_inputs": [],
+      "names": 94,
+      "members": 94,
+      "on_board": 94,
+      "targets_compared": false,
+      "target_basis": "the FOMC risk rule owned this session's paper plan; no allocation targets were set, so none were compared",
+      "replay_session": "2026-10-27",
+      "membership_history": "/home/animallya96/deploy/anios/backend/market/data/membership_history.csv",
+      "fundamentals": {
+        "live": "current",
+        "replay": "current",
+        "research": "corrected",
+        "live_source": "fundamentals-features/6",
+        "research_source": "fundamentals-features/7",
+        "note": "The nightly and this replay use the reporting-period safeguard (current, fundamentals-features/6); the research scorecard uses the generic desk default (corrected, fundamentals-features/7). The difference is deliberate: replaying the research mode here would report the safeguard's vote resets as drift."
+      },
+      "basis": "replay = market_daily.desk_report (live inputs, fundamentals=current) restricted by point_in_time.point_in_time, letter at the record's session; fundamentals live/replay=current, research=corrected; targets = the FOMC risk rule owned this session's paper plan; no allocation targets were set, so none were compared",
+      "mismatches": [],
+      "tone_expiry": "hard"
+    },
+    {
+      "version": "grade-parity/1",
+      "date": "2026-10-28",
+      "checked": "2026-10-29T00:16:04+00:00",
+      "ok": true,
+      "mode": "parity",
+      "code": {
+        "record": "5b54b96e",
+        "replay": "5b54b96e"
+      },
+      "moved_inputs": [],
+      "names": 94,
+      "members": 94,
+      "on_board": 94,
+      "targets_compared": true,
+      "target_basis": "recorded learned proposal with grade constraints reapplied to the original account snapshot; not a new model inference",
+      "replay_session": "2026-10-28",
+      "membership_history": "/home/animallya96/deploy/anios/backend/market/data/membership_history.csv",
+      "fundamentals": {
+        "live": "current",
+        "replay": "current",
+        "research": "corrected",
+        "live_source": "fundamentals-features/6",
+        "research_source": "fundamentals-features/7",
+        "note": "The nightly and this replay use the reporting-period safeguard (current, fundamentals-features/6); the research scorecard uses the generic desk default (corrected, fundamentals-features/7). The difference is deliberate: replaying the research mode here would report the safeguard's vote resets as drift."
+      },
+      "basis": "replay = market_daily.desk_report (live inputs, fundamentals=current) restricted by point_in_time.point_in_time, letter at the record's session; fundamentals live/replay=current, research=corrected; targets = recorded learned proposal with grade constraints reapplied to the original account snapshot; not a new model inference",
+      "mismatches": [],
+      "tone_expiry": "hard"
+    },
+    {
+      "version": "grade-parity/1",
+      "date": "2026-10-29",
+      "checked": "2026-10-29T23:50:43+00:00",
+      "ok": false,
+      "mode": "parity",
+      "code": {
+        "record": "5b54b96e",
+        "replay": "5b54b96e"
+      },
+      "moved_inputs": [],
+      "names": 94,
+      "members": 94,
+      "on_board": 94,
+      "targets_compared": false,
+      "target_basis": "recorded learned proposal with grade constraints reapplied to the original account snapshot; not a new model inference",
+      "replay_session": "2026-10-29",
+      "membership_history": "/home/animallya96/deploy/anios/backend/market/data/membership_history.csv",
+      "fundamentals": {
+        "live": "current",
+        "replay": "current",
+        "research": "corrected",
+        "live_source": "fundamentals-features/6",
+        "research_source": "fundamentals-features/7",
+        "note": "The nightly and this replay use the reporting-period safeguard (current, fundamentals-features/6); the research scorecard uses the generic desk default (corrected, fundamentals-features/7). The difference is deliberate: replaying the research mode here would report the safeguard's vote resets as drift."
+      },
+      "basis": "replay = market_daily.desk_report (live inputs, fundamentals=current) restricted by point_in_time.point_in_time, letter at the record's session; fundamentals live/replay=current, research=corrected; targets = recorded learned proposal with grade constraints reapplied to the original account snapshot; not a new model inference",
+      "mismatches": [
+        {
+          "kind": "targets",
+          "detail": "Matching available grade-led allocation receipt required"
+        }
+      ],
+      "tone_expiry": "hard"
+    },
+    {
+      "version": "grade-parity/1",
+      "date": "2026-10-30",
+      "checked": "2026-10-30T23:50:26+00:00",
+      "ok": true,
+      "mode": "parity",
+      "code": {
+        "record": "178320de",
+        "replay": "178320de"
+      },
+      "moved_inputs": [],
+      "names": 94,
+      "members": 94,
+      "on_board": 94,
+      "targets_compared": true,
+      "target_basis": "recorded learned proposal with grade constraints reapplied to the original account snapshot; not a new model inference",
+      "replay_session": "2026-10-30",
+      "membership_history": "/home/animallya96/deploy/anios/backend/market/data/membership_history.csv",
+      "fundamentals": {
+        "live": "current",
+        "replay": "current",
+        "research": "corrected",
+        "live_source": "fundamentals-features/6",
+        "research_source": "fundamentals-features/7",
+        "note": "The nightly and this replay use the reporting-period safeguard (current, fundamentals-features/6); the research scorecard uses the generic desk default (corrected, fundamentals-features/7). The difference is deliberate: replaying the research mode here would report the safeguard's vote resets as drift."
+      },
+      "basis": "replay = market_daily.desk_report (live inputs, fundamentals=current) restricted by point_in_time.point_in_time, letter at the record's session; fundamentals live/replay=current, research=corrected; targets = recorded learned proposal with grade constraints reapplied to the original account snapshot; not a new model inference",
+      "mismatches": [],
+      "tone_expiry": "hard"
+    },
+    {
+      "version": "grade-parity/1",
+      "date": "2026-11-04",
+      "checked": "2026-11-05T00:54:16+00:00",
+      "ok": true,
+      "mode": "parity",
+      "code": {
+        "record": "8daba85d",
+        "replay": "8daba85d"
+      },
+      "moved_inputs": [],
+      "names": 94,
+      "members": 94,
+      "on_board": 94,
+      "targets_compared": true,
+      "target_basis": "recorded learned proposal with grade constraints reapplied to the original account snapshot; not a new model inference",
+      "replay_session": "2026-11-04",
+      "membership_history": "/home/animallya96/deploy/anios/backend/market/data/membership_history.csv",
+      "fundamentals": {
+        "live": "current",
+        "replay": "current",
+        "research": "corrected",
+        "live_source": "fundamentals-features/6",
+        "research_source": "fundamentals-features/7",
+        "note": "The nightly and this replay use the reporting-period safeguard (current, fundamentals-features/6); the research scorecard uses the generic desk default (corrected, fundamentals-features/7). The difference is deliberate: replaying the research mode here would report the safeguard's vote resets as drift."
+      },
+      "basis": "replay = market_daily.desk_report (live inputs, fundamentals=current) restricted by point_in_time.point_in_time, letter at the record's session; fundamentals live/replay=current, research=corrected; targets = recorded learned proposal with grade constraints reapplied to the original account snapshot; not a new model inference",
+      "mismatches": [],
+      "tone_expiry": "hard"
+    }
+  ]
+}
