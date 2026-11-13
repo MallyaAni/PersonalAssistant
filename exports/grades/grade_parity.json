@@ -630,6 +630,36 @@
       "basis": "replay = market_daily.desk_report (live inputs, fundamentals=current) restricted by point_in_time.point_in_time, letter at the record's session; fundamentals live/replay=current, research=corrected; targets = recorded learned proposal with grade constraints reapplied to the original account snapshot; not a new model inference",
       "mismatches": [],
       "tone_expiry": "hard"
+    },
+    {
+      "version": "grade-parity/1",
+      "date": "2026-11-12",
+      "checked": "2026-11-13T00:51:07+00:00",
+      "ok": true,
+      "mode": "parity",
+      "code": {
+        "record": "85167e9c",
+        "replay": "85167e9c"
+      },
+      "moved_inputs": [],
+      "names": 94,
+      "members": 94,
+      "on_board": 94,
+      "targets_compared": true,
+      "target_basis": "recorded learned proposal with grade constraints reapplied to the original account snapshot; not a new model inference",
+      "replay_session": "2026-11-12",
+      "membership_history": "/home/animallya96/deploy/anios/backend/market/data/membership_history.csv",
+      "fundamentals": {
+        "live": "current",
+        "replay": "current",
+        "research": "corrected",
+        "live_source": "fundamentals-features/6",
+        "research_source": "fundamentals-features/7",
+        "note": "The nightly and this replay use the reporting-period safeguard (current, fundamentals-features/6); the research scorecard uses the generic desk default (corrected, fundamentals-features/7). The difference is deliberate: replaying the research mode here would report the safeguard's vote resets as drift."
+      },
+      "basis": "replay = market_daily.desk_report (live inputs, fundamentals=current) restricted by point_in_time.point_in_time, letter at the record's session; fundamentals live/replay=current, research=corrected; targets = recorded learned proposal with grade constraints reapplied to the original account snapshot; not a new model inference",
+      "mismatches": [],
+      "tone_expiry": "hard"
     }
   ]
 }
