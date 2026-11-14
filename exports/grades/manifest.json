@@ -1,571 +1,571 @@
 {
-  "exported_at": "2026-11-13T01:00:01Z",
-  "session": "2026-11-12",
+  "exported_at": "2026-11-14T01:00:02Z",
+  "session": "2026-11-13",
   "file_count": 94,
   "files": [
     {
       "ticker": "AAOI",
-      "rows": 2984,
+      "rows": 2985,
       "first_date": "2015-01-02",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "AAPL",
-      "rows": 2984,
+      "rows": 2985,
       "first_date": "2015-01-02",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "ACN",
-      "rows": 2984,
+      "rows": 2985,
       "first_date": "2015-01-02",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "ADBE",
-      "rows": 2984,
+      "rows": 2985,
       "first_date": "2015-01-02",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "ADI",
-      "rows": 2984,
+      "rows": 2985,
       "first_date": "2015-01-02",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "ADSK",
-      "rows": 2984,
+      "rows": 2985,
       "first_date": "2015-01-02",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "ALAB",
-      "rows": 666,
+      "rows": 667,
       "first_date": "2024-03-20",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "AMAT",
-      "rows": 2984,
+      "rows": 2985,
       "first_date": "2015-01-02",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "AMD",
-      "rows": 2984,
+      "rows": 2985,
       "first_date": "2015-01-02",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "AMZN",
-      "rows": 2984,
+      "rows": 2985,
       "first_date": "2015-01-02",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "ANET",
-      "rows": 2984,
+      "rows": 2985,
       "first_date": "2015-01-02",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "APLD",
-      "rows": 1151,
+      "rows": 1152,
       "first_date": "2022-04-13",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "ARM",
-      "rows": 795,
+      "rows": 796,
       "first_date": "2023-09-14",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "ASML",
-      "rows": 2984,
+      "rows": 2985,
       "first_date": "2015-01-02",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "AVGO",
-      "rows": 2984,
+      "rows": 2985,
       "first_date": "2015-01-02",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "BE",
-      "rows": 2088,
+      "rows": 2089,
       "first_date": "2018-07-25",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "CDNS",
-      "rows": 2984,
+      "rows": 2985,
       "first_date": "2015-01-02",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "CEG",
-      "rows": 1210,
+      "rows": 1211,
       "first_date": "2022-01-19",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "CIEN",
-      "rows": 2984,
+      "rows": 2985,
       "first_date": "2015-01-02",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "CIFR",
-      "rows": 1524,
+      "rows": 1525,
       "first_date": "2020-10-20",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "COHR",
-      "rows": 2984,
+      "rows": 2985,
       "first_date": "2015-01-02",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "CORZ",
-      "rows": 705,
+      "rows": 706,
       "first_date": "2024-01-24",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "CRDO",
-      "rows": 1204,
+      "rows": 1205,
       "first_date": "2022-01-27",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "CRM",
-      "rows": 2984,
+      "rows": 2985,
       "first_date": "2015-01-02",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "CRWD",
-      "rows": 1867,
+      "rows": 1868,
       "first_date": "2019-06-12",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "CRWV",
-      "rows": 410,
+      "rows": 411,
       "first_date": "2025-03-28",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "CSCO",
-      "rows": 2984,
+      "rows": 2985,
       "first_date": "2015-01-02",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "DDOG",
-      "rows": 1798,
+      "rows": 1799,
       "first_date": "2019-09-19",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "DELL",
-      "rows": 2575,
+      "rows": 2576,
       "first_date": "2016-08-17",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "ETN",
-      "rows": 2984,
+      "rows": 2985,
       "first_date": "2015-01-02",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "FFIV",
-      "rows": 2984,
+      "rows": 2985,
       "first_date": "2015-01-02",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "FICO",
-      "rows": 2984,
+      "rows": 2985,
       "first_date": "2015-01-02",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "FN",
-      "rows": 2984,
+      "rows": 2985,
       "first_date": "2015-01-02",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "FSLR",
-      "rows": 2984,
+      "rows": 2985,
       "first_date": "2015-01-02",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "FTNT",
-      "rows": 2984,
+      "rows": 2985,
       "first_date": "2015-01-02",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "GEN",
-      "rows": 2984,
+      "rows": 2985,
       "first_date": "2015-01-02",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "GEV",
-      "rows": 661,
+      "rows": 662,
       "first_date": "2024-03-27",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "GLW",
-      "rows": 2984,
+      "rows": 2985,
       "first_date": "2015-01-02",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "GLXY",
-      "rows": 376,
+      "rows": 377,
       "first_date": "2025-05-16",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "GOOGL",
-      "rows": 2984,
+      "rows": 2985,
       "first_date": "2015-01-02",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "HPE",
-      "rows": 2784,
+      "rows": 2785,
       "first_date": "2015-10-19",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "HUT",
-      "rows": 2184,
+      "rows": 2185,
       "first_date": "2018-03-08",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "IBM",
-      "rows": 2984,
+      "rows": 2985,
       "first_date": "2015-01-02",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "INTC",
-      "rows": 2984,
+      "rows": 2985,
       "first_date": "2015-01-02",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "INTU",
-      "rows": 2984,
+      "rows": 2985,
       "first_date": "2015-01-02",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "IREN",
-      "rows": 1252,
+      "rows": 1253,
       "first_date": "2021-11-17",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "KLAC",
-      "rows": 2984,
+      "rows": 2985,
       "first_date": "2015-01-02",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "LITE",
-      "rows": 2845,
+      "rows": 2846,
       "first_date": "2015-07-23",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "LRCX",
-      "rows": 2984,
+      "rows": 2985,
       "first_date": "2015-01-02",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "MCHP",
-      "rows": 2984,
+      "rows": 2985,
       "first_date": "2015-01-02",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "MDB",
-      "rows": 2279,
+      "rows": 2280,
       "first_date": "2017-10-19",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "META",
-      "rows": 2984,
+      "rows": 2985,
       "first_date": "2015-01-02",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "MOD",
-      "rows": 2984,
+      "rows": 2985,
       "first_date": "2015-01-02",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "MPWR",
-      "rows": 2984,
+      "rows": 2985,
       "first_date": "2015-01-02",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "MRVL",
-      "rows": 2984,
+      "rows": 2985,
       "first_date": "2015-01-02",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "MSFT",
-      "rows": 2984,
+      "rows": 2985,
       "first_date": "2015-01-02",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "MSI",
-      "rows": 2984,
+      "rows": 2985,
       "first_date": "2015-01-02",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "MU",
-      "rows": 2984,
+      "rows": 2985,
       "first_date": "2015-01-02",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "NBIS",
-      "rows": 518,
+      "rows": 519,
       "first_date": "2024-10-21",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "NET",
-      "rows": 1802,
+      "rows": 1803,
       "first_date": "2019-09-13",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "NOW",
-      "rows": 2984,
+      "rows": 2985,
       "first_date": "2015-01-02",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "NTAP",
-      "rows": 2984,
+      "rows": 2985,
       "first_date": "2015-01-02",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "NVDA",
-      "rows": 2984,
+      "rows": 2985,
       "first_date": "2015-01-02",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "NXPI",
-      "rows": 2984,
+      "rows": 2985,
       "first_date": "2015-01-02",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "OKLO",
-      "rows": 1345,
+      "rows": 1346,
       "first_date": "2021-07-08",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "ON",
-      "rows": 2984,
+      "rows": 2985,
       "first_date": "2015-01-02",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "ORCL",
-      "rows": 2984,
+      "rows": 2985,
       "first_date": "2015-01-02",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "PANW",
-      "rows": 2984,
+      "rows": 2985,
       "first_date": "2015-01-02",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "PLTR",
-      "rows": 1538,
+      "rows": 1539,
       "first_date": "2020-09-30",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "POWL",
-      "rows": 2984,
+      "rows": 2985,
       "first_date": "2015-01-02",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "PTC",
-      "rows": 2984,
+      "rows": 2985,
       "first_date": "2015-01-02",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "Q",
-      "rows": 264,
+      "rows": 265,
       "first_date": "2025-10-27",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "QCOM",
-      "rows": 2984,
+      "rows": 2985,
       "first_date": "2015-01-02",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "SIMO",
-      "rows": 2984,
+      "rows": 2985,
       "first_date": "2015-01-02",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "SMCI",
-      "rows": 2984,
+      "rows": 2985,
       "first_date": "2015-01-02",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "SMR",
-      "rows": 1182,
+      "rows": 1183,
       "first_date": "2022-03-01",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "SNDK",
-      "rows": 440,
+      "rows": 441,
       "first_date": "2025-02-13",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "SNOW",
-      "rows": 1548,
+      "rows": 1549,
       "first_date": "2020-09-16",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "SNPS",
-      "rows": 2984,
+      "rows": 2985,
       "first_date": "2015-01-02",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "STX",
-      "rows": 2984,
+      "rows": 2985,
       "first_date": "2015-01-02",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "SWKS",
-      "rows": 2984,
+      "rows": 2985,
       "first_date": "2015-01-02",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "TEAM",
-      "rows": 2748,
+      "rows": 2749,
       "first_date": "2015-12-09",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "TER",
-      "rows": 2984,
+      "rows": 2985,
       "first_date": "2015-01-02",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "TLN",
-      "rows": 866,
+      "rows": 867,
       "first_date": "2023-06-02",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "TRMB",
-      "rows": 2984,
+      "rows": 2985,
       "first_date": "2015-01-02",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "TSM",
-      "rows": 2984,
+      "rows": 2985,
       "first_date": "2015-01-02",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "TXN",
-      "rows": 2984,
+      "rows": 2985,
       "first_date": "2015-01-02",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "TYL",
-      "rows": 2984,
+      "rows": 2985,
       "first_date": "2015-01-02",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "VRT",
-      "rows": 2082,
+      "rows": 2083,
       "first_date": "2018-08-02",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "VST",
-      "rows": 2541,
+      "rows": 2542,
       "first_date": "2016-10-05",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "WDAY",
-      "rows": 2984,
+      "rows": 2985,
       "first_date": "2015-01-02",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "WDC",
-      "rows": 2984,
+      "rows": 2985,
       "first_date": "2015-01-02",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "WULF",
-      "rows": 2984,
+      "rows": 2985,
       "first_date": "2015-01-02",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     },
     {
       "ticker": "ZS",
-      "rows": 2178,
+      "rows": 2179,
       "first_date": "2018-03-16",
-      "last_date": "2026-11-12"
+      "last_date": "2026-11-13"
     }
   ]
 }

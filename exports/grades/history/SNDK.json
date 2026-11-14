@@ -1,6 +1,6 @@
 {
  "ticker": "SNDK",
- "asof": "2026-11-12",
+ "asof": "2026-11-13",
  "horizon": 20,
  "fundamentals_source": "fundamentals-features/6",
  "policy": "graded-equal-weight/5",
@@ -531,7 +531,7 @@
    "exposure": 1.0,
    "confidence": 1.0,
    "forward": -0.585796,
-   "forward_residual": -0.517187,
+   "forward_residual": -0.517188,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -804,7 +804,7 @@
    "exposure": 1.0,
    "confidence": 0.5,
    "forward": 0.077877,
-   "forward_residual": -0.044569,
+   "forward_residual": -0.044568,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -1035,7 +1035,7 @@
    "exposure": 1.0,
    "confidence": 0.5,
    "forward": 0.158609,
-   "forward_residual": 0.09415,
+   "forward_residual": 0.094149,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -1077,7 +1077,7 @@
    "exposure": 1.0,
    "confidence": 0.5,
    "forward": 0.168174,
-   "forward_residual": 0.097566,
+   "forward_residual": 0.097567,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -1434,7 +1434,7 @@
    "exposure": 1.0,
    "confidence": 0.5,
    "forward": 0.187919,
-   "forward_residual": 0.165564,
+   "forward_residual": 0.165563,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -1518,7 +1518,7 @@
    "exposure": 1.0,
    "confidence": 0.5,
    "forward": 0.206732,
-   "forward_residual": 0.163527,
+   "forward_residual": 0.163528,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -2337,7 +2337,7 @@
    "exposure": 1.0,
    "confidence": 0.5,
    "forward": 0.078615,
-   "forward_residual": 0.076836,
+   "forward_residual": 0.076835,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -2505,7 +2505,7 @@
    "exposure": 1.0,
    "confidence": 0.5,
    "forward": 0.234479,
-   "forward_residual": 0.209677,
+   "forward_residual": 0.209676,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -2547,7 +2547,7 @@
    "exposure": 1.0,
    "confidence": 1.0,
    "forward": 0.521581,
-   "forward_residual": 0.474088,
+   "forward_residual": 0.474089,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -2820,7 +2820,7 @@
    "exposure": 1.0,
    "confidence": 1.0,
    "forward": 0.745902,
-   "forward_residual": 0.687094,
+   "forward_residual": 0.687093,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -2883,7 +2883,7 @@
    "exposure": 1.0,
    "confidence": 0.5,
    "forward": 0.771561,
-   "forward_residual": 0.701485,
+   "forward_residual": 0.701484,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -2925,7 +2925,7 @@
    "exposure": 1.0,
    "confidence": 0.5,
    "forward": 0.826301,
-   "forward_residual": 0.735009,
+   "forward_residual": 0.73501,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -2946,7 +2946,7 @@
    "exposure": 1.0,
    "confidence": 1.0,
    "forward": 0.686243,
-   "forward_residual": 0.610055,
+   "forward_residual": 0.610056,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -3009,7 +3009,7 @@
    "exposure": 1.0,
    "confidence": 1.0,
    "forward": 0.539623,
-   "forward_residual": 0.469644,
+   "forward_residual": 0.469645,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -3156,7 +3156,7 @@
    "exposure": 1.0,
    "confidence": 0.5,
    "forward": 0.377881,
-   "forward_residual": 0.377134,
+   "forward_residual": 0.377133,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -3690,14 +3690,14 @@
   },
   {
    "date": "2025-10-24",
-   "grade": "B",
-   "votes": 0.6923076923076923,
+   "grade": "A",
+   "votes": 2.769230769230769,
    "stances": {
     "fundamental": 0,
     "technical": 1,
     "sentiment": 0,
     "rotation": 0,
-    "value": 0
+    "value": 1
    },
    "exposure": 0.75,
    "confidence": 1.0,
@@ -4950,14 +4950,14 @@
   },
   {
    "date": "2026-01-22",
-   "grade": "A+",
-   "votes": 3.4615384615384612,
+   "grade": "A",
+   "votes": 1.3846153846153846,
    "stances": {
     "fundamental": 0,
     "technical": 1,
     "sentiment": 1,
     "rotation": 0,
-    "value": 1
+    "value": 0
    },
    "exposure": 1.0,
    "confidence": 0.5,
@@ -4971,14 +4971,14 @@
   },
   {
    "date": "2026-01-23",
-   "grade": "A+",
-   "votes": 3.4615384615384612,
+   "grade": "A",
+   "votes": 1.3846153846153846,
    "stances": {
     "fundamental": 0,
     "technical": 1,
     "sentiment": 1,
     "rotation": 0,
-    "value": 1
+    "value": 0
    },
    "exposure": 1.0,
    "confidence": 0.5,
@@ -4992,14 +4992,14 @@
   },
   {
    "date": "2026-01-26",
-   "grade": "A+",
-   "votes": 3.4615384615384612,
+   "grade": "A",
+   "votes": 1.3846153846153846,
    "stances": {
     "fundamental": 0,
     "technical": 1,
     "sentiment": 1,
     "rotation": 0,
-    "value": 1
+    "value": 0
    },
    "exposure": 1.0,
    "confidence": 0.5,
@@ -5013,14 +5013,14 @@
   },
   {
    "date": "2026-01-27",
-   "grade": "A+",
-   "votes": 3.4615384615384612,
+   "grade": "A",
+   "votes": 1.3846153846153846,
    "stances": {
     "fundamental": 0,
     "technical": 1,
     "sentiment": 1,
     "rotation": 0,
-    "value": 1
+    "value": 0
    },
    "exposure": 1.0,
    "confidence": 0.5,
@@ -5034,14 +5034,14 @@
   },
   {
    "date": "2026-01-28",
-   "grade": "A+",
-   "votes": 3.4615384615384612,
+   "grade": "A",
+   "votes": 1.3846153846153846,
    "stances": {
     "fundamental": 0,
     "technical": 1,
     "sentiment": 1,
     "rotation": 0,
-    "value": 1
+    "value": 0
    },
    "exposure": 1.0,
    "confidence": 1.0,
@@ -5055,14 +5055,14 @@
   },
   {
    "date": "2026-01-29",
-   "grade": "A+",
-   "votes": 3.4615384615384612,
+   "grade": "A",
+   "votes": 1.3846153846153846,
    "stances": {
     "fundamental": 0,
     "technical": 1,
     "sentiment": 1,
     "rotation": 0,
-    "value": 1
+    "value": 0
    },
    "exposure": 1.0,
    "confidence": 1.0,
@@ -5076,14 +5076,14 @@
   },
   {
    "date": "2026-01-30",
-   "grade": "A+",
-   "votes": 3.4615384615384612,
+   "grade": "A",
+   "votes": 1.3846153846153846,
    "stances": {
     "fundamental": 0,
     "technical": 1,
     "sentiment": 1,
     "rotation": 0,
-    "value": 1
+    "value": 0
    },
    "exposure": 1.0,
    "confidence": 1.0,
@@ -5097,14 +5097,14 @@
   },
   {
    "date": "2026-02-02",
-   "grade": "A+",
-   "votes": 3.4615384615384612,
+   "grade": "A",
+   "votes": 1.3846153846153846,
    "stances": {
     "fundamental": 0,
     "technical": 1,
     "sentiment": 1,
     "rotation": 0,
-    "value": 1
+    "value": 0
    },
    "exposure": 1.0,
    "confidence": 1.0,
@@ -5118,14 +5118,14 @@
   },
   {
    "date": "2026-02-03",
-   "grade": "A+",
-   "votes": 3.4615384615384612,
+   "grade": "A",
+   "votes": 1.3846153846153846,
    "stances": {
     "fundamental": 0,
     "technical": 1,
     "sentiment": 1,
     "rotation": 0,
-    "value": 1
+    "value": 0
    },
    "exposure": 1.0,
    "confidence": 1.0,
@@ -8240,8 +8240,8 @@
    "forward": -0.020813,
    "forward_residual": -0.046272,
    "earnings": false,
-   "target_weight": 0.1,
-   "delta_weight": 0.1,
+   "target_weight": 0.090909,
+   "delta_weight": 0.090909,
    "action": "buy",
    "rebalance": true
   },
@@ -8261,7 +8261,7 @@
    "forward": -0.045635,
    "forward_residual": -0.104065,
    "earnings": false,
-   "target_weight": 0.1,
+   "target_weight": 0.090909,
    "delta_weight": 0.0,
    "action": "hold",
    "rebalance": true
@@ -8282,7 +8282,7 @@
    "forward": -0.041521,
    "forward_residual": -0.106717,
    "earnings": false,
-   "target_weight": 0.1,
+   "target_weight": 0.090909,
    "delta_weight": 0.0,
    "action": "hold",
    "rebalance": false
@@ -8304,7 +8304,7 @@
    "forward_residual": -0.120869,
    "earnings": false,
    "target_weight": 0.111111,
-   "delta_weight": 0.011111,
+   "delta_weight": 0.020202,
    "action": "hold",
    "rebalance": true
   },
@@ -8366,8 +8366,8 @@
    "forward": -0.032237,
    "forward_residual": -0.120261,
    "earnings": false,
-   "target_weight": 0.142857,
-   "delta_weight": 0.017857,
+   "target_weight": 0.125,
+   "delta_weight": 0.0,
    "action": "hold",
    "rebalance": false
   },
@@ -8388,7 +8388,7 @@
    "forward_residual": -0.148512,
    "earnings": false,
    "target_weight": 0.125,
-   "delta_weight": -0.017857,
+   "delta_weight": 0.0,
    "action": "hold",
    "rebalance": false
   },
@@ -8492,8 +8492,8 @@
    "forward": -0.276157,
    "forward_residual": -0.296717,
    "earnings": false,
-   "target_weight": 0.142857,
-   "delta_weight": 0.0,
+   "target_weight": 0.166667,
+   "delta_weight": 0.02381,
    "action": "hold",
    "rebalance": false
   },
@@ -8514,7 +8514,7 @@
    "forward_residual": -0.317215,
    "earnings": false,
    "target_weight": 0.166667,
-   "delta_weight": 0.02381,
+   "delta_weight": 0.0,
    "action": "hold",
    "rebalance": false
   },
@@ -8534,8 +8534,8 @@
    "forward": -0.361855,
    "forward_residual": -0.317265,
    "earnings": false,
-   "target_weight": 0.166667,
-   "delta_weight": 0.0,
+   "target_weight": 0.142857,
+   "delta_weight": -0.02381,
    "action": "hold",
    "rebalance": false
   },
@@ -8555,7 +8555,7 @@
    "forward": -0.310584,
    "forward_residual": -0.309644,
    "earnings": false,
-   "target_weight": 0.166667,
+   "target_weight": 0.142857,
    "delta_weight": 0.0,
    "action": "hold",
    "rebalance": true
@@ -8576,7 +8576,7 @@
    "forward": -0.281902,
    "forward_residual": -0.30326,
    "earnings": false,
-   "target_weight": 0.166667,
+   "target_weight": 0.142857,
    "delta_weight": 0.0,
    "action": "hold",
    "rebalance": false
@@ -8598,7 +8598,7 @@
    "forward_residual": -0.251787,
    "earnings": false,
    "target_weight": 0.166667,
-   "delta_weight": 0.0,
+   "delta_weight": 0.02381,
    "action": "hold",
    "rebalance": false
   },
@@ -8846,8 +8846,8 @@
    },
    "exposure": 1.0,
    "confidence": 0.5,
-   "forward": null,
-   "forward_residual": null,
+   "forward": -0.383982,
+   "forward_residual": -0.348874,
    "earnings": false,
    "target_weight": 0.142857,
    "delta_weight": -0.02381,
@@ -9059,8 +9059,8 @@
    "forward": null,
    "forward_residual": null,
    "earnings": false,
-   "target_weight": 0.125,
-   "delta_weight": -0.017857,
+   "target_weight": 0.142857,
+   "delta_weight": 0.0,
    "action": "hold",
    "rebalance": false
   },
@@ -9080,7 +9080,7 @@
    "forward": null,
    "forward_residual": null,
    "earnings": false,
-   "target_weight": 0.125,
+   "target_weight": 0.142857,
    "delta_weight": 0.0,
    "action": "hold",
    "rebalance": false
@@ -9102,7 +9102,7 @@
    "forward_residual": null,
    "earnings": false,
    "target_weight": 0.125,
-   "delta_weight": 0.0,
+   "delta_weight": -0.017857,
    "action": "hold",
    "rebalance": false
   },
@@ -9252,19 +9252,40 @@
    "delta_weight": 0.0,
    "action": "hold",
    "rebalance": false
+  },
+  {
+   "date": "2026-11-13",
+   "grade": "A+",
+   "votes": 3.4615384615384612,
+   "stances": {
+    "fundamental": 1,
+    "technical": 0,
+    "sentiment": 1,
+    "rotation": 0,
+    "value": 1
+   },
+   "exposure": 1.0,
+   "confidence": 0.5,
+   "forward": null,
+   "forward_residual": null,
+   "earnings": false,
+   "target_weight": 0.0625,
+   "delta_weight": 0.0,
+   "action": "hold",
+   "rebalance": false
   }
  ],
  "backtest": {
   "ticker": "SNDK",
   "min_grade": "A",
-  "sessions": 439,
-  "sessions_in": 297,
+  "sessions": 440,
+  "sessions_in": 299,
   "switches": 17,
-  "rule_return": 2.680896,
-  "hold_return": 3.259655,
-  "benchmark_return": 0.235961,
-  "in_annualised": 2.202107,
-  "out_annualised": 1.178926
+  "rule_return": 2.583314,
+  "hold_return": 3.20208,
+  "benchmark_return": 0.232322,
+  "in_annualised": 2.093894,
+  "out_annualised": 1.282622
  },
  "fills": [
   {
@@ -9314,6 +9335,14 @@
    "price": 1365.52,
    "client_order_id": "anios-2026-10-28-buy-sndk-168",
    "filled_at": "2026-10-29T13:31:27.788169Z"
+  },
+  {
+   "date": "2026-11-13",
+   "side": "sell",
+   "qty": 2,
+   "price": 922.425,
+   "client_order_id": "anios-2026-11-12-sell-sndk-189",
+   "filled_at": "2026-11-13T14:31:50.269632Z"
   }
  ]
 }

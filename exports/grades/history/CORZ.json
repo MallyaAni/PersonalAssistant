@@ -1,6 +1,6 @@
 {
  "ticker": "CORZ",
- "asof": "2026-11-12",
+ "asof": "2026-11-13",
  "horizon": 20,
  "fundamentals_source": "fundamentals-features/6",
  "policy": "graded-equal-weight/5",
@@ -153,7 +153,7 @@
    "exposure": 0.75,
    "confidence": 1.0,
    "forward": 0.339677,
-   "forward_residual": 0.292466,
+   "forward_residual": 0.292465,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -678,7 +678,7 @@
    "exposure": 0.75,
    "confidence": 1.0,
    "forward": -0.175891,
-   "forward_residual": -0.192579,
+   "forward_residual": -0.19258,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -771,14 +771,14 @@
   },
   {
    "date": "2024-03-15",
-   "grade": "C",
-   "votes": 0.0,
+   "grade": "B",
+   "votes": 2.0769230769230766,
    "stances": {
     "fundamental": -1,
     "technical": 0,
     "sentiment": 1,
     "rotation": 0,
-    "value": 0
+    "value": 1
    },
    "exposure": 0.75,
    "confidence": 1.0,
@@ -951,7 +951,7 @@
    "exposure": 0.75,
    "confidence": 1.0,
    "forward": 0.026356,
-   "forward_residual": 0.064698,
+   "forward_residual": 0.064699,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -1245,7 +1245,7 @@
    "exposure": 0.75,
    "confidence": 1.0,
    "forward": 0.349613,
-   "forward_residual": 0.292858,
+   "forward_residual": 0.292859,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -1308,7 +1308,7 @@
    "exposure": 0.75,
    "confidence": 1.0,
    "forward": 0.181302,
-   "forward_residual": 0.122359,
+   "forward_residual": 0.12236,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -1518,7 +1518,7 @@
    "exposure": 0.75,
    "confidence": 1.0,
    "forward": 0.688764,
-   "forward_residual": 0.666141,
+   "forward_residual": 0.66614,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -1539,7 +1539,7 @@
    "exposure": 0.75,
    "confidence": 1.0,
    "forward": 0.749237,
-   "forward_residual": 0.715901,
+   "forward_residual": 0.7159,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -1665,7 +1665,7 @@
    "exposure": 0.75,
    "confidence": 1.0,
    "forward": 0.944607,
-   "forward_residual": 0.920973,
+   "forward_residual": 0.920972,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -1770,7 +1770,7 @@
    "exposure": 0.75,
    "confidence": 1.0,
    "forward": 0.770777,
-   "forward_residual": 0.740227,
+   "forward_residual": 0.740226,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -1959,7 +1959,7 @@
    "exposure": 0.75,
    "confidence": 1.0,
    "forward": 0.36406,
-   "forward_residual": 0.324169,
+   "forward_residual": 0.32417,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -2001,7 +2001,7 @@
    "exposure": 0.75,
    "confidence": 1.0,
    "forward": 0.206031,
-   "forward_residual": 0.162781,
+   "forward_residual": 0.16278,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -2526,7 +2526,7 @@
    "exposure": 0.75,
    "confidence": 1.0,
    "forward": -0.32424,
-   "forward_residual": -0.283002,
+   "forward_residual": -0.283001,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -2589,7 +2589,7 @@
    "exposure": 0.75,
    "confidence": 1.0,
    "forward": -0.029299,
-   "forward_residual": -0.052007,
+   "forward_residual": -0.052006,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -2652,7 +2652,7 @@
    "exposure": 0.75,
    "confidence": 1.0,
    "forward": 0.041653,
-   "forward_residual": -0.043693,
+   "forward_residual": -0.043692,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -2673,7 +2673,7 @@
    "exposure": 0.75,
    "confidence": 1.0,
    "forward": 0.04874,
-   "forward_residual": -0.041697,
+   "forward_residual": -0.041696,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -2694,7 +2694,7 @@
    "exposure": 0.75,
    "confidence": 1.0,
    "forward": 0.052468,
-   "forward_residual": -0.034954,
+   "forward_residual": -0.034953,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -2820,7 +2820,7 @@
    "exposure": 0.75,
    "confidence": 1.0,
    "forward": 0.134139,
-   "forward_residual": -0.049248,
+   "forward_residual": -0.049247,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -2841,7 +2841,7 @@
    "exposure": 0.75,
    "confidence": 1.0,
    "forward": 0.016344,
-   "forward_residual": -0.137411,
+   "forward_residual": -0.13741,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -2862,7 +2862,7 @@
    "exposure": 0.75,
    "confidence": 1.0,
    "forward": 0.041881,
-   "forward_residual": -0.122616,
+   "forward_residual": -0.122615,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -2883,7 +2883,7 @@
    "exposure": 0.75,
    "confidence": 1.0,
    "forward": -0.084325,
-   "forward_residual": -0.134836,
+   "forward_residual": -0.134837,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -2904,7 +2904,7 @@
    "exposure": 0.75,
    "confidence": 1.0,
    "forward": 0.030459,
-   "forward_residual": -0.03869,
+   "forward_residual": -0.038689,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -2977,13 +2977,13 @@
   {
    "date": "2024-08-15",
    "grade": "B",
-   "votes": 0.6923076923076923,
+   "votes": 2.769230769230769,
    "stances": {
     "fundamental": -1,
     "technical": 1,
     "sentiment": 1,
     "rotation": 0,
-    "value": 0
+    "value": 1
    },
    "exposure": 0.75,
    "confidence": 1.0,
@@ -2998,13 +2998,13 @@
   {
    "date": "2024-08-16",
    "grade": "B",
-   "votes": 0.6923076923076923,
+   "votes": 2.769230769230769,
    "stances": {
     "fundamental": -1,
     "technical": 1,
     "sentiment": 1,
     "rotation": 0,
-    "value": 0
+    "value": 1
    },
    "exposure": 0.75,
    "confidence": 1.0,
@@ -3019,13 +3019,13 @@
   {
    "date": "2024-08-19",
    "grade": "B",
-   "votes": 0.6923076923076923,
+   "votes": 2.769230769230769,
    "stances": {
     "fundamental": -1,
     "technical": 1,
     "sentiment": 1,
     "rotation": 0,
-    "value": 0
+    "value": 1
    },
    "exposure": 0.75,
    "confidence": 1.0,
@@ -3040,13 +3040,13 @@
   {
    "date": "2024-08-20",
    "grade": "B",
-   "votes": 0.6923076923076923,
+   "votes": 2.769230769230769,
    "stances": {
     "fundamental": -1,
     "technical": 1,
     "sentiment": 1,
     "rotation": 0,
-    "value": 0
+    "value": 1
    },
    "exposure": 0.75,
    "confidence": 1.0,
@@ -3061,13 +3061,13 @@
   {
    "date": "2024-08-21",
    "grade": "B",
-   "votes": 0.6923076923076923,
+   "votes": 2.769230769230769,
    "stances": {
     "fundamental": -1,
     "technical": 1,
     "sentiment": 1,
     "rotation": 0,
-    "value": 0
+    "value": 1
    },
    "exposure": 0.75,
    "confidence": 1.0,
@@ -3082,13 +3082,13 @@
   {
    "date": "2024-08-22",
    "grade": "B",
-   "votes": 0.6923076923076923,
+   "votes": 2.769230769230769,
    "stances": {
     "fundamental": -1,
     "technical": 1,
     "sentiment": 1,
     "rotation": 0,
-    "value": 0
+    "value": 1
    },
    "exposure": 0.75,
    "confidence": 1.0,
@@ -3103,13 +3103,13 @@
   {
    "date": "2024-08-23",
    "grade": "B",
-   "votes": 0.6923076923076923,
+   "votes": 2.769230769230769,
    "stances": {
     "fundamental": -1,
     "technical": 1,
     "sentiment": 1,
     "rotation": 0,
-    "value": 0
+    "value": 1
    },
    "exposure": 0.75,
    "confidence": 1.0,
@@ -3124,13 +3124,13 @@
   {
    "date": "2024-08-26",
    "grade": "B",
-   "votes": 0.6923076923076923,
+   "votes": 2.769230769230769,
    "stances": {
     "fundamental": -1,
     "technical": 1,
     "sentiment": 1,
     "rotation": 0,
-    "value": 0
+    "value": 1
    },
    "exposure": 0.75,
    "confidence": 1.0,
@@ -3219,7 +3219,7 @@
    "exposure": 1.0,
    "confidence": 1.0,
    "forward": 0.139088,
-   "forward_residual": 0.083747,
+   "forward_residual": 0.083748,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -3250,13 +3250,13 @@
   {
    "date": "2024-09-04",
    "grade": "B",
-   "votes": 0.6923076923076923,
+   "votes": 2.769230769230769,
    "stances": {
     "fundamental": -1,
     "technical": 1,
     "sentiment": 1,
     "rotation": 0,
-    "value": 0
+    "value": 1
    },
    "exposure": 1.0,
    "confidence": 1.0,
@@ -3271,13 +3271,13 @@
   {
    "date": "2024-09-05",
    "grade": "B",
-   "votes": 0.6923076923076923,
+   "votes": 2.769230769230769,
    "stances": {
     "fundamental": -1,
     "technical": 1,
     "sentiment": 1,
     "rotation": 0,
-    "value": 0
+    "value": 1
    },
    "exposure": 1.0,
    "confidence": 1.0,
@@ -3292,13 +3292,13 @@
   {
    "date": "2024-09-06",
    "grade": "B",
-   "votes": 0.6923076923076923,
+   "votes": 2.769230769230769,
    "stances": {
     "fundamental": -1,
     "technical": 1,
     "sentiment": 1,
     "rotation": 0,
-    "value": 0
+    "value": 1
    },
    "exposure": 1.0,
    "confidence": 1.0,
@@ -3313,18 +3313,18 @@
   {
    "date": "2024-09-09",
    "grade": "B",
-   "votes": 0.6923076923076923,
+   "votes": 2.769230769230769,
    "stances": {
     "fundamental": -1,
     "technical": 1,
     "sentiment": 1,
     "rotation": 0,
-    "value": 0
+    "value": 1
    },
    "exposure": 1.0,
    "confidence": 1.0,
    "forward": 0.212689,
-   "forward_residual": 0.088303,
+   "forward_residual": 0.088302,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -3334,18 +3334,18 @@
   {
    "date": "2024-09-10",
    "grade": "B",
-   "votes": 0.6923076923076923,
+   "votes": 2.769230769230769,
    "stances": {
     "fundamental": -1,
     "technical": 1,
     "sentiment": 1,
     "rotation": 0,
-    "value": 0
+    "value": 1
    },
    "exposure": 1.0,
    "confidence": 1.0,
    "forward": 0.198671,
-   "forward_residual": 0.059084,
+   "forward_residual": 0.059083,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -3429,7 +3429,7 @@
    "exposure": 1.0,
    "confidence": 1.0,
    "forward": 0.148513,
-   "forward_residual": 0.026964,
+   "forward_residual": 0.026965,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -3460,13 +3460,13 @@
   {
    "date": "2024-09-18",
    "grade": "B",
-   "votes": 0.6923076923076923,
+   "votes": 2.769230769230769,
    "stances": {
     "fundamental": -1,
     "technical": 1,
     "sentiment": 1,
     "rotation": 0,
-    "value": 0
+    "value": 1
    },
    "exposure": 1.0,
    "confidence": 1.0,
@@ -3481,13 +3481,13 @@
   {
    "date": "2024-09-19",
    "grade": "B",
-   "votes": 0.6923076923076923,
+   "votes": 2.769230769230769,
    "stances": {
     "fundamental": -1,
     "technical": 1,
     "sentiment": 1,
     "rotation": 0,
-    "value": 0
+    "value": 1
    },
    "exposure": 1.0,
    "confidence": 1.0,
@@ -3502,13 +3502,13 @@
   {
    "date": "2024-09-20",
    "grade": "B",
-   "votes": 0.6923076923076923,
+   "votes": 2.769230769230769,
    "stances": {
     "fundamental": -1,
     "technical": 1,
     "sentiment": 1,
     "rotation": 0,
-    "value": 0
+    "value": 1
    },
    "exposure": 1.0,
    "confidence": 1.0,
@@ -3523,13 +3523,13 @@
   {
    "date": "2024-09-23",
    "grade": "B",
-   "votes": 0.6923076923076923,
+   "votes": 2.769230769230769,
    "stances": {
     "fundamental": -1,
     "technical": 1,
     "sentiment": 1,
     "rotation": 0,
-    "value": 0
+    "value": 1
    },
    "exposure": 1.0,
    "confidence": 1.0,
@@ -3597,7 +3597,7 @@
    "exposure": 1.0,
    "confidence": 1.0,
    "forward": 0.099853,
-   "forward_residual": 0.064292,
+   "forward_residual": 0.064291,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -3618,7 +3618,7 @@
    "exposure": 1.0,
    "confidence": 1.0,
    "forward": 0.094862,
-   "forward_residual": 0.055974,
+   "forward_residual": 0.055975,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -3670,13 +3670,13 @@
   {
    "date": "2024-10-02",
    "grade": "B",
-   "votes": 0.6923076923076923,
+   "votes": 2.769230769230769,
    "stances": {
     "fundamental": -1,
     "technical": 1,
     "sentiment": 1,
     "rotation": 0,
-    "value": 0
+    "value": 1
    },
    "exposure": 1.0,
    "confidence": 1.0,
@@ -3691,13 +3691,13 @@
   {
    "date": "2024-10-03",
    "grade": "B",
-   "votes": 0.6923076923076923,
+   "votes": 2.769230769230769,
    "stances": {
     "fundamental": -1,
     "technical": 1,
     "sentiment": 1,
     "rotation": 0,
-    "value": 0
+    "value": 1
    },
    "exposure": 1.0,
    "confidence": 1.0,
@@ -3712,18 +3712,18 @@
   {
    "date": "2024-10-04",
    "grade": "B",
-   "votes": 0.6923076923076923,
+   "votes": 2.769230769230769,
    "stances": {
     "fundamental": -1,
     "technical": 1,
     "sentiment": 1,
     "rotation": 0,
-    "value": 0
+    "value": 1
    },
    "exposure": 1.0,
    "confidence": 1.0,
    "forward": 0.066638,
-   "forward_residual": 0.076771,
+   "forward_residual": 0.076772,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -3733,13 +3733,13 @@
   {
    "date": "2024-10-07",
    "grade": "B",
-   "votes": 0.6923076923076923,
+   "votes": 2.769230769230769,
    "stances": {
     "fundamental": -1,
     "technical": 1,
     "sentiment": 1,
     "rotation": 0,
-    "value": 0
+    "value": 1
    },
    "exposure": 1.0,
    "confidence": 1.0,
@@ -3828,7 +3828,7 @@
    "exposure": 1.0,
    "confidence": 0.5,
    "forward": 0.249127,
-   "forward_residual": 0.154312,
+   "forward_residual": 0.154313,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -3891,7 +3891,7 @@
    "exposure": 1.0,
    "confidence": 0.5,
    "forward": 0.196683,
-   "forward_residual": 0.122817,
+   "forward_residual": 0.122818,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -3901,18 +3901,18 @@
   {
    "date": "2024-10-17",
    "grade": "B",
-   "votes": 0.6923076923076923,
+   "votes": 2.769230769230769,
    "stances": {
     "fundamental": -1,
     "technical": 1,
     "sentiment": 1,
     "rotation": 0,
-    "value": 0
+    "value": 1
    },
    "exposure": 1.0,
    "confidence": 0.5,
    "forward": 0.171243,
-   "forward_residual": 0.115878,
+   "forward_residual": 0.115877,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -3922,18 +3922,18 @@
   {
    "date": "2024-10-18",
    "grade": "B",
-   "votes": 0.6923076923076923,
+   "votes": 2.769230769230769,
    "stances": {
     "fundamental": -1,
     "technical": 1,
     "sentiment": 1,
     "rotation": 0,
-    "value": 0
+    "value": 1
    },
    "exposure": 1.0,
    "confidence": 0.5,
    "forward": 0.211681,
-   "forward_residual": 0.205775,
+   "forward_residual": 0.205774,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -3943,13 +3943,13 @@
   {
    "date": "2024-10-21",
    "grade": "B",
-   "votes": 0.6923076923076923,
+   "votes": 2.769230769230769,
    "stances": {
     "fundamental": -1,
     "technical": 1,
     "sentiment": 1,
     "rotation": 0,
-    "value": 0
+    "value": 1
    },
    "exposure": 1.0,
    "confidence": 0.5,
@@ -3964,18 +3964,18 @@
   {
    "date": "2024-10-22",
    "grade": "B",
-   "votes": 0.6923076923076923,
+   "votes": 2.769230769230769,
    "stances": {
     "fundamental": -1,
     "technical": 1,
     "sentiment": 1,
     "rotation": 0,
-    "value": 0
+    "value": 1
    },
    "exposure": 1.0,
    "confidence": 0.5,
    "forward": 0.182686,
-   "forward_residual": 0.148264,
+   "forward_residual": 0.148265,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -3985,13 +3985,13 @@
   {
    "date": "2024-10-23",
    "grade": "B",
-   "votes": 0.6923076923076923,
+   "votes": 2.769230769230769,
    "stances": {
     "fundamental": -1,
     "technical": 1,
     "sentiment": 1,
     "rotation": 0,
-    "value": 0
+    "value": 1
    },
    "exposure": 1.0,
    "confidence": 0.5,
@@ -4122,7 +4122,7 @@
    "exposure": 1.0,
    "confidence": 0.5,
    "forward": 0.296671,
-   "forward_residual": 0.132737,
+   "forward_residual": 0.132736,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -4143,7 +4143,7 @@
    "exposure": 1.0,
    "confidence": 1.0,
    "forward": 0.209077,
-   "forward_residual": 0.05298,
+   "forward_residual": 0.052979,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -4206,7 +4206,7 @@
    "exposure": 0.75,
    "confidence": 1.0,
    "forward": 0.167322,
-   "forward_residual": 0.093402,
+   "forward_residual": 0.093401,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -4248,7 +4248,7 @@
    "exposure": 1.0,
    "confidence": 1.0,
    "forward": -0.055772,
-   "forward_residual": -0.087283,
+   "forward_residual": -0.087284,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -4290,7 +4290,7 @@
    "exposure": 0.75,
    "confidence": 1.0,
    "forward": -0.072936,
-   "forward_residual": -0.124511,
+   "forward_residual": -0.124512,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -4332,7 +4332,7 @@
    "exposure": 0.75,
    "confidence": 1.0,
    "forward": 0.007099,
-   "forward_residual": -0.045776,
+   "forward_residual": -0.045775,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -4374,7 +4374,7 @@
    "exposure": 0.75,
    "confidence": 1.0,
    "forward": 0.027191,
-   "forward_residual": -0.050691,
+   "forward_residual": -0.05069,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -4416,7 +4416,7 @@
    "exposure": 0.75,
    "confidence": 1.0,
    "forward": -0.175623,
-   "forward_residual": -0.153975,
+   "forward_residual": -0.153974,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -4437,7 +4437,7 @@
    "exposure": 0.75,
    "confidence": 1.0,
    "forward": -0.216754,
-   "forward_residual": -0.21417,
+   "forward_residual": -0.214169,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -4458,7 +4458,7 @@
    "exposure": 0.75,
    "confidence": 1.0,
    "forward": -0.260446,
-   "forward_residual": -0.266182,
+   "forward_residual": -0.266183,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -4521,7 +4521,7 @@
    "exposure": 0.75,
    "confidence": 1.0,
    "forward": -0.231507,
-   "forward_residual": -0.222896,
+   "forward_residual": -0.222897,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -4542,7 +4542,7 @@
    "exposure": 0.75,
    "confidence": 1.0,
    "forward": -0.253234,
-   "forward_residual": -0.194918,
+   "forward_residual": -0.194917,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -4563,7 +4563,7 @@
    "exposure": 0.75,
    "confidence": 1.0,
    "forward": -0.133709,
-   "forward_residual": -0.060559,
+   "forward_residual": -0.06056,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -4584,7 +4584,7 @@
    "exposure": 0.75,
    "confidence": 1.0,
    "forward": -0.125732,
-   "forward_residual": -0.046123,
+   "forward_residual": -0.046122,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -4710,7 +4710,7 @@
    "exposure": 0.75,
    "confidence": 1.0,
    "forward": -0.15373,
-   "forward_residual": -0.036664,
+   "forward_residual": -0.036665,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -4794,7 +4794,7 @@
    "exposure": 0.75,
    "confidence": 1.0,
    "forward": -0.066412,
-   "forward_residual": -0.043751,
+   "forward_residual": -0.04375,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -4836,7 +4836,7 @@
    "exposure": 0.75,
    "confidence": 1.0,
    "forward": 0.097944,
-   "forward_residual": -0.012402,
+   "forward_residual": -0.012403,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -4857,7 +4857,7 @@
    "exposure": 0.75,
    "confidence": 1.0,
    "forward": 0.145316,
-   "forward_residual": 0.056669,
+   "forward_residual": 0.056668,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -4920,7 +4920,7 @@
    "exposure": 0.75,
    "confidence": 0.5,
    "forward": -0.248461,
-   "forward_residual": -0.263722,
+   "forward_residual": -0.263723,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -4962,7 +4962,7 @@
    "exposure": 0.75,
    "confidence": 0.5,
    "forward": -0.124107,
-   "forward_residual": -0.205379,
+   "forward_residual": -0.20538,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -5025,7 +5025,7 @@
    "exposure": 0.75,
    "confidence": 0.5,
    "forward": -0.230813,
-   "forward_residual": -0.278208,
+   "forward_residual": -0.278209,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -5130,7 +5130,7 @@
    "exposure": 0.75,
    "confidence": 0.5,
    "forward": -0.103728,
-   "forward_residual": -0.214131,
+   "forward_residual": -0.214132,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -5151,7 +5151,7 @@
    "exposure": 0.75,
    "confidence": 0.5,
    "forward": -0.140229,
-   "forward_residual": -0.238033,
+   "forward_residual": -0.238034,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -5235,7 +5235,7 @@
    "exposure": 1.0,
    "confidence": 0.5,
    "forward": -0.239318,
-   "forward_residual": -0.281343,
+   "forward_residual": -0.281342,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -5340,7 +5340,7 @@
    "exposure": 1.0,
    "confidence": 1.0,
    "forward": -0.121104,
-   "forward_residual": -0.071163,
+   "forward_residual": -0.071164,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -5382,7 +5382,7 @@
    "exposure": 0.75,
    "confidence": 1.0,
    "forward": -0.094006,
-   "forward_residual": -0.03967,
+   "forward_residual": -0.039669,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -5487,7 +5487,7 @@
    "exposure": 0.75,
    "confidence": 1.0,
    "forward": -0.476569,
-   "forward_residual": -0.322252,
+   "forward_residual": -0.322251,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -5497,13 +5497,13 @@
   {
    "date": "2025-02-07",
    "grade": "C",
-   "votes": -1.3846153846153846,
+   "votes": -3.4615384615384612,
    "stances": {
     "fundamental": -1,
     "technical": -1,
     "sentiment": 0,
     "rotation": 0,
-    "value": 0
+    "value": -1
    },
    "exposure": 0.75,
    "confidence": 1.0,
@@ -5518,13 +5518,13 @@
   {
    "date": "2025-02-10",
    "grade": "C",
-   "votes": -1.3846153846153846,
+   "votes": -3.4615384615384612,
    "stances": {
     "fundamental": -1,
     "technical": -1,
     "sentiment": 0,
     "rotation": 0,
-    "value": 0
+    "value": -1
    },
    "exposure": 0.75,
    "confidence": 1.0,
@@ -5539,18 +5539,18 @@
   {
    "date": "2025-02-11",
    "grade": "C",
-   "votes": -1.3846153846153846,
+   "votes": -3.4615384615384612,
    "stances": {
     "fundamental": -1,
     "technical": -1,
     "sentiment": 0,
     "rotation": 0,
-    "value": 0
+    "value": -1
    },
    "exposure": 0.75,
    "confidence": 1.0,
    "forward": -0.314688,
-   "forward_residual": -0.075218,
+   "forward_residual": -0.075217,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -5560,13 +5560,13 @@
   {
    "date": "2025-02-12",
    "grade": "C",
-   "votes": -1.3846153846153846,
+   "votes": -3.4615384615384612,
    "stances": {
     "fundamental": -1,
     "technical": -1,
     "sentiment": 0,
     "rotation": 0,
-    "value": 0
+    "value": -1
    },
    "exposure": 0.75,
    "confidence": 1.0,
@@ -5581,13 +5581,13 @@
   {
    "date": "2025-02-13",
    "grade": "C",
-   "votes": -1.3846153846153846,
+   "votes": -3.4615384615384612,
    "stances": {
     "fundamental": -1,
     "technical": -1,
     "sentiment": 0,
     "rotation": 0,
-    "value": 0
+    "value": -1
    },
    "exposure": 0.75,
    "confidence": 1.0,
@@ -5602,13 +5602,13 @@
   {
    "date": "2025-02-14",
    "grade": "C",
-   "votes": -1.3846153846153846,
+   "votes": -3.4615384615384612,
    "stances": {
     "fundamental": -1,
     "technical": -1,
     "sentiment": 0,
     "rotation": 0,
-    "value": 0
+    "value": -1
    },
    "exposure": 0.75,
    "confidence": 1.0,
@@ -5718,7 +5718,7 @@
    "exposure": 0.75,
    "confidence": 1.0,
    "forward": -0.057397,
-   "forward_residual": 0.052092,
+   "forward_residual": 0.052091,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -5728,13 +5728,13 @@
   {
    "date": "2025-02-25",
    "grade": "C",
-   "votes": -0.6923076923076923,
+   "votes": -2.769230769230769,
    "stances": {
     "fundamental": -1,
     "technical": 0,
     "sentiment": 0,
     "rotation": 0,
-    "value": 0
+    "value": -1
    },
    "exposure": 1.0,
    "confidence": 1.0,
@@ -5749,13 +5749,13 @@
   {
    "date": "2025-02-26",
    "grade": "C",
-   "votes": -0.6923076923076923,
+   "votes": -2.769230769230769,
    "stances": {
     "fundamental": -1,
     "technical": 0,
     "sentiment": 0,
     "rotation": 0,
-    "value": 0
+    "value": -1
    },
    "exposure": 1.0,
    "confidence": 1.0,
@@ -5770,18 +5770,18 @@
   {
    "date": "2025-02-27",
    "grade": "C",
-   "votes": -0.6923076923076923,
+   "votes": -2.769230769230769,
    "stances": {
     "fundamental": -1,
     "technical": 0,
     "sentiment": 0,
     "rotation": 0,
-    "value": 0
+    "value": -1
    },
    "exposure": 1.0,
    "confidence": 1.0,
    "forward": -0.30685,
-   "forward_residual": -0.22227,
+   "forward_residual": -0.222271,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -5886,7 +5886,7 @@
    "exposure": 0.75,
    "confidence": 1.0,
    "forward": -0.093401,
-   "forward_residual": 0.092408,
+   "forward_residual": 0.092409,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -5928,7 +5928,7 @@
    "exposure": 0.75,
    "confidence": 1.0,
    "forward": -0.131928,
-   "forward_residual": 0.167311,
+   "forward_residual": 0.167312,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -5991,7 +5991,7 @@
    "exposure": 0.75,
    "confidence": 1.0,
    "forward": -0.238855,
-   "forward_residual": -0.105657,
+   "forward_residual": -0.105656,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -6054,7 +6054,7 @@
    "exposure": 1.0,
    "confidence": 1.0,
    "forward": -0.15769,
-   "forward_residual": -0.04109,
+   "forward_residual": -0.041089,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -6075,7 +6075,7 @@
    "exposure": 1.0,
    "confidence": 1.0,
    "forward": -0.275468,
-   "forward_residual": -0.057169,
+   "forward_residual": -0.057168,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -6180,7 +6180,7 @@
    "exposure": 1.0,
    "confidence": 1.0,
    "forward": -0.013193,
-   "forward_residual": 0.10464,
+   "forward_residual": 0.104641,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -6222,7 +6222,7 @@
    "exposure": 1.0,
    "confidence": 0.5,
    "forward": 0.096768,
-   "forward_residual": 0.12285,
+   "forward_residual": 0.122849,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -6306,7 +6306,7 @@
    "exposure": 1.0,
    "confidence": 0.5,
    "forward": 0.200798,
-   "forward_residual": 0.037308,
+   "forward_residual": 0.037307,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -6348,7 +6348,7 @@
    "exposure": 1.0,
    "confidence": 0.5,
    "forward": 0.24735,
-   "forward_residual": -0.005157,
+   "forward_residual": -0.005158,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -6369,7 +6369,7 @@
    "exposure": 1.0,
    "confidence": 0.5,
    "forward": 0.312712,
-   "forward_residual": 0.00459,
+   "forward_residual": 0.004589,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -6390,7 +6390,7 @@
    "exposure": 1.0,
    "confidence": 0.5,
    "forward": 0.229779,
-   "forward_residual": 0.167263,
+   "forward_residual": 0.167264,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -6411,7 +6411,7 @@
    "exposure": 1.0,
    "confidence": 0.5,
    "forward": 0.312303,
-   "forward_residual": 0.158076,
+   "forward_residual": 0.158075,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -6432,7 +6432,7 @@
    "exposure": 1.0,
    "confidence": 1.0,
    "forward": 0.334652,
-   "forward_residual": 0.148949,
+   "forward_residual": 0.148948,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -6453,7 +6453,7 @@
    "exposure": 1.0,
    "confidence": 0.5,
    "forward": 0.371857,
-   "forward_residual": 0.192936,
+   "forward_residual": 0.192935,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -6495,7 +6495,7 @@
    "exposure": 1.0,
    "confidence": 1.0,
    "forward": 0.466774,
-   "forward_residual": 0.222503,
+   "forward_residual": 0.222504,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -6579,7 +6579,7 @@
    "exposure": 1.0,
    "confidence": 0.5,
    "forward": 0.414785,
-   "forward_residual": 0.235767,
+   "forward_residual": 0.235768,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -6600,7 +6600,7 @@
    "exposure": 1.0,
    "confidence": 0.5,
    "forward": 0.363425,
-   "forward_residual": 0.226803,
+   "forward_residual": 0.226802,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -6663,7 +6663,7 @@
    "exposure": 1.0,
    "confidence": 0.5,
    "forward": 0.262643,
-   "forward_residual": 0.136958,
+   "forward_residual": 0.136957,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -6768,7 +6768,7 @@
    "exposure": 1.0,
    "confidence": 0.5,
    "forward": 0.334404,
-   "forward_residual": 0.202122,
+   "forward_residual": 0.202121,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -6810,7 +6810,7 @@
    "exposure": 1.0,
    "confidence": 0.5,
    "forward": 0.254601,
-   "forward_residual": 0.13375,
+   "forward_residual": 0.133749,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -6862,13 +6862,13 @@
   {
    "date": "2025-05-13",
    "grade": "C",
-   "votes": -0.6923076923076923,
+   "votes": -2.769230769230769,
    "stances": {
     "fundamental": -1,
     "technical": -1,
     "sentiment": 1,
     "rotation": 0,
-    "value": 0
+    "value": -1
    },
    "exposure": 1.0,
    "confidence": 0.5,
@@ -6883,13 +6883,13 @@
   {
    "date": "2025-05-14",
    "grade": "C",
-   "votes": -0.6923076923076923,
+   "votes": -2.769230769230769,
    "stances": {
     "fundamental": -1,
     "technical": -1,
     "sentiment": 1,
     "rotation": 0,
-    "value": 0
+    "value": -1
    },
    "exposure": 1.0,
    "confidence": 0.5,
@@ -6904,13 +6904,13 @@
   {
    "date": "2025-05-15",
    "grade": "C",
-   "votes": -0.6923076923076923,
+   "votes": -2.769230769230769,
    "stances": {
     "fundamental": -1,
     "technical": -1,
     "sentiment": 1,
     "rotation": 0,
-    "value": 0
+    "value": -1
    },
    "exposure": 1.0,
    "confidence": 0.5,
@@ -6925,13 +6925,13 @@
   {
    "date": "2025-05-16",
    "grade": "C",
-   "votes": -0.6923076923076923,
+   "votes": -2.769230769230769,
    "stances": {
     "fundamental": -1,
     "technical": -1,
     "sentiment": 1,
     "rotation": 0,
-    "value": 0
+    "value": -1
    },
    "exposure": 1.0,
    "confidence": 0.5,
@@ -6946,18 +6946,18 @@
   {
    "date": "2025-05-19",
    "grade": "C",
-   "votes": -0.6923076923076923,
+   "votes": -2.769230769230769,
    "stances": {
     "fundamental": -1,
     "technical": -1,
     "sentiment": 1,
     "rotation": 0,
-    "value": 0
+    "value": -1
    },
    "exposure": 1.0,
    "confidence": 0.5,
    "forward": 0.091533,
-   "forward_residual": 0.082168,
+   "forward_residual": 0.082167,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -6999,7 +6999,7 @@
    "exposure": 1.0,
    "confidence": 0.5,
    "forward": 0.095479,
-   "forward_residual": 0.049325,
+   "forward_residual": 0.049324,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -7041,7 +7041,7 @@
    "exposure": 1.0,
    "confidence": 0.5,
    "forward": 0.133882,
-   "forward_residual": 0.030727,
+   "forward_residual": 0.030726,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -7083,7 +7083,7 @@
    "exposure": 1.0,
    "confidence": 0.5,
    "forward": 0.417147,
-   "forward_residual": 0.32639,
+   "forward_residual": 0.326391,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -7167,7 +7167,7 @@
    "exposure": 1.0,
    "confidence": 0.5,
    "forward": 0.397524,
-   "forward_residual": 0.307118,
+   "forward_residual": 0.307117,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -7261,13 +7261,13 @@
   {
    "date": "2025-06-10",
    "grade": "C",
-   "votes": 0.0,
+   "votes": -2.0769230769230766,
    "stances": {
     "fundamental": -1,
     "technical": 0,
     "sentiment": 1,
     "rotation": 0,
-    "value": 0
+    "value": -1
    },
    "exposure": 1.0,
    "confidence": 0.5,
@@ -7282,13 +7282,13 @@
   {
    "date": "2025-06-11",
    "grade": "C",
-   "votes": 0.0,
+   "votes": -2.0769230769230766,
    "stances": {
     "fundamental": -1,
     "technical": 0,
     "sentiment": 1,
     "rotation": 0,
-    "value": 0
+    "value": -1
    },
    "exposure": 1.0,
    "confidence": 0.5,
@@ -7303,13 +7303,13 @@
   {
    "date": "2025-06-12",
    "grade": "C",
-   "votes": 0.0,
+   "votes": -2.0769230769230766,
    "stances": {
     "fundamental": -1,
     "technical": 0,
     "sentiment": 1,
     "rotation": 0,
-    "value": 0
+    "value": -1
    },
    "exposure": 1.0,
    "confidence": 0.5,
@@ -7324,18 +7324,18 @@
   {
    "date": "2025-06-13",
    "grade": "C",
-   "votes": 0.0,
+   "votes": -2.0769230769230766,
    "stances": {
     "fundamental": -1,
     "technical": 0,
     "sentiment": 1,
     "rotation": 0,
-    "value": 0
+    "value": -1
    },
    "exposure": 1.0,
    "confidence": 0.5,
    "forward": 0.146068,
-   "forward_residual": 0.0553,
+   "forward_residual": 0.055299,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -7408,13 +7408,13 @@
   {
    "date": "2025-06-20",
    "grade": "C",
-   "votes": 0.0,
+   "votes": -2.0769230769230766,
    "stances": {
     "fundamental": -1,
     "technical": 0,
     "sentiment": 1,
     "rotation": 0,
-    "value": 0
+    "value": -1
    },
    "exposure": 1.0,
    "confidence": 0.5,
@@ -7429,13 +7429,13 @@
   {
    "date": "2025-06-23",
    "grade": "C",
-   "votes": 0.0,
+   "votes": -2.0769230769230766,
    "stances": {
     "fundamental": -1,
     "technical": 0,
     "sentiment": 1,
     "rotation": 0,
-    "value": 0
+    "value": -1
    },
    "exposure": 1.0,
    "confidence": 0.5,
@@ -7450,13 +7450,13 @@
   {
    "date": "2025-06-24",
    "grade": "C",
-   "votes": 0.0,
+   "votes": -2.0769230769230766,
    "stances": {
     "fundamental": -1,
     "technical": 0,
     "sentiment": 1,
     "rotation": 0,
-    "value": 0
+    "value": -1
    },
    "exposure": 1.0,
    "confidence": 0.5,
@@ -7471,13 +7471,13 @@
   {
    "date": "2025-06-25",
    "grade": "C",
-   "votes": 0.0,
+   "votes": -2.0769230769230766,
    "stances": {
     "fundamental": -1,
     "technical": 0,
     "sentiment": 1,
     "rotation": 0,
-    "value": 0
+    "value": -1
    },
    "exposure": 1.0,
    "confidence": 0.5,
@@ -7492,18 +7492,18 @@
   {
    "date": "2025-06-26",
    "grade": "C",
-   "votes": 0.0,
+   "votes": -2.0769230769230766,
    "stances": {
     "fundamental": -1,
     "technical": 0,
     "sentiment": 1,
     "rotation": 0,
-    "value": 0
+    "value": -1
    },
    "exposure": 1.0,
    "confidence": 0.5,
    "forward": -0.173074,
-   "forward_residual": -0.258993,
+   "forward_residual": -0.258994,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -7513,13 +7513,13 @@
   {
    "date": "2025-06-27",
    "grade": "C",
-   "votes": 0.0,
+   "votes": -2.0769230769230766,
    "stances": {
     "fundamental": -1,
     "technical": 0,
     "sentiment": 1,
     "rotation": 0,
-    "value": 0
+    "value": -1
    },
    "exposure": 1.0,
    "confidence": 0.5,
@@ -7545,7 +7545,7 @@
    "exposure": 1.0,
    "confidence": 0.5,
    "forward": -0.257864,
-   "forward_residual": -0.316764,
+   "forward_residual": -0.316765,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -7608,7 +7608,7 @@
    "exposure": 1.0,
    "confidence": 0.5,
    "forward": -0.352715,
-   "forward_residual": -0.340463,
+   "forward_residual": -0.340462,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -7629,7 +7629,7 @@
    "exposure": 1.0,
    "confidence": 0.5,
    "forward": -0.082913,
-   "forward_residual": -0.119344,
+   "forward_residual": -0.119345,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -7692,7 +7692,7 @@
    "exposure": 1.0,
    "confidence": 0.5,
    "forward": 0.085049,
-   "forward_residual": 0.062956,
+   "forward_residual": 0.062955,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -7828,13 +7828,13 @@
   {
    "date": "2025-07-21",
    "grade": "C",
-   "votes": -0.6923076923076923,
+   "votes": -2.769230769230769,
    "stances": {
     "fundamental": -1,
     "technical": -1,
     "sentiment": 1,
     "rotation": 0,
-    "value": 0
+    "value": -1
    },
    "exposure": 1.0,
    "confidence": 0.5,
@@ -7849,18 +7849,18 @@
   {
    "date": "2025-07-22",
    "grade": "C",
-   "votes": -0.6923076923076923,
+   "votes": -2.769230769230769,
    "stances": {
     "fundamental": -1,
     "technical": -1,
     "sentiment": 1,
     "rotation": 0,
-    "value": 0
+    "value": -1
    },
    "exposure": 1.0,
    "confidence": 0.5,
    "forward": 0.062543,
-   "forward_residual": 0.028063,
+   "forward_residual": 0.028064,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -7870,13 +7870,13 @@
   {
    "date": "2025-07-23",
    "grade": "C",
-   "votes": -0.6923076923076923,
+   "votes": -2.769230769230769,
    "stances": {
     "fundamental": -1,
     "technical": -1,
     "sentiment": 1,
     "rotation": 0,
-    "value": 0
+    "value": -1
    },
    "exposure": 1.0,
    "confidence": 0.5,
@@ -7891,13 +7891,13 @@
   {
    "date": "2025-07-24",
    "grade": "C",
-   "votes": -0.6923076923076923,
+   "votes": -2.769230769230769,
    "stances": {
     "fundamental": -1,
     "technical": -1,
     "sentiment": 1,
     "rotation": 0,
-    "value": 0
+    "value": -1
    },
    "exposure": 1.0,
    "confidence": 0.5,
@@ -7912,13 +7912,13 @@
   {
    "date": "2025-07-25",
    "grade": "C",
-   "votes": -0.6923076923076923,
+   "votes": -2.769230769230769,
    "stances": {
     "fundamental": -1,
     "technical": -1,
     "sentiment": 1,
     "rotation": 0,
-    "value": 0
+    "value": -1
    },
    "exposure": 1.0,
    "confidence": 0.5,
@@ -7933,13 +7933,13 @@
   {
    "date": "2025-07-28",
    "grade": "C",
-   "votes": -0.6923076923076923,
+   "votes": -2.769230769230769,
    "stances": {
     "fundamental": -1,
     "technical": -1,
     "sentiment": 1,
     "rotation": 0,
-    "value": 0
+    "value": -1
    },
    "exposure": 1.0,
    "confidence": 0.5,
@@ -8133,7 +8133,7 @@
    "exposure": 1.0,
    "confidence": 1.0,
    "forward": -0.033878,
-   "forward_residual": -0.070509,
+   "forward_residual": -0.07051,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -8154,7 +8154,7 @@
    "exposure": 1.0,
    "confidence": 1.0,
    "forward": 0.0,
-   "forward_residual": -0.045311,
+   "forward_residual": -0.045312,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -8406,7 +8406,7 @@
    "exposure": 1.0,
    "confidence": 1.0,
    "forward": 0.170515,
-   "forward_residual": 0.133184,
+   "forward_residual": 0.133183,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -8448,7 +8448,7 @@
    "exposure": 1.0,
    "confidence": 0.5,
    "forward": 0.188689,
-   "forward_residual": 0.128731,
+   "forward_residual": 0.12873,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -8469,7 +8469,7 @@
    "exposure": 1.0,
    "confidence": 0.5,
    "forward": 0.247976,
-   "forward_residual": 0.165076,
+   "forward_residual": 0.165077,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -9057,7 +9057,7 @@
    "exposure": 0.75,
    "confidence": 1.0,
    "forward": 0.086336,
-   "forward_residual": 0.024932,
+   "forward_residual": 0.024933,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -9078,7 +9078,7 @@
    "exposure": 0.75,
    "confidence": 1.0,
    "forward": 0.004156,
-   "forward_residual": -0.056028,
+   "forward_residual": -0.056027,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -9099,7 +9099,7 @@
    "exposure": 0.75,
    "confidence": 1.0,
    "forward": -0.089414,
-   "forward_residual": -0.158154,
+   "forward_residual": -0.158153,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -9267,7 +9267,7 @@
    "exposure": 0.75,
    "confidence": 1.0,
    "forward": -0.272289,
-   "forward_residual": -0.212167,
+   "forward_residual": -0.212168,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -9561,7 +9561,7 @@
    "exposure": 0.75,
    "confidence": 1.0,
    "forward": 0.086517,
-   "forward_residual": 0.051783,
+   "forward_residual": 0.051784,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -9729,7 +9729,7 @@
    "exposure": 0.75,
    "confidence": 1.0,
    "forward": 0.001285,
-   "forward_residual": -0.050799,
+   "forward_residual": -0.050798,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -9750,7 +9750,7 @@
    "exposure": 0.75,
    "confidence": 1.0,
    "forward": -0.056577,
-   "forward_residual": -0.094821,
+   "forward_residual": -0.09482,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -10674,7 +10674,7 @@
    "exposure": 1.0,
    "confidence": 1.0,
    "forward": -0.155271,
-   "forward_residual": -0.116976,
+   "forward_residual": -0.116977,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -10947,7 +10947,7 @@
    "exposure": 0.75,
    "confidence": 1.0,
    "forward": -0.090064,
-   "forward_residual": 0.0458,
+   "forward_residual": 0.045799,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -11010,7 +11010,7 @@
    "exposure": 0.75,
    "confidence": 1.0,
    "forward": -0.058656,
-   "forward_residual": 0.063793,
+   "forward_residual": 0.063792,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -11094,7 +11094,7 @@
    "exposure": 0.75,
    "confidence": 1.0,
    "forward": -0.022473,
-   "forward_residual": 0.08405,
+   "forward_residual": 0.084049,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -14411,8 +14411,8 @@
    },
    "exposure": 1.0,
    "confidence": 0.5,
-   "forward": null,
-   "forward_residual": null,
+   "forward": 0.07432,
+   "forward_residual": 0.109428,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -14817,19 +14817,40 @@
    "delta_weight": 0.0,
    "action": "hold",
    "rebalance": false
+  },
+  {
+   "date": "2026-11-13",
+   "grade": "B",
+   "votes": 1.3846153846153844,
+   "stances": {
+    "fundamental": 1,
+    "technical": -1,
+    "sentiment": -1,
+    "rotation": 0,
+    "value": 1
+   },
+   "exposure": 1.0,
+   "confidence": 0.5,
+   "forward": null,
+   "forward_residual": null,
+   "earnings": false,
+   "target_weight": 0.0,
+   "delta_weight": 0.0,
+   "action": "hold",
+   "rebalance": false
   }
  ],
  "backtest": {
   "ticker": "CORZ",
   "min_grade": "A",
-  "sessions": 704,
+  "sessions": 705,
   "sessions_in": 114,
   "switches": 18,
   "rule_return": 0.789173,
-  "hold_return": 1.430367,
-  "benchmark_return": 0.47677,
+  "hold_return": 1.440056,
+  "benchmark_return": 0.473131,
   "in_annualised": 2.337807,
-  "out_annualised": 0.159225
+  "out_annualised": 0.163086
  },
  "fills": []
 }

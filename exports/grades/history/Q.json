@@ -1,6 +1,6 @@
 {
  "ticker": "Q",
- "asof": "2026-11-12",
+ "asof": "2026-11-13",
  "horizon": 20,
  "fundamentals_source": "fundamentals-features/6",
  "policy": "graded-equal-weight/5",
@@ -848,8 +848,8 @@
    "forward": 0.187316,
    "forward_residual": 0.181274,
    "earnings": false,
-   "target_weight": 0.166667,
-   "delta_weight": 0.0,
+   "target_weight": 0.142857,
+   "delta_weight": -0.02381,
    "action": "hold",
    "rebalance": false
   },
@@ -869,8 +869,8 @@
    "forward": 0.144607,
    "forward_residual": 0.142762,
    "earnings": false,
-   "target_weight": 0.166667,
-   "delta_weight": 0.0,
+   "target_weight": 0.125,
+   "delta_weight": -0.017857,
    "action": "hold",
    "rebalance": false
   },
@@ -890,7 +890,7 @@
    "forward": 0.148738,
    "forward_residual": 0.14534,
    "earnings": false,
-   "target_weight": 0.166667,
+   "target_weight": 0.125,
    "delta_weight": 0.0,
    "action": "hold",
    "rebalance": false
@@ -911,8 +911,8 @@
    "forward": 0.166341,
    "forward_residual": 0.158865,
    "earnings": false,
-   "target_weight": 0.142857,
-   "delta_weight": -0.02381,
+   "target_weight": 0.125,
+   "delta_weight": 0.0,
    "action": "hold",
    "rebalance": false
   },
@@ -932,8 +932,8 @@
    "forward": 0.203256,
    "forward_residual": 0.192311,
    "earnings": false,
-   "target_weight": 0.142857,
-   "delta_weight": 0.0,
+   "target_weight": 0.111111,
+   "delta_weight": -0.013889,
    "action": "hold",
    "rebalance": false
   },
@@ -953,7 +953,7 @@
    "forward": 0.173334,
    "forward_residual": 0.163153,
    "earnings": false,
-   "target_weight": 0.142857,
+   "target_weight": 0.111111,
    "delta_weight": 0.0,
    "action": "hold",
    "rebalance": false
@@ -974,8 +974,8 @@
    "forward": 0.16378,
    "forward_residual": 0.149149,
    "earnings": false,
-   "target_weight": 0.142857,
-   "delta_weight": 0.0,
+   "target_weight": 0.125,
+   "delta_weight": 0.013889,
    "action": "hold",
    "rebalance": false
   },
@@ -995,7 +995,7 @@
    "forward": 0.169432,
    "forward_residual": 0.151674,
    "earnings": false,
-   "target_weight": 0.142857,
+   "target_weight": 0.125,
    "delta_weight": 0.0,
    "action": "hold",
    "rebalance": false
@@ -1016,8 +1016,8 @@
    "forward": 0.160025,
    "forward_residual": 0.157396,
    "earnings": false,
-   "target_weight": 0.166667,
-   "delta_weight": 0.02381,
+   "target_weight": 0.125,
+   "delta_weight": 0.0,
    "action": "hold",
    "rebalance": false
   },
@@ -1037,8 +1037,8 @@
    "forward": 0.046834,
    "forward_residual": 0.054991,
    "earnings": false,
-   "target_weight": 0.166667,
-   "delta_weight": 0.0,
+   "target_weight": 0.142857,
+   "delta_weight": 0.017857,
    "action": "hold",
    "rebalance": false
   },
@@ -1059,7 +1059,7 @@
    "forward_residual": 0.044371,
    "earnings": false,
    "target_weight": 0.166667,
-   "delta_weight": 0.0,
+   "delta_weight": 0.02381,
    "action": "hold",
    "rebalance": false
   },
@@ -1100,8 +1100,8 @@
    "forward": 0.152615,
    "forward_residual": 0.152788,
    "earnings": false,
-   "target_weight": 0.166667,
-   "delta_weight": 0.0,
+   "target_weight": 0.142857,
+   "delta_weight": -0.02381,
    "action": "hold",
    "rebalance": false
   },
@@ -1121,7 +1121,7 @@
    "forward": 0.184226,
    "forward_residual": 0.188609,
    "earnings": false,
-   "target_weight": 0.166667,
+   "target_weight": 0.142857,
    "delta_weight": 0.0,
    "action": "hold",
    "rebalance": false
@@ -1142,7 +1142,7 @@
    "forward": 0.244526,
    "forward_residual": 0.247138,
    "earnings": false,
-   "target_weight": 0.166667,
+   "target_weight": 0.142857,
    "delta_weight": 0.0,
    "action": "hold",
    "rebalance": false
@@ -1163,8 +1163,8 @@
    "forward": 0.188643,
    "forward_residual": 0.201898,
    "earnings": false,
-   "target_weight": 0.2,
-   "delta_weight": 0.033333,
+   "target_weight": 0.166667,
+   "delta_weight": 0.02381,
    "action": "hold",
    "rebalance": false
   },
@@ -1185,7 +1185,7 @@
    "forward_residual": 0.197108,
    "earnings": false,
    "target_weight": 0.2,
-   "delta_weight": 0.0,
+   "delta_weight": 0.033333,
    "action": "hold",
    "rebalance": false
   },
@@ -1814,8 +1814,8 @@
    "forward": -0.14699,
    "forward_residual": -0.067127,
    "earnings": false,
-   "target_weight": 0.25,
-   "delta_weight": 0.25,
+   "target_weight": 0.2,
+   "delta_weight": 0.2,
    "action": "buy",
    "rebalance": false
   },
@@ -1836,7 +1836,7 @@
    "forward_residual": 0.035962,
    "earnings": false,
    "target_weight": 0.166667,
-   "delta_weight": -0.083333,
+   "delta_weight": -0.033333,
    "action": "hold",
    "rebalance": false
   },
@@ -1877,8 +1877,8 @@
    "forward": 0.005248,
    "forward_residual": 0.040637,
    "earnings": false,
-   "target_weight": 0.2,
-   "delta_weight": 0.033333,
+   "target_weight": 0.166667,
+   "delta_weight": 0.0,
    "action": "hold",
    "rebalance": false
   },
@@ -1899,7 +1899,7 @@
    "forward_residual": 0.093757,
    "earnings": false,
    "target_weight": 0.2,
-   "delta_weight": 0.0,
+   "delta_weight": 0.033333,
    "action": "hold",
    "rebalance": false
   },
@@ -2024,8 +2024,8 @@
    "forward": 0.16789,
    "forward_residual": 0.127857,
    "earnings": false,
-   "target_weight": 0.2,
-   "delta_weight": 0.0,
+   "target_weight": 0.166667,
+   "delta_weight": -0.033333,
    "action": "hold",
    "rebalance": false
   },
@@ -2045,7 +2045,7 @@
    "forward": 0.14879,
    "forward_residual": 0.103524,
    "earnings": false,
-   "target_weight": 0.2,
+   "target_weight": 0.166667,
    "delta_weight": 0.0,
    "action": "hold",
    "rebalance": false
@@ -2066,7 +2066,7 @@
    "forward": 0.141462,
    "forward_residual": 0.07969,
    "earnings": false,
-   "target_weight": 0.2,
+   "target_weight": 0.166667,
    "delta_weight": 0.0,
    "action": "hold",
    "rebalance": false
@@ -2087,7 +2087,7 @@
    "forward": 0.196822,
    "forward_residual": 0.120569,
    "earnings": false,
-   "target_weight": 0.2,
+   "target_weight": 0.166667,
    "delta_weight": 0.0,
    "action": "hold",
    "rebalance": false
@@ -2109,7 +2109,7 @@
    "forward_residual": 0.16096,
    "earnings": false,
    "target_weight": 0.166667,
-   "delta_weight": -0.033333,
+   "delta_weight": 0.0,
    "action": "hold",
    "rebalance": false
   },
@@ -2472,23 +2472,23 @@
   },
   {
    "date": "2026-04-16",
-   "grade": "C",
-   "votes": 0.0,
+   "grade": "A",
+   "votes": 2.0769230769230766,
    "stances": {
     "fundamental": 0,
     "technical": 0,
     "sentiment": 0,
     "rotation": 0,
-    "value": 0
+    "value": 1
    },
    "exposure": 1.0,
    "confidence": 0.5,
    "forward": 0.223113,
    "forward_residual": 0.158932,
    "earnings": false,
-   "target_weight": 0.0,
-   "delta_weight": -0.125,
-   "action": "sell",
+   "target_weight": 0.125,
+   "delta_weight": 0.0,
+   "action": "hold",
    "rebalance": false
   },
   {
@@ -2508,8 +2508,8 @@
    "forward_residual": 0.102859,
    "earnings": false,
    "target_weight": 0.0,
-   "delta_weight": 0.0,
-   "action": "hold",
+   "delta_weight": -0.125,
+   "action": "sell",
    "rebalance": false
   },
   {
@@ -2913,42 +2913,42 @@
   },
   {
    "date": "2026-05-15",
-   "grade": "B",
-   "votes": 0.6923076923076923,
+   "grade": "A+",
+   "votes": 2.769230769230769,
    "stances": {
     "fundamental": 0,
     "technical": 0,
     "sentiment": 1,
     "rotation": 0,
-    "value": 0
+    "value": 1
    },
    "exposure": 0.75,
    "confidence": 1.0,
    "forward": 0.024322,
    "forward_residual": -0.030534,
    "earnings": false,
-   "target_weight": 0.0,
-   "delta_weight": 0.0,
-   "action": "hold",
+   "target_weight": 0.166667,
+   "delta_weight": 0.166667,
+   "action": "buy",
    "rebalance": false
   },
   {
    "date": "2026-05-18",
-   "grade": "B",
-   "votes": 0.6923076923076923,
+   "grade": "A+",
+   "votes": 2.769230769230769,
    "stances": {
     "fundamental": 0,
     "technical": 0,
     "sentiment": 1,
     "rotation": 0,
-    "value": 0
+    "value": 1
    },
    "exposure": 0.75,
    "confidence": 1.0,
    "forward": 0.021814,
    "forward_residual": -0.019729,
    "earnings": false,
-   "target_weight": 0.0,
+   "target_weight": 0.166667,
    "delta_weight": 0.0,
    "action": "hold",
    "rebalance": false
@@ -2970,8 +2970,8 @@
    "forward_residual": 0.049261,
    "earnings": false,
    "target_weight": 0.142857,
-   "delta_weight": 0.142857,
-   "action": "buy",
+   "delta_weight": -0.02381,
+   "action": "hold",
    "rebalance": false
   },
   {
@@ -3053,8 +3053,8 @@
    "forward": -0.035628,
    "forward_residual": 0.022204,
    "earnings": false,
-   "target_weight": 0.125,
-   "delta_weight": -0.017857,
+   "target_weight": 0.142857,
+   "delta_weight": 0.0,
    "action": "hold",
    "rebalance": false
   },
@@ -3074,8 +3074,8 @@
    "forward": 0.051831,
    "forward_residual": 0.105216,
    "earnings": false,
-   "target_weight": 0.111111,
-   "delta_weight": -0.013889,
+   "target_weight": 0.125,
+   "delta_weight": -0.017857,
    "action": "hold",
    "rebalance": false
   },
@@ -3096,7 +3096,7 @@
    "forward_residual": 0.084274,
    "earnings": false,
    "target_weight": 0.125,
-   "delta_weight": 0.013889,
+   "delta_weight": 0.0,
    "action": "hold",
    "rebalance": false
   },
@@ -3116,8 +3116,8 @@
    "forward": 0.014194,
    "forward_residual": 0.064271,
    "earnings": false,
-   "target_weight": 0.142857,
-   "delta_weight": 0.017857,
+   "target_weight": 0.125,
+   "delta_weight": 0.0,
    "action": "hold",
    "rebalance": false
   },
@@ -3138,7 +3138,7 @@
    "forward_residual": 0.108368,
    "earnings": false,
    "target_weight": 0.166667,
-   "delta_weight": 0.02381,
+   "delta_weight": 0.041667,
    "action": "hold",
    "rebalance": false
   },
@@ -3326,8 +3326,8 @@
    "forward": -0.061459,
    "forward_residual": -0.105949,
    "earnings": false,
-   "target_weight": 0.142857,
-   "delta_weight": 0.0,
+   "target_weight": 0.125,
+   "delta_weight": -0.017857,
    "action": "hold",
    "rebalance": false
   },
@@ -3347,7 +3347,7 @@
    "forward": -0.138245,
    "forward_residual": -0.14541,
    "earnings": false,
-   "target_weight": 0.142857,
+   "target_weight": 0.125,
    "delta_weight": 0.0,
    "action": "hold",
    "rebalance": false
@@ -3369,7 +3369,7 @@
    "forward_residual": -0.125498,
    "earnings": false,
    "target_weight": 0.142857,
-   "delta_weight": 0.0,
+   "delta_weight": 0.017857,
    "action": "hold",
    "rebalance": false
   },
@@ -3389,8 +3389,8 @@
    "forward": -0.139236,
    "forward_residual": -0.154964,
    "earnings": false,
-   "target_weight": 0.166667,
-   "delta_weight": 0.02381,
+   "target_weight": 0.142857,
+   "delta_weight": 0.0,
    "action": "hold",
    "rebalance": false
   },
@@ -3411,7 +3411,7 @@
    "forward_residual": -0.21012,
    "earnings": false,
    "target_weight": 0.142857,
-   "delta_weight": -0.02381,
+   "delta_weight": 0.0,
    "action": "hold",
    "rebalance": false
   },
@@ -3620,8 +3620,8 @@
    "forward": -0.095651,
    "forward_residual": -0.119702,
    "earnings": false,
-   "target_weight": 0.142857,
-   "delta_weight": -0.02381,
+   "target_weight": 0.166667,
+   "delta_weight": 0.0,
    "action": "hold",
    "rebalance": false
   },
@@ -3641,7 +3641,7 @@
    "forward": 0.008008,
    "forward_residual": -0.08085,
    "earnings": false,
-   "target_weight": 0.142857,
+   "target_weight": 0.166667,
    "delta_weight": 0.0,
    "action": "hold",
    "rebalance": false
@@ -3662,8 +3662,8 @@
    "forward": -0.047019,
    "forward_residual": -0.138694,
    "earnings": false,
-   "target_weight": 0.166667,
-   "delta_weight": 0.02381,
+   "target_weight": 0.2,
+   "delta_weight": 0.033333,
    "action": "hold",
    "rebalance": false
   },
@@ -3683,7 +3683,7 @@
    "forward": -0.072929,
    "forward_residual": -0.135938,
    "earnings": false,
-   "target_weight": 0.166667,
+   "target_weight": 0.2,
    "delta_weight": 0.0,
    "action": "hold",
    "rebalance": false
@@ -3704,7 +3704,7 @@
    "forward": -0.04117,
    "forward_residual": -0.109058,
    "earnings": false,
-   "target_weight": 0.166667,
+   "target_weight": 0.2,
    "delta_weight": 0.0,
    "action": "hold",
    "rebalance": false
@@ -3725,30 +3725,30 @@
    "forward": -0.048021,
    "forward_residual": -0.137044,
    "earnings": false,
-   "target_weight": 0.142857,
-   "delta_weight": -0.02381,
+   "target_weight": 0.166667,
+   "delta_weight": -0.033333,
    "action": "hold",
    "rebalance": false
   },
   {
    "date": "2026-07-14",
-   "grade": "B",
-   "votes": 0.6923076923076923,
+   "grade": "A+",
+   "votes": 2.769230769230769,
    "stances": {
     "fundamental": 0,
     "technical": 0,
     "sentiment": 1,
     "rotation": 0,
-    "value": 0
+    "value": 1
    },
    "exposure": 0.75,
    "confidence": 1.0,
    "forward": -0.024509,
    "forward_residual": -0.096317,
    "earnings": false,
-   "target_weight": 0.0,
-   "delta_weight": -0.142857,
-   "action": "sell",
+   "target_weight": 0.166667,
+   "delta_weight": 0.0,
+   "action": "hold",
    "rebalance": false
   },
   {
@@ -3768,8 +3768,8 @@
    "forward_residual": -0.053164,
    "earnings": false,
    "target_weight": 0.0,
-   "delta_weight": 0.0,
-   "action": "hold",
+   "delta_weight": -0.166667,
+   "action": "sell",
    "rebalance": false
   },
   {
@@ -4152,210 +4152,210 @@
   },
   {
    "date": "2026-08-11",
-   "grade": "C",
-   "votes": 0.0,
+   "grade": "A",
+   "votes": 2.0769230769230766,
    "stances": {
     "fundamental": 0,
     "technical": 0,
     "sentiment": 0,
     "rotation": 0,
-    "value": 0
+    "value": 1
    },
    "exposure": 1.0,
    "confidence": 1.0,
    "forward": -0.096259,
    "forward_residual": -0.066994,
    "earnings": false,
-   "target_weight": 0.0,
-   "delta_weight": 0.0,
-   "action": "hold",
+   "target_weight": 0.142857,
+   "delta_weight": 0.142857,
+   "action": "buy",
    "rebalance": false
   },
   {
    "date": "2026-08-12",
-   "grade": "C",
-   "votes": 0.0,
+   "grade": "A",
+   "votes": 2.0769230769230766,
    "stances": {
     "fundamental": 0,
     "technical": 0,
     "sentiment": 0,
     "rotation": 0,
-    "value": 0
+    "value": 1
    },
    "exposure": 1.0,
    "confidence": 1.0,
    "forward": -0.140942,
    "forward_residual": -0.088302,
    "earnings": false,
-   "target_weight": 0.0,
-   "delta_weight": 0.0,
+   "target_weight": 0.166667,
+   "delta_weight": 0.02381,
    "action": "hold",
    "rebalance": false
   },
   {
    "date": "2026-08-13",
-   "grade": "C",
-   "votes": 0.0,
+   "grade": "A",
+   "votes": 2.0769230769230766,
    "stances": {
     "fundamental": 0,
     "technical": 0,
     "sentiment": 0,
     "rotation": 0,
-    "value": 0
+    "value": 1
    },
    "exposure": 1.0,
    "confidence": 1.0,
    "forward": -0.119856,
    "forward_residual": -0.071438,
    "earnings": false,
-   "target_weight": 0.0,
+   "target_weight": 0.166667,
    "delta_weight": 0.0,
    "action": "hold",
    "rebalance": false
   },
   {
    "date": "2026-08-14",
-   "grade": "C",
-   "votes": 0.0,
+   "grade": "A",
+   "votes": 2.0769230769230766,
    "stances": {
     "fundamental": 0,
     "technical": 0,
     "sentiment": 0,
     "rotation": 0,
-    "value": 0
+    "value": 1
    },
    "exposure": 1.0,
    "confidence": 1.0,
    "forward": -0.193134,
    "forward_residual": -0.137608,
    "earnings": false,
-   "target_weight": 0.0,
-   "delta_weight": 0.0,
+   "target_weight": 0.2,
+   "delta_weight": 0.033333,
    "action": "hold",
    "rebalance": false
   },
   {
    "date": "2026-08-17",
-   "grade": "C",
-   "votes": 0.0,
+   "grade": "A",
+   "votes": 2.0769230769230766,
    "stances": {
     "fundamental": 0,
     "technical": 0,
     "sentiment": 0,
     "rotation": 0,
-    "value": 0
+    "value": 1
    },
    "exposure": 1.0,
    "confidence": 1.0,
    "forward": -0.20503,
    "forward_residual": -0.150278,
    "earnings": false,
-   "target_weight": 0.0,
+   "target_weight": 0.2,
    "delta_weight": 0.0,
    "action": "hold",
    "rebalance": false
   },
   {
    "date": "2026-08-18",
-   "grade": "C",
-   "votes": 0.0,
+   "grade": "A",
+   "votes": 2.0769230769230766,
    "stances": {
     "fundamental": 0,
     "technical": 0,
     "sentiment": 0,
     "rotation": 0,
-    "value": 0
+    "value": 1
    },
    "exposure": 1.0,
    "confidence": 1.0,
    "forward": -0.150321,
    "forward_residual": -0.101635,
    "earnings": false,
-   "target_weight": 0.0,
+   "target_weight": 0.2,
    "delta_weight": 0.0,
    "action": "hold",
    "rebalance": false
   },
   {
    "date": "2026-08-19",
-   "grade": "C",
-   "votes": 0.0,
+   "grade": "A",
+   "votes": 2.0769230769230766,
    "stances": {
     "fundamental": 0,
     "technical": 0,
     "sentiment": 0,
     "rotation": 0,
-    "value": 0
+    "value": 1
    },
    "exposure": 1.0,
    "confidence": 1.0,
    "forward": -0.072649,
    "forward_residual": -0.049069,
    "earnings": false,
-   "target_weight": 0.0,
-   "delta_weight": 0.0,
+   "target_weight": 0.25,
+   "delta_weight": 0.05,
    "action": "hold",
    "rebalance": false
   },
   {
    "date": "2026-08-20",
-   "grade": "C",
-   "votes": 0.0,
+   "grade": "A",
+   "votes": 2.0769230769230766,
    "stances": {
     "fundamental": 0,
     "technical": 0,
     "sentiment": 0,
     "rotation": 0,
-    "value": 0
+    "value": 1
    },
    "exposure": 1.0,
    "confidence": 1.0,
    "forward": -0.105678,
    "forward_residual": -0.109193,
    "earnings": false,
-   "target_weight": 0.0,
+   "target_weight": 0.25,
    "delta_weight": 0.0,
    "action": "hold",
    "rebalance": false
   },
   {
    "date": "2026-08-21",
-   "grade": "C",
-   "votes": 0.0,
+   "grade": "A",
+   "votes": 2.0769230769230766,
    "stances": {
     "fundamental": 0,
     "technical": 0,
     "sentiment": 0,
     "rotation": 0,
-    "value": 0
+    "value": 1
    },
    "exposure": 1.0,
    "confidence": 1.0,
    "forward": -0.055672,
    "forward_residual": -0.089891,
    "earnings": false,
-   "target_weight": 0.0,
+   "target_weight": 0.25,
    "delta_weight": 0.0,
    "action": "hold",
    "rebalance": false
   },
   {
    "date": "2026-08-24",
-   "grade": "C",
-   "votes": 0.0,
+   "grade": "A",
+   "votes": 2.0769230769230766,
    "stances": {
     "fundamental": 0,
     "technical": 0,
     "sentiment": 0,
     "rotation": 0,
-    "value": 0
+    "value": 1
    },
    "exposure": 1.0,
    "confidence": 0.5,
    "forward": -0.010326,
    "forward_residual": -0.051557,
    "earnings": false,
-   "target_weight": 0.0,
+   "target_weight": 0.25,
    "delta_weight": 0.0,
    "action": "hold",
    "rebalance": false
@@ -4377,8 +4377,8 @@
    "forward_residual": -0.029458,
    "earnings": false,
    "target_weight": 0.25,
-   "delta_weight": 0.25,
-   "action": "buy",
+   "delta_weight": 0.0,
+   "action": "hold",
    "rebalance": false
   },
   {
@@ -4544,8 +4544,8 @@
    "forward": 0.087834,
    "forward_residual": 0.066053,
    "earnings": false,
-   "target_weight": 0.1,
-   "delta_weight": -0.1,
+   "target_weight": 0.090909,
+   "delta_weight": -0.109091,
    "action": "trim",
    "rebalance": true
   },
@@ -4565,7 +4565,7 @@
    "forward": 0.080617,
    "forward_residual": 0.031218,
    "earnings": false,
-   "target_weight": 0.1,
+   "target_weight": 0.090909,
    "delta_weight": 0.0,
    "action": "hold",
    "rebalance": true
@@ -4586,7 +4586,7 @@
    "forward": 0.033312,
    "forward_residual": -0.022898,
    "earnings": false,
-   "target_weight": 0.1,
+   "target_weight": 0.090909,
    "delta_weight": 0.0,
    "action": "hold",
    "rebalance": false
@@ -4608,7 +4608,7 @@
    "forward_residual": -0.033805,
    "earnings": false,
    "target_weight": 0.0,
-   "delta_weight": -0.1,
+   "delta_weight": -0.090909,
    "action": "sell",
    "rebalance": true
   },
@@ -5150,8 +5150,8 @@
    },
    "exposure": 1.0,
    "confidence": 0.5,
-   "forward": null,
-   "forward_residual": null,
+   "forward": 0.025586,
+   "forward_residual": 0.054536,
    "earnings": false,
    "target_weight": 0.0,
    "delta_weight": 0.0,
@@ -5475,14 +5475,14 @@
   },
   {
    "date": "2026-11-09",
-   "grade": "C",
-   "votes": -0.6923076923076923,
+   "grade": "B",
+   "votes": 1.3846153846153844,
    "stances": {
     "fundamental": 0,
     "technical": -1,
     "sentiment": 0,
     "rotation": 0,
-    "value": 0
+    "value": 1
    },
    "exposure": 1.0,
    "confidence": 0.5,
@@ -5556,19 +5556,40 @@
    "delta_weight": 0.0,
    "action": "hold",
    "rebalance": false
+  },
+  {
+   "date": "2026-11-13",
+   "grade": "C",
+   "votes": -0.6923076923076923,
+   "stances": {
+    "fundamental": 0,
+    "technical": -1,
+    "sentiment": 0,
+    "rotation": 0,
+    "value": 0
+   },
+   "exposure": 1.0,
+   "confidence": 0.5,
+   "forward": null,
+   "forward_residual": null,
+   "earnings": false,
+   "target_weight": 0.0,
+   "delta_weight": 0.0,
+   "action": "hold",
+   "rebalance": false
   }
  ],
  "backtest": {
   "ticker": "Q",
   "min_grade": "A",
-  "sessions": 263,
-  "sessions_in": 120,
+  "sessions": 264,
+  "sessions_in": 134,
   "switches": 10,
-  "rule_return": 0.322636,
-  "hold_return": 0.255199,
-  "benchmark_return": 0.110484,
-  "in_annualised": 0.67815,
-  "out_annualised": -0.119356
+  "rule_return": 0.204981,
+  "hold_return": 0.219269,
+  "benchmark_return": 0.106845,
+  "in_annualised": 0.343941,
+  "out_annualised": 0.07052
  },
  "fills": []
 }
